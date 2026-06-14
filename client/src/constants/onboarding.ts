@@ -1,0 +1,31 @@
+export const INTERESTS: [string, string][] = [
+  ['Music', '🎵'],
+  ['Travel', '✈️'],
+  ['Food', '🍕'],
+  ['Sports', '⚽'],
+  ['Art', '🎨'],
+  ['Movies', '🎬'],
+  ['Gaming', '🎮'],
+  ['Dance', '💃'],
+  ['Fitness', '🏋️'],
+  ['Comedy', '😂'],
+  ['Photography', '📸'],
+  ['Fashion', '👗'],
+  ['Tech', '💻'],
+  ['Books', '📚'],
+  ['Cooking', '🍳'],
+  ['Nightlife', '🌃'],
+  ['Hiking', '🥾'],
+  ['Yoga', '🧘'],
+]
+
+export const CITIES: { name: string; state: string }[] = [
+  { name: 'Mumbai', state: 'Maharashtra' },
+  { name: 'Delhi', state: 'Delhi NCR' },
+  { name: 'Bangalore', state: 'Karnataka' },
+  { name: 'Hyderabad', state: 'Telangana' },
+  { name: 'Pune', state: 'Maharashtra' },
+  { name: 'Chennai', state: 'Tamil Nadu' },
+  { name: 'Kolkata', state: 'West Bengal' },
+  { name: 'Ahmedabad', state: 'Gujarat' },
+]

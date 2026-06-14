@@ -1,26 +1,30 @@
 {
   "expo": {
-    "name": "client",
-    "slug": "client",
+    "name": "Vybe",
+    "slug": "vybe",
     "version": "1.0.0",
     "orientation": "portrait",
+    "scheme": "vybe",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
     "icon": "./assets/images/icon.png",
-    "scheme": "client",
-    "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "bundleIdentifier": "in.vybe.app",
+      "supportsTablet": false
     },
     "android": {
+      "package": "in.vybe.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#111111",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundImage": "./assets/images/android-icon-background.png"
       },
+      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
+      "bundler": "metro",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -28,7 +32,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#111111",
           "android": {
             "image": "./assets/images/splash-icon.png",
             "imageWidth": 76
@@ -39,6 +43,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "apiUrl": "http://192.168.0.104:8000",
+      "router": {},
+      "eas": {
+        "projectId": "da4e0090-c985-42e9-ab31-f6832bcc46e9"
+      }
     }
   }
 }
