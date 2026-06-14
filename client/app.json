@@ -38,6 +38,14 @@
             "imageWidth": 76
           }
         }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow Vybe to access your microphone to record voice intros.",
+          "enableBackgroundPlayback": true,
+          "enableBackgroundRecording": false
+        }
       ]
     ],
     "experiments": {

@@ -1,7 +1,15 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
-import { Audio } from 'expo-av'
+import {
+  useAudioRecorder,
+  useAudioRecorderState,
+  useAudioPlayer,
+  useAudioPlayerStatus,
+  AudioModule,
+  RecordingPresets,
+  setAudioModeAsync,
+} from 'expo-audio'
 import { Mic, Square, Play, Pause } from 'lucide-react-native'
 import Animated, {
   useSharedValue,
@@ -22,24 +30,32 @@ const WAVE_BARS = 14
 
 export default function VoiceScreen() {
   const store = useOnboardingStore()
-  const [recording, setRecording] = useState<Audio.Recording | null>(null)
-  const [isRecording, setIsRecording] = useState(false)
   const [recorded, setRecorded] = useState(false)
-  const [seconds, setSeconds] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [sound, setSound] = useState<Audio.Sound | null>(null)
   const [uploading, setUploading] = useState(false)
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const ripple = useSharedValue(1)
 
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY)
+  const recorderState = useAudioRecorderState(audioRecorder)
+
+  const player = useAudioPlayer(null)
+  const playerStatus = useAudioPlayerStatus(player)
+
+  const ripple = useSharedValue(1)
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const barScales = Array.from({ length: WAVE_BARS }, () => useSharedValue(0.15))
 
   useEffect(() => {
-    return () => {
-      sound?.unloadAsync()
-      timerRef.current && clearInterval(timerRef.current)
+    AudioModule.requestRecordingPermissionsAsync()
+    setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true })
+  }, [])
+
+  const isRecording = recorderState.isRecording
+  const seconds = Math.round((recorderState.durationMillis ?? 0) / 1000)
+
+  useEffect(() => {
+    if (isRecording && seconds >= MAX_SECONDS) {
+      stopRecording()
     }
-  }, [sound])
+  }, [seconds, isRecording])
 
   useEffect(() => {
     if (isRecording) {
@@ -79,71 +95,39 @@ export default function VoiceScreen() {
 
   const fmt = (s: number) => `0:${String(s).padStart(2, '0')}`
 
-  const startRecording = async () => {
-    await Audio.requestPermissionsAsync()
-    await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true })
-    const { recording: rec } = await Audio.Recording.createAsync(
-      Audio.RecordingOptionsPresets.HIGH_QUALITY,
-    )
-    setRecording(rec)
-    setIsRecording(true)
-    setSeconds(0)
-
-    timerRef.current = setInterval(() => {
-      setSeconds(s => {
-        if (s + 1 >= MAX_SECONDS) {
-          stopRecording()
-          return MAX_SECONDS
-        }
-        return s + 1
-      })
-    }, 1000)
-  }
-
   const stopRecording = async () => {
-    if (timerRef.current) clearInterval(timerRef.current)
-    setIsRecording(false)
-    if (!recording) return
-    await recording.stopAndUnloadAsync()
-    const uri = recording.getURI()
-    if (uri && seconds > 0) {
-      setRecorded(true)
+    await audioRecorder.stop()
+    const uri = audioRecorder.uri
+    if (uri) {
       store.setField('voiceUri', uri)
+      player.replace({ uri })
+      setRecorded(true)
     }
-    setRecording(null)
   }
 
-  const tapRecord = () => {
-    if (isRecording) stopRecording()
-    else startRecording()
-  }
-
-  const handlePlayPause = async () => {
-    if (!store.voiceUri) return
-    if (playing) {
-      await sound?.pauseAsync()
-      setPlaying(false)
+  const tapRecord = async () => {
+    if (isRecording) {
+      await stopRecording()
     } else {
-      if (sound) {
-        await sound.playAsync()
-      } else {
-        const { sound: s } = await Audio.Sound.createAsync({ uri: store.voiceUri })
-        s.setOnPlaybackStatusUpdate(st => {
-          if (st.isLoaded && st.didJustFinish) setPlaying(false)
-        })
-        await s.playAsync()
-        setSound(s)
-      }
-      setPlaying(true)
+      setRecorded(false)
+      store.setField('voiceUri', '')
+      await audioRecorder.prepareToRecordAsync()
+      audioRecorder.record()
+    }
+  }
+
+  const handlePlayPause = () => {
+    if (playerStatus.playing) {
+      player.pause()
+    } else {
+      player.seekTo(0)
+      player.play()
     }
   }
 
   const handleRetake = () => {
-    sound?.unloadAsync()
-    setSound(null)
-    setPlaying(false)
+    player.pause()
     setRecorded(false)
-    setSeconds(0)
     store.setField('voiceUri', '')
   }
 
@@ -152,13 +136,12 @@ export default function VoiceScreen() {
     setUploading(true)
     try {
       await uploadVoice(store.voiceUri)
-      router.push('/(onboarding)/interests')
-    } catch {
-      router.push('/(onboarding)/interests')
-    } finally {
-      setUploading(false)
-    }
+    } catch {}
+    router.push('/(onboarding)/interests')
+    setUploading(false)
   }
+
+  const playing = playerStatus.playing
 
   return (
     <View style={styles.container}>
