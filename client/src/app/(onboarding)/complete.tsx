@@ -8,7 +8,7 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated'
 import { Check } from 'lucide-react-native'
-import { PrimaryButton } from '@/components/ui'
+import { PrimaryButton, Screen } from '@/components/ui'
 import { useOnboardingStore } from '@/store/onboarding'
 import { useAuthStore } from '@/store/auth'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
@@ -72,13 +72,13 @@ export default function CompleteScreen() {
   const navigate = () => {
     setProfileComplete(true)
     store.reset()
-    router.replace('/(tabs)/')
+    router.replace('/(tabs)')
   }
 
   const firstName = store.name.split(' ')[0] || 'there'
 
   return (
-    <View style={styles.container}>
+    <Screen style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, overflow: 'hidden' }}>
       {pieces.map(i => <ConfettiPiece key={i} index={i} />)}
       <View style={styles.content}>
         <View style={styles.checkCircle}>
@@ -93,19 +93,11 @@ export default function CompleteScreen() {
         </View>
         <Text style={styles.auto}>Taking you in automatically…</Text>
       </View>
-    </View>
+    </Screen>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 28,
-    overflow: 'hidden',
-  },
   confetti: {
     position: 'absolute',
     top: 0,

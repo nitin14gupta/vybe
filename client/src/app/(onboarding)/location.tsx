@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { View, Text, StyleSheet, Pressable, FlatList, Alert } from 'react-native'
+import { View, Text, StyleSheet, Pressable, FlatList, Alert, KeyboardAvoidingView, Platform } from 'react-native'
 import { router } from 'expo-router'
 import * as Location from 'expo-location'
 import { Search, MapPin, Check } from 'lucide-react-native'
-import { BackButton, ProgressBar, Input, PrimaryButton } from '@/components/ui'
+import { BackButton, ProgressBar, Input, PrimaryButton, Screen } from '@/components/ui'
 import { useOnboardingStore } from '@/store/onboarding'
 import { setLocation } from '@/api/user'
 import { CITIES } from '@/constants/onboarding'
@@ -56,9 +56,13 @@ export default function LocationScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <Screen>
       <BackButton onPress={() => router.back()} />
       <ProgressBar step={5} />
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
       <View style={styles.header}>
         <Text style={styles.title}>Where are you based?</Text>
         <Text style={styles.subtitle}>We'll show you events near you</Text>
@@ -112,12 +116,13 @@ export default function LocationScreen() {
           loading={loading}
         />
       </View>
-    </View>
+      </KeyboardAvoidingView>
+    </Screen>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  flex: { flex: 1 },
   header: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 12 },
   title: {
     fontFamily: FontFamily.headingBold,

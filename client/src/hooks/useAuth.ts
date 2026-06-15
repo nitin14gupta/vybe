@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/store/auth'
+import { tokenStorage } from '@/lib/tokenStorage'
 import { sendOTP, verifyOTP, logout as apiLogout } from '@/api/auth'
 
 export function useAuth() {
@@ -14,6 +15,13 @@ export function useAuth() {
       userId: tokens.user_id,
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
+      phone,
+      profileComplete: tokens.profile_complete,
+    })
+    await tokenStorage.save({
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+      userId: tokens.user_id,
       phone,
       profileComplete: tokens.profile_complete,
     })

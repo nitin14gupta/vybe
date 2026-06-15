@@ -15,3 +15,4 @@ httpx
 aiosmtplib
 pillow
 twilio
+opencv-python-headless

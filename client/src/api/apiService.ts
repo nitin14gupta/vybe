@@ -211,16 +211,49 @@ class ApiService {
 
   // ── Upload ─────────────────────────────────────────────────────────────────
 
-  static async uploadPhoto(uri: string, position: number): Promise<string> {
-    const formData = new FormData()
-    const filename = uri.split('/').pop() ?? 'photo.jpg'
-    const ext = filename.split('.').pop()?.toLowerCase()
-    const mime = ext === 'png' ? 'image/png' : 'image/jpeg'
-    formData.append('file', { uri, name: filename, type: mime } as any)
-    formData.append('position', String(position))
+  static uploadPhoto(uri: string, position: number): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const token = useAuthStore.getState().accessToken
+      const filename = uri.split('/').pop() ?? 'photo.jpg'
+      const ext = filename.split('.').pop()?.toLowerCase() ?? 'jpg'
+      const mime = ext === 'png' ? 'image/png' : 'image/jpeg'
 
-    const response = await this.postFormData<{ url: string }>(ENDPOINTS.UPLOAD_PHOTO, formData)
-    return response.url
+      const formData = new FormData()
+      formData.append('file', { uri, name: filename, type: mime } as any)
+      formData.append('position', String(position))
+
+      const xhr = new XMLHttpRequest()
+      xhr.open('POST', `${API_BASE_URL}${ENDPOINTS.UPLOAD_PHOTO}`)
+      if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+      xhr.timeout = 30000
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            resolve(JSON.parse(xhr.responseText).url)
+          } catch {
+            reject(new Error('Invalid server response'))
+          }
+        } else {
+          try {
+            const err = JSON.parse(xhr.responseText)
+            reject(Object.assign(new Error(err.detail ?? `Upload failed (${xhr.status})`), { status: xhr.status }))
+          } catch {
+            reject(Object.assign(new Error(`Upload failed (${xhr.status})`), { status: xhr.status }))
+          }
+        }
+      }
+      xhr.onerror = () => reject(new Error('Network error — check server is reachable'))
+      xhr.ontimeout = () => reject(new Error('Upload timed out'))
+      xhr.send(formData)
+    })
+  }
+
+  static async swapPhotos(positionA: number, positionB: number): Promise<void> {
+    await this.post<{ ok: boolean }>(ENDPOINTS.SWAP_PHOTOS, {
+      position_a: positionA,
+      position_b: positionB,
+    })
   }
 
   static async deletePhoto(photoId: string): Promise<void> {

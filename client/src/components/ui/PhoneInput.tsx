@@ -21,18 +21,19 @@ export function PhoneInput({ value, onChangeText, error, autoFocus }: Props) {
 
   return (
     <View>
-      <View
+      <Pressable
+        onPress={() => inputRef.current?.focus()}
         style={[
           styles.container,
           focused && styles.focused,
           !!error && styles.errored,
         ]}
       >
-        <Pressable style={styles.prefix} onPress={() => inputRef.current?.focus()}>
+        <View style={styles.prefix}>
           <Text style={styles.flag}>🇮🇳</Text>
           <Text style={styles.code}>+91</Text>
           <ChevronDown size={14} color={Colors.inkSecondary} strokeWidth={2} />
-        </Pressable>
+        </View>
         <View style={styles.divider} />
         <TextInput
           ref={inputRef}
@@ -46,8 +47,9 @@ export function PhoneInput({ value, onChangeText, error, autoFocus }: Props) {
           autoFocus={autoFocus}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
+          showSoftInputOnFocus
         />
-      </View>
+      </Pressable>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>
   )
@@ -69,7 +71,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.16,
     shadowRadius: 3,
-    elevation: 3,
   },
   errored: {
     borderColor: Colors.brandCoral,

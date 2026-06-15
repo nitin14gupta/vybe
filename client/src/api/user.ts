@@ -20,4 +20,7 @@ export const uploadPhoto = (uri: string, position: number) =>
 
 export const deletePhoto = (id: string) => ApiService.deletePhoto(id)
 
+export const swapPhotos = (positionA: number, positionB: number) =>
+  ApiService.swapPhotos(positionA, positionB)
+
 export const uploadVoice = (uri: string) => ApiService.uploadVoice(uri)

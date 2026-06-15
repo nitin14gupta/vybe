@@ -20,13 +20,54 @@ import Animated, {
   withDelay,
   cancelAnimation,
 } from 'react-native-reanimated'
-import { BackButton, ProgressBar, PrimaryButton, TextLinkButton } from '@/components/ui'
+import { BackButton, ProgressBar, PrimaryButton, TextLinkButton, Screen } from '@/components/ui'
 import { useOnboardingStore } from '@/store/onboarding'
 import { uploadVoice } from '@/api/user'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 
 const MAX_SECONDS = 30
 const WAVE_BARS = 14
+
+// ── WaveBar — own component so useSharedValue/useAnimatedStyle are never
+//    inside a conditional render (which breaks Rules of Hooks)
+function WaveBar({ index, isActive }: { index: number; isActive: boolean }) {
+  const scaleY = useSharedValue(0.15)
+
+  useEffect(() => {
+    if (isActive) {
+      scaleY.value = withDelay(
+        index * 55,
+        withRepeat(
+          withSequence(
+            withTiming(1, { duration: 325 }),
+            withTiming(0.15, { duration: 325 }),
+          ),
+          -1,
+        ),
+      )
+    } else {
+      cancelAnimation(scaleY)
+      scaleY.value = withTiming(0.15, { duration: 200 })
+    }
+  }, [isActive])
+
+  const style = useAnimatedStyle(() => ({
+    transform: [{ scaleY: scaleY.value }],
+  }))
+
+  return <Animated.View style={[styles.waveBar, style]} />
+}
+
+// ── always-mounted waveform — hidden when not recording via opacity
+function Waveform({ isActive }: { isActive: boolean }) {
+  return (
+    <View style={[styles.waveform, { opacity: isActive ? 1 : 0 }]}>
+      {Array.from({ length: WAVE_BARS }, (_, i) => (
+        <WaveBar key={i} index={i} isActive={isActive} />
+      ))}
+    </View>
+  )
+}
 
 export default function VoiceScreen() {
   const store = useOnboardingStore()
@@ -40,8 +81,6 @@ export default function VoiceScreen() {
   const playerStatus = useAudioPlayerStatus(player)
 
   const ripple = useSharedValue(1)
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const barScales = Array.from({ length: WAVE_BARS }, () => useSharedValue(0.15))
 
   useEffect(() => {
     AudioModule.requestRecordingPermissionsAsync()
@@ -66,25 +105,9 @@ export default function VoiceScreen() {
         ),
         -1,
       )
-      barScales.forEach((sv, i) => {
-        sv.value = withDelay(
-          i * 55,
-          withRepeat(
-            withSequence(
-              withTiming(1, { duration: 325 }),
-              withTiming(0.15, { duration: 325 }),
-            ),
-            -1,
-          ),
-        )
-      })
     } else {
       cancelAnimation(ripple)
       ripple.value = withTiming(1)
-      barScales.forEach(sv => {
-        cancelAnimation(sv)
-        sv.value = withTiming(0.15)
-      })
     }
   }, [isRecording])
 
@@ -144,7 +167,7 @@ export default function VoiceScreen() {
   const playing = playerStatus.playing
 
   return (
-    <View style={styles.container}>
+    <Screen>
       <BackButton onPress={() => router.back()} />
       <ProgressBar step={3} />
       <View style={styles.header}>
@@ -173,19 +196,8 @@ export default function VoiceScreen() {
           <Text style={styles.timerMax}>/ 0:30</Text>
         </Text>
 
-        {/* Waveform when recording */}
-        {isRecording && (
-          <View style={styles.waveform}>
-            {barScales.map((sv, i) => {
-              const barStyle = useAnimatedStyle(() => ({
-                transform: [{ scaleY: sv.value }],
-              }))
-              return (
-                <Animated.View key={i} style={[styles.waveBar, barStyle]} />
-              )
-            })}
-          </View>
-        )}
+        {/* Waveform — always mounted, hidden when not recording */}
+        <Waveform isActive={isRecording} />
 
         {/* Playback when recorded */}
         {recorded && !isRecording && (
@@ -224,12 +236,11 @@ export default function VoiceScreen() {
           />
         )}
       </View>
-    </View>
+    </Screen>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
   header: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 12 },
   title: {
     fontFamily: FontFamily.headingBold,

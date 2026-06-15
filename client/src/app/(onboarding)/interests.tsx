@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import { router } from 'expo-router'
-import { BackButton, ProgressBar, InterestChip, PrimaryButton } from '@/components/ui'
+import { BackButton, ProgressBar, InterestChip, PrimaryButton, Screen } from '@/components/ui'
 import { useOnboardingStore } from '@/store/onboarding'
 import { setInterests } from '@/api/user'
 import { INTERESTS } from '@/constants/onboarding'
@@ -37,7 +37,7 @@ export default function InterestsScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <Screen>
       <BackButton onPress={() => router.back()} />
       <ProgressBar step={4} />
       <View style={styles.header}>
@@ -82,12 +82,11 @@ export default function InterestsScreen() {
           loading={loading}
         />
       </View>
-    </View>
+    </Screen>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
   header: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 12 },
   title: {
     fontFamily: FontFamily.headingBold,

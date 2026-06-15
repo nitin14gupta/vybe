@@ -5,6 +5,7 @@ import { BackButton, PhoneInput, PrimaryButton, KeyboardAvoidingWrapper } from '
 import { useAuthStore } from '@/store/auth'
 import { useAuth } from '@/hooks/useAuth'
 import { Colors, FontFamily, Spacing } from '@/constants'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function PhoneScreen() {
   const [phone, setPhone] = useState('')
@@ -12,7 +13,7 @@ export default function PhoneScreen() {
   const [error, setError] = useState('')
   const { handleSendOTP } = useAuth()
   const setAuthPhone = useAuthStore(s => s.setAuth)
-
+  const insets = useSafeAreaInsets()
   const isValid = phone.length === 10
 
   const handleContinue = async () => {
@@ -30,35 +31,35 @@ export default function PhoneScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <BackButton onPress={() => router.back()} />
       <KeyboardAvoidingWrapper>
-        <View style={styles.inner}>
-          <View style={styles.header}>
-            <Text style={styles.title}>What's your number?</Text>
-            <Text style={styles.subtitle}>We'll send a one-time code</Text>
-          </View>
-          <PhoneInput
-            value={phone}
-            onChangeText={setPhone}
-            error={error}
+      <View style={styles.inner}>
+        <View style={styles.header}>
+          <Text style={styles.title}>What's your number?</Text>
+          <Text style={styles.subtitle}>We'll send a one-time code</Text>
+        </View>
+        <PhoneInput
+          value={phone}
+          onChangeText={setPhone}
+          error={error}
             autoFocus
-          />
-        </View>
-        <View style={styles.footer}>
-          <PrimaryButton
-            label="Continue"
-            onPress={handleContinue}
-            disabled={!isValid}
-            loading={loading}
-          />
-          <Text style={styles.legal}>
-            By continuing you agree to our{' '}
-            <Text style={styles.legalLink}>Terms</Text>
-            {' '}&amp;{' '}
-            <Text style={styles.legalLink}>Privacy Policy</Text>
-          </Text>
-        </View>
+        />
+      </View>
+      <View style={styles.footer}>
+        <PrimaryButton
+          label="Continue"
+          onPress={handleContinue}
+          disabled={!isValid}
+          loading={loading}
+        />
+        <Text style={styles.legal}>
+          By continuing you agree to our{' '}
+          <Text style={styles.legalLink}>Terms</Text>
+          {' '}&amp;{' '}
+          <Text style={styles.legalLink}>Privacy Policy</Text>
+        </Text>
+      </View>
       </KeyboardAvoidingWrapper>
     </View>
   )

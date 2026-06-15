@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { View, Text, StyleSheet, Dimensions } from 'react-native'
+import { View, Text, Image, StyleSheet, Dimensions } from 'react-native'
 import { router } from 'expo-router'
 import Animated, {
   useSharedValue,
@@ -8,7 +8,7 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated'
 import { LinearGradient } from 'expo-linear-gradient'
-import { PrimaryButton, TextLinkButton } from '@/components/ui'
+import { PrimaryButton, TextLinkButton, Screen } from '@/components/ui'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 
 const { height } = Dimensions.get('window')
@@ -28,18 +28,20 @@ export default function WelcomeScreen() {
   }))
 
   return (
-    <View style={styles.container}>
-      {/* City illustration area */}
+    <Screen top={false}>
+      {/* City illustration area — full-bleed image */}
       <View style={styles.cityArea}>
+        <Image
+          source={require('../../../assets/images/icon.png')}
+          style={styles.cityImage}
+          resizeMode="cover"
+        />
         <LinearGradient
-          colors={['rgba(17,17,17,0)', Colors.background]}
-          start={{ x: 0, y: 0.5 }}
+          colors={['transparent', Colors.background]}
+          start={{ x: 0, y: 0.4 }}
           end={{ x: 0, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
-        <View style={styles.cityPlaceholder}>
-          <Text style={styles.cityEmoji}>🌆</Text>
-        </View>
       </View>
 
       {/* Bottom card */}
@@ -67,27 +69,18 @@ export default function WelcomeScreen() {
           ))}
         </View>
       </Animated.View>
-    </View>
+    </Screen>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
   cityArea: {
-    height: height * 0.42,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    height: height * 0.48,
+    overflow: 'hidden',
   },
-  cityPlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cityEmoji: {
-    fontSize: 80,
+  cityImage: {
+    width: '100%',
+    height: '100%',
   },
   card: {
     flex: 1,

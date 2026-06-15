@@ -1,5 +1,5 @@
-import { useState, ReactNode } from 'react'
-import { View, Text, TextInput, StyleSheet, KeyboardTypeOptions, ViewStyle } from 'react-native'
+import { useState, useRef, ReactNode } from 'react'
+import { View, Text, TextInput, StyleSheet, KeyboardTypeOptions, ViewStyle, Pressable } from 'react-native'
 import { Colors, FontFamily, ComponentSize, Radius } from '@/constants'
 
 interface Props {
@@ -14,6 +14,7 @@ interface Props {
   error?: string
   style?: ViewStyle
   autoFocus?: boolean
+  onBlur?: () => void
 }
 
 export function Input({
@@ -28,13 +29,16 @@ export function Input({
   error,
   style,
   autoFocus,
+  onBlur: onBlurProp,
 }: Props) {
   const [focused, setFocused] = useState(false)
+  const inputRef = useRef<TextInput>(null)
 
   return (
     <View style={style}>
       {label ? <Text style={styles.label}>{label.toUpperCase()}</Text> : null}
-      <View
+      <Pressable
+        onPress={() => inputRef.current?.focus()}
         style={[
           styles.container,
           focused && styles.focused,
@@ -43,6 +47,7 @@ export function Input({
       >
         {leftIcon}
         <TextInput
+          ref={inputRef}
           style={styles.input}
           value={value}
           onChangeText={onChangeText}
@@ -52,10 +57,11 @@ export function Input({
           secureTextEntry={secureTextEntry}
           autoFocus={autoFocus}
           onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          onBlur={() => { setFocused(false); onBlurProp?.() }}
+          showSoftInputOnFocus
         />
         {rightIcon}
-      </View>
+      </Pressable>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>
   )
@@ -85,7 +91,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.16,
     shadowRadius: 3,
-    elevation: 3,
   },
   errored: {
     borderColor: Colors.brandCoral,

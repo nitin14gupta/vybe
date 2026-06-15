@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { Pencil } from 'lucide-react-native'
-import { BackButton, OTPInput, PrimaryButton } from '@/components/ui'
+import { BackButton, OTPInput, PrimaryButton, Screen, KeyboardAvoidingWrapper } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
 import { useCountdown } from '@/hooks/useCountdown'
 import { Colors, FontFamily, Spacing } from '@/constants'
@@ -47,61 +47,59 @@ export default function OTPScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <Screen>
       <BackButton onPress={() => router.back()} />
-      <View style={styles.inner}>
-        <Text style={styles.title}>Enter the code</Text>
-        <View style={styles.sentRow}>
-          <Text style={styles.sentText}>Sent to +91 {phone}</Text>
-          <Pressable onPress={() => router.back()}>
-            <Pencil size={14} color={Colors.brandOrange} strokeWidth={2} />
-          </Pressable>
-        </View>
-
-        <OTPInput
-          value={code}
-          onChange={setCode}
-          error={error}
-          autoFocus
-        />
-
-        {errorMsg ? (
-          <Text style={styles.errorMsg}>{errorMsg}</Text>
-        ) : null}
-
-        <View style={styles.resendArea}>
-          {!isExpired ? (
-            <Text style={styles.countdown}>
-              Resend code in{' '}
-              <Text style={styles.countdownTimer}>
-                0:{String(seconds).padStart(2, '0')}
-              </Text>
-            </Text>
-          ) : (
-            <Pressable onPress={handleResend}>
-              <Text style={styles.resendBtn}>Resend code</Text>
+      <KeyboardAvoidingWrapper>
+        <View style={styles.inner}>
+          <Text style={styles.title}>Enter the code</Text>
+          <View style={styles.sentRow}>
+            <Text style={styles.sentText}>Sent to +91 {phone}</Text>
+            <Pressable onPress={() => router.back()}>
+              <Pencil size={14} color={Colors.brandOrange} strokeWidth={2} />
             </Pressable>
-          )}
-        </View>
-      </View>
+          </View>
 
-      <View style={styles.footer}>
-        <PrimaryButton
-          label="Continue"
-          onPress={handleVerify}
-          disabled={!isComplete}
-          loading={loading}
-        />
-      </View>
-    </View>
+          <OTPInput
+            value={code}
+            onChange={setCode}
+            error={error}
+            autoFocus
+          />
+
+          {errorMsg ? (
+            <Text style={styles.errorMsg}>{errorMsg}</Text>
+          ) : null}
+
+          <View style={styles.resendArea}>
+            {!isExpired ? (
+              <Text style={styles.countdown}>
+                Resend code in{' '}
+                <Text style={styles.countdownTimer}>
+                  0:{String(seconds).padStart(2, '0')}
+                </Text>
+              </Text>
+            ) : (
+              <Pressable onPress={handleResend}>
+                <Text style={styles.resendBtn}>Resend code</Text>
+              </Pressable>
+            )}
+          </View>
+        </View>
+
+        <View style={styles.footer}>
+          <PrimaryButton
+            label="Continue"
+            onPress={handleVerify}
+            disabled={!isComplete}
+            loading={loading}
+          />
+        </View>
+      </KeyboardAvoidingWrapper>
+    </Screen>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
   inner: {
     flex: 1,
     paddingHorizontal: Spacing.screenPadding,

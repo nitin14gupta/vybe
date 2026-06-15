@@ -10,6 +10,7 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated'
 import { LinearGradient } from 'expo-linear-gradient'
+import { Screen } from '@/components/ui'
 import { Colors, FontFamily } from '@/constants'
 
 export default function SplashScreen() {
@@ -51,7 +52,7 @@ export default function SplashScreen() {
   const d2Style = useAnimatedStyle(() => ({ opacity: dot2.value }))
 
   return (
-    <View style={styles.container}>
+    <Screen style={{ alignItems: 'center', justifyContent: 'center' }}>
       <View style={styles.glow} />
       <View style={styles.center}>
         <Animated.View style={wordmarkStyle}>
@@ -73,17 +74,11 @@ export default function SplashScreen() {
           <Animated.View key={i} style={[styles.dot, style]} />
         ))}
       </View>
-    </View>
+    </Screen>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   glow: {
     position: 'absolute',
     width: 340,

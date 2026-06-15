@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { tokenStorage } from '@/lib/tokenStorage'
 
 interface AuthState {
   isAuthenticated: boolean
@@ -26,7 +27,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   phone: null,
   profileComplete: false,
 
-  setAuth: (payload) =>
+  setAuth: (payload) => {
     set({
       isAuthenticated: true,
       userId: payload.userId,
@@ -34,11 +35,15 @@ export const useAuthStore = create<AuthState>((set) => ({
       refreshToken: payload.refreshToken,
       phone: payload.phone,
       profileComplete: payload.profileComplete,
-    }),
+    })
+  },
 
-  setProfileComplete: (val) => set({ profileComplete: val }),
+  setProfileComplete: (val) => {
+    set({ profileComplete: val })
+    tokenStorage.updateProfileComplete(val)
+  },
 
-  clearAuth: () =>
+  clearAuth: () => {
     set({
       isAuthenticated: false,
       userId: null,
@@ -46,5 +51,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       refreshToken: null,
       phone: null,
       profileComplete: false,
-    }),
+    })
+    tokenStorage.clear()
+  },
 }))

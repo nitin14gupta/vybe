@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
-import { PrimaryButton, OutlineButton } from '@/components/ui'
+import { PrimaryButton, OutlineButton, Screen } from '@/components/ui'
 import { Colors, FontFamily, Spacing } from '@/constants'
 
 export default function AgeGateScreen() {
@@ -9,7 +9,7 @@ export default function AgeGateScreen() {
 
   if (declined) {
     return (
-      <View style={styles.lockedContainer}>
+      <Screen style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
         <Text style={styles.lockEmoji}>🔒</Text>
         <Text style={styles.lockedTitle}>Come back when you're 18!</Text>
         <Text style={styles.lockedBody}>
@@ -18,12 +18,12 @@ export default function AgeGateScreen() {
         <Pressable onPress={() => setDeclined(false)}>
           <Text style={styles.goBack}>← Go back</Text>
         </Pressable>
-      </View>
+      </Screen>
     )
   }
 
   return (
-    <View style={styles.container}>
+    <Screen style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 }}>
       <Text style={styles.emoji}>🎂</Text>
       <Text style={styles.title}>Are you 18 or older?</Text>
       <Text style={styles.body}>
@@ -41,18 +41,11 @@ export default function AgeGateScreen() {
           style={styles.btn}
         />
       </View>
-    </View>
+    </Screen>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 28,
-  },
   emoji: {
     fontSize: 80,
     marginBottom: 28,
@@ -78,13 +71,6 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   btn: {},
-  lockedContainer: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
   lockEmoji: {
     fontSize: 72,
     marginBottom: 22,

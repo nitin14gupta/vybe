@@ -11,23 +11,31 @@ class R2Client:
     """Client for Cloudflare R2 Storage operations"""
     
     def __init__(self):
-        """Initialize the R2 client with credentials from environment variables"""
         self.r2_account_id = os.getenv("R2_ACCOUNT_ID")
         self.r2_access_key = os.getenv("R2_ACCESS_KEY")
         self.r2_secret_key = os.getenv("R2_SECRET_KEY")
         self.r2_bucket = os.getenv("R2_BUCKET")
         self.r2_baseurl = os.getenv("R2_BASEURL")
         self.r2_endpoint = os.getenv("R2_ENDPOINT")
-        
-        # Initialize the boto3 client with SSL verification disabled for development
+
+        missing = [k for k, v in {
+            "R2_ACCOUNT_ID": self.r2_account_id,
+            "R2_ACCESS_KEY": self.r2_access_key,
+            "R2_SECRET_KEY": self.r2_secret_key,
+            "R2_BUCKET": self.r2_bucket,
+            "R2_BASEURL": self.r2_baseurl,
+        }.items() if not v]
+        if missing:
+            print(f"[R2] WARNING: missing env vars: {missing} — uploads will fail", flush=True)
+
         import urllib3
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-        self.r2_client = boto3.client("s3", 
-                        endpoint_url=f'https://{self.r2_account_id}.r2.cloudflarestorage.com', 
-                        aws_access_key_id=self.r2_access_key, 
-                        aws_secret_access_key=self.r2_secret_key
-                        # verify=False
+        self.r2_client = boto3.client(
+            "s3",
+            endpoint_url=f"https://{self.r2_account_id}.r2.cloudflarestorage.com",
+            aws_access_key_id=self.r2_access_key,
+            aws_secret_access_key=self.r2_secret_key,
         )
         # self.client = boto3.client(
         #     "s3",
@@ -93,10 +101,7 @@ class R2Client:
             file_bytes,
             self.r2_bucket,
             r2_key,
-            ExtraArgs={
-                "ACL": "public-read",
-                "ContentType": content_type
-            }
+            ExtraArgs={"ContentType": content_type},
         )
         
         # Construct the public URL
