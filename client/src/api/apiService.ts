@@ -1,3 +1,4 @@
+import * as FileSystem from 'expo-file-system/legacy'
 import { API_BASE_URL, ENDPOINTS, DEFAULT_HEADERS, createAuthHeader } from './config'
 import { useAuthStore } from '@/store/auth'
 
@@ -16,19 +17,53 @@ export interface UserResponse {
   name: string | null
   dob: string | null
   gender: string | null
+  bio: string | null
   city: string | null
   lat: number | null
   lng: number | null
   voice_url: string | null
   interests: string[]
+  badges: string[]
   profile_complete: boolean
   photos: PhotoResponse[]
 }
+
+export interface InterestResponse {
+  name: string
+  emoji: string
+}
+
+export type BadgeResponse = string
 
 export interface PhotoResponse {
   id: string
   url: string
   position: number
+}
+
+export interface CityResponse {
+  name: string
+  state: string
+}
+
+export interface ProfileResponse extends UserResponse {
+  vibers_count: number
+  vibing_count: number
+  is_following?: boolean
+}
+
+export interface DiscoverUser {
+  id: string
+  name: string | null
+  age: number | null
+  gender: string | null
+  bio: string | null
+  city: string | null
+  interests: string[]
+  voice_url: string | null
+  distance_km: number | null
+  match_pct: number
+  photos: PhotoResponse[]
 }
 
 // ── ApiService ───────────────────────────────────────────────────────────────
@@ -83,7 +118,12 @@ class ApiService {
       let detail = `Request failed (${response.status})`
       try {
         const err = await response.json()
-        detail = err.detail ?? err.message ?? detail
+        // Pydantic v2 returns detail as an array on validation errors
+        if (Array.isArray(err.detail)) {
+          detail = err.detail.map((d: any) => d.msg ?? String(d)).join(', ')
+        } else {
+          detail = String(err.detail ?? err.message ?? detail)
+        }
       } catch {}
       throw Object.assign(new Error(detail), { status: response.status })
     }
@@ -189,6 +229,8 @@ class ApiService {
     name?: string
     dob?: string
     gender?: string
+    bio?: string
+    badges?: string[]
   }): Promise<UserResponse> {
     return this.patch<UserResponse>(ENDPOINTS.UPDATE_PROFILE, data)
   }
@@ -205,8 +247,42 @@ class ApiService {
     return this.post<{ message: string }>(ENDPOINTS.SET_LOCATION, { city, lat, lng })
   }
 
-  static async getMe(): Promise<UserResponse> {
-    return this.get<UserResponse>(ENDPOINTS.GET_ME)
+  static async getMe(): Promise<ProfileResponse> {
+    return this.get<ProfileResponse>(ENDPOINTS.GET_ME)
+  }
+
+  static async getProfile(userId: string): Promise<ProfileResponse> {
+    const endpoint = ENDPOINTS.GET_PROFILE.replace(':id', userId)
+    return this.get<ProfileResponse>(endpoint)
+  }
+
+  static async followUser(userId: string): Promise<void> {
+    const endpoint = ENDPOINTS.FOLLOW_USER.replace(':id', userId)
+    await this.post<{ ok: boolean }>(endpoint, {})
+  }
+
+  static async unfollowUser(userId: string): Promise<void> {
+    const endpoint = ENDPOINTS.FOLLOW_USER.replace(':id', userId)
+    await this.delete<{ ok: boolean }>(endpoint)
+  }
+
+  static async getCities(): Promise<CityResponse[]> {
+    const res = await this.get<{ cities: CityResponse[] }>(ENDPOINTS.GET_CITIES)
+    return res.cities
+  }
+
+  static async getInterests(): Promise<InterestResponse[]> {
+    const res = await this.get<{ interests: InterestResponse[] }>(ENDPOINTS.GET_INTERESTS)
+    return res.interests
+  }
+
+  static async getBadges(): Promise<string[]> {
+    const res = await this.get<{ badges: string[] }>(ENDPOINTS.GET_BADGES)
+    return res.badges
+  }
+
+  static async getDiscover(limit = 30): Promise<DiscoverUser[]> {
+    return this.get<DiscoverUser[]>(`${ENDPOINTS.DISCOVER}?limit=${limit}`)
   }
 
   // ── Upload ─────────────────────────────────────────────────────────────────
@@ -262,12 +338,33 @@ class ApiService {
   }
 
   static async uploadVoice(uri: string): Promise<string> {
-    const formData = new FormData()
-    const filename = uri.split('/').pop() ?? 'voice.m4a'
-    formData.append('file', { uri, name: filename, type: 'audio/m4a' } as any)
+    const token = useAuthStore.getState().accessToken
+    const ext = (uri.split('/').pop() ?? 'voice.m4a').split('.').pop()?.toLowerCase() ?? 'm4a'
+    const mime = ext === 'mp4' ? 'audio/mp4' : ext === '3gp' ? 'audio/3gpp' : 'audio/m4a'
 
-    const response = await this.postFormData<{ url: string }>(ENDPOINTS.UPLOAD_VOICE, formData)
-    return response.url
+    const result = await FileSystem.uploadAsync(
+      `${API_BASE_URL}${ENDPOINTS.UPLOAD_VOICE}`,
+      uri,
+      {
+        httpMethod: 'POST',
+        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+        fieldName: 'file',
+        mimeType: mime,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      },
+    )
+
+    if (result.status < 200 || result.status >= 300) {
+      let detail = `Upload failed (${result.status})`
+      try { detail = JSON.parse(result.body)?.detail ?? detail } catch {}
+      throw new Error(detail)
+    }
+
+    try {
+      return JSON.parse(result.body).url
+    } catch {
+      throw new Error('Invalid server response')
+    }
   }
 }
 

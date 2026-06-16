@@ -32,7 +32,7 @@ export default function WelcomeScreen() {
       {/* City illustration area — full-bleed image */}
       <View style={styles.cityArea}>
         <Image
-          source={require('../../../assets/images/icon.png')}
+          source={require('../../../assets/images/onboarding/welcome.png')}
           style={styles.cityImage}
           resizeMode="cover"
         />

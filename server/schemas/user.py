@@ -3,10 +3,14 @@ from typing import Optional, List
 from datetime import date
 
 
+DEFAULT_BADGES = ['🔥 Vybe Starter', '✨ Early Adopter', '🎙️ Voice Ready', '🌟 Main Character']
+
+
 class ProfileCreate(BaseModel):
     name: str
     dob: date
     gender: str
+    bio: Optional[str] = None
 
     @field_validator("name")
     @classmethod
@@ -21,7 +25,7 @@ class ProfileCreate(BaseModel):
     @field_validator("gender")
     @classmethod
     def validate_gender(cls, v: str) -> str:
-        allowed = {"Man", "Woman", "Non-binary", "Prefer not to say"}
+        allowed = {"Male", "Female", "Non-binary", "Prefer not to say"}
         if v not in allowed:
             raise ValueError(f"Gender must be one of: {', '.join(allowed)}")
         return v
@@ -30,10 +34,19 @@ class ProfileCreate(BaseModel):
 class ProfileUpdate(BaseModel):
     name: Optional[str] = None
     gender: Optional[str] = None
+    bio: Optional[str] = None
+    badges: Optional[List[str]] = None
     city: Optional[str] = None
     lat: Optional[float] = None
     lng: Optional[float] = None
     interests: Optional[List[str]] = None
+
+    @field_validator("badges")
+    @classmethod
+    def validate_badges(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+        if v is not None and len(v) > 4:
+            raise ValueError("Cannot select more than 4 badges")
+        return v
 
 
 class LocationUpdate(BaseModel):
@@ -50,15 +63,32 @@ class InterestsUpdate(BaseModel):
     def validate_interests(cls, v: List[str]) -> List[str]:
         if len(v) < 3:
             raise ValueError("Must select at least 3 interests")
+        if len(v) > 4:
+            raise ValueError("Cannot select more than 4 interests")
         return v
+
+
+class PhotoResponse(BaseModel):
+    id: str
+    url: str
+    position: int
 
 
 class UserResponse(BaseModel):
     id: str
     phone: str
-    name: Optional[str]
-    gender: Optional[str]
-    city: Optional[str]
-    interests: List[str]
-    profile_complete: bool
-    voice_url: Optional[str]
+    name: Optional[str] = None
+    gender: Optional[str] = None
+    bio: Optional[str] = None
+    city: Optional[str] = None
+    interests: List[str] = []
+    badges: List[str] = []
+    profile_complete: bool = False
+    voice_url: Optional[str] = None
+    photos: List[PhotoResponse] = []
+    vibers_count: int = 0
+    vibing_count: int = 0
+
+
+class ProfileResponse(UserResponse):
+    is_following: bool = False

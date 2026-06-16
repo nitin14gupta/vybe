@@ -1,79 +1,58 @@
-import { useState } from 'react'
-import { View, Text, StyleSheet, ScrollView } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native'
 import { router } from 'expo-router'
 import { BackButton, ProgressBar, InterestChip, PrimaryButton, Screen } from '@/components/ui'
-import { useOnboardingStore } from '@/store/onboarding'
-import { setInterests } from '@/api/user'
-import { INTERESTS } from '@/constants/onboarding'
+import { useInterests } from '@/hooks/useInterests'
 import { Colors, FontFamily, Spacing } from '@/constants'
 
 export default function InterestsScreen() {
-  const store = useOnboardingStore()
-  const [loading, setLoading] = useState(false)
-
-  const canProceed = store.interests.length >= 3
-  const remaining = Math.max(0, 3 - store.interests.length)
-
-  const toggle = (label: string) => {
-    const current = store.interests
-    if (current.includes(label)) {
-      store.setField('interests', current.filter(x => x !== label))
-    } else {
-      store.setField('interests', [...current, label])
-    }
-  }
-
-  const handleNext = async () => {
-    if (!canProceed) return
-    setLoading(true)
-    try {
-      await setInterests(store.interests)
-      router.push('/(onboarding)/location')
-    } catch {
-      router.push('/(onboarding)/location')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { availableInterests, loadingList, selected, atMax, canProceed, remaining, loading, toggle, handleNext } = useInterests()
 
   return (
     <Screen>
       <BackButton onPress={() => router.back()} />
       <ProgressBar step={4} />
+
       <View style={styles.header}>
         <Text style={styles.title}>What are you into?</Text>
         <Text style={styles.subtitle}>
-          Pick at least 3 — helps us find your vibe
-          {store.interests.length > 0 && (
+          Pick 3–4 interests that define your vibe
+          {selected.length > 0 && (
             <Text style={canProceed ? styles.countReady : styles.count}>
-              {' '}· {store.interests.length} selected
+              {' '}· {selected.length}/4
             </Text>
           )}
         </Text>
+        {atMax && (
+          <Text style={styles.maxHint}>Max 4 reached — deselect one to swap</Text>
+        )}
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.chips}
-        showsVerticalScrollIndicator={false}
-      >
-        {INTERESTS.map(([label, emoji]) => (
-          <InterestChip
-            key={label}
-            label={label}
-            emoji={emoji}
-            selected={store.interests.includes(label)}
-            onPress={() => toggle(label)}
-          />
-        ))}
-        <View style={styles.spacer} />
-      </ScrollView>
+      {loadingList ? (
+        <View style={styles.listLoader}>
+          <ActivityIndicator color={Colors.brandOrange} />
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.chips}
+          showsVerticalScrollIndicator={false}
+        >
+          {availableInterests.map(({ name, emoji }) => (
+            <InterestChip
+              key={name}
+              label={name}
+              emoji={emoji}
+              selected={selected.includes(name)}
+              onPress={() => toggle(name)}
+            />
+          ))}
+          <View style={styles.spacer} />
+        </ScrollView>
+      )}
 
       <View style={styles.footer}>
-        {!canProceed && (
-          <Text style={styles.hint}>
-            Select {remaining} more to continue
-          </Text>
+        {!canProceed && !atMax && (
+          <Text style={styles.hint}>Select {remaining} more to continue</Text>
         )}
         <PrimaryButton
           label="Next"
@@ -102,6 +81,13 @@ const styles = StyleSheet.create({
   },
   count: { color: Colors.inkSecondary },
   countReady: { color: Colors.brandOrange },
+  maxHint: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 12,
+    color: Colors.accentGold,
+    marginTop: 6,
+  },
+  listLoader: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { flex: 1 },
   chips: {
     flexDirection: 'row',

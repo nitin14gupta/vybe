@@ -1,7 +1,7 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { Colors, FontFamily, Radius } from '@/constants'
 
-const OPTIONS = ['Man', 'Woman', 'Non-binary', 'Prefer not to say'] as const
+const OPTIONS = ['Male', 'Female', 'Non-binary', 'Prefer not to say'] as const
 type Gender = typeof OPTIONS[number]
 
 interface Props {

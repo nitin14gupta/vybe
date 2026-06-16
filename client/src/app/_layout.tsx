@@ -1,5 +1,7 @@
 import '../../global.css'
 import { useEffect, useState } from 'react'
+import { StyleSheet } from 'react-native'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { Slot, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
@@ -22,7 +24,9 @@ function AuthGuard({ ready }: { ready: boolean }) {
 
     const inAuth       = segments[0] === '(auth)'
     const inOnboarding = segments[0] === '(onboarding)'
-    const inTabs       = segments[0] === '(tabs)'
+    const inApp        = segments[0] === '(tabs)'
+                      || segments[0] === '(settings)'
+                      || segments[0] === '(profile)'
 
     if (!isAuthenticated) {
       // Not logged in → welcome screen
@@ -31,8 +35,8 @@ function AuthGuard({ ready }: { ready: boolean }) {
       // Logged in but onboarding not done → resume onboarding
       if (!inOnboarding) router.replace('/(onboarding)/profile')
     } else {
-      // Fully onboarded → home
-      if (!inTabs) router.replace('/(tabs)/')
+      // Fully onboarded → allow tabs + settings + profile screens
+      if (!inApp) router.replace('/(tabs)/')
     }
   }, [isAuthenticated, profileComplete, segments, ready])
 
@@ -82,13 +86,16 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError, authReady])
 
-  // Hold splash until fonts + auth check are both done
   if ((!fontsLoaded && !fontError) || !authReady) return null
 
   return (
-    <>
+    <GestureHandlerRootView style={styles.root}>
       <StatusBar style="light" />
       <AuthGuard ready={authReady} />
-    </>
+    </GestureHandlerRootView>
   )
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+})

@@ -4,6 +4,7 @@ interface OnboardingState {
   name: string
   dob: string
   gender: string
+  bio: string
   photoUris: string[]
   voiceUri: string | null
   interests: string[]
@@ -21,6 +22,7 @@ const initialState = {
   name: '',
   dob: '',
   gender: '',
+  bio: '',
   photoUris: [] as string[],
   voiceUri: null as string | null,
   interests: [] as string[],

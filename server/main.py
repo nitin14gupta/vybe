@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from routes.auth import router as auth_router
 from routes.users import router as users_router
 from routes.upload import router as upload_router
+from routes.places import router as places_router
+from routes.discover import router as discover_router
 
 app = FastAPI(title="Vybe API", version="1.0.0")
 
@@ -17,6 +19,8 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(upload_router)
+app.include_router(places_router)
+app.include_router(discover_router)
 
 
 @app.get("/health")

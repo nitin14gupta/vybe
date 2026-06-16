@@ -1,15 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
-import {
-  useAudioRecorder,
-  useAudioRecorderState,
-  useAudioPlayer,
-  useAudioPlayerStatus,
-  AudioModule,
-  RecordingPresets,
-  setAudioModeAsync,
-} from 'expo-audio'
 import { Mic, Square, Play, Pause } from 'lucide-react-native'
 import Animated, {
   useSharedValue,
@@ -17,84 +8,29 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
-  withDelay,
   cancelAnimation,
 } from 'react-native-reanimated'
-import { BackButton, ProgressBar, PrimaryButton, TextLinkButton, Screen } from '@/components/ui'
-import { useOnboardingStore } from '@/store/onboarding'
-import { uploadVoice } from '@/api/user'
+import { BackButton, ProgressBar, PrimaryButton, TextLinkButton, Screen, RecordingWave, PlaybackWave } from '@/components/ui'
+import { useVoice } from '@/hooks/useVoice'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 
-const MAX_SECONDS = 30
-const WAVE_BARS = 14
-
-// ── WaveBar — own component so useSharedValue/useAnimatedStyle are never
-//    inside a conditional render (which breaks Rules of Hooks)
-function WaveBar({ index, isActive }: { index: number; isActive: boolean }) {
-  const scaleY = useSharedValue(0.15)
-
-  useEffect(() => {
-    if (isActive) {
-      scaleY.value = withDelay(
-        index * 55,
-        withRepeat(
-          withSequence(
-            withTiming(1, { duration: 325 }),
-            withTiming(0.15, { duration: 325 }),
-          ),
-          -1,
-        ),
-      )
-    } else {
-      cancelAnimation(scaleY)
-      scaleY.value = withTiming(0.15, { duration: 200 })
-    }
-  }, [isActive])
-
-  const style = useAnimatedStyle(() => ({
-    transform: [{ scaleY: scaleY.value }],
-  }))
-
-  return <Animated.View style={[styles.waveBar, style]} />
-}
-
-// ── always-mounted waveform — hidden when not recording via opacity
-function Waveform({ isActive }: { isActive: boolean }) {
-  return (
-    <View style={[styles.waveform, { opacity: isActive ? 1 : 0 }]}>
-      {Array.from({ length: WAVE_BARS }, (_, i) => (
-        <WaveBar key={i} index={i} isActive={isActive} />
-      ))}
-    </View>
-  )
-}
 
 export default function VoiceScreen() {
-  const store = useOnboardingStore()
-  const [recorded, setRecorded] = useState(false)
-  const [uploading, setUploading] = useState(false)
-
-  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY)
-  const recorderState = useAudioRecorderState(audioRecorder)
-
-  const player = useAudioPlayer(null)
-  const playerStatus = useAudioPlayerStatus(player)
+  const {
+    isRecording,
+    seconds,
+    recorded,
+    uploading,
+    uploadError,
+    playing,
+    tapRecord,
+    handlePlayPause,
+    handleRetake,
+    handleUse,
+    handleSkip,
+  } = useVoice()
 
   const ripple = useSharedValue(1)
-
-  useEffect(() => {
-    AudioModule.requestRecordingPermissionsAsync()
-    setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true })
-  }, [])
-
-  const isRecording = recorderState.isRecording
-  const seconds = Math.round((recorderState.durationMillis ?? 0) / 1000)
-
-  useEffect(() => {
-    if (isRecording && seconds >= MAX_SECONDS) {
-      stopRecording()
-    }
-  }, [seconds, isRecording])
 
   useEffect(() => {
     if (isRecording) {
@@ -118,65 +54,17 @@ export default function VoiceScreen() {
 
   const fmt = (s: number) => `0:${String(s).padStart(2, '0')}`
 
-  const stopRecording = async () => {
-    await audioRecorder.stop()
-    const uri = audioRecorder.uri
-    if (uri) {
-      store.setField('voiceUri', uri)
-      player.replace({ uri })
-      setRecorded(true)
-    }
-  }
-
-  const tapRecord = async () => {
-    if (isRecording) {
-      await stopRecording()
-    } else {
-      setRecorded(false)
-      store.setField('voiceUri', '')
-      await audioRecorder.prepareToRecordAsync()
-      audioRecorder.record()
-    }
-  }
-
-  const handlePlayPause = () => {
-    if (playerStatus.playing) {
-      player.pause()
-    } else {
-      player.seekTo(0)
-      player.play()
-    }
-  }
-
-  const handleRetake = () => {
-    player.pause()
-    setRecorded(false)
-    store.setField('voiceUri', '')
-  }
-
-  const handleUse = async () => {
-    if (!store.voiceUri) return
-    setUploading(true)
-    try {
-      await uploadVoice(store.voiceUri)
-    } catch {}
-    router.push('/(onboarding)/interests')
-    setUploading(false)
-  }
-
-  const playing = playerStatus.playing
-
   return (
     <Screen>
       <BackButton onPress={() => router.back()} />
       <ProgressBar step={3} />
+
       <View style={styles.header}>
         <Text style={styles.title}>Record your voice intro</Text>
         <Text style={styles.subtitle}>30 seconds. Let people hear the real you.</Text>
       </View>
 
       <View style={styles.center}>
-        {/* Record button */}
         <View style={styles.recordWrap}>
           <Animated.View style={[styles.ripple, rippleStyle]} />
           <Pressable
@@ -190,16 +78,15 @@ export default function VoiceScreen() {
           </Pressable>
         </View>
 
-        {/* Timer */}
         <Text style={[styles.timer, !isRecording && styles.timerMuted]}>
           {fmt(seconds)}{' '}
           <Text style={styles.timerMax}>/ 0:30</Text>
         </Text>
 
-        {/* Waveform — always mounted, hidden when not recording */}
-        <Waveform isActive={isRecording} />
+        <View style={{ opacity: isRecording ? 1 : 0 }}>
+          <RecordingWave isActive={isRecording} />
+        </View>
 
-        {/* Playback when recorded */}
         {recorded && !isRecording && (
           <View style={styles.playback}>
             <Pressable onPress={handlePlayPause} style={styles.playBtn}>
@@ -208,9 +95,7 @@ export default function VoiceScreen() {
                 : <Play size={18} color={Colors.background} strokeWidth={2} />
               }
             </Pressable>
-            <View style={styles.progressBg}>
-              <View style={[styles.progressFill, playing && { width: '45%' }]} />
-            </View>
+            <PlaybackWave isActive={playing} compact />
             <Text style={styles.playbackTime}>{fmt(seconds)}</Text>
           </View>
         )}
@@ -227,13 +112,13 @@ export default function VoiceScreen() {
       </View>
 
       <View style={styles.footer}>
+        {uploadError ? (
+          <Text style={styles.uploadError}>{uploadError}</Text>
+        ) : null}
         {recorded ? (
           <PrimaryButton label="Use this" onPress={handleUse} loading={uploading} />
         ) : (
-          <TextLinkButton
-            label="Skip for now"
-            onPress={() => router.push('/(onboarding)/interests')}
-          />
+          <TextLinkButton label="Skip for now" onPress={handleSkip} />
         )}
       </View>
     </Screen>
@@ -294,27 +179,12 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: Colors.inkPrimary,
   },
-  timerMuted: {
-    color: Colors.inkSecondary,
-  },
+  timerMuted: { color: Colors.inkSecondary },
   timerMax: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 14,
     color: Colors.inkSecondary,
   },
-  waveform: {
-    flexDirection: 'row',
-    gap: 4,
-    alignItems: 'center',
-    height: 48,
-  },
-  waveBar: {
-    width: 4,
-    height: 36,
-    borderRadius: Radius.pill,
-    backgroundColor: Colors.brandOrange,
-    transformOrigin: 'center',
-  } as any,
   playback: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -328,19 +198,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.brandOrange,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  progressBg: {
-    flex: 1,
-    height: 4,
-    backgroundColor: Colors.divider,
-    borderRadius: Radius.pill,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    width: '0%',
-    height: '100%',
-    backgroundColor: Colors.brandOrange,
-    borderRadius: Radius.pill,
   },
   playbackTime: {
     fontFamily: FontFamily.bodyRegular,
@@ -361,6 +218,12 @@ const styles = StyleSheet.create({
   footer: {
     paddingHorizontal: Spacing.screenPadding,
     paddingBottom: 16,
-    alignItems: 'center',
+    gap: 10,
+  },
+  uploadError: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 13,
+    color: Colors.brandCoral,
+    textAlign: 'center',
   },
 })

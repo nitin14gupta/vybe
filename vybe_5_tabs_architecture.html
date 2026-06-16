@@ -1,0 +1,848 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+.wrap{padding:16px 0;display:flex;flex-direction:column;gap:24px}
+.tabs-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.tab-btn{padding:8px 16px;border-radius:999px;border:1.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+.tab-btn.active{background:#FF6B35;border-color:#FF6B35;color:#111}
+.tab-btn .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;background:currentColor;opacity:.5}
+.tab-btn.active .dot{opacity:1}
+.content{display:none;animation:fadeIn .2s ease}
+.content.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.tab-header{border-left:3px solid #FF6B35;padding:2px 0 2px 12px;margin-bottom:16px}
+.tab-header h2{font-size:17px;font-weight:500;color:var(--color-text-primary)}
+.tab-header p{font-size:12px;color:var(--color-text-secondary);margin-top:3px}
+.screens-grid{display:flex;flex-direction:column;gap:8px}
+.screen{border:1px solid var(--color-border-tertiary);border-radius:10px;overflow:hidden}
+.screen-header{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--color-background-secondary);cursor:pointer;user-select:none}
+.screen-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.screen-title{font-size:13px;font-weight:500;color:var(--color-text-primary);flex:1}
+.screen-badge{font-size:10px;padding:2px 7px;border-radius:999px;font-weight:500}
+.badge-main{background:rgba(255,107,53,.15);color:#FF6B35}
+.badge-modal{background:var(--color-background-tertiary);color:var(--color-text-secondary)}
+.badge-sheet{background:rgba(78,205,196,.12);color:#0F6E56}
+.chevron{font-size:11px;color:var(--color-text-tertiary);transition:transform .2s}
+.chevron.open{transform:rotate(90deg)}
+.screen-detail{display:none;padding:12px 14px 14px;border-top:1px solid var(--color-border-tertiary);background:var(--color-background-primary)}
+.screen-detail.open{display:block}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.detail-block{background:var(--color-background-secondary);border-radius:8px;padding:10px 12px}
+.detail-block h4{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.detail-block ul{list-style:none;display:flex;flex-direction:column;gap:4px}
+.detail-block li{font-size:12px;color:var(--color-text-primary);padding-left:10px;position:relative}
+.detail-block li::before{content:"→";position:absolute;left:0;color:#FF6B35;font-size:10px;top:1px}
+.header-spec{background:rgba(255,107,53,.06);border:1px solid rgba(255,107,53,.2);border-radius:8px;padding:10px 12px;margin-bottom:10px}
+.header-spec h4{font-size:11px;font-weight:500;color:#FF6B35;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.header-spec p{font-size:12px;color:var(--color-text-primary);line-height:1.5}
+.links-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.link-chip{font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid var(--color-border-secondary);color:var(--color-text-secondary);background:var(--color-background-secondary)}
+.link-chip span{color:#FF6B35;margin-right:3px}
+.full-detail{grid-column:1/-1}
+.note{font-size:11px;color:var(--color-text-secondary);line-height:1.5;font-style:italic;margin-top:8px}
+</style>
+
+<div class="wrap">
+  <div class="tabs-row" id="tabs">
+    <button class="tab-btn active" onclick="switchTab('discover',this)"><span class="dot"></span>Discover</button>
+    <button class="tab-btn" onclick="switchTab('events',this)"><span class="dot"></span>Events</button>
+    <button class="tab-btn" onclick="switchTab('vybe',this)"><span class="dot"></span>Vybe (Centre)</button>
+    <button class="tab-btn" onclick="switchTab('chat',this)"><span class="dot"></span>Chat</button>
+    <button class="tab-btn" onclick="switchTab('profile',this)"><span class="dot"></span>Profile</button>
+  </div>
+
+  <!-- TAB 1: DISCOVER -->
+  <div class="content active" id="tab-discover">
+    <div class="tab-header">
+      <h2>Tab 1 — Discover</h2>
+      <p>People nearby · card stack · vibe request entry point</p>
+    </div>
+    <div class="screens-grid">
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(255,107,53,.15)">👤</div>
+          <span class="screen-title">Discover (main screen)</span>
+          <span class="screen-badge badge-main">Main</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header</h4>
+            <p><strong>"Discover"</strong> — left aligned, Cabinet Grotesk Bold 22pt. Right side: filter icon button (opens Filter Sheet). No back arrow. Status bar visible above.</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block">
+              <h4>What's on screen</h4>
+              <ul>
+                <li>Stack of profile cards (top card full visible, next peeking 8px from top right)</li>
+                <li>Card: full bleed photo, gradient overlay bottom 40%</li>
+                <li>Name + age + city on photo (bottom left)</li>
+                <li>Interest chips row — max 3 visible</li>
+                <li>Voice intro play button top-right of card</li>
+                <li>Match % badge top-left of card</li>
+                <li>Two action buttons below card — Pass (X) and Vibe (fire)</li>
+              </ul>
+            </div>
+            <div class="detail-block">
+              <h4>Interactions</h4>
+              <ul>
+                <li>Tap card → opens Profile Detail screen</li>
+                <li>Tap Voice button → plays voice intro inline</li>
+                <li>Tap Filter icon → opens Filter Bottom Sheet</li>
+                <li>Tap Pass (X) → card dismisses left, next loads</li>
+                <li>Tap Vibe (fire) → opens Send Vibe Modal</li>
+                <li>Swipe card left → Pass</li>
+                <li>Swipe card right → Send Vibe shortcut</li>
+              </ul>
+            </div>
+            <div class="detail-block full-detail">
+              <h4>Links to</h4>
+              <div class="links-row">
+                <span class="link-chip"><span>→</span>Profile Detail screen</span>
+                <span class="link-chip"><span>→</span>Send Vibe Modal</span>
+                <span class="link-chip"><span>→</span>Filter Bottom Sheet</span>
+                <span class="link-chip"><span>→</span>Empty State (no users nearby)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(255,107,53,.1)">🧑</div>
+          <span class="screen-title">Profile Detail</span>
+          <span class="screen-badge badge-modal">Full screen</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header</h4>
+            <p>No standard header bar. Back arrow overlaid top-left on photo (glass circle bg, 36px). Three-dot menu top-right (glass circle) — Report / Block options. No title text.</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block">
+              <h4>What's on screen</h4>
+              <ul>
+                <li>Full-width photo top 45% (scrolls away)</li>
+                <li>Name + age + city + verified badge below photo</li>
+                <li>Voice intro player bar — full width</li>
+                <li>All interest tags in wrap grid</li>
+                <li>Bio text, events attended count</li>
+                <li>Host section if they've hosted events</li>
+              </ul>
+            </div>
+            <div class="detail-block">
+              <h4>Bottom bar (sticky)</h4>
+              <ul>
+                <li>If not connected: "Send Vibe 🔥" gradient button full width</li>
+                <li>If vibe pending: "Vibe Pending..." muted, pulsing</li>
+                <li>If connected: "Message 💬" gradient button</li>
+                <li>Bar sits above tab bar with safe area</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(255,107,53,.1)">🔥</div>
+          <span class="screen-title">Send Vibe Modal</span>
+          <span class="screen-badge badge-sheet">Bottom sheet</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header</h4>
+            <p>Drag handle top centre. <strong>"Send a Vibe"</strong> — 18pt semibold, left aligned. Small avatar + "to [Name]" right of title. No back arrow — drag down to dismiss.</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block full-detail">
+              <h4>What's on screen</h4>
+              <ul>
+                <li>Textarea — "Write something genuine..." placeholder, 150 char max, char counter</li>
+                <li>Compatibility hint below textarea — shared interests shown</li>
+                <li>"Send Vibe 🔥" gradient full-width button</li>
+                <li>"Cancel" text link below button</li>
+                <li>Keyboard pushes sheet up automatically</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(255,107,53,.1)">⚙️</div>
+          <span class="screen-title">Filter Bottom Sheet</span>
+          <span class="screen-badge badge-sheet">Bottom sheet</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header</h4>
+            <p>Drag handle top. <strong>"Filters"</strong> left — 18pt semibold. <strong>"Reset"</strong> right — orange text button. No back arrow.</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block full-detail">
+              <h4>Controls</h4>
+              <ul>
+                <li>Age range: dual-handle slider, 18–40+</li>
+                <li>Show me: segmented control — Women / Men / Everyone</li>
+                <li>Max distance: single slider, 1–50km with live label</li>
+                <li>Online only: toggle switch</li>
+                <li>"Apply Filters" gradient button pinned bottom</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TAB 2: EVENTS -->
+  <div class="content" id="tab-events">
+    <div class="tab-header">
+      <h2>Tab 2 — Events</h2>
+      <p>Map + list toggle · event discovery · booking flow</p>
+    </div>
+    <div class="screens-grid">
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(255,184,48,.15)">🗺️</div>
+          <span class="screen-title">Events — Map view (default)</span>
+          <span class="screen-badge badge-main">Main</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header</h4>
+            <p>Floats over map (transparent bg, no card). Left: <strong>"Events"</strong> — Cabinet Grotesk Bold 22pt, white text (on map). Right: list-view toggle icon + filter icon. Both on glass-effect pill background.</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block">
+              <h4>What's on screen</h4>
+              <ul>
+                <li>Full-screen map (Google Maps dark style) as background</li>
+                <li>Custom orange circle pins for each event</li>
+                <li>Pin tap → mini event card pops above pin</li>
+                <li>Bottom: horizontal scroll of event preview cards</li>
+                <li>Each preview: photo + title + date + price + distance</li>
+              </ul>
+            </div>
+            <div class="detail-block">
+              <h4>Interactions</h4>
+              <ul>
+                <li>Tap pin → highlight pin, show preview card</li>
+                <li>Tap preview card → open Event Detail</li>
+                <li>Tap list icon → switch to List view</li>
+                <li>Tap filter → open Filter Sheet</li>
+                <li>Pinch/zoom map → standard map behaviour</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(255,184,48,.1)">📋</div>
+          <span class="screen-title">Events — List view</span>
+          <span class="screen-badge badge-main">Main (toggle)</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header</h4>
+            <p><strong>"Events"</strong> — left, 22pt bold. Right: map-view toggle icon + filter icon. Below header: horizontal filter chips scroll — All / Free / Tonight / This Weekend / Music / Food / Sports.</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block full-detail">
+              <h4>What's on screen</h4>
+              <ul>
+                <li>Filter chips row — "All" selected by default (orange filled), rest outline</li>
+                <li>Event cards in vertical scroll — each: photo left 40%, content right 60%</li>
+                <li>Card content: title, host row (avatar + name + verified badge), date+time, location, price badge</li>
+                <li>Heart save button top-right of each card</li>
+                <li>"X spots left" in coral when capacity low (&lt;10)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(255,184,48,.1)">📅</div>
+          <span class="screen-title">Event Detail</span>
+          <span class="screen-badge badge-modal">Full screen</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header</h4>
+            <p>No standard header. Back arrow top-left overlaid on hero photo (glass circle). Share icon top-right (glass circle). Title appears in sticky top bar only after user scrolls past the hero photo.</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block">
+              <h4>Content (scrollable)</h4>
+              <ul>
+                <li>Hero image carousel (swipe) full width</li>
+                <li>Event title, date+time, location row</li>
+                <li>Host card — avatar, name, verified, event count</li>
+                <li>About section — full description</li>
+                <li>Rules section (collapsible)</li>
+                <li>Age restriction badge, amenities chips</li>
+                <li>Attendee avatars row + count</li>
+                <li>Static map embed</li>
+              </ul>
+            </div>
+            <div class="detail-block">
+              <h4>Sticky bottom bar</h4>
+              <ul>
+                <li>"X spots left" coral text left</li>
+                <li>Price bold centre</li>
+                <li>"Book Now" gradient button right</li>
+                <li>If event full: "Join Waitlist" outline button</li>
+                <li>If already booked: "View My Ticket" green button</li>
+                <li>If user is host: "Manage Event" button</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(255,184,48,.1)">💳</div>
+          <span class="screen-title">Booking + Payment flow</span>
+          <span class="screen-badge badge-modal">3 screens</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header (Booking Confirm screen)</h4>
+            <p>Back arrow left. <strong>"Confirm Booking"</strong> — centre, 18pt semibold. No right action.</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block">
+              <h4>Booking confirm screen</h4>
+              <ul>
+                <li>Order summary card: event, date, 1× ticket, fee breakdown, total</li>
+                <li>Payment method selector: UPI / Card / Wallets</li>
+                <li>T&amp;C checkbox</li>
+                <li>"Pay ₹[total]" gradient button</li>
+                <li>Refund policy note muted below</li>
+              </ul>
+            </div>
+            <div class="detail-block">
+              <h4>After payment</h4>
+              <ul>
+                <li>Processing: full screen loader, "Don't close" note</li>
+                <li>Success: celebration + QR ticket + "Save / Share"</li>
+                <li>Failed: error + "Try Again" + "Different Method"</li>
+                <li>QR ticket also lives in Profile → My Tickets</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(255,184,48,.1)">🎟️</div>
+          <span class="screen-title">Create Event flow (Host)</span>
+          <span class="screen-badge badge-modal">4-step flow</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header (each step)</h4>
+            <p>Back arrow left. <strong>"Create Event"</strong> centre. Step indicator right — "1 of 4". Progress bar below header (4 segments, active fills orange).</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block full-detail">
+              <h4>4 steps</h4>
+              <ul>
+                <li>Step 1: Event type chips + title + description + rules</li>
+                <li>Step 2: Date + time + capacity stepper + age restriction</li>
+                <li>Step 3: Full-screen map + drag to pin location</li>
+                <li>Step 4: Price (free/paid toggle) + photos upload (up to 5)</li>
+                <li>Preview screen → "Publish" button → success celebration</li>
+              </ul>
+            </div>
+          </div>
+          <p class="note">Create Event is accessible from: Events tab top-right "+" button, Host Dashboard FAB, and Profile tab → "Host an Event" CTA.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TAB 3: VYBE -->
+  <div class="content" id="tab-vybe">
+    <div class="tab-header">
+      <h2>Tab 3 — Vybe (Centre tab)</h2>
+      <p>Vibe requests inbox · the social heartbeat of the app</p>
+    </div>
+    <div class="screens-grid">
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(255,56,100,.15)">🔥</div>
+          <span class="screen-title">Vybe tab — Requests inbox</span>
+          <span class="screen-badge badge-main">Main</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header</h4>
+            <p><strong>"Vibes"</strong> — left, 22pt bold. No right action button. Below title: two segmented tabs — <strong>"Received"</strong> (with unread count badge) and <strong>"Sent"</strong>. Active tab has orange underline.</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block">
+              <h4>Received tab</h4>
+              <ul>
+                <li>Cards stacked — one per incoming vibe</li>
+                <li>Left: blurred profile photo (revealed on accept)</li>
+                <li>Right: name, match %, message preview (italic, truncated)</li>
+                <li>Timestamp top-right</li>
+                <li>Accept (green) + Pass (X) buttons on card</li>
+                <li>Swipe right = Accept, swipe left = Pass</li>
+              </ul>
+            </div>
+            <div class="detail-block">
+              <h4>Sent tab</h4>
+              <ul>
+                <li>Same card layout, different status badges</li>
+                <li>"Pending" — muted orange pill</li>
+                <li>"Accepted" — green pill, tap opens chat</li>
+                <li>"No response" — muted grey pill</li>
+                <li>"Expired" — grey, 7 days no reply auto-expires</li>
+              </ul>
+            </div>
+            <div class="detail-block full-detail">
+              <h4>Empty states</h4>
+              <ul>
+                <li>No received vibes: flame illustration (dimmed) + "No vibes yet. Keep exploring!" + "Discover People" button</li>
+                <li>No sent vibes: "You haven't sent any vibes yet" + "Start discovering" button</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(255,56,100,.1)">👁️</div>
+          <span class="screen-title">Incoming Vibe — full view</span>
+          <span class="screen-badge badge-modal">Full screen</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header</h4>
+            <p>Back arrow left. <strong>"Vibe Request"</strong> centre — 18pt semibold. No right action.</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block full-detail">
+              <h4>What's on screen</h4>
+              <ul>
+                <li>Top half: blurred profile photo full width (CSS blur 10px) — name visible, photo revealed only on accept</li>
+                <li>Their message in coral-outline chat bubble</li>
+                <li>Match score + shared interests row</li>
+                <li>"Accept Vibe 🔥" gradient button full width</li>
+                <li>"Pass" outline button below</li>
+                <li>Note: "Accepting reveals their photos and starts a chat"</li>
+                <li>Accept → triggers Ice Breaker Modal</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(255,56,100,.1)">💬</div>
+          <span class="screen-title">Accept — Ice Breaker Modal</span>
+          <span class="screen-badge badge-sheet">Bottom sheet</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header</h4>
+            <p>Drag handle. <strong>"You matched! 🎉"</strong> — centre, 18pt semibold, with mini confetti CSS animation around it.</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block full-detail">
+              <h4>What's on screen</h4>
+              <ul>
+                <li>"Send [Name] a first message?" label</li>
+                <li>Text input pre-filled with suggested opener — fully editable</li>
+                <li>"Send &amp; Open Chat" gradient full-width button</li>
+                <li>"Just Accept (no message)" muted text link</li>
+                <li>Either option → navigates to Chat thread with that person</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(255,56,100,.1)">⏱️</div>
+          <span class="screen-title">Cooldown screen</span>
+          <span class="screen-badge badge-modal">Full screen</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header</h4>
+            <p>Back arrow left. No title text — the screen content is the message.</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block full-detail">
+              <h4>What's on screen</h4>
+              <ul>
+                <li>Dimmed flame SVG icon (extinguished, not lit)</li>
+                <li>"Not yet..." 24pt heading</li>
+                <li>"You can vibe [Name] again in:" label</li>
+                <li>Live countdown timer — large, orange, Cabinet Grotesk Bold</li>
+                <li>"After a pass, there's a 24-hour cooldown" explanation in muted</li>
+                <li>"Go Back" outline button</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TAB 4: CHAT -->
+  <div class="content" id="tab-chat">
+    <div class="tab-header">
+      <h2>Tab 4 — Chat</h2>
+      <p>Connections list · direct messages · event group chats</p>
+    </div>
+    <div class="screens-grid">
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(78,205,196,.15)">💬</div>
+          <span class="screen-title">Chat list</span>
+          <span class="screen-badge badge-main">Main</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header</h4>
+            <p><strong>"Messages"</strong> — left, 22pt bold. No right action button. Search bar pinned directly below header (always visible, not inside scroll).</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block">
+              <h4>Chat rows</h4>
+              <ul>
+                <li>72px circular avatar left — green online dot overlay</li>
+                <li>Name — 16pt semibold</li>
+                <li>Last message preview — 14pt muted, 1 line truncated</li>
+                <li>Timestamp — top right, muted small</li>
+                <li>Unread badge — orange circle with count</li>
+              </ul>
+            </div>
+            <div class="detail-block">
+              <h4>Sections</h4>
+              <ul>
+                <li>Direct messages — individual connections at top</li>
+                <li>Event group chats — below DMs with separator</li>
+                <li>Event groups show event name + "X members"</li>
+                <li>Search bar filters both sections live</li>
+                <li>Empty state if no connections yet</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(78,205,196,.1)">💭</div>
+          <span class="screen-title">Chat thread (DM)</span>
+          <span class="screen-badge badge-modal">Full screen</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header</h4>
+            <p>Back arrow left. Centre: 40px circular avatar + <strong>[Name]</strong> semibold + "● Online" green 12pt (or "last seen X ago" muted). Right: three-dot menu → Report / Block / View Profile.</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block">
+              <h4>Message area</h4>
+              <ul>
+                <li>Sent bubbles: right-aligned, orange-tinted bg, orange border 0.3 opacity</li>
+                <li>Received bubbles: left-aligned, surface colour bg</li>
+                <li>Timestamp below each bubble, muted small</li>
+                <li>Typing indicator: 3 bouncing dots, received side</li>
+                <li>Tap avatar → opens their profile</li>
+              </ul>
+            </div>
+            <div class="detail-block">
+              <h4>Input bar (sticky bottom)</h4>
+              <ul>
+                <li>Attach icon left (share event / share profile)</li>
+                <li>Text input — pill shape, expandable multiline</li>
+                <li>Microphone icon — hold to record voice message</li>
+                <li>Send button — orange icon, disabled when empty</li>
+                <li>Keyboard awareness — bar lifts with keyboard</li>
+              </ul>
+            </div>
+            <div class="detail-block full-detail">
+              <h4>Special message types</h4>
+              <ul>
+                <li>Voice message bubble: waveform bar + play/pause + duration. Unplayed = grey, played = orange</li>
+                <li>Event share: mini event card embed with "View Event" button inside bubble</li>
+                <li>Profile share: mini profile card embed with "View Profile" button</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(78,205,196,.1)">👥</div>
+          <span class="screen-title">Event Group Chat</span>
+          <span class="screen-badge badge-modal">Full screen</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header</h4>
+            <p>Back arrow left. Centre: small event photo circle (40px) + <strong>[Event Name]</strong> semibold + "X members" muted 12pt. Right: info icon → opens member list + event details.</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block full-detail">
+              <h4>Differences from DM thread</h4>
+              <ul>
+                <li>Pinned message at top (collapsible) — event address + date reminder</li>
+                <li>Host messages have "Host" orange badge beside their name</li>
+                <li>Name shown above each received bubble (group chat style)</li>
+                <li>Photo sharing enabled in this chat</li>
+                <li>Host can pin announcements</li>
+                <li>Auto-created when first booking is made. Archived 48h after event ends.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TAB 5: PROFILE -->
+  <div class="content" id="tab-profile">
+    <div class="tab-header">
+      <h2>Tab 5 — Profile</h2>
+      <p>Own profile · edit · my tickets · host dashboard · settings</p>
+    </div>
+    <div class="screens-grid">
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(255,107,53,.15)">🧑‍💻</div>
+          <span class="screen-title">Profile tab (own profile)</span>
+          <span class="screen-badge badge-main">Main</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header</h4>
+            <p>Transparent (overlaid on photo). Left: nothing. Right: <strong>settings gear icon</strong> (glass circle, 36px) — this is the entry point to Settings. Edit pencil icon just below gear (or combined into one top-right cluster).</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block">
+              <h4>What's on screen</h4>
+              <ul>
+                <li>Full-width photo top 45%, gradient overlay</li>
+                <li>Name + age + city + verified badge over photo</li>
+                <li>Stats row: Connections · Events Attended · Events Hosted</li>
+                <li>Voice intro player bar</li>
+                <li>Interest tags wrap grid</li>
+                <li>Bio text</li>
+              </ul>
+            </div>
+            <div class="detail-block">
+              <h4>Sections below</h4>
+              <ul>
+                <li>"My Upcoming Events" — horizontal event card scroll</li>
+                <li>"My Tickets" — link row → opens My Tickets screen</li>
+                <li>If has hosted: "My Events (Host)" section with hosted cards</li>
+                <li>Edit profile button inline or via header pencil icon</li>
+              </ul>
+            </div>
+            <div class="detail-block full-detail">
+              <h4>Header gear icon → Settings</h4>
+              <div class="links-row">
+                <span class="link-chip"><span>→</span>Settings home screen</span>
+                <span class="link-chip"><span>→</span>Edit Profile</span>
+                <span class="link-chip"><span>→</span>My Tickets</span>
+                <span class="link-chip"><span>→</span>Host Dashboard</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(255,107,53,.1)">✏️</div>
+          <span class="screen-title">Edit Profile</span>
+          <span class="screen-badge badge-modal">Full screen</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header</h4>
+            <p>Back arrow left (discards changes with confirmation). <strong>"Edit Profile"</strong> centre — 18pt semibold. <strong>"Save"</strong> right — orange text button (saves and pops back).</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block full-detail">
+              <h4>Sections (scrollable)</h4>
+              <ul>
+                <li>Photos: horizontal scroll of current photos, reorder drag, delete X, + add button</li>
+                <li>About: Name input, Bio textarea</li>
+                <li>Voice Intro: current waveform player + "Re-record" button</li>
+                <li>Interests: same tag selector grid as onboarding — tap to toggle</li>
+                <li>Location: current city display + "Change" orange link</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(255,107,53,.1)">🎟️</div>
+          <span class="screen-title">My Tickets</span>
+          <span class="screen-badge badge-modal">Full screen</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header</h4>
+            <p>Back arrow left. <strong>"My Tickets"</strong> centre — 18pt semibold. Two sub-tabs below: <strong>"Upcoming"</strong> and <strong>"Past"</strong>.</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block full-detail">
+              <h4>Ticket rows</h4>
+              <ul>
+                <li>Event photo left (small, 16:9) + title + date + host name right</li>
+                <li>QR icon button right edge — tap → full-screen QR ticket</li>
+                <li>Status badge: "Confirmed" green / "Attended" muted / "Cancelled" red outline</li>
+                <li>Tap row → expands to show full QR inline, or opens QR full screen</li>
+                <li>QR full screen: maximises brightness, shows booking ID below QR</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(255,107,53,.1)">🏠</div>
+          <span class="screen-title">Host Dashboard</span>
+          <span class="screen-badge badge-modal">Full screen</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header</h4>
+            <p>Back arrow left. <strong>"My Events"</strong> — left aligned, 22pt bold. Right: <strong>"+ New Event"</strong> — orange pill button (launches Create Event flow).</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block">
+              <h4>Stats row (top)</h4>
+              <ul>
+                <li>Total events hosted</li>
+                <li>Total guests across all events</li>
+                <li>Total earned (₹)</li>
+                <li>Each stat: bold number + muted label</li>
+              </ul>
+            </div>
+            <div class="detail-block">
+              <h4>Event cards</h4>
+              <ul>
+                <li>Two tabs: Upcoming / Past</li>
+                <li>Photo left + title + date right</li>
+                <li>Capacity bar (orange filled, "X/Y going")</li>
+                <li>Revenue earned in green</li>
+                <li>Three-dot menu: Edit / View Attendees / Cancel</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="screen">
+        <div class="screen-header" onclick="toggle(this)">
+          <div class="screen-icon" style="background:rgba(255,107,53,.1)">⚙️</div>
+          <span class="screen-title">Settings</span>
+          <span class="screen-badge badge-modal">Full screen</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="screen-detail">
+          <div class="header-spec">
+            <h4>Header</h4>
+            <p>Back arrow left (returns to Profile tab). <strong>"Settings"</strong> centre — 18pt semibold. No right action.</p>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-block">
+              <h4>Settings groups</h4>
+              <ul>
+                <li>Account: Edit Profile, Phone Number, Verified Badge</li>
+                <li>Privacy: Who can find me, Location, Online status</li>
+                <li>Notifications: toggle each notification type</li>
+                <li>Safety: Blocked Users, Report history</li>
+                <li>Support: Help, Contact, Feedback, Report a bug</li>
+                <li>About: Version, Terms, Privacy Policy</li>
+              </ul>
+            </div>
+            <div class="detail-block">
+              <h4>Danger zone (bottom)</h4>
+              <ul>
+                <li>"Log Out" row — coral colour text</li>
+                <li>"Delete Account" row — red text</li>
+                <li>Both require confirmation modal before executing</li>
+                <li>Delete account: type "DELETE" to confirm, shows data loss warning</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+function switchTab(id, btn) {
+  document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+function toggle(header) {
+  const detail = header.nextElementSibling;
+  const chevron = header.querySelector('.chevron');
+  const isOpen = detail.classList.contains('open');
+  detail.classList.toggle('open', !isOpen);
+  chevron.classList.toggle('open', !isOpen);
+}
+</script>

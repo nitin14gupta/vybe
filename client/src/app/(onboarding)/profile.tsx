@@ -1,11 +1,37 @@
-import { useState } from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { useState, useRef } from 'react'
+import { View, Text, StyleSheet, TextInput, Pressable } from 'react-native'
 import { router } from 'expo-router'
 import { BackButton, Input, GenderSelector, ProgressBar, PrimaryButton, Screen, KeyboardAvoidingWrapper } from '@/components/ui'
 import { useOnboardingStore } from '@/store/onboarding'
 import { useAuthStore } from '@/store/auth'
 import { createProfile } from '@/api/user'
-import { Colors, FontFamily, Spacing } from '@/constants'
+import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+
+function BioInput({ value, onChangeText }: { value: string; onChangeText: (t: string) => void }) {
+  const [focused, setFocused] = useState(false)
+  const inputRef = useRef<TextInput>(null)
+  return (
+    <Pressable
+      onPress={() => inputRef.current?.focus()}
+      style={[bioStyles.wrap, focused && bioStyles.focused]}
+    >
+      <TextInput
+        ref={inputRef}
+        value={value}
+        onChangeText={v => onChangeText(v.slice(0, 150))}
+        placeholder="A short intro — who are you? ✨"
+        placeholderTextColor={Colors.inkDisabled}
+        multiline
+        textAlignVertical="top"
+        style={bioStyles.input}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        showSoftInputOnFocus
+      />
+      <Text style={bioStyles.counter}>{value.length}/150</Text>
+    </Pressable>
+  )
+}
 
 export default function ProfileScreen() {
   const store = useOnboardingStore()
@@ -14,7 +40,7 @@ export default function ProfileScreen() {
   const [error, setError] = useState('')
   const [dobError, setDobError] = useState('')
 
-  const canProceed = !!store.name.trim() && store.dob.replace(/\D/g, '').length === 8 && !!store.gender && !dobError
+  const canProceed = !!store.name.trim() && store.dob.replace(/\D/g, '').length === 8 && !!store.gender && !dobError && !!store.bio?.trim()
 
   const validateDOB = (dob: string): string => {
     const digits = dob.replace(/\D/g, '')
@@ -66,6 +92,7 @@ export default function ProfileScreen() {
         name: store.name.trim(),
         dob: dobToISO(store.dob),
         gender: store.gender,
+        bio: store.bio?.trim() || undefined,
       })
       router.push('/(onboarding)/photos')
     } catch (e: any) {
@@ -113,6 +140,13 @@ export default function ProfileScreen() {
               onChange={v => store.setField('gender', v)}
             />
           </View>
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>BIO</Text>
+            <BioInput
+              value={store.bio}
+              onChangeText={v => store.setField('bio', v)}
+            />
+          </View>
           {error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
         <View style={styles.footer}>
@@ -158,4 +192,36 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   footer: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 16 },
+})
+
+const bioStyles = StyleSheet.create({
+  wrap: {
+    backgroundColor: Colors.elevated,
+    borderRadius: Radius.input,
+    borderWidth: 1.5,
+    borderColor: Colors.divider,
+    padding: 14,
+    minHeight: 90,
+  },
+  focused: {
+    borderColor: Colors.brandOrange,
+    shadowColor: Colors.brandOrange,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.16,
+    shadowRadius: 3,
+  },
+  input: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 15,
+    color: Colors.inkPrimary,
+    lineHeight: 22,
+    minHeight: 60,
+  },
+  counter: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 11,
+    color: Colors.inkDisabled,
+    textAlign: 'right',
+    marginTop: 6,
+  },
 })
