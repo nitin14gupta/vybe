@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useRef, useCallback } from 'react'
+import { forwardRef, useImperativeHandle, useRef, useCallback, useState } from 'react'
 import {
   View, Text, StyleSheet, Pressable, Image, Dimensions, ActivityIndicator,
 } from 'react-native'
@@ -8,9 +8,12 @@ import Animated, {
 } from 'react-native-reanimated'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { LinearGradient } from 'expo-linear-gradient'
-import { X, Flame, Star, SlidersHorizontal, MapPin } from 'lucide-react-native'
-import { AppHeader, HeaderIconBtn } from '@/components/ui'
-import { useDiscover } from '@/hooks/useDiscover'
+import { useFocusEffect } from 'expo-router'
+import { X, Flame, Star, SlidersHorizontal, MapPin, Mic, Pause } from 'lucide-react-native'
+import { AppHeader, HeaderIconBtn, PlaybackWave } from '@/components/ui'
+import { FilterSheet } from '@/components/ui/FilterSheet'
+import { useDiscover, type DiscoverFilters } from '@/hooks/useDiscover'
+import { useCardAudio } from '@/hooks/useCardAudio'
 import type { DiscoverUser } from '@/api/apiService'
 import { Colors, FontFamily, Radius } from '@/constants'
 
@@ -21,7 +24,10 @@ const CARD_H = height * 0.68
 // ── SwipeCard ─────────────────────────────────────────────────────────────────
 
 type SwipeCardRef = { swipeLeft: () => void; swipeRight: () => void; swipeStar: () => void }
-type SwipeCardProps = { user: DiscoverUser; onSwipe: (dir: 'left' | 'right') => void }
+type SwipeCardProps = {
+  user: DiscoverUser
+  onSwipe: (dir: 'left' | 'right') => void
+}
 
 const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(function SwipeCard(
   { user, onSwipe },
@@ -30,14 +36,17 @@ const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(function SwipeCard(
   const tx = useSharedValue(0)
   const ty = useSharedValue(0)
 
+  const { isPlaying, hasAudio, toggle: toggleAudio, stop: stopAudio } = useCardAudio(user.voice_url)
+
   const triggerSwipe = useCallback(
     (dir: 'left' | 'right') => {
+      stopAudio()
       const target = dir === 'right' ? width * 1.6 : -width * 1.6
       tx.value = withTiming(target, { duration: 300 }, () => {
         runOnJS(onSwipe)(dir)
       })
     },
-    [onSwipe],
+    [onSwipe, stopAudio],
   )
 
   useImperativeHandle(ref, () => ({
@@ -53,9 +62,11 @@ const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(function SwipeCard(
     })
     .onEnd(e => {
       if (e.translationX > SWIPE_THRESHOLD) {
+        runOnJS(stopAudio)()
         const target = width * 1.6
         tx.value = withTiming(target, { duration: 300 }, () => runOnJS(onSwipe)('right'))
       } else if (e.translationX < -SWIPE_THRESHOLD) {
+        runOnJS(stopAudio)()
         const target = -width * 1.6
         tx.value = withTiming(target, { duration: 300 }, () => runOnJS(onSwipe)('left'))
       } else {
@@ -101,12 +112,12 @@ const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(function SwipeCard(
           style={StyleSheet.absoluteFill}
         />
 
-        {/* VYBE overlay */}
+        {/* VYBE stamp overlay */}
         <Animated.View style={[styles.vibeStamp, vibeOverlay]}>
           <Text style={styles.vibeStampText}>🔥 VYBE IT!</Text>
         </Animated.View>
 
-        {/* PASS overlay */}
+        {/* PASS stamp overlay */}
         <Animated.View style={[styles.passStamp, passOverlay]}>
           <Text style={styles.passStampText}>✕ PASS</Text>
         </Animated.View>
@@ -124,9 +135,25 @@ const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(function SwipeCard(
           </LinearGradient>
         )}
 
-        {/* Interest chips — top area */}
+        {/* Voice intro button — top right (shown only when voice exists) */}
+        {hasAudio && (
+          <Pressable onPress={toggleAudio} style={styles.voiceBtn}>
+            {isPlaying ? (
+              <>
+                <Pause size={14} color="#fff" strokeWidth={2.5} />
+                <View style={styles.voiceWaveWrap}>
+                  <PlaybackWave isActive compact />
+                </View>
+              </>
+            ) : (
+              <Mic size={16} color="#fff" strokeWidth={2} />
+            )}
+          </Pressable>
+        )}
+
+        {/* Interest chips — below match badge on top-right (shifted down when voice btn present) */}
         {chips.length > 0 && (
-          <View style={styles.chipsWrap}>
+          <View style={[styles.chipsWrap, hasAudio && styles.chipsWrapWithVoice]}>
             {chips.map(tag => (
               <View key={tag} style={styles.chip}>
                 <Text style={styles.chipText}>{tag}</Text>
@@ -163,22 +190,39 @@ const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(function SwipeCard(
 // ── DiscoverScreen ────────────────────────────────────────────────────────────
 
 export default function DiscoverScreen() {
+  const [filterOpen, setFilterOpen] = useState(false)
+
   const {
     loading, error, hasMore,
     activeUser, nextUser, backUser,
-    handlePass, handleVybe, handleStar,
-    currentIdx, reload,
+    handlePass, handleVybe, handleFollow, handleStar,
+    currentIdx, reload, filters, setFilters,
   } = useDiscover()
 
   const cardRef = useRef<SwipeCardRef>(null)
 
+  // Stop audio when tab loses focus
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        // SwipeCard unmounts on tab change (key={currentIdx} remounts)
+        // audio cleanup happens in useCardAudio via hook unmount
+      }
+    }, []),
+  )
+
   const onSwipe = useCallback(
     (dir: 'left' | 'right') => {
-      if (dir === 'right') handleVybe(activeUser?.id ?? '')
-      else handlePass()
+      if (dir === 'right') handleFollow(activeUser?.id ?? '')
+      else handlePass(activeUser?.id ?? '')
     },
-    [activeUser, handleVybe, handlePass],
+    [activeUser, handleFollow, handlePass],
   )
+
+  const onVybePress = useCallback(() => {
+    handleVybe(activeUser?.id ?? '')
+    cardRef.current?.swipeRight()
+  }, [activeUser, handleVybe])
 
   return (
     <View style={styles.root}>
@@ -194,7 +238,7 @@ export default function DiscoverScreen() {
           </HeaderIconBtn>
         }
         rightAction={
-          <HeaderIconBtn>
+          <HeaderIconBtn onPress={() => setFilterOpen(true)}>
             <SlidersHorizontal size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
           </HeaderIconBtn>
         }
@@ -260,20 +304,26 @@ export default function DiscoverScreen() {
 
           {/* Action buttons */}
           <View style={styles.actions}>
+            {/* Pass (X) */}
             <Pressable
-              onPress={() => cardRef.current?.swipeLeft()}
+              onPress={() => {
+                handlePass(activeUser?.id ?? '')
+                cardRef.current?.swipeLeft()
+              }}
               style={[styles.actionBtn, styles.passBtn]}
             >
               <X size={26} color="#FF5252" strokeWidth={2.5} />
             </Pressable>
 
+            {/* Vybe + Follow (fire) */}
             <Pressable
-              onPress={() => cardRef.current?.swipeRight()}
+              onPress={onVybePress}
               style={[styles.actionBtn, styles.vibeBtn]}
             >
               <Flame size={30} color={Colors.background} strokeWidth={2} fill={Colors.background} />
             </Pressable>
 
+            {/* Star / Follow */}
             <Pressable
               onPress={() => {
                 handleStar(activeUser?.id ?? '')
@@ -286,6 +336,13 @@ export default function DiscoverScreen() {
           </View>
         </View>
       )}
+
+      <FilterSheet
+        visible={filterOpen}
+        filters={filters}
+        onApply={f => { setFilters(f); setFilterOpen(false) }}
+        onClose={() => setFilterOpen(false)}
+      />
     </View>
   )
 }
@@ -304,10 +361,8 @@ const styles = StyleSheet.create({
   },
   retryText: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.brandOrange },
 
-  // Card arena
   arena: { flex: 1, position: 'relative' },
 
-  // Base card shape
   card: {
     position: 'absolute',
     top: 4,
@@ -318,8 +373,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: Colors.surface,
   },
-
-  // Background depth cards
   backCard2: {
     transform: [{ scale: 0.88 }, { translateY: 22 }],
     opacity: 0.45,
@@ -329,7 +382,6 @@ const styles = StyleSheet.create({
     opacity: 0.72,
   },
 
-  // Photo fallback
   photoFallback: {
     backgroundColor: Colors.elevated,
     alignItems: 'center',
@@ -341,7 +393,6 @@ const styles = StyleSheet.create({
     color: Colors.inkDisabled,
   },
 
-  // Swipe stamps
   vibeStamp: {
     position: 'absolute',
     top: 48,
@@ -377,7 +428,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  // VIBE MATCH badge
   matchBadge: {
     position: 'absolute',
     top: 20,
@@ -406,15 +456,39 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
-  // Interest chips
-  chipsWrap: {
+  // Voice intro button (top-right)
+  voiceBtn: {
     position: 'absolute',
     top: 20,
+    right: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+    zIndex: 6,
+  },
+  voiceWaveWrap: {
+    width: 36,
+    height: 16,
+    overflow: 'hidden',
+  },
+
+  chipsWrap: {
+    position: 'absolute',
+    top: 80,
     right: 14,
     gap: 6,
     alignItems: 'flex-end',
     zIndex: 5,
     maxWidth: '55%',
+  },
+  chipsWrapWithVoice: {
+    top: 68,
   },
   chip: {
     backgroundColor: 'rgba(255,255,255,0.18)',
@@ -431,7 +505,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
 
-  // Glass info card
   glassCard: {
     position: 'absolute',
     bottom: 14,
@@ -469,7 +542,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  // Action buttons
   actions: {
     position: 'absolute',
     bottom: 18,
@@ -511,7 +583,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,184,48,0.35)',
   },
 
-  // Menu dots
   menuDots: { gap: 3, alignItems: 'center' },
   dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.inkSecondary },
 })

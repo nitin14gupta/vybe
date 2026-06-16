@@ -4,7 +4,9 @@
   "version": "1.0.0",
   "dependencies": {
     "@expo/ui": "~56.0.17",
+    "@react-native-community/datetimepicker": "9.1.0",
     "@shopify/flash-list": "2.0.2",
+    "@shopify/react-native-skia": "2.6.2",
     "babel-preset-expo": "^56.0.15",
     "expo": "~56.0.11",
     "expo-audio": "~56.0.12",
@@ -36,6 +38,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.85.3",
+    "react-native-fast-confetti": "^2.0.0",
     "react-native-gesture-handler": "~2.31.1",
     "react-native-maps": "1.27.2",
     "react-native-qrcode-svg": "^6.3.21",

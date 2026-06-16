@@ -8,9 +8,11 @@ import {
   User,
 } from "lucide-react-native";
 import { Colors, ComponentSize } from "@/constants";
+import { Screen } from "@/components/ui";
 
 export default function TabsLayout() {
   return (
+    // <Screen>
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -73,6 +75,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="explore" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
     </Tabs>
+    // </Screen>
   );
 }
 

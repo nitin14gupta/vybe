@@ -52,6 +52,57 @@ export interface ProfileResponse extends UserResponse {
   is_following?: boolean
 }
 
+export interface EventPhoto {
+  url: string
+  position: number
+}
+
+export interface EventSummary {
+  id: string
+  title: string
+  event_type: string
+  date_time: string
+  end_time: string | null
+  location_name: string | null
+  location_lat: number | null
+  location_lng: number | null
+  price_inr: number
+  is_free: boolean
+  spots_left: number
+  capacity: number
+  distance_km: number | null
+  cover_photos: EventPhoto[]
+  host_name: string | null
+  host_avatar: string | null
+  age_restriction: number
+  attendee_count: number
+}
+
+export interface EventDetail extends EventSummary {
+  description: string | null
+  rules: string | null
+  host_id: string
+  is_cancelled: boolean
+  cancel_deadline: string
+  edit_deadline: string
+}
+
+export interface CreateEventPayload {
+  title: string
+  event_type: string
+  description?: string
+  rules?: string
+  date_time: string
+  end_time?: string
+  capacity: number
+  age_restriction: number
+  location_name?: string
+  location_lat?: number
+  location_lng?: number
+  price_inr: number
+  cover_photos?: string[]
+}
+
 export interface DiscoverUser {
   id: string
   name: string | null
@@ -281,8 +332,65 @@ class ApiService {
     return res.badges
   }
 
-  static async getDiscover(limit = 30): Promise<DiscoverUser[]> {
-    return this.get<DiscoverUser[]>(`${ENDPOINTS.DISCOVER}?limit=${limit}`)
+  static async getDiscover(
+    limit = 30,
+    filters: { gender?: string; minAge?: number; maxAge?: number; maxDistanceKm?: number } = {},
+  ): Promise<DiscoverUser[]> {
+    const params = new URLSearchParams({ limit: String(limit) })
+    if (filters.gender) params.set('gender', filters.gender)
+    if (filters.minAge != null) params.set('min_age', String(filters.minAge))
+    if (filters.maxAge != null) params.set('max_age', String(filters.maxAge))
+    if (filters.maxDistanceKm != null) params.set('max_distance_km', String(filters.maxDistanceKm))
+    return this.get<DiscoverUser[]>(`${ENDPOINTS.DISCOVER}?${params.toString()}`)
+  }
+
+  static async passUser(targetId: string): Promise<void> {
+    await this.post<{ ok: boolean }>(ENDPOINTS.DISCOVER_PASS, { target_id: targetId })
+  }
+
+  static async sendVibe(targetId: string): Promise<void> {
+    await this.post<{ ok: boolean }>(ENDPOINTS.VIBES, { target_id: targetId })
+  }
+
+  // ── Events ─────────────────────────────────────────────────────────────────
+
+  static async getEvents(filters: {
+    lat?: number
+    lng?: number
+    radius_km?: number
+    category?: string
+    is_free?: boolean
+    date_range?: string
+  } = {}): Promise<EventSummary[]> {
+    const params = new URLSearchParams()
+    if (filters.lat != null) params.set('lat', String(filters.lat))
+    if (filters.lng != null) params.set('lng', String(filters.lng))
+    if (filters.radius_km != null) params.set('radius_km', String(filters.radius_km))
+    if (filters.category) params.set('category', filters.category)
+    if (filters.is_free != null) params.set('is_free', String(filters.is_free))
+    if (filters.date_range) params.set('date_range', filters.date_range)
+    const qs = params.toString()
+    return this.get<EventSummary[]>(`${ENDPOINTS.EVENTS}${qs ? '?' + qs : ''}`)
+  }
+
+  static async getEvent(id: string): Promise<EventDetail> {
+    return this.get<EventDetail>(ENDPOINTS.EVENT_DETAIL.replace(':id', id))
+  }
+
+  static async createEvent(data: CreateEventPayload): Promise<EventDetail> {
+    return this.post<EventDetail>(ENDPOINTS.EVENTS, data)
+  }
+
+  static async updateEvent(id: string, data: Partial<CreateEventPayload>): Promise<EventDetail> {
+    return this.patch<EventDetail>(ENDPOINTS.EVENT_UPDATE.replace(':id', id), data)
+  }
+
+  static async rsvpEvent(id: string, action: 'going' | 'cancel'): Promise<{ status: string }> {
+    return this.post<{ status: string }>(ENDPOINTS.EVENT_RSVP.replace(':id', id), { action })
+  }
+
+  static async cancelEvent(id: string): Promise<void> {
+    await this.delete<{ ok: boolean }>(ENDPOINTS.EVENT_DETAIL.replace(':id', id))
   }
 
   // ── Upload ─────────────────────────────────────────────────────────────────

@@ -25,7 +25,7 @@
       "usesCleartextTraffic": true,
       "config": {
         "googleMaps": {
-          "apiKey": ""
+          "apiKey": "AIzaSyAzBgikYrIER9BsmcxOF330T_zX2jMdVQg"
         }
       }
     },
@@ -63,10 +63,12 @@
       [
         "react-native-maps",
         {
+          "apiKey": "AIzaSyAzBgikYrIER9BsmcxOF330T_zX2jMdVQg",
           "enableGoogleMapsOnIOS": false
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

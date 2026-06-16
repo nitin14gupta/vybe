@@ -34,6 +34,16 @@ export const ENDPOINTS = {
 
   // Discover
   DISCOVER:        '/discover',
+  DISCOVER_PASS:   '/discover/pass',
+
+  // Vibes
+  VIBES:           '/vibes',
+
+  // Events
+  EVENTS:          '/events',
+  EVENT_DETAIL:    '/events/:id',
+  EVENT_RSVP:      '/events/:id/rsvp',
+  EVENT_UPDATE:    '/events/:id',
 } as const
 
 export const DEFAULT_HEADERS = {

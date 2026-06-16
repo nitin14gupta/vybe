@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from typing import List, Optional
 from datetime import date
 from pydantic import BaseModel
@@ -36,10 +36,14 @@ def _calc_age(dob: date) -> int:
 @router.get("", response_model=List[DiscoverUser])
 def get_discover_feed(
     limit: int = Query(default=30, le=50),
+    gender: Optional[str] = Query(default=None),
+    min_age: Optional[int] = Query(default=None, ge=18, le=80),
+    max_age: Optional[int] = Query(default=None, ge=18, le=80),
+    max_distance_km: Optional[int] = Query(default=None, ge=1, le=500),
     current_user: dict = Depends(get_current_user),
 ):
     with get_db() as (cur, _):
-        # Current user's location + interests for distance + match calculation
+        # Current user's location + interests
         cur.execute(
             "SELECT lat, lng, interests FROM users WHERE id = %s",
             (current_user["id"],),
@@ -65,6 +69,45 @@ def get_discover_feed(
         else:
             dist_sql = "NULL::int"
             dist_params = []
+
+        # Build optional WHERE clauses
+        filters: list[str] = []
+        filter_params: list = []
+
+        if gender:
+            filters.append("u.gender = %s")
+            filter_params.append(gender)
+
+        # Age filters require dob
+        if min_age is not None:
+            # user born before (today - min_age years)
+            filters.append(
+                "u.dob IS NOT NULL AND u.dob <= (CURRENT_DATE - INTERVAL '1 year' * %s)"
+            )
+            filter_params.append(min_age)
+
+        if max_age is not None:
+            # user born after (today - (max_age+1) years)
+            filters.append(
+                "u.dob IS NOT NULL AND u.dob > (CURRENT_DATE - INTERVAL '1 year' * %s)"
+            )
+            filter_params.append(max_age + 1)
+
+        if max_distance_km is not None and me_lat is not None and me_lng is not None:
+            filters.append(
+                f"""
+                6371.0 * acos(
+                    LEAST(1.0,
+                      cos(radians(%s)) * cos(radians(u.lat::float)) *
+                      cos(radians(u.lng::float) - radians(%s)) +
+                      sin(radians(%s)) * sin(radians(u.lat::float))
+                    )
+                ) <= %s
+                """
+            )
+            filter_params.extend([me_lat, me_lng, me_lat, max_distance_km])
+
+        extra_where = ("AND " + " AND ".join(filters)) if filters else ""
 
         sql = f"""
             SELECT
@@ -93,12 +136,13 @@ def get_discover_feed(
             WHERE u.id != %s
               AND u.profile_complete = TRUE
               AND u.is_active = TRUE
+              {extra_where}
             GROUP BY u.id
             ORDER BY RANDOM()
             LIMIT %s
         """
 
-        params = dist_params + [current_user["id"], limit]
+        params = dist_params + [current_user["id"]] + filter_params + [limit]
         cur.execute(sql, params)
         rows = cur.fetchall()
 
@@ -108,11 +152,9 @@ def get_discover_feed(
         d["interests"] = d.get("interests") or []
         d["photos"] = d.get("photos") or []
 
-        # Age from DOB
         d["age"] = _calc_age(d["dob"]) if d.get("dob") else None
         del d["dob"]
 
-        # Vibe match % — shared interests / max interests, base 35%
         user_interests = set(d["interests"])
         if me_interests and user_interests:
             overlap = len(me_interests & user_interests)
@@ -124,3 +166,14 @@ def get_discover_feed(
         result.append(d)
 
     return result
+
+
+class PassRequest(BaseModel):
+    target_id: str
+
+
+@router.post("/pass")
+def pass_user(body: PassRequest, current_user: dict = Depends(get_current_user)):
+    # Record a pass — soft reject, stored for future "don't show again" logic
+    # For now just a no-op ack; add a discover_passes table in a future migration if needed
+    return {"ok": True}
