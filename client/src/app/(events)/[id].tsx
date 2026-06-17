@@ -14,6 +14,7 @@ import {
 import { StaticEventMap } from '@/components/maps'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useHardwareBack } from '@/hooks/useHardwareBack'
 import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
@@ -78,6 +79,7 @@ export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  useHardwareBack()
   const [event, setEvent] = useState<EventDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [rsvpStatus, setRsvpStatus] = useState<RsvpStatus>('idle')

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, status, Depends
+from pydantic import BaseModel
 from datetime import date
 from schemas.user import (
     ProfileCreate, ProfileUpdate, LocationUpdate, InterestsUpdate,
@@ -187,4 +188,77 @@ def unfollow_user(user_id: str, current_user: dict = Depends(get_current_user)):
             "DELETE FROM follows WHERE follower_id = %s AND following_id = %s",
             (current_user["id"], user_id),
         )
+    return {"ok": True}
+
+
+# ── Block / Unblock ───────────────────────────────────────────────────────────
+
+class ReportRequest(BaseModel):
+    reason: str
+
+
+@router.post("/{user_id}/block", status_code=status.HTTP_200_OK)
+def block_user(user_id: str, current_user: dict = Depends(get_current_user)):
+    if user_id == current_user["id"]:
+        raise HTTPException(status_code=400, detail="Cannot block yourself")
+    with get_db() as (cur, conn):
+        cur.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="User not found")
+        cur.execute(
+            """
+            INSERT INTO user_blocks (blocker_id, blocked_id)
+            VALUES (%s::uuid, %s::uuid)
+            ON CONFLICT DO NOTHING
+            """,
+            (current_user["id"], user_id),
+        )
+        conn.commit()
+    return {"ok": True}
+
+
+@router.delete("/{user_id}/block", status_code=status.HTTP_200_OK)
+def unblock_user(user_id: str, current_user: dict = Depends(get_current_user)):
+    with get_db() as (cur, conn):
+        cur.execute(
+            "DELETE FROM user_blocks WHERE blocker_id = %s::uuid AND blocked_id = %s::uuid",
+            (current_user["id"], user_id),
+        )
+        conn.commit()
+    return {"ok": True}
+
+
+@router.get("/blocked")
+def get_blocked_users(current_user: dict = Depends(get_current_user)):
+    with get_db() as (cur, _):
+        cur.execute(
+            """
+            SELECT u.id::text, u.name, u.city, ub.created_at,
+                   (SELECT url FROM user_photos WHERE user_id = u.id ORDER BY position LIMIT 1) AS avatar
+            FROM user_blocks ub
+            JOIN users u ON u.id = ub.blocked_id
+            WHERE ub.blocker_id = %s::uuid
+            ORDER BY ub.created_at DESC
+            """,
+            (current_user["id"],),
+        )
+        rows = cur.fetchall()
+    return [dict(r) for r in rows]
+
+
+# ── Report ────────────────────────────────────────────────────────────────────
+
+@router.post("/{user_id}/report", status_code=status.HTTP_200_OK)
+def report_user(user_id: str, body: ReportRequest, current_user: dict = Depends(get_current_user)):
+    if user_id == current_user["id"]:
+        raise HTTPException(status_code=400, detail="Cannot report yourself")
+    with get_db() as (cur, conn):
+        cur.execute(
+            """
+            INSERT INTO user_reports (reporter_id, reported_id, reason)
+            VALUES (%s::uuid, %s::uuid, %s)
+            """,
+            (current_user["id"], user_id, body.reason),
+        )
+        conn.commit()
     return {"ok": True}

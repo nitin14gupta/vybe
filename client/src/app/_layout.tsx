@@ -28,6 +28,7 @@ function AuthGuard({ ready }: { ready: boolean }) {
                       || segments[0] === '(settings)'
                       || segments[0] === '(profile)'
                       || segments[0] === '(events)'
+                      || segments[0] === '(chat)'
 
     if (!isAuthenticated) {
       // Not logged in → welcome screen

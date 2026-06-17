@@ -1,16 +1,17 @@
 import { forwardRef, useImperativeHandle, useRef, useCallback, useState } from 'react'
 import {
-  View, Text, StyleSheet, Pressable, Image, Dimensions, ActivityIndicator,
+  BackHandler, View, Text, StyleSheet, Pressable, Image, Dimensions, ActivityIndicator,
 } from 'react-native'
 import Animated, {
   useSharedValue, useAnimatedStyle,
-  withTiming, withSpring, runOnJS,
+  withTiming, withSpring, withSequence, runOnJS,
+  FadeIn, FadeOut,
 } from 'react-native-reanimated'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useFocusEffect } from 'expo-router'
 import { X, Flame, Star, SlidersHorizontal, MapPin, Mic, Pause } from 'lucide-react-native'
-import { AppHeader, HeaderIconBtn, PlaybackWave } from '@/components/ui'
+import { AppHeader, HeaderIconBtn, PlaybackWave, VybeRequestModal } from '@/components/ui'
 import { FilterSheet } from '@/components/ui/FilterSheet'
 import { useDiscover, type DiscoverFilters } from '@/hooks/useDiscover'
 import { useCardAudio } from '@/hooks/useCardAudio'
@@ -191,22 +192,39 @@ const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(function SwipeCard(
 
 export default function DiscoverScreen() {
   const [filterOpen, setFilterOpen] = useState(false)
+  const [showExitPill, setShowExitPill] = useState(false)
+  const [vybeSentPill, setVybeSentPill] = useState(false)
+  const lastBackRef = useRef(0)
+  const flameScale = useSharedValue(1)
+  const flameAnimStyle = useAnimatedStyle(() => ({ transform: [{ scale: flameScale.value }] }))
 
   const {
     loading, error, hasMore,
     activeUser, nextUser, backUser,
     handlePass, handleVybe, handleFollow, handleStar,
+    pendingVybe, sendVybe, dismissVybe,
     currentIdx, reload, filters, setFilters,
   } = useDiscover()
 
   const cardRef = useRef<SwipeCardRef>(null)
 
-  // Stop audio when tab loses focus
+  // Stop audio when tab loses focus + double-back to exit
   useFocusEffect(
     useCallback(() => {
+      const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+        const now = Date.now()
+        if (now - lastBackRef.current < 2000) {
+          BackHandler.exitApp()
+          return true
+        }
+        lastBackRef.current = now
+        setShowExitPill(true)
+        setTimeout(() => setShowExitPill(false), 2000)
+        return true
+      })
       return () => {
-        // SwipeCard unmounts on tab change (key={currentIdx} remounts)
-        // audio cleanup happens in useCardAudio via hook unmount
+        sub.remove()
+        setShowExitPill(false)
       }
     }, []),
   )
@@ -220,9 +238,20 @@ export default function DiscoverScreen() {
   )
 
   const onVybePress = useCallback(() => {
-    handleVybe(activeUser?.id ?? '')
-    cardRef.current?.swipeRight()
-  }, [activeUser, handleVybe])
+    if (!activeUser) return
+    // Bounce the flame button
+    flameScale.value = withSequence(
+      withSpring(1.45, { damping: 4, stiffness: 400 }),
+      withSpring(1, { damping: 6, stiffness: 300 }),
+    )
+    handleVybe(activeUser)
+  }, [activeUser, handleVybe, flameScale])
+
+  const handleSendVybe = useCallback((message: string) => {
+    sendVybe(message)
+    setVybeSentPill(true)
+    setTimeout(() => setVybeSentPill(false), 2500)
+  }, [sendVybe])
 
   return (
     <View style={styles.root}>
@@ -315,13 +344,15 @@ export default function DiscoverScreen() {
               <X size={26} color="#FF5252" strokeWidth={2.5} />
             </Pressable>
 
-            {/* Vybe + Follow (fire) */}
-            <Pressable
-              onPress={onVybePress}
-              style={[styles.actionBtn, styles.vibeBtn]}
-            >
-              <Flame size={30} color={Colors.background} strokeWidth={2} fill={Colors.background} />
-            </Pressable>
+            {/* Vybe (fire) */}
+            <Animated.View style={flameAnimStyle}>
+              <Pressable
+                onPress={onVybePress}
+                style={[styles.actionBtn, styles.vibeBtn]}
+              >
+                <Flame size={30} color={Colors.background} strokeWidth={2} fill={Colors.background} />
+              </Pressable>
+            </Animated.View>
 
             {/* Star / Follow */}
             <Pressable
@@ -343,6 +374,32 @@ export default function DiscoverScreen() {
         onApply={f => { setFilters(f); setFilterOpen(false) }}
         onClose={() => setFilterOpen(false)}
       />
+
+      <VybeRequestModal
+        visible={!!pendingVybe}
+        user={pendingVybe}
+        onSend={handleSendVybe}
+        onClose={dismissVybe}
+      />
+
+      {/* Vybe sent confirmation pill */}
+      {vybeSentPill && (
+        <Animated.View
+          entering={FadeIn.duration(200)}
+          exiting={FadeOut.duration(300)}
+          style={styles.vybeSentPill}
+          pointerEvents="none"
+        >
+          <Text style={styles.vybeSentText}>Vybe sent 🔥</Text>
+        </Animated.View>
+      )}
+
+      {/* Double-back exit hint */}
+      {showExitPill && (
+        <View style={styles.exitPill} pointerEvents="none">
+          <Text style={styles.exitPillText}>Press back again to exit</Text>
+        </View>
+      )}
     </View>
   )
 }
@@ -352,6 +409,42 @@ export default function DiscoverScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 32 },
+  vybeSentPill: {
+    position: 'absolute',
+    bottom: 140,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(255,107,53,0.92)',
+    borderRadius: 24,
+    paddingHorizontal: 22,
+    paddingVertical: 11,
+    shadowColor: Colors.brandOrange,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  vybeSentText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 15,
+    color: '#111',
+  },
+  exitPill: {
+    position: 'absolute',
+    bottom: 32,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(20,20,20,0.92)',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  exitPillText: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 14,
+    color: '#fff',
+    letterSpacing: 0.1,
+  },
   emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.inkPrimary, textAlign: 'center' },
   emptySub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center' },
   retryBtn: {

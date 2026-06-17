@@ -4,7 +4,7 @@ import { useOnboardingStore } from '@/store/onboarding'
 import { setInterests, getInterests } from '@/api/user'
 import type { InterestResponse } from '@/api/user'
 
-const MAX_INTERESTS = 4
+const MAX_INTERESTS = 8
 
 // Fallback if backend is unreachable
 const FALLBACK: InterestResponse[] = [

@@ -1,5 +1,5 @@
 import * as FileSystem from 'expo-file-system/legacy'
-import { API_BASE_URL, ENDPOINTS, DEFAULT_HEADERS, createAuthHeader } from './config'
+import { API_BASE_URL, WS_BASE_URL, ENDPOINTS, DEFAULT_HEADERS, createAuthHeader } from './config'
 import { useAuthStore } from '@/store/auth'
 
 // ── Response shapes ──────────────────────────────────────────────────────────
@@ -115,6 +115,50 @@ export interface DiscoverUser {
   distance_km: number | null
   match_pct: number
   photos: PhotoResponse[]
+}
+
+export interface VybeRequest {
+  id: string
+  sender_id: string
+  name: string | null
+  city: string | null
+  message: string
+  status: string
+  created_at: string
+  photos: PhotoResponse[]
+}
+
+export interface Conversation {
+  id: string
+  status: 'pending' | 'active'
+  partner_id: string
+  partner_name: string | null
+  partner_avatar: string | null
+  last_message: string | null
+  last_message_type: string | null
+  last_sender_id: string | null
+  last_sent_at: string | null
+  unread_count: number
+  last_message_at: string | null
+}
+
+export interface Message {
+  id: string
+  conversation_id: string
+  sender_id: string
+  content: string | null
+  content_type: 'text' | 'event' | 'profile' | 'image'
+  metadata: Record<string, any> | null
+  sent_at: string
+  read_at: string | null
+}
+
+export interface BlockedUser {
+  id: string
+  name: string | null
+  city: string | null
+  avatar: string | null
+  created_at: string
 }
 
 // ── ApiService ───────────────────────────────────────────────────────────────
@@ -348,8 +392,66 @@ class ApiService {
     await this.post<{ ok: boolean }>(ENDPOINTS.DISCOVER_PASS, { target_id: targetId })
   }
 
-  static async sendVibe(targetId: string): Promise<void> {
-    await this.post<{ ok: boolean }>(ENDPOINTS.VIBES, { target_id: targetId })
+  static async sendVibe(targetId: string, message: string): Promise<{ conversation_id: string | null }> {
+    return this.post<{ ok: boolean; conversation_id: string | null }>(ENDPOINTS.VIBES, { target_id: targetId, message })
+  }
+
+  static async respondToVibe(vibeId: string, action: 'accept' | 'pass', icebreaker?: string): Promise<{ status: string; conversation_id?: string }> {
+    return this.patch<{ ok: boolean; status: string; conversation_id?: string }>(
+      `${ENDPOINTS.VIBES}/${vibeId}`,
+      { action, icebreaker },
+    )
+  }
+
+  static async getReceivedVibes(): Promise<VybeRequest[]> {
+    return this.get<VybeRequest[]>(ENDPOINTS.VIBES_RECEIVED)
+  }
+
+  // ── Chat ───────────────────────────────────────────────────────────────────
+
+  static async getConversations(): Promise<{ pending: Conversation[]; active: Conversation[]; locked: Conversation[] }> {
+    return this.get(ENDPOINTS.CONVERSATIONS)
+  }
+
+  static async getMessages(convId: string, before?: string): Promise<Message[]> {
+    const endpoint = ENDPOINTS.CONVERSATION_MESSAGES.replace(':id', convId)
+    const qs = before ? `?before=${encodeURIComponent(before)}` : ''
+    return this.get<Message[]>(`${endpoint}${qs}`)
+  }
+
+  static async sendMessage(convId: string, content: string, contentType = 'text', metadata?: object): Promise<Message> {
+    const endpoint = ENDPOINTS.CONVERSATION_MESSAGES.replace(':id', convId)
+    return this.post<Message>(endpoint, { content, content_type: contentType, metadata })
+  }
+
+  static async markRead(convId: string): Promise<void> {
+    const endpoint = ENDPOINTS.CONVERSATION_READ.replace(':id', convId)
+    await this.patch<{ ok: boolean }>(endpoint, {})
+  }
+
+  static getChatWsUrl(convId: string, accessToken: string): string {
+    return `${WS_BASE_URL}/ws/chat/${convId}?token=${accessToken}`
+  }
+
+  // ── Block / Report ─────────────────────────────────────────────────────────
+
+  static async blockUser(userId: string): Promise<void> {
+    const endpoint = ENDPOINTS.BLOCK_USER.replace(':id', userId)
+    await this.post<{ ok: boolean }>(endpoint, {})
+  }
+
+  static async unblockUser(userId: string): Promise<void> {
+    const endpoint = ENDPOINTS.BLOCK_USER.replace(':id', userId)
+    await this.delete<{ ok: boolean }>(endpoint)
+  }
+
+  static async getBlockedUsers(): Promise<BlockedUser[]> {
+    return this.get<BlockedUser[]>(ENDPOINTS.BLOCKED_LIST)
+  }
+
+  static async reportUser(userId: string, reason: string): Promise<void> {
+    const endpoint = ENDPOINTS.REPORT_USER.replace(':id', userId)
+    await this.post<{ ok: boolean }>(endpoint, { reason })
   }
 
   // ── Events ─────────────────────────────────────────────────────────────────

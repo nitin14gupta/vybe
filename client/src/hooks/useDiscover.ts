@@ -14,6 +14,7 @@ export function useDiscover() {
   const [error, setError] = useState<string | null>(null)
   const [currentIdx, setCurrentIdx] = useState(0)
   const [filters, setFiltersState] = useState<DiscoverFilters>({})
+  const [pendingVybe, setPendingVybe] = useState<DiscoverUser | null>(null)
 
   const load = useCallback(async (f: DiscoverFilters = {}) => {
     setLoading(true)
@@ -48,12 +49,23 @@ export function useDiscover() {
     if (userId) ApiService.followUser(userId).catch(() => {})
   }, [])
 
-  const handleVybe = useCallback((userId: string) => {
+  // Opens the vybe modal — does NOT advance the card, does NOT call API yet
+  const handleVybe = useCallback((user: DiscoverUser) => {
+    setPendingVybe(user)
+  }, [])
+
+  // Called when user submits message in the modal
+  const sendVybe = useCallback((message: string) => {
+    if (!pendingVybe) return
+    const userId = pendingVybe.id
+    setPendingVybe(null)
     advance()
-    if (userId) {
-      ApiService.sendVibe(userId).catch(() => {})
-      ApiService.followUser(userId).catch(() => {})
-    }
+    if (userId) ApiService.sendVibe(userId, message).catch(() => {})
+  }, [pendingVybe])
+
+  // Called when user closes modal without sending
+  const dismissVybe = useCallback(() => {
+    setPendingVybe(null)
   }, [])
 
   const handleStar = useCallback((userId: string) => {
@@ -74,10 +86,13 @@ export function useDiscover() {
     activeUser: users[currentIdx] ?? null,
     nextUser: users[currentIdx + 1] ?? null,
     backUser: users[currentIdx + 2] ?? null,
+    pendingVybe,
     handlePass,
     handleFollow,
     handleVybe,
     handleStar,
+    sendVybe,
+    dismissVybe,
     reload: () => load(filters),
   }
 }

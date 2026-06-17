@@ -365,7 +365,7 @@ export default function CreateScreen() {
           style={[styles.textInput, styles.textArea]}
           value={form.rules}
           onChangeText={(v) => set("rules", v.slice(0, 200))}
-          placeholder="No shoes inside, BYO drinks..."
+          placeholder="No shoes inside, BYO food..."
           placeholderTextColor={Colors.inkDisabled}
           multiline
           maxLength={200}

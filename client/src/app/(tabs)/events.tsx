@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useState } from "react";
 import {
+  BackHandler,
   Dimensions,
   FlatList,
   Pressable,
@@ -9,19 +10,21 @@ import {
   Text,
   View,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { EventsMapView } from "@/components/maps";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { Flame, List, Map, Plus } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
-import { AppHeader, HeaderIconBtn, Screen } from "@/components/ui";
 import { Colors, FontFamily } from "@/constants";
 import { useEvents } from "@/hooks/useEvents";
 import type { EventSummary } from "@/api/apiService";
 
 const { width: W } = Dimensions.get("window");
-const CARD_W = 280;
-const CARD_MARGIN = 12;
+const CARD_W = 268;
+const CARD_MARGIN = 10;
+const PREVIEW_MAX = 8;
+const LIST_PAGE = 8;
 
 const EVENT_EMOJIS: Record<string, string> = {
   house_party: "🎉",
@@ -43,10 +46,8 @@ const FILTER_CHIPS = [
   { key: "game_night", label: "Games" },
 ];
 
-
 function formatDate(iso: string | null | undefined) {
   if (!iso) return "Date TBC";
-  // PostgreSQL may return "2025-06-18 10:00:00+00" — replace space with T for reliable parsing
   const d = new Date(iso.replace(" ", "T"));
   if (isNaN(d.getTime())) return "Date TBC";
   return d.toLocaleDateString("en-IN", {
@@ -62,7 +63,7 @@ function formatPrice(price: number, isFree: boolean) {
   return `₹${price}`;
 }
 
-// ── Preview card (map bottom scroll) ────────────────────────────────────────
+// ── Preview card (map mode bottom strip) ────────────────────────────────────
 
 function PreviewCard({
   event,
@@ -81,36 +82,21 @@ function PreviewCard({
     >
       <View style={styles.previewImageWrap}>
         {cover ? (
-          <Image
-            source={{ uri: cover }}
-            style={styles.previewImage}
-            contentFit="cover"
-          />
+          <Image source={{ uri: cover }} style={styles.previewImage} contentFit="cover" />
         ) : (
-          <View style={[styles.previewImage, styles.previewImagePlaceholder]}>
-            <Text style={styles.eventEmoji}>
-              {EVENT_EMOJIS[event.event_type] ?? "🔥"}
-            </Text>
+          <View style={[styles.previewImage, styles.previewPlaceholder]}>
+            <Text style={styles.eventEmoji}>{EVENT_EMOJIS[event.event_type] ?? "🔥"}</Text>
           </View>
         )}
         <View style={styles.previewPriceBadge}>
-          <Text
-            style={[
-              styles.previewPriceText,
-              event.is_free && { color: Colors.accentGreen },
-            ]}
-          >
+          <Text style={[styles.previewPriceText, event.is_free && { color: Colors.accentGreen }]}>
             {formatPrice(event.price_inr, event.is_free)}
           </Text>
         </View>
       </View>
       <View style={styles.previewBody}>
-        <Text style={styles.previewTitle} numberOfLines={2}>
-          {event.title}
-        </Text>
-        <Text style={styles.previewMeta} numberOfLines={1}>
-          {formatDate(event.date_time)}
-        </Text>
+        <Text style={styles.previewTitle} numberOfLines={2}>{event.title}</Text>
+        <Text style={styles.previewMeta} numberOfLines={1}>{formatDate(event.date_time)}</Text>
         {event.distance_km != null && (
           <Text style={styles.previewDist}>{event.distance_km} km away</Text>
         )}
@@ -119,62 +105,45 @@ function PreviewCard({
   );
 }
 
+// "N more events" tail card in preview strip
+function MoreCard({ count, onPress }: { count: number; onPress: () => void }) {
+  return (
+    <Pressable style={styles.moreCard} onPress={onPress}>
+      <Text style={styles.moreCount}>+{count}</Text>
+      <Text style={styles.moreLabel}>more{"\n"}events</Text>
+    </Pressable>
+  );
+}
+
 // ── List event card ──────────────────────────────────────────────────────────
 
-function EventCard({
-  event,
-  onPress,
-}: {
-  event: EventSummary;
-  onPress: () => void;
-}) {
+function EventCard({ event, onPress }: { event: EventSummary; onPress: () => void }) {
   const cover = event.cover_photos?.[0]?.url;
   const spotsLow = event.spots_left <= 10;
   return (
     <Pressable style={styles.listCard} onPress={onPress}>
       <View style={styles.listImageWrap}>
         {cover ? (
-          <Image
-            source={{ uri: cover }}
-            style={styles.listImage}
-            contentFit="cover"
-          />
+          <Image source={{ uri: cover }} style={styles.listImage} contentFit="cover" />
         ) : (
-          <View style={[styles.listImage, styles.listImagePlaceholder]}>
-            <Text style={{ fontSize: 32 }}>
-              {EVENT_EMOJIS[event.event_type] ?? "🔥"}
-            </Text>
+          <View style={[styles.listImage, styles.listPlaceholder]}>
+            <Text style={{ fontSize: 30 }}>{EVENT_EMOJIS[event.event_type] ?? "🔥"}</Text>
           </View>
         )}
-        <View
-          style={[
-            styles.listPriceBadge,
-            event.is_free && styles.listPriceBadgeFree,
-          ]}
-        >
-          <Text style={styles.listPriceText}>
-            {formatPrice(event.price_inr, event.is_free)}
-          </Text>
+        <View style={[styles.listPriceBadge, event.is_free && styles.listPriceBadgeFree]}>
+          <Text style={styles.listPriceText}>{formatPrice(event.price_inr, event.is_free)}</Text>
         </View>
       </View>
       <View style={styles.listBody}>
-        <Text style={styles.listTitle} numberOfLines={2}>
-          {event.title}
-        </Text>
+        <Text style={styles.listTitle} numberOfLines={2}>{event.title}</Text>
         <Text style={styles.listMeta}>{formatDate(event.date_time)}</Text>
         {event.location_name ? (
-          <Text style={styles.listLocation} numberOfLines={1}>
-            📍 {event.location_name}
-          </Text>
+          <Text style={styles.listLocation} numberOfLines={1}>📍 {event.location_name}</Text>
         ) : null}
         {event.distance_km != null && (
           <Text style={styles.listDist}>{event.distance_km} km away</Text>
         )}
-        {spotsLow && (
-          <Text style={styles.listSpotsLow}>
-            Only {event.spots_left} spots left!
-          </Text>
-        )}
+        {spotsLow && <Text style={styles.listSpotsLow}>Only {event.spots_left} spots left!</Text>}
       </View>
     </Pressable>
   );
@@ -185,11 +154,22 @@ function EventCard({
 export default function EventsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { events, loading, filters, setFilter, reload, loadInBounds, userLat, userLng } =
-    useEvents();
+  const { events, loading, filters, setFilter, reload, loadInBounds, userLat, userLng } = useEvents();
   const [viewMode, setViewMode] = useState<"map" | "list">("map");
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
+  const [listCount, setListCount] = useState(LIST_PAGE);
   const previewListRef = useRef<FlatList>(null);
+
+  // Events tab back → navigate to discover tab
+  useFocusEffect(
+    useCallback(() => {
+      const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+        router.navigate("/(tabs)/");
+        return true;
+      });
+      return () => sub.remove();
+    }, []),
+  );
 
   const activeChip = filters.category
     ? filters.category
@@ -225,212 +205,216 @@ export default function EventsScreen() {
     }
   };
 
-  const handleMarkerPress = useCallback((ev: EventSummary, idx: number) => {
-    setActiveEventId(ev.id);
-    previewListRef.current?.scrollToIndex({
-      index: idx,
-      animated: true,
-      viewPosition: 0.5,
-    });
-  }, []);
+  const handleMarkerPress = useCallback(
+    (ev: EventSummary, idx: number) => {
+      setActiveEventId(ev.id);
+      const clampedIdx = Math.min(idx, PREVIEW_MAX - 1);
+      previewListRef.current?.scrollToIndex({
+        index: clampedIdx,
+        animated: true,
+        viewPosition: 0.5,
+      });
+    },
+    [],
+  );
 
   const openEvent = (id: string) => router.push(`/(events)/${id}` as any);
-
   const isEmpty = !loading && events.length === 0;
+  const previewEvents = events.slice(0, PREVIEW_MAX);
+  const extraCount = events.length - PREVIEW_MAX;
 
-  // ── Header ──
-
-  const toggleEl = (
+  // Shared toggle pill used in both map and list header
+  const togglePill = (
     <View style={styles.togglePill}>
       <Pressable
         onPress={() => setViewMode("map")}
         style={[styles.toggleBtn, viewMode === "map" && styles.toggleBtnActive]}
       >
-        <Map
-          size={14}
-          color={viewMode === "map" ? "#fff" : Colors.inkSecondary}
-          strokeWidth={2}
-        />
-        <Text
-          style={[
-            styles.toggleLabel,
-            viewMode === "map" && styles.toggleLabelActive,
-          ]}
-        >
-          Map
-        </Text>
+        <Map size={13} color={viewMode === "map" ? "#fff" : Colors.inkSecondary} strokeWidth={2} />
+        <Text style={[styles.toggleLabel, viewMode === "map" && styles.toggleLabelActive]}>Map</Text>
       </Pressable>
       <Pressable
         onPress={() => setViewMode("list")}
-        style={[
-          styles.toggleBtn,
-          viewMode === "list" && styles.toggleBtnActive,
-        ]}
+        style={[styles.toggleBtn, viewMode === "list" && styles.toggleBtnActive]}
       >
-        <List
-          size={14}
-          color={viewMode === "list" ? "#fff" : Colors.inkSecondary}
-          strokeWidth={2}
-        />
-        <Text
-          style={[
-            styles.toggleLabel,
-            viewMode === "list" && styles.toggleLabelActive,
-          ]}
-        >
-          List
-        </Text>
+        <List size={13} color={viewMode === "list" ? "#fff" : Colors.inkSecondary} strokeWidth={2} />
+        <Text style={[styles.toggleLabel, viewMode === "list" && styles.toggleLabelActive]}>List</Text>
       </Pressable>
     </View>
   );
 
-  return (
-    <Screen top={false}>
+  // ── MAP VIEW — fullscreen ────────────────────────────────────────────────────
+
+  if (viewMode === "map") {
+    return (
       <View style={styles.root}>
-        <AppHeader
-          title="Events"
-          rightAction={
-            <HeaderIconBtn onPress={() => router.push("/(tabs)/create" as any)}>
-              <Plus size={22} color={Colors.inkPrimary} strokeWidth={2} />
-            </HeaderIconBtn>
-          }
+        {/* Full-bleed map */}
+        <EventsMapView
+          events={events}
+          userLat={userLat}
+          userLng={userLng}
+          activeEventId={activeEventId}
+          onEventSelect={handleMarkerPress}
+          onBoundsChange={loadInBounds}
+          style={{ flex: 1 }}
         />
 
-        {/* View mode toggle */}
-        <View style={styles.toggleRow}>{toggleEl}</View>
+        {/* Gradient at top so header text is readable over map tiles */}
+        <LinearGradient
+          colors={["rgba(10,10,10,0.9)", "rgba(10,10,10,0.45)", "transparent"]}
+          style={[styles.topGradient, { height: insets.top + 92 }]}
+          pointerEvents="none"
+        />
 
-        {/* MAP VIEW */}
-        {viewMode === "map" && (
-          <View style={styles.mapContainer}>
-            <EventsMapView
-              events={events}
-              userLat={userLat}
-              userLng={userLng}
-              activeEventId={activeEventId}
-              onEventSelect={handleMarkerPress}
-              onBoundsChange={loadInBounds}
-            />
+        {/* Floating header */}
+        <View style={[styles.floatHeader, { paddingTop: insets.top + 6 }]} pointerEvents="box-none">
+          <Text style={styles.floatTitle}>Events</Text>
+          <View style={styles.floatActions}>
+            {togglePill}
+            <Pressable
+              style={styles.addBtn}
+              onPress={() => router.push("/(tabs)/create" as any)}
+              hitSlop={8}
+            >
+              <Plus size={18} color="#fff" strokeWidth={2.5} />
+            </Pressable>
+          </View>
+        </View>
 
-            {isEmpty && (
-              <View style={styles.mapEmpty}>
-                <View style={styles.mapEmptyCard}>
-                  <Flame
-                    size={28}
-                    color={Colors.brandOrange}
-                    strokeWidth={1.5}
-                  />
-                  <Text style={styles.mapEmptyTitle}>No events nearby</Text>
-                  <Pressable
-                    onPress={() => router.push("/(tabs)/create" as any)}
-                    style={styles.mapEmptyCta}
-                  >
-                    <Text style={styles.mapEmptyCtaText}>Create one</Text>
-                  </Pressable>
-                </View>
-              </View>
-            )}
-
-            {/* Preview cards strip */}
-            {!isEmpty && (
-              <View
-                style={[
-                  styles.previewStrip,
-                  { paddingBottom: insets.bottom + 8 },
-                ]}
+        {/* No events overlay */}
+        {isEmpty && (
+          <View style={styles.mapEmpty} pointerEvents="box-none">
+            <View style={styles.mapEmptyCard}>
+              <Flame size={28} color={Colors.brandOrange} strokeWidth={1.5} />
+              <Text style={styles.mapEmptyTitle}>No events nearby</Text>
+              <Pressable
+                onPress={() => router.push("/(tabs)/create" as any)}
+                style={styles.mapEmptyCta}
               >
-                <FlatList
-                  ref={previewListRef}
-                  data={events}
-                  horizontal
-                  keyExtractor={(e) => e.id}
-                  showsHorizontalScrollIndicator={false}
-                  snapToInterval={CARD_W + CARD_MARGIN}
-                  decelerationRate="fast"
-                  contentContainerStyle={{ paddingHorizontal: 16 }}
-                  ItemSeparatorComponent={() => (
-                    <View style={{ width: CARD_MARGIN }} />
-                  )}
-                  onScrollToIndexFailed={() => {}}
-                  renderItem={({ item }) => (
-                    <PreviewCard
-                      event={item}
-                      active={item.id === activeEventId}
-                      onPress={() => openEvent(item.id)}
-                    />
-                  )}
-                />
-              </View>
-            )}
+                <Text style={styles.mapEmptyCtaText}>Create one</Text>
+              </Pressable>
+            </View>
           </View>
         )}
 
-        {/* LIST VIEW */}
-        {viewMode === "list" && (
-          <View style={{ flex: 1 }}>
-            {/* Filter chips */}
-            <ScrollView
+        {/* Preview strip — bottom frosted bar */}
+        {!isEmpty && (
+          <View style={[styles.previewStrip, { paddingBottom: Math.max(insets.bottom, 8) + 6 }]}>
+            <FlatList
+              ref={previewListRef}
+              data={previewEvents}
               horizontal
+              keyExtractor={(e) => e.id}
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.chipsRow}
-            >
-              {FILTER_CHIPS.map((chip) => (
-                <Pressable
-                  key={chip.key}
-                  onPress={() => handleChip(chip.key)}
-                  style={[
-                    styles.filterChip,
-                    activeChip === chip.key && styles.filterChipActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      activeChip === chip.key && styles.filterChipTextActive,
-                    ]}
-                  >
-                    {chip.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-
-            {isEmpty ? (
-              <View style={styles.listEmpty}>
-                <Flame size={48} color={Colors.inkDisabled} strokeWidth={1.2} />
-                <Text style={styles.listEmptyTitle}>No events nearby yet</Text>
-                <Text style={styles.listEmptySub}>
-                  Be the first to host one
-                </Text>
-                <Pressable
-                  onPress={() => router.push("/(tabs)/create" as any)}
-                  style={styles.listEmptyCta}
-                >
-                  <Plus size={16} color={Colors.brandOrange} />
-                  <Text style={styles.listEmptyCtaText}>Create Event</Text>
-                </Pressable>
-              </View>
-            ) : (
-              <FlatList
-                data={events}
-                keyExtractor={(e) => e.id}
-                contentContainerStyle={{ padding: 16, gap: 12 }}
-                showsVerticalScrollIndicator={false}
-                refreshControl={
-                  <RefreshControl
-                    refreshing={loading}
-                    onRefresh={reload}
-                    tintColor={Colors.brandOrange}
-                  />
-                }
-                renderItem={({ item }) => (
-                  <EventCard event={item} onPress={() => openEvent(item.id)} />
-                )}
-              />
-            )}
+              snapToInterval={CARD_W + CARD_MARGIN}
+              decelerationRate="fast"
+              contentContainerStyle={{ paddingHorizontal: 14, gap: CARD_MARGIN }}
+              onScrollToIndexFailed={() => {}}
+              ListFooterComponent={
+                extraCount > 0 ? (
+                  <MoreCard count={extraCount} onPress={() => setViewMode("list")} />
+                ) : null
+              }
+              renderItem={({ item }) => (
+                <PreviewCard
+                  event={item}
+                  active={item.id === activeEventId}
+                  onPress={() => openEvent(item.id)}
+                />
+              )}
+            />
           </View>
         )}
       </View>
-    </Screen>
+    );
+  }
+
+  // ── LIST VIEW ────────────────────────────────────────────────────────────────
+
+  const listEvents = events.slice(0, listCount);
+  const hasMore = events.length > listCount;
+
+  return (
+    <View style={styles.root}>
+      {/* Header */}
+      <View style={[styles.listHeader, { paddingTop: insets.top + 6 }]}>
+        <Text style={styles.listHeaderTitle}>Events</Text>
+        <View style={styles.floatActions}>
+          {togglePill}
+          <Pressable
+            style={styles.addBtn}
+            onPress={() => router.push("/(tabs)/create" as any)}
+            hitSlop={8}
+          >
+            <Plus size={18} color="#fff" strokeWidth={2.5} />
+          </Pressable>
+        </View>
+      </View>
+
+      {/* Filter chips */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipsRow}
+      >
+        {FILTER_CHIPS.map((chip) => (
+          <Pressable
+            key={chip.key}
+            onPress={() => handleChip(chip.key)}
+            style={[styles.filterChip, activeChip === chip.key && styles.filterChipActive]}
+          >
+            <Text
+              style={[styles.filterChipText, activeChip === chip.key && styles.filterChipTextActive]}
+            >
+              {chip.label}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+
+      {/* List */}
+      {isEmpty ? (
+        <View style={styles.listEmpty}>
+          <Flame size={48} color={Colors.inkDisabled} strokeWidth={1.2} />
+          <Text style={styles.listEmptyTitle}>No events nearby yet</Text>
+          <Text style={styles.listEmptySub}>Be the first to host one</Text>
+          <Pressable
+            onPress={() => router.push("/(tabs)/create" as any)}
+            style={styles.listEmptyCta}
+          >
+            <Plus size={16} color={Colors.brandOrange} />
+            <Text style={styles.listEmptyCtaText}>Create Event</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <FlatList
+          data={listEvents}
+          keyExtractor={(e) => e.id}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={loading} onRefresh={reload} tintColor={Colors.brandOrange} />
+          }
+          ListFooterComponent={
+            hasMore ? (
+              <Pressable
+                style={styles.loadMoreBtn}
+                onPress={() => setListCount((c) => c + LIST_PAGE)}
+              >
+                <Text style={styles.loadMoreText}>
+                  Load {Math.min(events.length - listCount, LIST_PAGE)} more events
+                </Text>
+              </Pressable>
+            ) : events.length > LIST_PAGE ? (
+              <Text style={styles.listEndText}>All {events.length} events shown</Text>
+            ) : null
+          }
+          renderItem={({ item }) => (
+            <EventCard event={item} onPress={() => openEvent(item.id)} />
+          )}
+        />
+      )}
+    </View>
   );
 }
 
@@ -439,58 +423,65 @@ export default function EventsScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
 
-  toggleRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    paddingVertical: 8,
+  // Map mode — floating header
+  topGradient: { position: "absolute", top: 0, left: 0, right: 0 },
+  floatHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
     paddingHorizontal: 16,
-    backgroundColor: Colors.background,
+    paddingBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
+  floatTitle: {
+    fontFamily: FontFamily.headingBold,
+    fontSize: 22,
+    color: "#fff",
+    letterSpacing: -0.3,
+  },
+  floatActions: { flexDirection: "row", alignItems: "center", gap: 8 },
+  addBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: Colors.brandOrange,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  // Toggle pill (shared map + list)
   togglePill: {
     flexDirection: "row",
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderRadius: 10,
     padding: 3,
     gap: 2,
   },
   toggleBtn: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-    borderRadius: 10,
-    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 4,
   },
   toggleBtnActive: { backgroundColor: Colors.brandOrange },
-  toggleLabel: {
-    fontFamily: FontFamily.bodyMedium,
-    fontSize: 13,
-    color: Colors.inkSecondary,
-  },
+  toggleLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.inkSecondary },
   toggleLabelActive: { color: "#fff", fontFamily: FontFamily.bodySemiBold },
 
-  // Map
-  mapContainer: { flex: 1 },
-  mapPin: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.surface,
-    borderWidth: 2,
-    borderColor: Colors.brandOrange,
+  // Map empty state
+  mapEmpty: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: "center",
     justifyContent: "center",
-    elevation: 4,
   },
-  mapPinActive: {
-    backgroundColor: Colors.brandOrange,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-  },
-  mapPinEmoji: { fontSize: 20 },
-
-  mapEmpty: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center" },
   mapEmptyCard: {
     backgroundColor: Colors.surface,
     borderRadius: 20,
@@ -499,11 +490,7 @@ const styles = StyleSheet.create({
     gap: 10,
     marginHorizontal: 40,
   },
-  mapEmptyTitle: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 16,
-    color: Colors.inkPrimary,
-  },
+  mapEmptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
   mapEmptyCta: {
     backgroundColor: Colors.brandOrange,
     paddingHorizontal: 20,
@@ -511,72 +498,108 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginTop: 4,
   },
-  mapEmptyCtaText: {
-    color: "#fff",
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 14,
-  },
+  mapEmptyCtaText: { color: "#fff", fontFamily: FontFamily.bodySemiBold, fontSize: 14 },
 
+  // Preview strip
   previewStrip: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    paddingTop: 8,
-    backgroundColor: "rgba(17,17,17,0.85)",
+    paddingTop: 10,
+    backgroundColor: "rgba(12,12,12,0.82)",
   },
   previewCard: {
     width: CARD_W,
     backgroundColor: Colors.surface,
-    borderRadius: 16,
+    borderRadius: 14,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: Colors.divider,
   },
   previewCardActive: { borderColor: Colors.brandOrange, borderWidth: 2 },
-  previewImageWrap: { height: 130 },
+  previewImageWrap: { height: 118 },
   previewImage: { width: "100%", height: "100%" },
-  previewImagePlaceholder: {
+  previewPlaceholder: {
     backgroundColor: Colors.elevated,
     alignItems: "center",
     justifyContent: "center",
   },
-  eventEmoji: { fontSize: 36 },
+  eventEmoji: { fontSize: 34 },
   previewPriceBadge: {
     position: "absolute",
     top: 8,
     right: 8,
     backgroundColor: "rgba(17,17,17,0.85)",
-    borderRadius: 8,
-    paddingHorizontal: 8,
+    borderRadius: 7,
+    paddingHorizontal: 7,
     paddingVertical: 3,
   },
   previewPriceText: {
     color: Colors.brandOrange,
     fontFamily: FontFamily.bodySemiBold,
-    fontSize: 13,
+    fontSize: 12,
   },
-  previewBody: { padding: 12 },
+  previewBody: { padding: 10 },
   previewTitle: {
     fontFamily: FontFamily.headingBold,
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.inkPrimary,
-    marginBottom: 4,
+    marginBottom: 3,
   },
-  previewMeta: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 12,
-    color: Colors.inkSecondary,
-  },
+  previewMeta: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkSecondary },
   previewDist: {
     fontFamily: FontFamily.bodyRegular,
-    fontSize: 11,
+    fontSize: 10,
     color: Colors.inkDisabled,
     marginTop: 2,
   },
 
+  // "+N more" tail card
+  moreCard: {
+    width: 80,
+    height: "100%",
+    minHeight: 158,
+    backgroundColor: "rgba(255,107,53,0.12)",
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: Colors.brandOrange,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+  },
+  moreCount: {
+    fontFamily: FontFamily.headingBold,
+    fontSize: 22,
+    color: Colors.brandOrange,
+  },
+  moreLabel: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 12,
+    color: Colors.brandOrange,
+    textAlign: "center",
+  },
+
+  // List mode header
+  listHeader: {
+    backgroundColor: Colors.background,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.divider,
+  },
+  listHeaderTitle: {
+    fontFamily: FontFamily.headingBold,
+    fontSize: 22,
+    color: Colors.inkPrimary,
+    letterSpacing: -0.3,
+  },
+
   // Filter chips
-  chipsRow: { paddingHorizontal: 16, paddingVertical: 12, gap: 8 },
+  chipsRow: { paddingHorizontal: 16, paddingVertical: 10, gap: 8 },
   filterChip: {
     paddingHorizontal: 14,
     paddingVertical: 7,
@@ -585,18 +608,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.divider,
   },
-  filterChipActive: {
-    backgroundColor: Colors.brandOrange,
-    borderColor: Colors.brandOrange,
-  },
-  filterChipText: {
-    fontFamily: FontFamily.bodyMedium,
-    fontSize: 13,
-    color: Colors.inkSecondary,
-  },
+  filterChipActive: { backgroundColor: Colors.brandOrange, borderColor: Colors.brandOrange },
+  filterChipText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.inkSecondary },
   filterChipTextActive: { color: "#fff", fontFamily: FontFamily.bodySemiBold },
 
-  // List card
+  // List cards
+  listContent: { padding: 16, gap: 12 },
   listCard: {
     flexDirection: "row",
     backgroundColor: Colors.surface,
@@ -605,9 +622,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.divider,
   },
-  listImageWrap: { width: W * 0.38 },
+  listImageWrap: { width: W * 0.36 },
   listImage: { width: "100%", aspectRatio: 3 / 4 },
-  listImagePlaceholder: {
+  listPlaceholder: {
     backgroundColor: Colors.elevated,
     alignItems: "center",
     justifyContent: "center",
@@ -617,38 +634,22 @@ const styles = StyleSheet.create({
     bottom: 8,
     left: 8,
     backgroundColor: Colors.brandOrange,
-    borderRadius: 8,
+    borderRadius: 7,
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
   listPriceBadgeFree: { backgroundColor: Colors.accentGreen },
-  listPriceText: {
-    color: "#fff",
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 12,
-  },
-  listBody: { flex: 1, padding: 14, justifyContent: "center", gap: 4 },
+  listPriceText: { color: "#fff", fontFamily: FontFamily.bodySemiBold, fontSize: 12 },
+  listBody: { flex: 1, padding: 13, justifyContent: "center", gap: 4 },
   listTitle: {
     fontFamily: FontFamily.headingBold,
     fontSize: 15,
     color: Colors.inkPrimary,
     lineHeight: 20,
   },
-  listMeta: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 12,
-    color: Colors.inkSecondary,
-  },
-  listLocation: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 12,
-    color: Colors.inkSecondary,
-  },
-  listDist: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 11,
-    color: Colors.inkDisabled,
-  },
+  listMeta: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary },
+  listLocation: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary },
+  listDist: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled },
   listSpotsLow: {
     fontFamily: FontFamily.bodyMedium,
     fontSize: 12,
@@ -657,31 +658,35 @@ const styles = StyleSheet.create({
   },
 
   // List empty
-  listEmpty: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-  },
-  listEmptyTitle: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 20,
-    color: Colors.inkPrimary,
-  },
-  listEmptySub: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 14,
-    color: Colors.inkSecondary,
-  },
+  listEmpty: { flex: 1, alignItems: "center", justifyContent: "center", gap: 10 },
+  listEmptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary },
+  listEmptySub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary },
   listEmptyCta: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     marginTop: 8,
   },
-  listEmptyCtaText: {
-    color: Colors.brandOrange,
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 15,
+  listEmptyCtaText: { color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
+
+  // Load more / end
+  loadMoreBtn: {
+    marginTop: 8,
+    marginHorizontal: 32,
+    paddingVertical: 13,
+    backgroundColor: "rgba(255,107,53,0.1)",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,107,53,0.25)",
+    alignItems: "center",
+  },
+  loadMoreText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandOrange },
+  listEndText: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 13,
+    color: Colors.inkDisabled,
+    textAlign: "center",
+    marginTop: 12,
+    marginBottom: 24,
   },
 });

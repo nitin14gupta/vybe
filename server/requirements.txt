@@ -16,3 +16,4 @@ aiosmtplib
 pillow
 twilio
 opencv-python-headless
+redis[asyncio]

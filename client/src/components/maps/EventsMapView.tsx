@@ -145,17 +145,34 @@ function EventsMapLibre({ events, userLat, userLng, activeEventId, onEventSelect
     if (idx >= 0) onEventSelect(events[idx], idx)
   }
 
+  // Heatmap — multi-color spectrum teal→blue→purple→red→orange
+  const heatmapPaint = {
+    'heatmap-weight': 1,
+    'heatmap-radius': 60,
+    'heatmap-intensity': 1.5,
+    'heatmap-color': [
+      'interpolate', ['linear'], ['heatmap-density'],
+      0,    'rgba(0,0,0,0)',
+      0.15, 'rgba(29,233,182,0.25)',
+      0.35, 'rgba(79,195,247,0.55)',
+      0.60, 'rgba(206,147,216,0.75)',
+      0.82, 'rgba(255,82,82,0.85)',
+      1.0,  'rgba(255,107,53,0.95)',
+    ] as any,
+    'heatmap-opacity': 0.85,
+  }
+
   const circlePaint = {
-    'circle-radius': 20,
+    'circle-radius': 10,
     'circle-color': [
       'case',
       ['==', ['get', 'id'], activeEventId ?? ''],
       Colors.brandCoral,
       Colors.brandOrange,
     ] as any,
-    'circle-stroke-width': 2,
+    'circle-stroke-width': 2.5,
     'circle-stroke-color': '#fff',
-    'circle-opacity': 0.95,
+    'circle-opacity': 1,
   }
 
   const linePaint = {
@@ -187,13 +204,14 @@ function EventsMapLibre({ events, userLat, userLng, activeEventId, onEventSelect
         </GeoJSONSource>
       )}
 
+      {/* Heatmap glow layer — same data, separate source so no press fires on the glow */}
+      <GeoJSONSource id="events-heat-source" data={geojson}>
+        <Layer id="events-heatmap" type="heatmap" source="events-heat-source" paint={heatmapPaint} />
+      </GeoJSONSource>
+
+      {/* Tappable pin circles — press fires onEventSelect */}
       <GeoJSONSource id="events-source" data={geojson} onPress={handleSourcePress}>
-        <Layer
-          id="events-circles"
-          type="circle"
-          source="events-source"
-          paint={circlePaint}
-        />
+        <Layer id="events-circles" type="circle" source="events-source" paint={circlePaint} />
       </GeoJSONSource>
     </Map>
   )

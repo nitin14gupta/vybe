@@ -1,0 +1,7 @@
+services:
+  vybe-redis:
+    image: redis:alpine
+    container_name: vybe-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped

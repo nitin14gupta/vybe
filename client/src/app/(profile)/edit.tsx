@@ -7,8 +7,10 @@ import { useInterests } from '@/hooks/useInterests'
 import { useVoiceEdit } from '@/hooks/useVoiceEdit'
 import { useOnboardingStore } from '@/store/onboarding'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { useHardwareBack } from '@/hooks/useHardwareBack'
 
 export default function EditProfileScreen() {
+  useHardwareBack()
   const {
     profile, name, setName, bio, setBio, gender, setGender,
     selectedBadges, availableBadges, toggleBadge,

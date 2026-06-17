@@ -13,13 +13,15 @@ export default function OTPScreen() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+  const [attempts, setAttempts] = useState(0)
+  const tooManyAttempts = attempts >= 3
   const { handleVerifyOTP, handleSendOTP } = useAuth()
   const { seconds, isExpired, reset } = useCountdown(45)
 
   const isComplete = code.length === 6
 
   const handleVerify = async () => {
-    if (!isComplete) return
+    if (!isComplete || tooManyAttempts) return
     setLoading(true)
     setError(false)
     setErrorMsg('')
@@ -31,8 +33,14 @@ export default function OTPScreen() {
         router.replace('/(auth)/age-gate')
       }
     } catch (e: any) {
+      const next = attempts + 1
+      setAttempts(next)
       setError(true)
-      setErrorMsg(e?.response?.data?.detail || 'Incorrect code. Try again.')
+      if (next >= 3) {
+        setErrorMsg('Too many attempts — request a new code.')
+      } else {
+        setErrorMsg(e?.response?.data?.detail || 'Incorrect code. Try again.')
+      }
       setCode('')
     } finally {
       setLoading(false)
@@ -43,6 +51,9 @@ export default function OTPScreen() {
     try {
       await handleSendOTP(phone)
       reset()
+      setAttempts(0)
+      setError(false)
+      setErrorMsg('')
     } catch {}
   }
 
@@ -90,7 +101,7 @@ export default function OTPScreen() {
           <PrimaryButton
             label="Continue"
             onPress={handleVerify}
-            disabled={!isComplete}
+            disabled={!isComplete || tooManyAttempts}
             loading={loading}
           />
         </View>

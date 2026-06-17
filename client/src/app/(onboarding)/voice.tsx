@@ -18,7 +18,9 @@ import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 export default function VoiceScreen() {
   const {
     isRecording,
-    seconds,
+    recordingSeconds,
+    playbackCurrent,
+    playbackTotal,
     recorded,
     uploading,
     uploadError,
@@ -52,7 +54,7 @@ export default function VoiceScreen() {
     opacity: isRecording ? 0.4 : 0,
   }))
 
-  const fmt = (s: number) => `0:${String(s).padStart(2, '0')}`
+  const fmt = (s: number) => `0:${String(Math.max(0, s)).padStart(2, '0')}`
 
   return (
     <Screen>
@@ -79,7 +81,7 @@ export default function VoiceScreen() {
         </View>
 
         <Text style={[styles.timer, !isRecording && styles.timerMuted]}>
-          {fmt(seconds)}{' '}
+          {fmt(recordingSeconds)}{' '}
           <Text style={styles.timerMax}>/ 0:30</Text>
         </Text>
 
@@ -96,7 +98,11 @@ export default function VoiceScreen() {
               }
             </Pressable>
             <PlaybackWave isActive={playing} compact />
-            <Text style={styles.playbackTime}>{fmt(seconds)}</Text>
+            {/* current position / total duration */}
+            <Text style={styles.playbackTime}>
+              {fmt(playbackCurrent)}
+              <Text style={styles.playbackDuration}> / {fmt(playbackTotal)}</Text>
+            </Text>
           </View>
         )}
 
@@ -188,8 +194,13 @@ const styles = StyleSheet.create({
   playback: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 12,
-    width: '80%',
+  },
+  playbackDuration: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 11,
+    color: Colors.inkDisabled,
   },
   playBtn: {
     width: 40,

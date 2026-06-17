@@ -26,7 +26,11 @@ export function useVoice() {
   const playerStatus = useAudioPlayerStatus(player)
 
   const isRecording = recorderState.isRecording
-  const seconds = Math.round((recorderState.durationMillis ?? 0) / 1000)
+  // During recording: live elapsed seconds
+  const recordingSeconds = Math.round((recorderState.durationMillis ?? 0) / 1000)
+  // During playback: current position + total duration from player
+  const playbackCurrent = Math.round((playerStatus.currentTime ?? 0))
+  const playbackTotal = Math.round((playerStatus.duration ?? 0))
   const playing = playerStatus.playing
 
   useEffect(() => {
@@ -35,8 +39,8 @@ export function useVoice() {
   }, [])
 
   useEffect(() => {
-    if (isRecording && seconds >= MAX_SECONDS) stopRecording()
-  }, [seconds, isRecording])
+    if (isRecording && recordingSeconds >= MAX_SECONDS) stopRecording()
+  }, [recordingSeconds, isRecording])
 
   const stopRecording = async () => {
     await audioRecorder.stop()
@@ -92,7 +96,9 @@ export function useVoice() {
 
   return {
     isRecording,
-    seconds,
+    recordingSeconds,
+    playbackCurrent,
+    playbackTotal,
     recorded,
     uploading,
     uploadError,

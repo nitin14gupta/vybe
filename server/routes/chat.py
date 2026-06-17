@@ -1,0 +1,377 @@
+import asyncio
+import json
+import os
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel
+from typing import Optional
+from middleware.auth import get_current_user
+from db.config import get_db
+from jose import jwt, JWTError
+
+router = APIRouter(tags=["chat"])
+
+JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-change-in-production")
+JWT_ALGORITHM = "HS256"
+
+# ── Redis helpers ─────────────────────────────────────────────────────────────
+
+_redis = None
+
+async def _get_redis():
+    global _redis
+    if _redis is None:
+        try:
+            import redis.asyncio as aioredis
+            _redis = aioredis.from_url("redis://localhost:6379", decode_responses=True)
+            await _redis.ping()
+        except Exception:
+            _redis = None
+    return _redis
+
+
+async def _publish(channel: str, data: dict) -> None:
+    r = await _get_redis()
+    if r:
+        try:
+            await r.publish(channel, json.dumps(data))
+        except Exception:
+            pass
+
+
+# ── Auth helper for WebSocket ─────────────────────────────────────────────────
+
+def _user_from_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id: str = payload.get("sub")
+        if not user_id:
+            raise ValueError("no sub")
+        return {"id": user_id}
+    except (JWTError, Exception):
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
+# ── Pydantic models ───────────────────────────────────────────────────────────
+
+class SendMessageRequest(BaseModel):
+    content: Optional[str] = None
+    content_type: str = "text"
+    metadata: Optional[dict] = None
+
+
+# ── Helper: verify conversation participant ───────────────────────────────────
+
+def _get_conversation(cur, conv_id: str, user_id: str) -> dict:
+    cur.execute(
+        """
+        SELECT id::text, user1_id::text, user2_id::text, status
+        FROM conversations
+        WHERE id = %s::uuid AND (user1_id = %s::uuid OR user2_id = %s::uuid)
+        """,
+        (conv_id, user_id, user_id),
+    )
+    row = cur.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    return dict(row)
+
+
+# ── REST endpoints ────────────────────────────────────────────────────────────
+
+@router.get("/chat/conversations")
+def list_conversations(current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    with get_db() as (cur, _):
+        cur.execute(
+            """
+            SELECT
+                c.id::text,
+                c.status,
+                c.last_message_at,
+                c.user1_id::text,
+                c.user2_id::text,
+                -- Partner info
+                CASE WHEN c.user1_id = %s::uuid THEN c.user2_id ELSE c.user1_id END AS partner_id,
+                CASE WHEN c.user1_id = %s::uuid THEN u2.name ELSE u1.name END AS partner_name,
+                CASE WHEN c.user1_id = %s::uuid THEN p2.url ELSE p1.url END AS partner_avatar,
+                -- Last message
+                m.content AS last_message,
+                m.content_type AS last_message_type,
+                m.sender_id::text AS last_sender_id,
+                m.sent_at AS last_sent_at,
+                -- Unread count (messages not read by current user sent by partner)
+                (
+                    SELECT COUNT(*) FROM messages msg
+                    WHERE msg.conversation_id = c.id
+                      AND msg.sender_id != %s::uuid
+                      AND msg.read_at IS NULL
+                )::int AS unread_count
+            FROM conversations c
+            JOIN users u1 ON u1.id = c.user1_id
+            JOIN users u2 ON u2.id = c.user2_id
+            LEFT JOIN LATERAL (
+                SELECT url FROM user_photos
+                WHERE user_id = c.user1_id ORDER BY position LIMIT 1
+            ) p1 ON true
+            LEFT JOIN LATERAL (
+                SELECT url FROM user_photos
+                WHERE user_id = c.user2_id ORDER BY position LIMIT 1
+            ) p2 ON true
+            LEFT JOIN LATERAL (
+                SELECT content, content_type, sender_id, sent_at FROM messages
+                WHERE conversation_id = c.id ORDER BY sent_at DESC LIMIT 1
+            ) m ON true
+            WHERE (c.user1_id = %s::uuid OR c.user2_id = %s::uuid)
+            ORDER BY COALESCE(c.last_message_at, c.created_at) DESC
+            """,
+            (uid, uid, uid, uid, uid, uid),
+        )
+        rows = cur.fetchall()
+
+    all_convs = []
+    for r in rows:
+        d = dict(r)
+        d["partner_id"] = str(d["partner_id"])
+        all_convs.append(d)
+
+    pending = [c for c in all_convs if c["status"] == "pending" and c["last_sender_id"] != uid]
+    active = [c for c in all_convs if c["status"] == "active"]
+    locked = [c for c in all_convs if c["status"] == "pending" and c["last_sender_id"] == uid]
+
+    return {"pending": pending, "active": active, "locked": locked}
+
+
+@router.get("/chat/conversations/{conv_id}/messages")
+def list_messages(
+    conv_id: str,
+    before: Optional[str] = Query(None),
+    limit: int = Query(50, le=100),
+    current_user: dict = Depends(get_current_user),
+):
+    with get_db() as (cur, _):
+        conv = _get_conversation(cur, conv_id, current_user["id"])
+        if conv["status"] != "active":
+            raise HTTPException(status_code=403, detail="Conversation not yet active")
+
+        if before:
+            cur.execute(
+                """
+                SELECT id::text, conversation_id::text, sender_id::text,
+                       content, content_type, metadata, sent_at, read_at
+                FROM messages
+                WHERE conversation_id = %s::uuid AND sent_at < %s
+                ORDER BY sent_at DESC
+                LIMIT %s
+                """,
+                (conv_id, before, limit),
+            )
+        else:
+            cur.execute(
+                """
+                SELECT id::text, conversation_id::text, sender_id::text,
+                       content, content_type, metadata, sent_at, read_at
+                FROM messages
+                WHERE conversation_id = %s::uuid
+                ORDER BY sent_at DESC
+                LIMIT %s
+                """,
+                (conv_id, limit),
+            )
+        rows = cur.fetchall()
+    return [dict(r) for r in rows]
+
+
+@router.patch("/chat/conversations/{conv_id}/read")
+def mark_read(conv_id: str, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    with get_db() as (cur, conn):
+        _get_conversation(cur, conv_id, uid)
+        cur.execute(
+            """
+            UPDATE messages SET read_at = NOW()
+            WHERE conversation_id = %s::uuid
+              AND sender_id != %s::uuid
+              AND read_at IS NULL
+            """,
+            (conv_id, uid),
+        )
+        conn.commit()
+    return {"ok": True}
+
+
+@router.post("/chat/conversations/{conv_id}/messages", status_code=201)
+def send_message_rest(
+    conv_id: str,
+    body: SendMessageRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    uid = current_user["id"]
+    with get_db() as (cur, conn):
+        conv = _get_conversation(cur, conv_id, uid)
+        if conv["status"] != "active":
+            raise HTTPException(status_code=403, detail="Conversation not yet active")
+
+        cur.execute(
+            """
+            INSERT INTO messages (conversation_id, sender_id, content, content_type, metadata)
+            VALUES (%s::uuid, %s::uuid, %s, %s, %s)
+            RETURNING id::text, sender_id::text, content, content_type, metadata, sent_at
+            """,
+            (conv_id, uid, body.content, body.content_type, json.dumps(body.metadata) if body.metadata else None),
+        )
+        msg = dict(cur.fetchone())
+        cur.execute(
+            "UPDATE conversations SET last_message_at = NOW() WHERE id = %s::uuid",
+            (conv_id,),
+        )
+        conn.commit()
+
+    # Publish to Redis for real-time delivery
+    asyncio.create_task(
+        _publish(f"conv:{conv_id}", {"type": "message", **msg, "sent_at": msg["sent_at"].isoformat()})
+    )
+    return msg
+
+
+# ── WebSocket ─────────────────────────────────────────────────────────────────
+
+@router.websocket("/ws/chat/{conv_id}")
+async def chat_websocket(
+    conv_id: str,
+    websocket: WebSocket,
+    token: str = Query(...),
+):
+    # Auth
+    try:
+        user = _user_from_token(token)
+    except HTTPException:
+        await websocket.close(code=4001)
+        return
+
+    uid = user["id"]
+
+    # Verify participant + active status
+    try:
+        with get_db() as (cur, _):
+            cur.execute(
+                """
+                SELECT id::text, status FROM conversations
+                WHERE id = %s::uuid AND (user1_id = %s::uuid OR user2_id = %s::uuid)
+                  AND status = 'active'
+                """,
+                (conv_id, uid, uid),
+            )
+            if not cur.fetchone():
+                await websocket.close(code=4003)
+                return
+    except Exception:
+        await websocket.close(code=4003)
+        return
+
+    await websocket.accept()
+
+    r = await _get_redis()
+
+    async def redis_listener():
+        if not r:
+            return
+        try:
+            async with r.pubsub() as ps:
+                await ps.subscribe(f"conv:{conv_id}")
+                async for raw in ps.listen():
+                    if raw["type"] != "message":
+                        continue
+                    data = json.loads(raw["data"])
+                    # Don't echo back to sender
+                    if data.get("sender_id") != uid:
+                        try:
+                            await websocket.send_text(json.dumps(data))
+                        except Exception:
+                            break
+        except Exception:
+            pass
+
+    listener_task = asyncio.create_task(redis_listener())
+
+    # Mark user online
+    if r:
+        await r.set(f"online:{uid}", "1", ex=35)
+
+    try:
+        while True:
+            try:
+                raw = await asyncio.wait_for(websocket.receive_text(), timeout=25.0)
+            except asyncio.TimeoutError:
+                # Keepalive ping
+                await websocket.send_text(json.dumps({"type": "pong"}))
+                if r:
+                    await r.set(f"online:{uid}", "1", ex=35)
+                continue
+
+            data = json.loads(raw)
+            msg_type = data.get("type")
+
+            if msg_type == "ping":
+                await websocket.send_text(json.dumps({"type": "pong"}))
+                if r:
+                    await r.set(f"online:{uid}", "1", ex=35)
+
+            elif msg_type == "typing":
+                payload = {"type": "typing", "user_id": uid, "is_typing": data.get("is_typing", False)}
+                await _publish(f"conv:{conv_id}", payload)
+
+            elif msg_type == "read":
+                with get_db() as (cur, conn):
+                    cur.execute(
+                        """
+                        UPDATE messages SET read_at = NOW()
+                        WHERE conversation_id = %s::uuid
+                          AND sender_id != %s::uuid AND read_at IS NULL
+                        """,
+                        (conv_id, uid),
+                    )
+                    conn.commit()
+                await _publish(f"conv:{conv_id}", {"type": "read", "user_id": uid})
+
+            elif msg_type == "message":
+                content = data.get("content")
+                content_type = data.get("content_type", "text")
+                metadata = data.get("metadata")
+
+                with get_db() as (cur, conn):
+                    cur.execute(
+                        """
+                        INSERT INTO messages (conversation_id, sender_id, content, content_type, metadata)
+                        VALUES (%s::uuid, %s::uuid, %s, %s, %s)
+                        RETURNING id::text, sender_id::text, content, content_type, metadata, sent_at
+                        """,
+                        (conv_id, uid, content, content_type,
+                         json.dumps(metadata) if metadata else None),
+                    )
+                    msg = dict(cur.fetchone())
+                    cur.execute(
+                        "UPDATE conversations SET last_message_at = NOW() WHERE id = %s::uuid",
+                        (conv_id,),
+                    )
+                    conn.commit()
+
+                out = {
+                    "type": "message",
+                    **msg,
+                    "sent_at": msg["sent_at"].isoformat(),
+                }
+                # Echo back to sender immediately
+                await websocket.send_text(json.dumps(out))
+                # Broadcast to partner via Redis
+                await _publish(f"conv:{conv_id}", out)
+
+    except (WebSocketDisconnect, Exception):
+        pass
+    finally:
+        listener_task.cancel()
+        if r:
+            try:
+                await r.delete(f"online:{uid}")
+            except Exception:
+                pass
