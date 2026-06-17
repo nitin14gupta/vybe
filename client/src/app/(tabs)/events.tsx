@@ -1,6 +1,5 @@
 import React, { useCallback, useRef, useState } from "react";
 import {
-  Animated,
   Dimensions,
   FlatList,
   Pressable,
@@ -10,9 +9,9 @@ import {
   Text,
   View,
 } from "react-native";
-import MapView, { Marker, type Region } from "react-native-maps";
+import { EventsMapView } from "@/components/maps";
 import { useRouter } from "expo-router";
-import { Flame, List, Map, Plus, Ticket } from "lucide-react-native";
+import { Flame, List, Map, Plus } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { AppHeader, HeaderIconBtn, Screen } from "@/components/ui";
@@ -44,61 +43,6 @@ const FILTER_CHIPS = [
   { key: "game_night", label: "Games" },
 ];
 
-const DARK_MAP_STYLE = [
-  { elementType: "geometry", stylers: [{ color: "#1a1a1a" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#111111" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-  {
-    featureType: "road",
-    elementType: "geometry",
-    stylers: [{ color: "#2c2c2c" }],
-  },
-  {
-    featureType: "road",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#212121" }],
-  },
-  {
-    featureType: "road",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#9ca5b3" }],
-  },
-  {
-    featureType: "road.highway",
-    elementType: "geometry",
-    stylers: [{ color: "#3a3a3a" }],
-  },
-  {
-    featureType: "water",
-    elementType: "geometry",
-    stylers: [{ color: "#0d0d0d" }],
-  },
-  {
-    featureType: "water",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#515c6d" }],
-  },
-  {
-    featureType: "poi",
-    elementType: "geometry",
-    stylers: [{ color: "#1c1c1c" }],
-  },
-  {
-    featureType: "transit",
-    elementType: "geometry",
-    stylers: [{ color: "#2f3948" }],
-  },
-  {
-    featureType: "administrative",
-    elementType: "geometry",
-    stylers: [{ color: "#757575" }],
-  },
-  {
-    featureType: "administrative.country",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#9e9e9e" }],
-  },
-];
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -238,18 +182,11 @@ function EventCard({
 export default function EventsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { events, loading, filters, setFilter, reload, userLat, userLng } =
+  const { events, loading, filters, setFilter, reload, loadInBounds, userLat, userLng } =
     useEvents();
   const [viewMode, setViewMode] = useState<"map" | "list">("map");
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const previewListRef = useRef<FlatList>(null);
-
-  const initialRegion: Region = {
-    latitude: userLat ?? 19.076,
-    longitude: userLng ?? 72.877,
-    latitudeDelta: 0.15,
-    longitudeDelta: 0.15,
-  };
 
   const activeChip = filters.category
     ? filters.category
@@ -362,37 +299,14 @@ export default function EventsScreen() {
         {/* MAP VIEW */}
         {viewMode === "map" && (
           <View style={styles.mapContainer}>
-            <MapView
-              style={StyleSheet.absoluteFillObject}
-              initialRegion={initialRegion}
-              customMapStyle={DARK_MAP_STYLE}
-              showsUserLocation
-              showsMyLocationButton={false}
-            >
-              {events.map((ev, idx) =>
-                ev.location_lat != null && ev.location_lng != null ? (
-                  <Marker
-                    key={ev.id}
-                    coordinate={{
-                      latitude: ev.location_lat,
-                      longitude: ev.location_lng,
-                    }}
-                    onPress={() => handleMarkerPress(ev, idx)}
-                  >
-                    <View
-                      style={[
-                        styles.mapPin,
-                        ev.id === activeEventId && styles.mapPinActive,
-                      ]}
-                    >
-                      <Text style={styles.mapPinEmoji}>
-                        {EVENT_EMOJIS[ev.event_type] ?? "🔥"}
-                      </Text>
-                    </View>
-                  </Marker>
-                ) : null,
-              )}
-            </MapView>
+            <EventsMapView
+              events={events}
+              userLat={userLat}
+              userLng={userLng}
+              activeEventId={activeEventId}
+              onEventSelect={handleMarkerPress}
+              onBoundsChange={loadInBounds}
+            />
 
             {isEmpty && (
               <View style={styles.mapEmpty}>

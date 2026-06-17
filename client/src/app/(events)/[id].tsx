@@ -11,7 +11,7 @@ import {
   Text,
   View,
 } from 'react-native'
-import MapView, { Marker } from 'react-native-maps'
+import { StaticEventMap } from '@/components/maps'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Image } from 'expo-image'
@@ -39,13 +39,6 @@ const EVENT_EMOJIS: Record<string, string> = {
   other: '🔥',
 }
 
-const DARK_MAP_STYLE = [
-  { elementType: 'geometry', stylers: [{ color: '#1a1a1a' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#111111' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2c2c2c' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0d0d0d' }] },
-  { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#1c1c1c' }] },
-]
 
 function formatDateTime(iso: string) {
   const d = new Date(iso)
@@ -280,25 +273,11 @@ export default function EventDetailScreen() {
         {/* Mini map */}
         {event.location_lat != null && event.location_lng != null && (
           <View style={styles.miniMapWrap}>
-            <MapView
-              style={StyleSheet.absoluteFillObject}
-              customMapStyle={DARK_MAP_STYLE}
-              region={{
-                latitude: event.location_lat,
-                longitude: event.location_lng,
-                latitudeDelta: 0.008,
-                longitudeDelta: 0.008,
-              }}
-              scrollEnabled={false}
-              zoomEnabled={false}
-              rotateEnabled={false}
-            >
-              <Marker coordinate={{ latitude: event.location_lat, longitude: event.location_lng }}>
-                <View style={styles.miniMapPin}>
-                  <Text style={{ fontSize: 18 }}>{EVENT_EMOJIS[event.event_type] ?? '📍'}</Text>
-                </View>
-              </Marker>
-            </MapView>
+            <StaticEventMap
+              lat={event.location_lat}
+              lng={event.location_lng}
+              eventType={event.event_type}
+            />
           </View>
         )}
       </ScrollView>

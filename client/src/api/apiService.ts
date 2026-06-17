@@ -361,6 +361,10 @@ class ApiService {
     category?: string
     is_free?: boolean
     date_range?: string
+    min_lat?: number
+    max_lat?: number
+    min_lng?: number
+    max_lng?: number
   } = {}): Promise<EventSummary[]> {
     const params = new URLSearchParams()
     if (filters.lat != null) params.set('lat', String(filters.lat))
@@ -369,6 +373,10 @@ class ApiService {
     if (filters.category) params.set('category', filters.category)
     if (filters.is_free != null) params.set('is_free', String(filters.is_free))
     if (filters.date_range) params.set('date_range', filters.date_range)
+    if (filters.min_lat != null) params.set('min_lat', String(filters.min_lat))
+    if (filters.max_lat != null) params.set('max_lat', String(filters.max_lat))
+    if (filters.min_lng != null) params.set('min_lng', String(filters.min_lng))
+    if (filters.max_lng != null) params.set('max_lng', String(filters.max_lng))
     const qs = params.toString()
     return this.get<EventSummary[]>(`${ENDPOINTS.EVENTS}${qs ? '?' + qs : ''}`)
   }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import * as Location from 'expo-location'
 import ApiService, { type EventSummary } from '@/api/apiService'
+import type { MapBounds } from '@/constants'
 
 export interface EventFilters {
   category?: string
@@ -38,6 +39,28 @@ export function useEvents() {
       }
     },
     [],
+  )
+
+  // Loads events visible in the current map viewport — used by MapLibre's onRegionDidChange.
+  const loadInBounds = useCallback(
+    async (bounds: MapBounds) => {
+      setLoading(true)
+      try {
+        const result = await ApiService.getEvents({
+          ...filters,
+          min_lat: bounds.minLat,
+          max_lat: bounds.maxLat,
+          min_lng: bounds.minLng,
+          max_lng: bounds.maxLng,
+        })
+        setEvents(result)
+      } catch {
+        // silently ignore viewport reload errors
+      } finally {
+        setLoading(false)
+      }
+    },
+    [filters],
   )
 
   useEffect(() => {
@@ -80,5 +103,5 @@ export function useEvents() {
     load(filters, userLat, userLng)
   }, [filters, userLat, userLng, load])
 
-  return { events, loading, error, filters, setFilter, reload, userLat, userLng }
+  return { events, loading, error, filters, setFilter, reload, loadInBounds, userLat, userLng }
 }

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import {
   Alert,
   Dimensions,
@@ -12,7 +12,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import MapView, { type Region } from "react-native-maps";
+import { LocationPickerMap } from "@/components/maps";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
@@ -45,26 +45,6 @@ const EVENT_TYPES = [
 
 const AGE_OPTIONS: Array<18 | 21 | 25> = [18, 21, 25];
 
-const DARK_MAP_STYLE = [
-  { elementType: "geometry", stylers: [{ color: "#1a1a1a" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#111111" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-  {
-    featureType: "road",
-    elementType: "geometry",
-    stylers: [{ color: "#2c2c2c" }],
-  },
-  {
-    featureType: "water",
-    elementType: "geometry",
-    stylers: [{ color: "#0d0d0d" }],
-  },
-  {
-    featureType: "poi",
-    elementType: "geometry",
-    stylers: [{ color: "#1c1c1c" }],
-  },
-];
 
 function fmt(d: Date) {
   return d.toLocaleDateString("en-IN", {
@@ -130,8 +110,6 @@ export default function CreateScreen() {
   const dtPicker = useDateTimePicker();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const mapRef = useRef<MapView>(null);
-
   // ── Validation per step ──
 
   const validateStep = (): boolean => {
@@ -521,18 +499,12 @@ export default function CreateScreen() {
 
       {/* Map with centred pin */}
       <View style={styles.mapWrap}>
-        <MapView
-          ref={mapRef}
-          customMapStyle={DARK_MAP_STYLE}
-          initialRegion={{
-            latitude: form.locationLat ?? 19.076,
-            longitude: form.locationLng ?? 72.877,
-            latitudeDelta: 0.02,
-            longitudeDelta: 0.02,
-          }}
-          onRegionChangeComplete={(region: Region) => {
-            set("locationLat", region.latitude);
-            set("locationLng", region.longitude);
+        <LocationPickerMap
+          lat={form.locationLat ?? undefined}
+          lng={form.locationLng ?? undefined}
+          onChange={(lat, lng) => {
+            set("locationLat", lat);
+            set("locationLng", lng);
           }}
         />
         {/* Fixed centre pin */}

@@ -1,5 +1,6 @@
 export * from './colors'
 export * from './gradients'
+export * from './mapConfig'
 export * from './onboarding'
 export * from './spacing'
 export * from './typography'

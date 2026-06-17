@@ -41,6 +41,10 @@ CREATE TABLE IF NOT EXISTS public.event_attendees (
     joined_at TIMESTAMPTZ DEFAULT NOW(),
     CONSTRAINT event_attendees_unique UNIQUE (event_id, user_id)
 );
+
+CREATE INDEX IF NOT EXISTS events_location_idx
+    ON events(location_lat, location_lng)
+    WHERE location_lat IS NOT NULL;
 """
 
 
@@ -134,6 +138,10 @@ def list_events(
     category: Optional[str] = Query(default=None),
     is_free: Optional[bool] = Query(default=None),
     date_range: Optional[str] = Query(default=None),  # tonight | weekend | all
+    min_lat: Optional[float] = Query(default=None),
+    max_lat: Optional[float] = Query(default=None),
+    min_lng: Optional[float] = Query(default=None),
+    max_lng: Optional[float] = Query(default=None),
     limit: int = Query(default=30, le=50),
     current_user: dict = Depends(get_current_user),
 ):
@@ -158,7 +166,12 @@ def list_events(
     elif date_range == "weekend":
         filters.append("EXTRACT(DOW FROM e.date_time) IN (5, 6, 0)")
 
-    if lat and lng and radius_km:
+    # Viewport bounds take priority over radius — used by MapLibre's onRegionDidChange
+    if min_lat is not None and max_lat is not None and min_lng is not None and max_lng is not None:
+        filters.append("e.location_lat BETWEEN %s AND %s")
+        filters.append("e.location_lng BETWEEN %s AND %s")
+        params.extend([min_lat, max_lat, min_lng, max_lng])
+    elif lat and lng and radius_km:
         filters.append(f"""
             6371.0 * acos(LEAST(1.0,
                 cos(radians(%s)) * cos(radians(e.location_lat)) *
