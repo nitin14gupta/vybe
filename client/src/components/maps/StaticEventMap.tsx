@@ -1,7 +1,7 @@
 import React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
-import MapView, { Marker } from 'react-native-maps'
-import MapLibreGL from '@maplibre/maplibre-react-native'
+import MapView, { Marker as GoogleMarker } from 'react-native-maps'
+import { Map, Camera, Marker } from '@maplibre/maplibre-react-native'
 import { Colors } from '@/constants'
 import { MAP_PROVIDER, TILE_STYLE } from '@/constants/mapConfig'
 
@@ -47,35 +47,34 @@ export function StaticEventMap({
         zoomEnabled={false}
         rotateEnabled={false}
       >
-        <Marker coordinate={{ latitude: lat, longitude: lng }}>
+        <GoogleMarker coordinate={{ latitude: lat, longitude: lng }}>
           <View style={s.pin}>
             <Text style={{ fontSize: 18 }}>{emoji}</Text>
           </View>
-        </Marker>
+        </GoogleMarker>
       </MapView>
     )
   }
 
   return (
-    <MapLibreGL.MapView
+    <Map
       style={StyleSheet.absoluteFillObject}
-      styleURL={TILE_STYLE.dark}
-      scrollEnabled={false}
-      zoomEnabled={false}
-      rotateEnabled={false}
-      logoEnabled={false}
-      attributionEnabled={false}
+      mapStyle={TILE_STYLE.dark}
+      dragPan={false}
+      touchZoom={false}
+      touchRotate={false}
+      touchPitch={false}
+      logo={false}
+      attribution={false}
     >
-      <MapLibreGL.Camera
-        defaultSettings={{ centerCoordinate: [lng, lat], zoomLevel: 14 }}
-        animationDuration={0}
-      />
-      <MapLibreGL.PointAnnotation id="event-pin" coordinate={[lng, lat]}>
+      <Camera initialViewState={{ center: [lng, lat], zoom: 14 }} />
+      {/* Marker.lngLat = [longitude, latitude] */}
+      <Marker lngLat={[lng, lat]}>
         <View style={s.pin}>
           <Text style={{ fontSize: 18 }}>{emoji}</Text>
         </View>
-      </MapLibreGL.PointAnnotation>
-    </MapLibreGL.MapView>
+      </Marker>
+    </Map>
   )
 }
 

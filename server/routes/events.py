@@ -7,53 +7,6 @@ from db.config import get_db
 
 router = APIRouter(prefix="/events", tags=["events"])
 
-# ── DDL ──────────────────────────────────────────────────────────────────────
-
-_DDL = """
-CREATE TABLE IF NOT EXISTS public.events (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    host_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    title VARCHAR(60) NOT NULL,
-    description TEXT,
-    rules TEXT,
-    event_type TEXT NOT NULL,
-    date_time TIMESTAMPTZ NOT NULL,
-    end_time TIMESTAMPTZ,
-    capacity INT NOT NULL DEFAULT 20,
-    spots_left INT NOT NULL DEFAULT 20,
-    age_restriction INT NOT NULL DEFAULT 18,
-    location_name TEXT,
-    location_lat FLOAT,
-    location_lng FLOAT,
-    price_inr INT NOT NULL DEFAULT 0,
-    cover_photos JSONB DEFAULT '[]'::jsonb,
-    is_published BOOL DEFAULT TRUE,
-    is_cancelled BOOL DEFAULT FALSE,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS public.event_attendees (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    status TEXT NOT NULL DEFAULT 'going',
-    joined_at TIMESTAMPTZ DEFAULT NOW(),
-    CONSTRAINT event_attendees_unique UNIQUE (event_id, user_id)
-);
-
-CREATE INDEX IF NOT EXISTS events_location_idx
-    ON events(location_lat, location_lng)
-    WHERE location_lat IS NOT NULL;
-"""
-
-
-def _ensure_tables():
-    with get_db() as (cur, conn):
-        cur.execute(_DDL)
-        conn.commit()
-
-
 def _calc_age(dob: date) -> int:
     today = date.today()
     return today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
@@ -145,7 +98,6 @@ def list_events(
     limit: int = Query(default=30, le=50),
     current_user: dict = Depends(get_current_user),
 ):
-    _ensure_tables()
 
     dist_sql = _haversine_sql(lat, lng) if lat and lng else "NULL::int"
 
@@ -221,7 +173,6 @@ def list_events(
 
 @router.get("/{event_id}", response_model=EventDetail)
 def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
-    _ensure_tables()
     with get_db() as (cur, _):
         cur.execute(
             """
@@ -261,8 +212,6 @@ def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
 
 @router.post("", response_model=EventDetail, status_code=201)
 def create_event(body: CreateEventBody, current_user: dict = Depends(get_current_user)):
-    _ensure_tables()
-
     # Parse and validate date_time
     try:
         dt = datetime.fromisoformat(body.date_time.replace("Z", "+00:00"))
@@ -317,7 +266,6 @@ def create_event(body: CreateEventBody, current_user: dict = Depends(get_current
 
 @router.patch("/{event_id}", response_model=EventDetail)
 def update_event(event_id: str, body: CreateEventBody, current_user: dict = Depends(get_current_user)):
-    _ensure_tables()
     with get_db() as (cur, conn):
         cur.execute(
             "SELECT host_id::text, date_time FROM events WHERE id = %s",
@@ -358,7 +306,6 @@ def update_event(event_id: str, body: CreateEventBody, current_user: dict = Depe
 
 @router.post("/{event_id}/rsvp")
 def rsvp_event(event_id: str, body: RsvpBody, current_user: dict = Depends(get_current_user)):
-    _ensure_tables()
     if body.action not in ("going", "cancel"):
         raise HTTPException(status_code=400, detail="action must be 'going' or 'cancel'")
 
@@ -429,7 +376,6 @@ def rsvp_event(event_id: str, body: RsvpBody, current_user: dict = Depends(get_c
 
 @router.delete("/{event_id}")
 def cancel_event(event_id: str, current_user: dict = Depends(get_current_user)):
-    _ensure_tables()
     with get_db() as (cur, conn):
         cur.execute(
             "SELECT host_id::text, date_time FROM events WHERE id = %s",

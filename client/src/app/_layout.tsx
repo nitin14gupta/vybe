@@ -27,6 +27,7 @@ function AuthGuard({ ready }: { ready: boolean }) {
     const inApp        = segments[0] === '(tabs)'
                       || segments[0] === '(settings)'
                       || segments[0] === '(profile)'
+                      || segments[0] === '(events)'
 
     if (!isAuthenticated) {
       // Not logged in → welcome screen

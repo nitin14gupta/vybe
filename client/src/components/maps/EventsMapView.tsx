@@ -1,13 +1,36 @@
 import React, { useMemo } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
-import MapView, { Marker } from 'react-native-maps'
-import MapLibreGL from '@maplibre/maplibre-react-native'
+import MapView, { Marker, Polyline } from 'react-native-maps'
+import {
+  Map,
+  Camera,
+  UserLocation,
+  GeoJSONSource,
+  Layer,
+} from '@maplibre/maplibre-react-native'
+import type { NativeSyntheticEvent } from 'react-native'
+import type { PressEventWithFeatures } from '@maplibre/maplibre-react-native'
 import { Colors } from '@/constants'
 import { MAP_PROVIDER, TILE_STYLE, DEFAULT_MAP_CENTER, type MapBounds } from '@/constants/mapConfig'
 import { useGoogleMaps } from '@/hooks/useGoogleMaps'
 import { useMapLibre, eventsToGeoJSON } from '@/hooks/useMapLibre'
 import type { EventSummary } from '@/api/apiService'
 import type { ViewStyle } from 'react-native'
+import type { FeatureCollection } from 'geojson'
+
+function routeLineGeoJSON(
+  userLat: number, userLng: number,
+  eventLat: number, eventLng: number,
+): FeatureCollection {
+  return {
+    type: 'FeatureCollection',
+    features: [{
+      type: 'Feature',
+      geometry: { type: 'LineString', coordinates: [[userLng, userLat], [eventLng, eventLat]] },
+      properties: {},
+    }],
+  }
+}
 
 const EVENT_EMOJIS: Record<string, string> = {
   house_party: '🎉',
@@ -42,11 +65,12 @@ interface GoogleProps {
 
 function EventsMapGoogle({ events, userLat, userLng, activeEventId, onEventSelect }: GoogleProps) {
   const { mapRef } = useGoogleMaps()
+  const activeEvent = activeEventId ? events.find(e => e.id === activeEventId) : null
 
   return (
     <MapView
       ref={mapRef}
-      style={StyleSheet.absoluteFillObject}
+      style={{ flex: 1 }}
       initialRegion={{
         latitude: userLat ?? DEFAULT_MAP_CENTER.lat,
         longitude: userLng ?? DEFAULT_MAP_CENTER.lng,
@@ -57,6 +81,19 @@ function EventsMapGoogle({ events, userLat, userLng, activeEventId, onEventSelec
       showsUserLocation
       showsMyLocationButton={false}
     >
+      {/* Route line from user → selected event */}
+      {activeEvent && userLat != null && userLng != null &&
+        activeEvent.location_lat != null && activeEvent.location_lng != null && (
+        <Polyline
+          coordinates={[
+            { latitude: userLat, longitude: userLng },
+            { latitude: activeEvent.location_lat, longitude: activeEvent.location_lng },
+          ]}
+          strokeColor={Colors.brandCoral}
+          strokeWidth={2.5}
+          lineDashPattern={[8, 5]}
+        />
+      )}
       {events.map((ev, idx) =>
         ev.location_lat != null && ev.location_lng != null ? (
           <Marker
@@ -86,55 +123,83 @@ interface LibreProps {
 }
 
 function EventsMapLibre({ events, userLat, userLng, activeEventId, onEventSelect, onBoundsChange }: LibreProps) {
-  const { cameraRef, handleRegionDidChange, handleFeaturePress: _handleFeaturePress } = useMapLibre(onBoundsChange)
+  const { mapRef, handleRegionDidChange } = useMapLibre(onBoundsChange)
   const geojson = useMemo(() => eventsToGeoJSON(events), [events])
 
-  const handleFeaturePress = (e: any) => {
-    const feature = e.features?.[0]
+  const activeEvent = useMemo(
+    () => (activeEventId ? events.find(e => e.id === activeEventId) : null),
+    [activeEventId, events],
+  )
+
+  const routeLine = useMemo((): FeatureCollection | null => {
+    if (!activeEvent || userLat == null || userLng == null) return null
+    if (activeEvent.location_lat == null || activeEvent.location_lng == null) return null
+    return routeLineGeoJSON(userLat, userLng, activeEvent.location_lat, activeEvent.location_lng)
+  }, [activeEvent, userLat, userLng])
+
+  const handleSourcePress = (event: NativeSyntheticEvent<PressEventWithFeatures>) => {
+    const feature = event.nativeEvent.features?.[0]
     if (!feature) return
     const id = feature.properties?.id as string
     const idx = events.findIndex(ev => ev.id === id)
-    const ev = events.find(ev => ev.id === id)
-    if (ev && idx >= 0) onEventSelect(ev, idx)
+    if (idx >= 0) onEventSelect(events[idx], idx)
   }
 
-  const circleLayerStyle = {
-    circleRadius: 20,
-    circleColor: [
+  const circlePaint = {
+    'circle-radius': 20,
+    'circle-color': [
       'case',
       ['==', ['get', 'id'], activeEventId ?? ''],
       Colors.brandCoral,
       Colors.brandOrange,
-    ],
-    circleStrokeWidth: 2,
-    circleStrokeColor: '#fff',
-    circleOpacity: 0.95,
+    ] as any,
+    'circle-stroke-width': 2,
+    'circle-stroke-color': '#fff',
+    'circle-opacity': 0.95,
+  }
+
+  const linePaint = {
+    'line-color': Colors.brandCoral,
+    'line-width': 2.5,
+    'line-dasharray': [6, 4],
+    'line-opacity': 0.9,
   }
 
   return (
-    <MapLibreGL.MapView
-      style={StyleSheet.absoluteFillObject}
-      styleURL={TILE_STYLE.dark}
+    <Map
+      ref={mapRef}
+      style={{ flex: 1 }}
+      mapStyle={TILE_STYLE.dark}
       onRegionDidChange={handleRegionDidChange}
-      logoEnabled={false}
-      attributionEnabled={false}
     >
-      <MapLibreGL.Camera
-        ref={cameraRef}
-        defaultSettings={{
-          centerCoordinate: [userLng ?? DEFAULT_MAP_CENTER.lng, userLat ?? DEFAULT_MAP_CENTER.lat],
-          zoomLevel: 11,
+      <Camera
+        initialViewState={{
+          center: [userLng ?? DEFAULT_MAP_CENTER.lng, userLat ?? DEFAULT_MAP_CENTER.lat],
+          zoom: 11,
         }}
       />
-      <MapLibreGL.UserLocation visible />
-      <MapLibreGL.ShapeSource id="events-source" shape={geojson} onPress={handleFeaturePress}>
-        <MapLibreGL.CircleLayer id="events-circles" style={circleLayerStyle} />
-      </MapLibreGL.ShapeSource>
-    </MapLibreGL.MapView>
+      <UserLocation visible />
+
+      {/* Dashed route line from user → selected event */}
+      {routeLine && (
+        <GeoJSONSource id="route-source" data={routeLine}>
+          <Layer id="route-line" type="line" source="route-source" paint={linePaint} />
+        </GeoJSONSource>
+      )}
+
+      <GeoJSONSource id="events-source" data={geojson} onPress={handleSourcePress}>
+        <Layer
+          id="events-circles"
+          type="circle"
+          source="events-source"
+          paint={circlePaint}
+        />
+      </GeoJSONSource>
+    </Map>
   )
 }
 
-// ── Public component (reads MAP_PROVIDER, accepts optional override) ──────────
+// ── Public component ──────────────────────────────────────────────────────────
 
 export interface EventsMapViewProps {
   events: EventSummary[]
@@ -158,7 +223,7 @@ export function EventsMapView({
   style,
 }: EventsMapViewProps) {
   return (
-    <View style={[StyleSheet.absoluteFillObject, style]}>
+    <View style={[{ flex: 1 }, style]}>
       {provider === 'google' ? (
         <EventsMapGoogle
           events={events}
@@ -180,8 +245,6 @@ export function EventsMapView({
     </View>
   )
 }
-
-// ── Styles ────────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
   pin: {

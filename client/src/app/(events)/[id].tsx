@@ -40,8 +40,15 @@ const EVENT_EMOJIS: Record<string, string> = {
 }
 
 
-function formatDateTime(iso: string) {
-  const d = new Date(iso)
+function parseDate(iso: string | null | undefined): Date | null {
+  if (!iso) return null
+  const d = new Date(iso.replace(' ', 'T'))
+  return isNaN(d.getTime()) ? null : d
+}
+
+function formatDateTime(iso: string | null | undefined) {
+  const d = parseDate(iso)
+  if (!d) return 'Date TBC'
   return d.toLocaleDateString('en-IN', {
     weekday: 'short',
     day: 'numeric',
@@ -53,7 +60,7 @@ function formatDateTime(iso: string) {
 }
 
 function daysUntil(iso: string) {
-  const diff = new Date(iso).getTime() - Date.now()
+  const diff = (parseDate(iso)?.getTime() ?? 0) - Date.now()
   const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
   if (days <= 0) return 'Today'
   if (days === 1) return 'Tomorrow'

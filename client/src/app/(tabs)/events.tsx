@@ -44,8 +44,11 @@ const FILTER_CHIPS = [
 ];
 
 
-function formatDate(iso: string) {
-  const d = new Date(iso);
+function formatDate(iso: string | null | undefined) {
+  if (!iso) return "Date TBC";
+  // PostgreSQL may return "2025-06-18 10:00:00+00" — replace space with T for reliable parsing
+  const d = new Date(iso.replace(" ", "T"));
+  if (isNaN(d.getTime())) return "Date TBC";
   return d.toLocaleDateString("en-IN", {
     day: "numeric",
     month: "short",
@@ -282,7 +285,7 @@ export default function EventsScreen() {
   );
 
   return (
-    <Screen>
+    <Screen top={false}>
       <View style={styles.root}>
         <AppHeader
           title="Events"
@@ -487,7 +490,7 @@ const styles = StyleSheet.create({
   },
   mapPinEmoji: { fontSize: 20 },
 
-  mapEmpty: { flex: 1, alignItems: "center", justifyContent: "center" },
+  mapEmpty: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center" },
   mapEmptyCard: {
     backgroundColor: Colors.surface,
     borderRadius: 20,

@@ -36,7 +36,6 @@ async def upload_photo(
           f"content_type={file.content_type!r} filename={file.filename!r}", flush=True)
 
     if not _is_image(file):
-        print(f"[UPLOAD] rejected content_type={file.content_type!r}", flush=True)
         raise HTTPException(status_code=400, detail=f"Unsupported image type: {file.content_type}")
 
     contents = await file.read()
@@ -81,6 +80,36 @@ async def upload_photo(
     return {"url": result["url"], "position": position, "id": str(photo["id"]) if photo else None}
 
 
+@router.post("/event-photo")
+async def upload_event_photo(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """Upload an event cover photo. No face validation — posters are fine."""
+    print(f"\n[UPLOAD] event-photo — user={current_user['id']} "
+          f"content_type={file.content_type!r} filename={file.filename!r}", flush=True)
+
+    if not _is_image(file):
+        raise HTTPException(status_code=400, detail=f"Unsupported image type: {file.content_type}")
+
+    contents = await file.read()
+    if len(contents) > MAX_PHOTO_SIZE:
+        raise HTTPException(status_code=400, detail="Photo must be under 10 MB")
+    if len(contents) == 0:
+        raise HTTPException(status_code=400, detail="Empty file received")
+
+    try:
+        result = r2_client.upload_file(
+            io.BytesIO(contents),
+            file.filename or "cover.jpg",
+            folder=f"events/{current_user['id']}/covers",
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
+
+    return {"url": result["url"]}
+
+
 @router.post("/voice")
 async def upload_voice(
     file: UploadFile = File(...),
@@ -104,9 +133,7 @@ async def upload_voice(
             file.filename or "voice.m4a",
             folder=f"users/{current_user['id']}/voice",
         )
-        print(f"[UPLOAD] voice R2 success → {result['url']}", flush=True)
     except Exception as e:
-        print(f"[UPLOAD] voice R2 error: {e}", flush=True)
         raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
 
     with get_db() as (cur, _):

@@ -135,7 +135,6 @@ class R2Client:
             )
             return True
         except Exception as e:
-            print(f"Error deleting file from R2: {e}")
             return False
 
 # Create a singleton instance

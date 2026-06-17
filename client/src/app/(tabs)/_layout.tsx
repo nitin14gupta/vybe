@@ -71,9 +71,6 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* Hide unused screens */}
-      <Tabs.Screen name="explore" options={{ href: null }} />
-      <Tabs.Screen name="notifications" options={{ href: null }} />
     </Tabs>
     // </Screen>
   );

@@ -6,28 +6,6 @@ from db.config import get_db
 
 router = APIRouter(prefix="/vibes", tags=["vibes"])
 
-# Ensure vibe_requests table exists on startup
-_DDL = """
-CREATE TABLE IF NOT EXISTS public.vibe_requests (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    receiver_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    message TEXT,
-    status TEXT NOT NULL DEFAULT 'pending',
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    expires_at TIMESTAMPTZ DEFAULT NOW() + INTERVAL '7 days',
-    passed_at TIMESTAMPTZ,
-    CONSTRAINT vibe_requests_sender_receiver_key UNIQUE (sender_id, receiver_id),
-    CONSTRAINT vibe_requests_no_self CHECK (sender_id <> receiver_id)
-)
-"""
-
-def _ensure_table():
-    with get_db() as (cur, conn):
-        cur.execute(_DDL)
-        conn.commit()
-
-
 class SendVibeRequest(BaseModel):
     target_id: str
     message: Optional[str] = None

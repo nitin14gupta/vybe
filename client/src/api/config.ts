@@ -1,7 +1,7 @@
 import Constants from 'expo-constants'
 
 export const API_BASE_URL: string =
-  (Constants.expoConfig?.extra?.apiUrl as string | undefined) ?? 'http://192.168.0.104:8000'
+  (Constants.expoConfig?.extra?.apiUrl as string | undefined) ?? 'http://192.168.0.102:8000'
 
 export const ENDPOINTS = {
   // Auth
@@ -18,10 +18,11 @@ export const ENDPOINTS = {
   GET_ME:          '/users/me',
 
   // Upload
-  UPLOAD_PHOTO:    '/upload/photo',
-  SWAP_PHOTOS:     '/upload/photo/swap',
-  DELETE_PHOTO:    '/upload/photo/{id}',
-  UPLOAD_VOICE:    '/upload/voice',
+  UPLOAD_PHOTO:        '/upload/photo',
+  UPLOAD_EVENT_PHOTO:  '/upload/event-photo',
+  SWAP_PHOTOS:         '/upload/photo/swap',
+  DELETE_PHOTO:        '/upload/photo/{id}',
+  UPLOAD_VOICE:        '/upload/voice',
 
   // Places
   GET_CITIES:      '/places/cities',

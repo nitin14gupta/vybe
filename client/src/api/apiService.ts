@@ -441,6 +441,40 @@ class ApiService {
     })
   }
 
+  static uploadEventPhoto(uri: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const token = useAuthStore.getState().accessToken
+      const filename = uri.split('/').pop() ?? 'photo.jpg'
+      const ext = filename.split('.').pop()?.toLowerCase() ?? 'jpg'
+      const mime = ext === 'png' ? 'image/png' : 'image/jpeg'
+
+      const formData = new FormData()
+      formData.append('file', { uri, name: filename, type: mime } as any)
+
+      const xhr = new XMLHttpRequest()
+      xhr.open('POST', `${API_BASE_URL}${ENDPOINTS.UPLOAD_EVENT_PHOTO}`)
+      if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+      xhr.timeout = 30000
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try { resolve(JSON.parse(xhr.responseText).url) }
+          catch { reject(new Error('Invalid server response')) }
+        } else {
+          try {
+            const err = JSON.parse(xhr.responseText)
+            reject(new Error(err.detail ?? `Upload failed (${xhr.status})`))
+          } catch {
+            reject(new Error(`Upload failed (${xhr.status})`))
+          }
+        }
+      }
+      xhr.onerror = () => reject(new Error('Network error'))
+      xhr.ontimeout = () => reject(new Error('Upload timed out'))
+      xhr.send(formData)
+    })
+  }
+
   static async swapPhotos(positionA: number, positionB: number): Promise<void> {
     await this.post<{ ok: boolean }>(ENDPOINTS.SWAP_PHOTOS, {
       position_a: positionA,

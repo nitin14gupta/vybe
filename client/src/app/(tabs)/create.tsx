@@ -12,6 +12,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import * as Location from "expo-location";
 import { LocationPickerMap } from "@/components/maps";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -155,8 +156,24 @@ export default function CreateScreen() {
     return Object.keys(errs).length === 0;
   };
 
-  const next = () => {
+  const next = async () => {
     if (!validateStep()) return;
+    // Pre-fetch location when transitioning to step 3 so the map opens
+    // already centred on the user instead of flashing to the default city first.
+    if (step === 2 && form.locationLat == null) {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === "granted") {
+          const { coords } = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          set("locationLat", coords.latitude);
+          set("locationLng", coords.longitude);
+        }
+      } catch {
+        // Permission denied or GPS unavailable — LocationPickerMap will retry
+      }
+    }
     if (step < 4) setStep((step + 1) as 1 | 2 | 3 | 4);
   };
 
@@ -241,7 +258,7 @@ export default function CreateScreen() {
     if (result.canceled) return;
     const uri = result.assets[0].uri;
     try {
-      const url = await ApiService.uploadPhoto(uri, position);
+      const url = await ApiService.uploadEventPhoto(uri);
       const photos = [...form.coverPhotos];
       photos[position] = url;
       set("coverPhotos", photos);
@@ -506,14 +523,14 @@ export default function CreateScreen() {
             set("locationLat", lat);
             set("locationLng", lng);
           }}
+          onAddressDetected={(address) => {
+            // Only auto-fill if user hasn't typed anything yet
+            if (!form.locationName.trim()) set("locationName", address);
+          }}
         />
-        {/* Fixed centre pin */}
+        {/* Fixed centre pin — always at the map centre */}
         <View style={styles.mapCentrePin} pointerEvents="none">
-          <MapPin
-            size={32}
-            color={Colors.brandOrange}
-            fill={Colors.brandOrange}
-          />
+          <MapPin size={36} color={Colors.brandOrange} fill="rgba(255,107,53,0.25)" />
         </View>
       </View>
     </View>
@@ -596,10 +613,16 @@ export default function CreateScreen() {
       </Text>
       <View style={styles.photosGrid}>
         {/* Large cover slot */}
-        <Pressable style={styles.photoCoverSlot} onPress={() => pickPhoto(0)}>
+        <Pressable
+          style={[styles.photoCoverSlot, form.coverPhotos[0] ? styles.photoSlotFilled : null]}
+          onPress={() => pickPhoto(0)}
+        >
           {form.coverPhotos[0] ? (
             <>
-              <Image source={{ uri: form.coverPhotos[0] }} contentFit="cover" />
+              {/* Wrapper View needed: dashed border breaks overflow:hidden on Android */}
+              <View style={StyleSheet.absoluteFillObject}>
+                <Image source={{ uri: form.coverPhotos[0] }} contentFit="cover" style={{ flex: 1 }} />
+              </View>
               <Pressable
                 style={styles.photoRemove}
                 onPress={() => removePhoto(0)}
@@ -620,15 +643,18 @@ export default function CreateScreen() {
           {[1, 2, 3, 4].map((i) => (
             <Pressable
               key={i}
-              style={styles.photoSmallSlot}
+              style={[styles.photoSmallSlot, form.coverPhotos[i] ? styles.photoSlotFilled : null]}
               onPress={() => pickPhoto(i)}
             >
               {form.coverPhotos[i] ? (
                 <>
-                  <Image
-                    source={{ uri: form.coverPhotos[i] }}
-                    contentFit="cover"
-                  />
+                  <View style={StyleSheet.absoluteFillObject}>
+                    <Image
+                      source={{ uri: form.coverPhotos[i] }}
+                      contentFit="cover"
+                      style={{ flex: 1 }}
+                    />
+                  </View>
                   <Pressable
                     style={styles.photoRemove}
                     onPress={() => removePhoto(i)}
@@ -958,8 +984,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: "50%",
     left: "50%",
-    marginTop: -32,
-    marginLeft: -16,
+    // MapPin tip is at the bottom-centre of the 36×36 icon
+    marginTop: -36,
+    marginLeft: -18,
   },
   locationNote: {
     fontFamily: FontFamily.bodyRegular,
@@ -1024,6 +1051,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  photoSlotFilled: {
+    borderStyle: "solid",
+    borderColor: "transparent",
+  },
   photoSmallGrid: { width: (W - 48 - 8) / 3, gap: 6 },
   photoSmallSlot: {
     flex: 1,
@@ -1035,6 +1066,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
+    position: "relative",
   },
   photoPlaceholder: { alignItems: "center", gap: 4 },
   photoPlaceholderText: {
