@@ -15,6 +15,7 @@ export interface UserResponse {
   id: string
   phone: string
   name: string | null
+  username: string | null
   dob: string | null
   gender: string | null
   bio: string | null
@@ -52,6 +53,13 @@ export interface ProfileResponse extends UserResponse {
   is_following?: boolean
 }
 
+export interface ExtendedProfile extends ProfileResponse {
+  mutual_count: number
+  vybe_status: 'none' | 'pending' | 'connected'
+  conversation_id: string | null
+  events_attending: EventSummary[]
+}
+
 export interface EventPhoto {
   url: string
   position: number
@@ -85,6 +93,28 @@ export interface EventDetail extends EventSummary {
   is_cancelled: boolean
   cancel_deadline: string
   edit_deadline: string
+  my_ticket_token: string | null
+  my_checked_in_at: string | null
+  avg_rating: number | null
+}
+
+export interface TicketInfo {
+  ticket_token: string
+  event_title: string
+  date_time: string
+  end_time: string | null
+  location_name: string | null
+  event_type: string
+  host_name: string | null
+}
+
+export interface ReviewItem {
+  id: string
+  reviewer_name: string | null
+  reviewer_avatar: string | null
+  rating: number
+  body: string | null
+  created_at: string
 }
 
 export interface CreateEventPayload {
@@ -106,6 +136,7 @@ export interface CreateEventPayload {
 export interface DiscoverUser {
   id: string
   name: string | null
+  username: string | null
   age: number | null
   gender: string | null
   bio: string | null
@@ -121,6 +152,7 @@ export interface VybeRequest {
   id: string
   sender_id: string
   name: string | null
+  username: string | null
   city: string | null
   message: string
   status: string
@@ -133,6 +165,7 @@ export interface Conversation {
   status: 'pending' | 'active'
   partner_id: string
   partner_name: string | null
+  partner_username: string | null
   partner_avatar: string | null
   last_message: string | null
   last_message_type: string | null
@@ -140,6 +173,16 @@ export interface Conversation {
   last_sent_at: string | null
   unread_count: number
   last_message_at: string | null
+}
+
+export interface EventAttendee {
+  id: string
+  name: string | null
+  username: string | null
+  city: string | null
+  avatar: string | null
+  status: string
+  joined_at: string
 }
 
 export interface Message {
@@ -322,6 +365,7 @@ class ApiService {
 
   static async updateProfile(data: {
     name?: string
+    username?: string
     dob?: string
     gender?: string
     bio?: string
@@ -349,6 +393,16 @@ class ApiService {
   static async getProfile(userId: string): Promise<ProfileResponse> {
     const endpoint = ENDPOINTS.GET_PROFILE.replace(':id', userId)
     return this.get<ProfileResponse>(endpoint)
+  }
+
+  static async getUserProfile(userId: string): Promise<ExtendedProfile> {
+    const endpoint = ENDPOINTS.GET_USER_PROFILE.replace(':id', userId)
+    return this.get<ExtendedProfile>(endpoint)
+  }
+
+  static async searchUsers(q: string, page = 1, limit = 20): Promise<{ users: DiscoverUser[]; total: number }> {
+    const params = new URLSearchParams({ q, page: String(page), limit: String(limit) })
+    return this.get<{ users: DiscoverUser[]; total: number }>(`${ENDPOINTS.SEARCH_USERS}?${params}`)
   }
 
   static async followUser(userId: string): Promise<void> {
@@ -454,6 +508,12 @@ class ApiService {
     await this.post<{ ok: boolean }>(endpoint, { reason })
   }
 
+  static async checkUsername(username: string): Promise<{ available: boolean; error?: string }> {
+    return this.get<{ available: boolean; error?: string }>(
+      `${ENDPOINTS.CHECK_USERNAME}?username=${encodeURIComponent(username)}`,
+    )
+  }
+
   // ── Events ─────────────────────────────────────────────────────────────────
 
   static async getEvents(filters: {
@@ -501,6 +561,39 @@ class ApiService {
 
   static async cancelEvent(id: string): Promise<void> {
     await this.delete<{ ok: boolean }>(ENDPOINTS.EVENT_DETAIL.replace(':id', id))
+  }
+
+  static async getEventAttendees(id: string): Promise<{ attendees: EventAttendee[]; total: number }> {
+    return this.get<{ attendees: EventAttendee[]; total: number }>(
+      ENDPOINTS.EVENT_ATTENDEES.replace(':id', id),
+    )
+  }
+
+  static async getMyTicket(eventId: string): Promise<TicketInfo> {
+    return this.get<TicketInfo>(ENDPOINTS.EVENT_TICKET.replace(':id', eventId))
+  }
+
+  static async checkinAttendee(
+    eventId: string,
+    ticketToken: string,
+  ): Promise<{ ok: boolean; already_checked_in?: boolean; name: string; username?: string | null }> {
+    return this.post(ENDPOINTS.EVENT_CHECKIN.replace(':id', eventId), { ticket_token: ticketToken })
+  }
+
+  static async submitReview(eventId: string, rating: number, body?: string): Promise<{ ok: boolean }> {
+    return this.post(ENDPOINTS.EVENT_REVIEWS.replace(':id', eventId), { rating, body: body ?? null })
+  }
+
+  static async getEventReviews(eventId: string): Promise<{ avg_rating: number | null; count: number; reviews: ReviewItem[] }> {
+    return this.get(ENDPOINTS.EVENT_REVIEWS.replace(':id', eventId))
+  }
+
+  static async getMyReview(eventId: string): Promise<{ rating: number; body: string | null } | null> {
+    try {
+      return await this.get(`/events/${eventId}/reviews/me`)
+    } catch {
+      return null
+    }
   }
 
   // ── Upload ─────────────────────────────────────────────────────────────────

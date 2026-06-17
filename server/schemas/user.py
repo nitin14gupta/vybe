@@ -33,6 +33,7 @@ class ProfileCreate(BaseModel):
 
 class ProfileUpdate(BaseModel):
     name: Optional[str] = None
+    username: Optional[str] = None
     gender: Optional[str] = None
     bio: Optional[str] = None
     badges: Optional[List[str]] = None
@@ -40,6 +41,17 @@ class ProfileUpdate(BaseModel):
     lat: Optional[float] = None
     lng: Optional[float] = None
     interests: Optional[List[str]] = None
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        import re
+        v = v.strip().lower()
+        if not re.match(r'^[a-z0-9_]{3,30}$', v):
+            raise ValueError("3–30 chars: letters, numbers, underscore only")
+        return v
 
     @field_validator("badges")
     @classmethod
@@ -63,8 +75,8 @@ class InterestsUpdate(BaseModel):
     def validate_interests(cls, v: List[str]) -> List[str]:
         if len(v) < 3:
             raise ValueError("Must select at least 3 interests")
-        if len(v) > 4:
-            raise ValueError("Cannot select more than 4 interests")
+        if len(v) > 8:
+            raise ValueError("Cannot select more than 8 interests")
         return v
 
 
@@ -78,6 +90,7 @@ class UserResponse(BaseModel):
     id: str
     phone: str
     name: Optional[str] = None
+    username: Optional[str] = None
     gender: Optional[str] = None
     bio: Optional[str] = None
     city: Optional[str] = None

@@ -9,8 +9,8 @@ import Animated, {
 } from 'react-native-reanimated'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { LinearGradient } from 'expo-linear-gradient'
-import { useFocusEffect } from 'expo-router'
-import { X, Flame, Star, SlidersHorizontal, MapPin, Mic, Pause } from 'lucide-react-native'
+import { useFocusEffect, router } from 'expo-router'
+import { X, Flame, Star, SlidersHorizontal, MapPin, Mic, Pause, Search } from 'lucide-react-native'
 import { AppHeader, HeaderIconBtn, PlaybackWave, VybeRequestModal } from '@/components/ui'
 import { FilterSheet } from '@/components/ui/FilterSheet'
 import { useDiscover, type DiscoverFilters } from '@/hooks/useDiscover'
@@ -170,6 +170,9 @@ const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(function SwipeCard(
               {user.name ?? 'Unknown'}{user.age ? `, ${user.age}` : ''}
             </Text>
           </View>
+          {user.username ? (
+            <Text style={styles.usernameText}>@{user.username}</Text>
+          ) : null}
           {(user.city || user.distance_km != null) && (
             <View style={styles.locationRow}>
               <MapPin size={12} color="rgba(255,255,255,0.55)" strokeWidth={2} />
@@ -267,9 +270,14 @@ export default function DiscoverScreen() {
           </HeaderIconBtn>
         }
         rightAction={
-          <HeaderIconBtn onPress={() => setFilterOpen(true)}>
-            <SlidersHorizontal size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
-          </HeaderIconBtn>
+          <View style={{ flexDirection: 'row', gap: 4 }}>
+            <HeaderIconBtn onPress={() => router.push('/(search)/' as any)}>
+              <Search size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
+            </HeaderIconBtn>
+            <HeaderIconBtn onPress={() => setFilterOpen(true)}>
+              <SlidersHorizontal size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
+            </HeaderIconBtn>
+          </View>
         }
       />
 
@@ -616,6 +624,12 @@ const styles = StyleSheet.create({
     fontSize: 26,
     color: '#F5F0EB',
     letterSpacing: -0.3,
+  },
+  usernameText: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 13,
+    color: 'rgba(255,107,53,0.85)',
+    marginTop: -2,
   },
   locationRow: {
     flexDirection: 'row',

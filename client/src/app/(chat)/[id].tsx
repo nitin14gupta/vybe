@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { useChat } from '@/hooks/useChat'
 import { useConversations } from '@/hooks/useConversations'
 import { useAuthStore } from '@/store/auth'
+import { ReportSheet } from '@/components/ui'
 import ApiService, { Message } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
 
@@ -132,7 +133,10 @@ export default function ChatDetailScreen() {
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [inputText, setInputText] = useState('')
   const [partnerName, setPartnerName] = useState<string | null>(null)
+  const [partnerUsername, setPartnerUsername] = useState<string | null>(null)
   const [partnerAvatar, setPartnerAvatar] = useState<string | null>(null)
+  const [partnerId, setPartnerId] = useState<string | null>(null)
+  const [reportOpen, setReportOpen] = useState(false)
 
   const { messages, isPartnerTyping, isPartnerOnline, loading, sendMessage, sendTyping, loadMore } = useChat(convId)
 
@@ -142,7 +146,9 @@ export default function ChatDetailScreen() {
       const conv = [...data.active, ...data.locked].find(c => c.id === convId)
       if (conv) {
         setPartnerName(conv.partner_name)
+        setPartnerUsername(conv.partner_username ?? null)
         setPartnerAvatar(conv.partner_avatar)
+        setPartnerId(conv.partner_id)
       }
     }).catch(() => {})
   }, [convId])
@@ -199,24 +205,7 @@ export default function ChatDetailScreen() {
   }, [convId])
 
   const confirmReport = useCallback(() => {
-    Alert.prompt(
-      'Report User',
-      'Briefly describe the issue',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Report',
-          onPress: (reason) => {
-            if (!reason) return
-            ApiService.getConversations().then(data => {
-              const conv = [...data.active].find(c => c.id === convId)
-              if (conv) ApiService.reportUser(conv.partner_id, reason).catch(() => {})
-            })
-          },
-        },
-      ],
-      'plain-text',
-    )
+    setReportOpen(true)
   }, [convId])
 
   const renderItem = useCallback(({ item }: { item: Message }) => (
@@ -235,7 +224,10 @@ export default function ChatDetailScreen() {
           <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
         </Pressable>
 
-        <Pressable style={s.headerCenter} onPress={() => {}}>
+        <Pressable
+          style={s.headerCenter}
+          onPress={() => partnerId && router.push(`/(profile)/${partnerId}` as any)}
+        >
           {partnerAvatar ? (
             <Image source={{ uri: partnerAvatar }} style={s.headerAvatar} />
           ) : (
@@ -248,7 +240,9 @@ export default function ChatDetailScreen() {
               <Text style={s.headerName}>{partnerName ?? 'Chat'}</Text>
               {isPartnerOnline && <View style={s.onlineDot} />}
             </View>
-            <Text style={s.headerSub}>{isPartnerOnline ? 'Active now' : 'Tap for profile'}</Text>
+            <Text style={s.headerSub}>
+              {partnerUsername ? `@${partnerUsername}` : (isPartnerOnline ? 'Active now' : 'Tap for profile')}
+            </Text>
           </View>
         </Pressable>
 
@@ -302,6 +296,15 @@ export default function ChatDetailScreen() {
           <Send size={18} color="#111" strokeWidth={2} fill={inputText.trim() ? '#111' : 'transparent'} />
         </Pressable>
       </View>
+
+      <ReportSheet
+        visible={reportOpen}
+        targetName={partnerName}
+        onSubmit={async (reason) => {
+          if (partnerId) await ApiService.reportUser(partnerId, reason)
+        }}
+        onClose={() => setReportOpen(false)}
+      />
     </KeyboardAvoidingView>
   )
 }

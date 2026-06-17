@@ -94,6 +94,7 @@ def list_conversations(current_user: dict = Depends(get_current_user)):
                 -- Partner info
                 CASE WHEN c.user1_id = %s::uuid THEN c.user2_id ELSE c.user1_id END AS partner_id,
                 CASE WHEN c.user1_id = %s::uuid THEN u2.name ELSE u1.name END AS partner_name,
+                CASE WHEN c.user1_id = %s::uuid THEN u2.username ELSE u1.username END AS partner_username,
                 CASE WHEN c.user1_id = %s::uuid THEN p2.url ELSE p1.url END AS partner_avatar,
                 -- Last message
                 m.content AS last_message,
@@ -125,7 +126,7 @@ def list_conversations(current_user: dict = Depends(get_current_user)):
             WHERE (c.user1_id = %s::uuid OR c.user2_id = %s::uuid)
             ORDER BY COALESCE(c.last_message_at, c.created_at) DESC
             """,
-            (uid, uid, uid, uid, uid, uid),
+            (uid, uid, uid, uid, uid, uid, uid),
         )
         rows = cur.fetchall()
 

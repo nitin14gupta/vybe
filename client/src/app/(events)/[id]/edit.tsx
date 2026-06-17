@@ -1,0 +1,216 @@
+import React, { useEffect, useState } from 'react'
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native'
+import { LinearGradient } from 'expo-linear-gradient'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useLocalSearchParams, useRouter } from 'expo-router'
+import { ArrowLeft } from 'lucide-react-native'
+import { Colors, FontFamily } from '@/constants'
+import { DateTimePickerSheet } from '@/components/ui'
+import { Step1Basics, Step2When, Step3Where, Step4Pricing } from '@/components/event-form'
+import { useCreateEvent, type CreateEventForm } from '@/hooks/useCreateEvent'
+import { useEventDateTimePickers } from '@/hooks/useEventDateTimePickers'
+import ApiService, { type EventDetail } from '@/api/apiService'
+
+export default function EditEventScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>()
+  const insets = useSafeAreaInsets()
+  const router = useRouter()
+
+  const { form, set } = useCreateEvent()
+  const { openDate, openStartTime, openEndTime, picker } = useEventDateTimePickers(form, set)
+
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [locked, setLocked] = useState(false)
+  const [hasAttendees, setHasAttendees] = useState(false)
+
+  useEffect(() => {
+    if (!id) return
+    ApiService.getEvent(id)
+      .then((ev: EventDetail) => {
+        // Populate shared form from existing event data
+        set('title',         ev.title)
+        set('eventType',     ev.event_type)
+        set('description',   ev.description ?? '')
+        set('rules',         ev.rules ?? '')
+        set('capacity',      ev.capacity)
+        set('ageRestriction', (ev.age_restriction as 18 | 21 | 25) ?? 18)
+        set('locationName',  ev.location_name ?? '')
+        set('locationLat',   ev.location_lat)
+        set('locationLng',   ev.location_lng)
+        set('isFree',        ev.is_free)
+        set('priceInr',      ev.price_inr)
+        set('coverPhotos',   ev.cover_photos?.map((p: { url: string }) => p.url) ?? [])
+
+        const dt = new Date(ev.date_time.replace(' ', 'T'))
+        set('dateTime', dt)
+        if (ev.end_time) set('endTime', new Date(ev.end_time.replace(' ', 'T')))
+
+        const editDeadline = new Date(ev.edit_deadline.replace(' ', 'T'))
+        if (new Date() > editDeadline) setLocked(true)
+        if (ev.attendee_count > 0)     setHasAttendees(true)
+      })
+      .catch(() => Alert.alert('Error', 'Could not load event'))
+      .finally(() => setLoading(false))
+  }, [id])
+
+  const handleSave = async () => {
+    if (saving || locked) return
+    if (!form.title.trim()) return Alert.alert('Error', 'Title is required')
+    if (!form.isFree && form.priceInr < 50) return Alert.alert('Error', 'Minimum ticket price is ₹50')
+
+    const start = form.dateTime ? new Date(form.dateTime) : new Date()
+    const end   = form.endTime  ? new Date(form.endTime)  : null
+    if (end && end <= start) return Alert.alert('Error', 'End time must be after start time')
+
+    setSaving(true)
+    try {
+      await ApiService.updateEvent(id!, {
+        title:          form.title.trim(),
+        event_type:     form.eventType,
+        description:    form.description.trim() || undefined,
+        rules:          form.rules.trim() || undefined,
+        date_time:      start.toISOString(),
+        end_time:       end ? end.toISOString() : undefined,
+        capacity:       form.capacity,
+        age_restriction: form.ageRestriction,
+        location_name:  form.locationName.trim() || undefined,
+        location_lat:   form.locationLat ?? undefined,
+        location_lng:   form.locationLng ?? undefined,
+        price_inr:      form.isFree ? 0 : form.priceInr,
+        cover_photos:   form.coverPhotos,
+      })
+      router.back()
+    } catch (e: any) {
+      Alert.alert('Error', e.message)
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <View style={[s.root, s.center]}>
+        <ActivityIndicator size="large" color={Colors.brandOrange} />
+      </View>
+    )
+  }
+
+  return (
+    <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={[s.header, { paddingTop: insets.top + 8 }]}>
+        <Pressable style={s.backBtn} onPress={() => router.back()}>
+          <ArrowLeft size={20} color={Colors.inkPrimary} />
+        </Pressable>
+        <Text style={s.headerTitle}>Edit Event</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      {locked && (
+        <View style={s.lockedBanner}>
+          <Text style={s.lockedText}>Editing locked — event starts soon</Text>
+        </View>
+      )}
+
+      <ScrollView
+        style={s.scroll}
+        contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 100 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Step 1 — Basics */}
+        <Step1Basics
+          form={form} set={set} errors={errors} setErrors={setErrors}
+          scrollable={false} disabled={locked}
+        />
+
+        {/* Step 2 — When & who */}
+        <Step2When
+          form={form} set={set} errors={errors} setErrors={setErrors}
+          openDate={openDate} openStartTime={openStartTime} openEndTime={openEndTime}
+          scrollable={false} disabled={locked}
+          ageLocked={hasAttendees}
+          ageLockNote="Locked — attendees already joined"
+        />
+
+        {/* Step 3 — Where (inline map) */}
+        <Step3Where
+          form={form} set={set} errors={errors} setErrors={setErrors}
+          disabled={locked} inline
+        />
+
+        {/* Step 4 — Pricing & photos */}
+        <Step4Pricing
+          form={form} set={set} errors={errors} setErrors={setErrors}
+          scrollable={false} disabled={locked}
+          priceLocked={hasAttendees}
+          priceLockNote="Locked — attendees already booked"
+        />
+      </ScrollView>
+
+      {!locked && (
+        <View style={[s.footer, { paddingBottom: insets.bottom + 16 }]}>
+          <Pressable style={s.saveBtn} onPress={handleSave} disabled={saving}>
+            <LinearGradient
+              colors={['#FF6B35', '#FF3864']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={s.saveGradient}
+            >
+              {saving ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={s.saveText}>SAVE CHANGES</Text>
+              )}
+            </LinearGradient>
+          </Pressable>
+        </View>
+      )}
+
+      <DateTimePickerSheet
+        visible={picker.visible}
+        mode={picker.mode}
+        value={picker.value}
+        onConfirm={picker.confirm}
+        onDismiss={picker.dismiss}
+      />
+    </KeyboardAvoidingView>
+  )
+}
+
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: Colors.background },
+  center: { alignItems: 'center', justifyContent: 'center' },
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingBottom: 12,
+    borderBottomWidth: 1, borderBottomColor: Colors.divider,
+  },
+  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontFamily: FontFamily.headingBold, fontSize: 17, color: Colors.inkPrimary },
+  lockedBanner: {
+    backgroundColor: 'rgba(255,56,100,0.12)',
+    borderBottomWidth: 1, borderBottomColor: Colors.brandCoral,
+    paddingVertical: 10, paddingHorizontal: 20,
+  },
+  lockedText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.brandCoral, textAlign: 'center' },
+  scroll: { flex: 1 },
+  content: { padding: 20, gap: 4 },
+  footer: {
+    paddingHorizontal: 20, paddingTop: 12,
+    borderTopWidth: 1, borderTopColor: Colors.divider,
+    backgroundColor: 'rgba(17,17,17,0.95)',
+  },
+  saveBtn: { borderRadius: 16, overflow: 'hidden' },
+  saveGradient: { height: 54, alignItems: 'center', justifyContent: 'center', borderRadius: 16 },
+  saveText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: '#fff', letterSpacing: 0.5 },
+})

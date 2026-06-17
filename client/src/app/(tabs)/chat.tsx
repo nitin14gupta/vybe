@@ -4,12 +4,12 @@ import {
   TextInput, ActivityIndicator,
 } from 'react-native'
 import { router } from 'expo-router'
-import { Search, MessageCircle } from 'lucide-react-native'
+import { Search, MessageCircle, Flame } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { VybeReviewModal } from '@/components/ui'
+import { VybeInboxSheet } from '@/components/ui'
 import { useConversations } from '@/hooks/useConversations'
 import { Colors, FontFamily } from '@/constants'
-import type { Conversation, VybeRequest } from '@/api/apiService'
+import type { Conversation } from '@/api/apiService'
 
 function formatTime(iso: string | null): string {
   if (!iso) return ''
@@ -32,28 +32,6 @@ function formatLastMessage(conv: Conversation): string {
   if (conv.last_message_type === 'profile') return '👤 Shared a profile'
   if (conv.last_message_type === 'image') return '📷 Photo'
   return conv.last_message
-}
-
-// ── Pending vybe avatar strip item ───────────────────────────────────────────
-
-function PendingVybeAvatar({ request, onPress }: { request: VybeRequest; onPress: () => void }) {
-  const avatar = request.photos[0]?.url
-  return (
-    <Pressable onPress={onPress} style={s.pendingItem}>
-      <View style={s.pendingRing}>
-        {avatar ? (
-          <Image source={{ uri: avatar }} style={s.pendingAvatar} />
-        ) : (
-          <View style={[s.pendingAvatar, s.pendingAvatarFallback]}>
-            <Text style={s.pendingInitial}>{(request.name ?? '?').charAt(0)}</Text>
-          </View>
-        )}
-      </View>
-      <Text style={s.pendingName} numberOfLines={1}>
-        {(request.name ?? 'Someone').split(' ')[0]}
-      </Text>
-    </Pressable>
-  )
 }
 
 // ── Conversation row ──────────────────────────────────────────────────────────
@@ -105,7 +83,7 @@ function ConvRow({ conv, onPress }: { conv: Conversation; onPress: () => void })
 export default function ChatScreen() {
   const insets = useSafeAreaInsets()
   const [search, setSearch] = useState('')
-  const [reviewingVybe, setReviewingVybe] = useState<VybeRequest | null>(null)
+  const [inboxOpen, setInboxOpen] = useState(false)
 
   const {
     activeConversations,
@@ -117,7 +95,17 @@ export default function ChatScreen() {
     passVybe,
   } = useConversations()
 
-  const allConvs = [...activeConversations, ...lockedConversations]
+  // Active first (sorted by most recent message), locked at bottom
+  const sortByRecent = (a: Conversation, b: Conversation) => {
+    const ta = a.last_sent_at ?? a.last_message_at ?? a.id
+    const tb = b.last_sent_at ?? b.last_message_at ?? b.id
+    return tb.localeCompare(ta)
+  }
+
+  const allConvs = [
+    ...activeConversations.slice().sort(sortByRecent),
+    ...lockedConversations.slice().sort(sortByRecent),
+  ]
 
   const filtered = search.trim()
     ? allConvs.filter(c =>
@@ -131,7 +119,20 @@ export default function ChatScreen() {
     <View style={[s.root, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={s.header}>
-        <Text style={s.title}>Messages</Text>
+        <View style={s.headerTop}>
+          <Text style={s.title}>Messages</Text>
+          {/* Vybe inbox badge button */}
+          <Pressable style={s.inboxBtn} onPress={() => setInboxOpen(true)}>
+            <Flame size={22} color={Colors.brandOrange} fill={Colors.brandOrange} />
+            {pendingVibes.length > 0 && (
+              <View style={s.inboxBadge}>
+                <Text style={s.inboxBadgeText}>
+                  {pendingVibes.length > 9 ? '9+' : pendingVibes.length}
+                </Text>
+              </View>
+            )}
+          </Pressable>
+        </View>
         <View style={s.searchBar}>
           <Search size={16} color={Colors.inkDisabled} strokeWidth={1.8} />
           <TextInput
@@ -165,26 +166,7 @@ export default function ChatScreen() {
           onRefresh={refresh}
           refreshing={false}
           contentContainerStyle={s.listContent}
-          ListHeaderComponent={
-            pendingVibes.length > 0 ? (
-              <View style={s.pendingSection}>
-                <Text style={s.pendingSectionLabel}>Vybe Requests</Text>
-                <FlatList
-                  data={pendingVibes}
-                  keyExtractor={v => v.id}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={s.pendingStrip}
-                  renderItem={({ item }) => (
-                    <PendingVybeAvatar
-                      request={item}
-                      onPress={() => setReviewingVybe(item)}
-                    />
-                  )}
-                />
-              </View>
-            ) : null
-          }
+          ListHeaderComponent={null}
           renderItem={({ item }) => (
             <ConvRow
               conv={item}
@@ -203,18 +185,16 @@ export default function ChatScreen() {
         />
       )}
 
-      <VybeReviewModal
-        visible={!!reviewingVybe}
-        request={reviewingVybe}
+      <VybeInboxSheet
+        visible={inboxOpen}
+        requests={pendingVibes}
         onAccept={(vibeId, icebreaker) => {
           acceptVybe(vibeId, icebreaker)
-          setReviewingVybe(null)
         }}
         onPass={(vibeId) => {
           passVybe(vibeId)
-          setReviewingVybe(null)
         }}
-        onClose={() => setReviewingVybe(null)}
+        onClose={() => setInboxOpen(false)}
       />
     </View>
   )
@@ -228,12 +208,32 @@ const s = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: 'rgba(255,255,255,0.08)',
   },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
   title: {
     fontFamily: FontFamily.headingBold,
     fontSize: 28,
     color: Colors.inkPrimary,
-    marginBottom: 12,
   },
+  inboxBtn: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: 'rgba(255,107,53,0.12)',
+    borderWidth: 1, borderColor: 'rgba(255,107,53,0.25)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  inboxBadge: {
+    position: 'absolute', top: -2, right: -2,
+    minWidth: 18, height: 18, borderRadius: 9,
+    backgroundColor: Colors.brandOrange,
+    alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 2, borderColor: Colors.background,
+  },
+  inboxBadgeText: { fontFamily: FontFamily.bodySemiBold, fontSize: 10, color: '#111' },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',

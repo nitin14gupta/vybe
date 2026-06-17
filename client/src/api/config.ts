@@ -30,8 +30,11 @@ export const ENDPOINTS = {
   GET_BADGES:      '/places/badges',
 
   // Social
-  GET_PROFILE:     '/users/:id',
-  FOLLOW_USER:     '/users/:id/follow',
+  GET_PROFILE:       '/users/:id',
+  GET_USER_PROFILE:  '/users/:id/profile',
+  FOLLOW_USER:       '/users/:id/follow',
+  SEARCH_USERS:      '/users/search',
+  CHECK_USERNAME:    '/users/check-username',
 
   // Discover
   DISCOVER:        '/discover',
@@ -41,10 +44,14 @@ export const ENDPOINTS = {
   VIBES:           '/vibes',
 
   // Events
-  EVENTS:          '/events',
-  EVENT_DETAIL:    '/events/:id',
-  EVENT_RSVP:      '/events/:id/rsvp',
-  EVENT_UPDATE:    '/events/:id',
+  EVENTS:             '/events',
+  EVENT_DETAIL:       '/events/:id',
+  EVENT_RSVP:         '/events/:id/rsvp',
+  EVENT_UPDATE:       '/events/:id',
+  EVENT_ATTENDEES:    '/events/:id/attendees',
+  EVENT_TICKET:       '/events/:id/ticket',
+  EVENT_CHECKIN:      '/events/:id/checkin',
+  EVENT_REVIEWS:      '/events/:id/reviews',
 
   // Chat
   CONVERSATIONS:            '/chat/conversations',

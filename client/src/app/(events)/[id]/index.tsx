@@ -6,11 +6,11 @@ import {
   FlatList,
   Pressable,
   ScrollView,
-  Share,
   StyleSheet,
   Text,
   View,
 } from 'react-native'
+import { ShareEventSheet } from '@/components/ui'
 import { StaticEventMap } from '@/components/maps'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -22,12 +22,16 @@ import {
   Calendar,
   Clock,
   MapPin,
+  MoreVertical,
+  QrCode,
   Share2,
   Shield,
+  Star,
   Users,
 } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
-import ApiService, { type EventDetail } from '@/api/apiService'
+import ApiService, { type EventDetail, type EventAttendee } from '@/api/apiService'
+import { useAuthStore } from '@/store/auth'
 
 const { width: W } = Dimensions.get('window')
 
@@ -75,42 +79,70 @@ function formatPrice(price: number, isFree: boolean) {
 
 type RsvpStatus = 'idle' | 'going' | 'waitlist' | 'loading'
 
+const EVENT_PAST_THRESHOLD_MS = 0 // show rate button as soon as date_time passes
+
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const insets = useSafeAreaInsets()
   const router = useRouter()
   useHardwareBack()
+  const myId = useAuthStore(s => s.userId)
   const [event, setEvent] = useState<EventDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [rsvpStatus, setRsvpStatus] = useState<RsvpStatus>('idle')
   const [photoIdx, setPhotoIdx] = useState(0)
   const [showFullDesc, setShowFullDesc] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
+  const [attendees, setAttendees] = useState<EventAttendee[]>([])
+  const [attendeesLoading, setAttendeesLoading] = useState(false)
 
   useEffect(() => {
     if (!id) return
     ApiService.getEvent(id)
-      .then(setEvent)
+      .then(ev => {
+        setEvent(ev)
+        if (ev.host_id === myId) {
+          setAttendeesLoading(true)
+          ApiService.getEventAttendees(id)
+            .then(r => setAttendees(r.attendees))
+            .catch(() => {})
+            .finally(() => setAttendeesLoading(false))
+        }
+      })
       .catch(() => Alert.alert('Error', 'Could not load event'))
       .finally(() => setLoading(false))
-  }, [id])
+  }, [id, myId])
 
-  const handleRsvp = async () => {
-    if (!event || rsvpStatus === 'loading') return
-    setRsvpStatus('loading')
-    try {
-      const res = await ApiService.rsvpEvent(event.id, 'going')
-      setRsvpStatus(res.status as RsvpStatus)
-      setEvent(prev => prev ? { ...prev, spots_left: Math.max(0, prev.spots_left - 1), attendee_count: prev.attendee_count + 1 } : prev)
-    } catch (e: any) {
-      Alert.alert('Cannot RSVP', e.message)
-      setRsvpStatus('idle')
-    }
+  const handleRsvp = () => {
+    if (!event) return
+    router.push(`/(events)/${id}/book` as any)
+  }
+
+  const handleCancelEvent = () => {
+    Alert.alert('Cancel Event', 'Are you sure? Attendees will be notified. This cannot be undone.', [
+      { text: 'Keep Event', style: 'cancel' },
+      {
+        text: 'Cancel Event', style: 'destructive',
+        onPress: async () => {
+          try {
+            await ApiService.cancelEvent(id!)
+            setEvent(prev => prev ? { ...prev, is_cancelled: true } : prev)
+          } catch (e: any) {
+            Alert.alert('Error', e.message)
+          }
+        },
+      },
+    ])
   }
 
   const handleShare = () => {
     if (!event) return
-    Share.share({ message: `Check out "${event.title}" on VYBE!` })
+    setShareOpen(true)
   }
+
+  const isPast = event ? new Date(event.date_time.replace(' ', 'T')) < new Date() : false
+  const hasTicket = !!(event?.my_ticket_token)
 
   if (loading) {
     return (
@@ -177,10 +209,32 @@ export default function EventDetailScreen() {
           <Pressable style={styles.heroCircleBtn} onPress={() => router.back()}>
             <ArrowLeft size={20} color="#fff" />
           </Pressable>
-          <Pressable style={styles.heroCircleBtn} onPress={handleShare}>
-            <Share2 size={20} color="#fff" />
-          </Pressable>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Pressable style={styles.heroCircleBtn} onPress={handleShare}>
+              <Share2 size={20} color="#fff" />
+            </Pressable>
+            {event?.host_id === myId && (
+              <Pressable style={styles.heroCircleBtn} onPress={() => setMoreOpen(true)}>
+                <MoreVertical size={20} color="#fff" />
+              </Pressable>
+            )}
+          </View>
         </View>
+
+        {/* Host ⋮ menu modal */}
+        {moreOpen && (
+          <Pressable style={styles.menuBackdrop} onPress={() => setMoreOpen(false)}>
+            <View style={[styles.menuSheet, { top: insets.top + 60 }]}>
+              <Pressable style={styles.menuItem} onPress={() => { setMoreOpen(false); router.push(`/(events)/${id}/edit` as any) }}>
+                <Text style={styles.menuItemText}>Edit Event</Text>
+              </Pressable>
+              <View style={styles.menuDivider} />
+              <Pressable style={styles.menuItem} onPress={() => { setMoreOpen(false); handleCancelEvent() }}>
+                <Text style={[styles.menuItemText, { color: Colors.brandCoral }]}>Cancel Event</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        )}
       </View>
 
       {/* Scrollable content */}
@@ -293,51 +347,112 @@ export default function EventDetailScreen() {
 
       {/* Sticky bottom bar */}
       <View style={[styles.stickyBar, { paddingBottom: insets.bottom + 12 }]}>
-        <View style={styles.stickyLeft}>
-          {spotsLow && !isGoing && (
-            <View style={styles.spotsAlert}>
-              <View style={styles.spotsDot} />
-              <Text style={styles.spotsText}>Only {event.spots_left} left</Text>
-            </View>
-          )}
-          <Text style={styles.stickyPrice}>{formatPrice(event.price_inr, event.is_free)}</Text>
-        </View>
-
-        {event.is_cancelled ? (
-          <View style={styles.cancelledBadge}>
-            <Text style={styles.cancelledText}>Cancelled</Text>
-          </View>
-        ) : isGoing ? (
-          <View style={styles.goingBtn}>
-            <Text style={styles.goingBtnText}>Going ✓</Text>
-          </View>
-        ) : isWaitlist ? (
-          <View style={styles.waitlistBtn}>
-            <Text style={styles.waitlistBtnText}>On Waitlist</Text>
-          </View>
-        ) : (
-          <Pressable
-            style={styles.bookBtn}
-            onPress={handleRsvp}
-            disabled={rsvpStatus === 'loading'}
-          >
-            <LinearGradient
-              colors={['#FF6B35', '#FF3864']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.bookGradient}
-            >
-              {rsvpStatus === 'loading' ? (
-                <ActivityIndicator color="#fff" size="small" />
+        {event.host_id === myId ? (
+          /* ── Host view ── */
+          <View style={styles.hostBar}>
+            <View style={styles.hostMeta}>
+              <Text style={styles.stickyPrice}>{formatPrice(event.price_inr, event.is_free)}</Text>
+              {attendeesLoading ? (
+                <ActivityIndicator size="small" color={Colors.inkSecondary} />
               ) : (
-                <Text style={styles.bookBtnText}>
-                  {event.is_free ? 'RSVP Free' : 'Book Now'}
+                <Text style={styles.hostAttendeeCount}>
+                  {attendees.length} / {event.capacity} going
                 </Text>
               )}
-            </LinearGradient>
-          </Pressable>
+            </View>
+            <View style={styles.hostActions}>
+              <Pressable
+                style={styles.hostBtn}
+                onPress={() => router.push(`/(events)/${id}/attendees` as any)}
+              >
+                <Users size={16} color={Colors.inkPrimary} strokeWidth={1.8} />
+                <Text style={styles.hostBtnText}>Attendees</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.hostBtn, styles.hostBtnPrimary]}
+                onPress={() => router.push(`/(events)/${id}/scanner` as any)}
+              >
+                <LinearGradient
+                  colors={['#FF6B35', '#FF3864']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={styles.hostBtnGradient}
+                >
+                  <Text style={styles.hostBtnPrimaryText}>🔍 Scanner</Text>
+                </LinearGradient>
+              </Pressable>
+            </View>
+          </View>
+        ) : (
+          /* ── Attendee view ── */
+          <>
+            <View style={styles.stickyLeft}>
+              {spotsLow && !isGoing && (
+                <View style={styles.spotsAlert}>
+                  <View style={styles.spotsDot} />
+                  <Text style={styles.spotsText}>Only {event.spots_left} left</Text>
+                </View>
+              )}
+              <Text style={styles.stickyPrice}>{formatPrice(event.price_inr, event.is_free)}</Text>
+            </View>
+
+            {event.is_cancelled ? (
+              <View style={styles.cancelledBadge}>
+                <Text style={styles.cancelledText}>Cancelled</Text>
+              </View>
+            ) : isPast && (isGoing || hasTicket) ? (
+              <Pressable
+                style={styles.bookBtn}
+                onPress={() => router.push(`/(events)/${id}/review` as any)}
+              >
+                <LinearGradient
+                  colors={['#FF6B35', '#FF3864']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={styles.bookGradient}
+                >
+                  <Star size={15} color="#fff" fill="#fff" />
+                  <Text style={[styles.bookBtnText, { marginLeft: 6 }]}>Rate Event</Text>
+                </LinearGradient>
+              </Pressable>
+            ) : isGoing || hasTicket ? (
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <View style={styles.goingBtn}>
+                  <Text style={styles.goingBtnText}>Going ✓</Text>
+                </View>
+                <Pressable
+                  style={styles.ticketBtn}
+                  onPress={() => router.push(`/(events)/${id}/ticket` as any)}
+                >
+                  <QrCode size={16} color={Colors.brandOrange} />
+                  <Text style={styles.ticketBtnText}>Ticket</Text>
+                </Pressable>
+              </View>
+            ) : isWaitlist ? (
+              <View style={styles.waitlistBtn}>
+                <Text style={styles.waitlistBtnText}>On Waitlist</Text>
+              </View>
+            ) : (
+              <Pressable style={styles.bookBtn} onPress={handleRsvp}>
+                <LinearGradient
+                  colors={['#FF6B35', '#FF3864']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.bookGradient}
+                >
+                  <Text style={styles.bookBtnText}>
+                    {event.is_free ? 'RSVP Free' : 'Book Now'}
+                  </Text>
+                </LinearGradient>
+              </Pressable>
+            )}
+          </>
         )}
       </View>
+
+      <ShareEventSheet
+        visible={shareOpen}
+        event={event}
+        onClose={() => setShareOpen(false)}
+      />
     </View>
   )
 }
@@ -510,4 +625,46 @@ const styles = StyleSheet.create({
   errorText: { color: Colors.inkSecondary, fontFamily: FontFamily.bodyRegular, fontSize: 16, marginBottom: 16 },
   backBtn: { marginTop: 8 },
   backBtnText: { color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
+
+  ticketBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 14, paddingVertical: 14, borderRadius: 14,
+    borderWidth: 1, borderColor: Colors.brandOrange,
+  },
+  ticketBtnText: { color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold, fontSize: 14 },
+
+  menuBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100 },
+  menuSheet: {
+    position: 'absolute', right: 16,
+    backgroundColor: Colors.surface,
+    borderRadius: 14,
+    borderWidth: 1, borderColor: Colors.divider,
+    minWidth: 160,
+    overflow: 'hidden',
+    zIndex: 101,
+  },
+  menuItem: { paddingHorizontal: 18, paddingVertical: 14 },
+  menuItemText: { fontFamily: FontFamily.bodyMedium, fontSize: 15, color: Colors.inkPrimary },
+  menuDivider: { height: 1, backgroundColor: Colors.divider },
+
+  // Host bar
+  hostBar: { flex: 1, gap: 10 },
+  hostMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  hostAttendeeCount: {
+    fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary,
+  },
+  hostActions: { flexDirection: 'row', gap: 10 },
+  hostBtn: {
+    flex: 1, height: 48, borderRadius: 24,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)',
+  },
+  hostBtnPrimary: { borderWidth: 0, overflow: 'hidden' },
+  hostBtnGradient: {
+    flex: 1, width: '100%', height: '100%',
+    alignItems: 'center', justifyContent: 'center',
+    borderRadius: 24,
+  },
+  hostBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkPrimary },
+  hostBtnPrimaryText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: '#fff' },
 })

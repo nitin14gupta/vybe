@@ -47,6 +47,18 @@ class EventDetail(EventSummary):
     is_cancelled: bool
     cancel_deadline: str
     edit_deadline: str
+    my_ticket_token: Optional[str] = None
+    my_checked_in_at: Optional[str] = None
+    avg_rating: Optional[float] = None
+
+
+class CheckinBody(BaseModel):
+    ticket_token: str
+
+
+class ReviewBody(BaseModel):
+    rating: int
+    body: Optional[str] = None
 
 
 class CreateEventBody(BaseModel):
@@ -173,6 +185,7 @@ def list_events(
 
 @router.get("/{event_id}", response_model=EventDetail)
 def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
     with get_db() as (cur, _):
         cur.execute(
             """
@@ -190,12 +203,16 @@ def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
                 u.name AS host_name,
                 (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
                 (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id = e.id AND ea.status = 'going')::int AS attendee_count,
-                NULL::int AS distance_km
+                NULL::int AS distance_km,
+                my_ea.ticket_token AS my_ticket_token,
+                my_ea.checked_in_at::text AS my_checked_in_at,
+                (SELECT ROUND(AVG(rating)::numeric, 1) FROM event_reviews WHERE event_id = e.id) AS avg_rating
             FROM events e
             JOIN users u ON u.id = e.host_id
+            LEFT JOIN event_attendees my_ea ON my_ea.event_id = e.id AND my_ea.user_id = %s::uuid AND my_ea.status = 'going'
             WHERE e.id = %s
             """,
-            (event_id,),
+            (uid, event_id),
         )
         row = cur.fetchone()
 
@@ -398,3 +415,172 @@ def cancel_event(event_id: str, current_user: dict = Depends(get_current_user)):
         conn.commit()
 
     return {"ok": True}
+
+
+# ── GET /events/{id}/attendees ────────────────────────────────────────────────
+
+@router.get("/{event_id}/attendees")
+def get_attendees(event_id: str, current_user: dict = Depends(get_current_user)):
+    with get_db() as (cur, _):
+        # Only host can see attendee list
+        cur.execute("SELECT host_id::text FROM events WHERE id = %s", (event_id,))
+        ev = cur.fetchone()
+        if not ev:
+            raise HTTPException(status_code=404, detail="Event not found")
+        if ev["host_id"] != current_user["id"]:
+            raise HTTPException(status_code=403, detail="Only the host can view attendees")
+
+        cur.execute(
+            """
+            SELECT
+                u.id::text,
+                u.name,
+                u.username,
+                u.city,
+                ea.status,
+                ea.joined_at,
+                (SELECT url FROM user_photos WHERE user_id = u.id ORDER BY position LIMIT 1) AS avatar
+            FROM event_attendees ea
+            JOIN users u ON u.id = ea.user_id
+            WHERE ea.event_id = %s
+            ORDER BY ea.joined_at ASC
+            """,
+            (event_id,),
+        )
+        rows = [dict(r) for r in cur.fetchall()]
+    return {"attendees": rows, "total": len(rows)}
+
+
+# ── GET /events/{id}/ticket ───────────────────────────────────────────────────
+
+@router.get("/{event_id}/ticket")
+def get_my_ticket(event_id: str, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    with get_db() as (cur, _):
+        cur.execute(
+            """
+            SELECT ea.ticket_token, e.title AS event_title, e.date_time::text,
+                   e.end_time::text, e.location_name, e.event_type,
+                   u.name AS host_name
+            FROM event_attendees ea
+            JOIN events e ON e.id = ea.event_id
+            JOIN users u ON u.id = e.host_id
+            WHERE ea.event_id = %s AND ea.user_id = %s::uuid AND ea.status = 'going'
+            """,
+            (event_id, uid),
+        )
+        row = cur.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="No ticket found — you are not attending this event")
+    return dict(row)
+
+
+# ── POST /events/{id}/checkin ─────────────────────────────────────────────────
+
+@router.post("/{event_id}/checkin")
+def checkin_attendee(event_id: str, body: CheckinBody, current_user: dict = Depends(get_current_user)):
+    with get_db() as (cur, conn):
+        cur.execute("SELECT host_id::text FROM events WHERE id = %s", (event_id,))
+        ev = cur.fetchone()
+        if not ev:
+            raise HTTPException(status_code=404, detail="Event not found")
+        if ev["host_id"] != current_user["id"]:
+            raise HTTPException(status_code=403, detail="Only the host can check in attendees")
+
+        cur.execute(
+            """
+            SELECT ea.id, ea.checked_in_at, u.name, u.username
+            FROM event_attendees ea
+            JOIN users u ON u.id = ea.user_id
+            WHERE ea.event_id = %s AND ea.ticket_token = %s AND ea.status = 'going'
+            """,
+            (event_id, body.ticket_token),
+        )
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Invalid or cancelled ticket")
+
+        if row["checked_in_at"] is not None:
+            return {"ok": True, "already_checked_in": True, "name": row["name"], "username": row["username"]}
+
+        cur.execute(
+            "UPDATE event_attendees SET checked_in_at = NOW() WHERE id = %s",
+            (row["id"],),
+        )
+        conn.commit()
+    return {"ok": True, "already_checked_in": False, "name": row["name"], "username": row["username"]}
+
+
+# ── POST /events/{id}/reviews ─────────────────────────────────────────────────
+
+@router.post("/{event_id}/reviews")
+def submit_review(event_id: str, body: ReviewBody, current_user: dict = Depends(get_current_user)):
+    if not (1 <= body.rating <= 5):
+        raise HTTPException(status_code=422, detail="Rating must be between 1 and 5")
+
+    uid = current_user["id"]
+    with get_db() as (cur, conn):
+        cur.execute("SELECT date_time FROM events WHERE id = %s", (event_id,))
+        ev = cur.fetchone()
+        if not ev:
+            raise HTTPException(status_code=404, detail="Event not found")
+        if ev["date_time"].replace(tzinfo=timezone.utc) > datetime.now(timezone.utc):
+            raise HTTPException(status_code=403, detail="Event has not ended yet")
+
+        cur.execute(
+            "SELECT 1 FROM event_attendees WHERE event_id = %s AND user_id = %s::uuid AND status = 'going'",
+            (event_id, uid),
+        )
+        if not cur.fetchone():
+            raise HTTPException(status_code=403, detail="You did not attend this event")
+
+        cur.execute(
+            """
+            INSERT INTO event_reviews (event_id, reviewer_id, rating, body)
+            VALUES (%s, %s::uuid, %s, %s)
+            ON CONFLICT (event_id, reviewer_id) DO UPDATE SET rating = EXCLUDED.rating, body = EXCLUDED.body
+            """,
+            (event_id, uid, body.rating, body.body),
+        )
+        conn.commit()
+    return {"ok": True}
+
+
+# ── GET /events/{id}/reviews ──────────────────────────────────────────────────
+
+@router.get("/{event_id}/reviews")
+def get_reviews(event_id: str, current_user: dict = Depends(get_current_user)):
+    with get_db() as (cur, _):
+        cur.execute(
+            """
+            SELECT
+                er.id::text,
+                u.name AS reviewer_name,
+                (SELECT url FROM user_photos WHERE user_id = u.id ORDER BY position LIMIT 1) AS reviewer_avatar,
+                er.rating, er.body, er.created_at::text
+            FROM event_reviews er
+            JOIN users u ON u.id = er.reviewer_id
+            WHERE er.event_id = %s
+            ORDER BY er.created_at DESC
+            """,
+            (event_id,),
+        )
+        reviews = [dict(r) for r in cur.fetchall()]
+        avg = round(sum(r["rating"] for r in reviews) / len(reviews), 1) if reviews else None
+    return {"avg_rating": avg, "count": len(reviews), "reviews": reviews}
+
+
+# ── GET /events/{id}/reviews/me ───────────────────────────────────────────────
+
+@router.get("/{event_id}/reviews/me")
+def get_my_review(event_id: str, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    with get_db() as (cur, _):
+        cur.execute(
+            "SELECT rating, body FROM event_reviews WHERE event_id = %s AND reviewer_id = %s::uuid",
+            (event_id, uid),
+        )
+        row = cur.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="No review found")
+    return dict(row)

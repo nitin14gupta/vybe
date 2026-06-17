@@ -14,9 +14,14 @@ export function useConversations() {
         ApiService.getConversations(),
         ApiService.getReceivedVibes(),
       ])
-      setActiveConversations(convData.active)
-      setLockedConversations(convData.locked)
-      setPendingVibes(vibeData)
+      const byRecent = (a: Conversation, b: Conversation) =>
+        (b.last_sent_at ?? b.last_message_at ?? '').localeCompare(
+          a.last_sent_at ?? a.last_message_at ?? '',
+        )
+      setActiveConversations([...convData.active].sort(byRecent))
+      setLockedConversations([...convData.locked].sort(byRecent))
+      // Newest vybe request first in the strip
+      setPendingVibes([...vibeData].sort((a, b) => b.created_at.localeCompare(a.created_at)))
     } catch (e) {
       // Silently ignore — show empty state
     } finally {
