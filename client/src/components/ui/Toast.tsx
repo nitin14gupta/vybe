@@ -1,81 +1,25 @@
-import { useEffect } from 'react'
-import { StyleSheet, Text } from 'react-native'
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-} from 'react-native-reanimated'
-import { Colors, FontFamily } from '@/constants'
+// ToastBanner is kept for backward compatibility but now routes through the global pill.
+// Call sites that import ToastBanner can keep working — the pill shows at 75% screen height.
+export { usePillStore as useToast } from '@/store/pillStore'
+
+import { usePillStore } from '@/store/pillStore'
 
 export type ToastType = 'error' | 'success' | 'info'
+
+// Legacy component shim — kept so existing imports don't break.
+// Previously rendered its own animated banner; now triggers the global PillOverlay instead.
+import { useEffect } from 'react'
 
 interface Props {
   message: string
   type?: ToastType
 }
 
-const BG: Record<ToastType, string> = {
-  error:   '#C0392B',
-  success: '#1B8A4C',
-  info:    '#2C2C2C',
-}
-
-const PREFIX: Record<ToastType, string> = {
-  error:   '✕  ',
-  success: '✓  ',
-  info:    '',
-}
-
 export function ToastBanner({ message, type = 'info' }: Props) {
-  const opacity = useSharedValue(0)
-  const ty = useSharedValue(14)
-
+  const show = usePillStore(s => s.show)
   useEffect(() => {
-    opacity.value = withTiming(1, { duration: 180 })
-    ty.value = withSpring(0, { damping: 18, stiffness: 260 })
-
-    const t = setTimeout(() => {
-      opacity.value = withTiming(0, { duration: 220 })
-      ty.value = withTiming(10, { duration: 220 })
-    }, 2200)
-
-    return () => clearTimeout(t)
-  }, [])
-
-  const anim = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: ty.value }],
-  }))
-
-  return (
-    <Animated.View style={[styles.banner, { backgroundColor: BG[type] }, anim]}>
-      <Text style={styles.text}>{PREFIX[type]}{message}</Text>
-    </Animated.View>
-  )
+    const pillType = type === 'success' ? 'success' : type === 'error' ? 'error' : 'default'
+    show(message, pillType)
+  }, [message])
+  return null
 }
-
-const styles = StyleSheet.create({
-  banner: {
-    position: 'absolute',
-    bottom: 96,
-    left: 20,
-    right: 20,
-    paddingHorizontal: 18,
-    paddingVertical: 13,
-    borderRadius: 14,
-    zIndex: 999,
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
-  },
-  text: {
-    fontFamily: FontFamily.bodyMedium,
-    fontSize: 14,
-    color: '#fff',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-})

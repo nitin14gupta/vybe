@@ -141,7 +141,7 @@ def list_conversations(current_user: dict = Depends(get_current_user)):
               AND NOT (%s::uuid = ANY(COALESCE(c.hidden_by, '{}'::uuid[])))
             ORDER BY COALESCE(c.last_message_at, c.created_at) DESC
             """,
-            (uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid),
+            (uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid),
         )
         rows = cur.fetchall()
 

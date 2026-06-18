@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Pressable,
   StyleSheet,
@@ -17,6 +16,7 @@ import { Image } from 'expo-image'
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated'
 import { Colors, FontFamily } from '@/constants'
 import ApiService, { type EventAttendee } from '@/api/apiService'
+import { usePillStore } from '@/store/pillStore'
 
 type ScanResult = { ok: boolean; already_checked_in?: boolean; name: string; username?: string | null }
 
@@ -33,6 +33,7 @@ export default function ScannerScreen() {
   const [scanning, setScanning] = useState(false)
   const [checkingIn, setCheckingIn] = useState<string | null>(null)
   const scanCooldown = useRef(false)
+  const showPill = usePillStore(s => s.show)
 
   useEffect(() => {
     if (!permission?.granted) {
@@ -85,7 +86,7 @@ export default function ScannerScreen() {
       showResult(res)
       setAttendees(prev => prev.map(a => a.id === attendee.id ? { ...a, status: 'checked_in' } : a))
     } catch (e: any) {
-      Alert.alert('Error', e.message)
+      showPill(e.message || 'Check-in failed', 'error')
     } finally {
       setCheckingIn(null)
     }

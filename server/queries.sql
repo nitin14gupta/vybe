@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS public.conversations (
   status text DEFAULT 'pending'::text,
   created_at timestamp with time zone DEFAULT now(),
   last_message_at timestamp with time zone,
+  hidden_by uuid[] DEFAULT '{}'::uuid[],
   CONSTRAINT conversations_check CHECK (user1_id < user2_id),
   CONSTRAINT conversations_status_check CHECK (status = ANY (ARRAY['pending'::text, 'active'::text])),
   CONSTRAINT conversations_pkey PRIMARY KEY (id),
@@ -30,8 +31,24 @@ CREATE TABLE IF NOT EXISTS public.event_attendees (
   user_id uuid NOT NULL,
   status text DEFAULT 'going'::text NOT NULL,
   joined_at timestamp with time zone DEFAULT now(),
+  checked_in_at timestamp with time zone,
+  ticket_token text DEFAULT (gen_random_uuid())::text,
+  payment_id text,
   CONSTRAINT event_attendees_pkey PRIMARY KEY (id),
+  CONSTRAINT event_attendees_ticket_token_key UNIQUE (ticket_token),
   CONSTRAINT event_attendees_unique UNIQUE (event_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.event_reviews (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  event_id uuid NOT NULL,
+  reviewer_id uuid NOT NULL,
+  rating smallint NOT NULL,
+  body text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT event_reviews_rating_check CHECK (rating >= 1 AND rating <= 5),
+  CONSTRAINT event_reviews_pkey PRIMARY KEY (id),
+  CONSTRAINT event_reviews_event_id_reviewer_id_key UNIQUE (event_id, reviewer_id)
 );
 
 CREATE TABLE IF NOT EXISTS public.events (
@@ -79,6 +96,20 @@ CREATE TABLE IF NOT EXISTS public.messages (
   read_at timestamp with time zone,
   CONSTRAINT messages_content_type_check CHECK (content_type = ANY (ARRAY['text'::text, 'event'::text, 'profile'::text, 'image'::text])),
   CONSTRAINT messages_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  user_id uuid NOT NULL,
+  type text NOT NULL,
+  actor_id uuid,
+  entity_id uuid,
+  entity_type text,
+  title text NOT NULL,
+  body text,
+  read_at timestamp with time zone,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT notifications_pkey PRIMARY KEY (id)
 );
 
 CREATE TABLE IF NOT EXISTS public.refresh_tokens (
@@ -139,8 +170,10 @@ CREATE TABLE IF NOT EXISTS public.users (
   updated_at timestamp with time zone DEFAULT now(),
   bio text,
   badges text[] DEFAULT ARRAY['🔥 Vybe Starter'::text, '✨ Early Adopter'::text, '🎙️ Voice Ready'::text, '🌟 Main Character'::text],
+  username character varying(30),
   CONSTRAINT users_pkey PRIMARY KEY (id),
-  CONSTRAINT users_phone_key UNIQUE (phone)
+  CONSTRAINT users_phone_key UNIQUE (phone),
+  CONSTRAINT users_username_key UNIQUE (username)
 );
 
 CREATE TABLE IF NOT EXISTS public.vibe_requests (
@@ -164,11 +197,15 @@ ALTER TABLE public.conversations ADD CONSTRAINT conversations_user1_id_fkey FORE
 ALTER TABLE public.conversations ADD CONSTRAINT conversations_user2_id_fkey FOREIGN KEY (user2_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.event_attendees ADD CONSTRAINT event_attendees_event_id_fkey FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE;
 ALTER TABLE public.event_attendees ADD CONSTRAINT event_attendees_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE public.event_reviews ADD CONSTRAINT event_reviews_event_id_fkey FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE;
+ALTER TABLE public.event_reviews ADD CONSTRAINT event_reviews_reviewer_id_fkey FOREIGN KEY (reviewer_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.events ADD CONSTRAINT events_host_id_fkey FOREIGN KEY (host_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.follows ADD CONSTRAINT follows_follower_id_fkey FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.follows ADD CONSTRAINT follows_following_id_fkey FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.messages ADD CONSTRAINT messages_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE;
 ALTER TABLE public.messages ADD CONSTRAINT messages_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE public.notifications ADD CONSTRAINT notifications_actor_id_fkey FOREIGN KEY (actor_id) REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE public.notifications ADD CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.refresh_tokens ADD CONSTRAINT refresh_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.user_blocks ADD CONSTRAINT user_blocks_blocked_id_fkey FOREIGN KEY (blocked_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.user_blocks ADD CONSTRAINT user_blocks_blocker_id_fkey FOREIGN KEY (blocker_id) REFERENCES users(id) ON DELETE CASCADE;
@@ -183,8 +220,10 @@ CREATE INDEX events_location_idx ON public.events USING btree (location_lat, loc
 CREATE INDEX idx_follows_follower ON public.follows USING btree (follower_id);
 CREATE INDEX idx_follows_following ON public.follows USING btree (following_id);
 CREATE INDEX messages_conv_sent_idx ON public.messages USING btree (conversation_id, sent_at DESC);
+CREATE INDEX idx_notif_user_created ON public.notifications USING btree (user_id, created_at DESC);
 CREATE INDEX idx_refresh_tokens_user_id ON public.refresh_tokens USING btree (user_id);
 CREATE INDEX idx_users_phone ON public.users USING btree (phone);
+CREATE INDEX idx_users_username ON public.users USING btree (username);
 
 -- ── Triggers ────────────────────────────────────────────────────────────────
 -- TRIGGER users_updated_at BEFORE UPDATE ON public.users: EXECUTE FUNCTION update_updated_at()

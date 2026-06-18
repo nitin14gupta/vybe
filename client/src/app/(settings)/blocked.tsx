@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import {
   View, Text, StyleSheet, FlatList, Pressable, Image,
-  ActivityIndicator, Alert,
+  ActivityIndicator,
 } from 'react-native'
 import { router } from 'expo-router'
 import { useFocusEffect } from 'expo-router'
@@ -9,11 +9,13 @@ import { ChevronLeft, ShieldOff } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import ApiService, { BlockedUser } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
+import { ConfirmSheet } from '@/components/ui'
 
 export default function BlockedUsersScreen() {
   const insets = useSafeAreaInsets()
   const [blocked, setBlocked] = useState<BlockedUser[]>([])
   const [loading, setLoading] = useState(true)
+  const [confirmUser, setConfirmUser] = useState<BlockedUser | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -25,21 +27,10 @@ export default function BlockedUsersScreen() {
 
   useFocusEffect(useCallback(() => { load() }, [load]))
 
-  const handleUnblock = (user: BlockedUser) => {
-    Alert.alert(
-      'Unblock User',
-      `Unblock ${user.name ?? 'this user'}? They may appear in your discover feed again.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Unblock',
-          onPress: async () => {
-            await ApiService.unblockUser(user.id).catch(() => {})
-            setBlocked(prev => prev.filter(u => u.id !== user.id))
-          },
-        },
-      ],
-    )
+  const doUnblock = async () => {
+    if (!confirmUser) return
+    await ApiService.unblockUser(confirmUser.id).catch(() => {})
+    setBlocked(prev => prev.filter(u => u.id !== confirmUser.id))
   }
 
   return (
@@ -82,13 +73,22 @@ export default function BlockedUsersScreen() {
                 <Text style={s.name}>{item.name ?? 'Unknown'}</Text>
                 {item.city ? <Text style={s.city}>{item.city}</Text> : null}
               </View>
-              <Pressable style={s.unblockBtn} onPress={() => handleUnblock(item)}>
+              <Pressable style={s.unblockBtn} onPress={() => setConfirmUser(item)}>
                 <Text style={s.unblockText}>Unblock</Text>
               </Pressable>
             </View>
           )}
         />
       )}
+
+      <ConfirmSheet
+        visible={!!confirmUser}
+        title={`Unblock ${confirmUser?.name ?? 'this user'}?`}
+        body="They may appear in your discover feed again."
+        confirmLabel="Unblock"
+        onConfirm={doUnblock}
+        onClose={() => setConfirmUser(null)}
+      />
     </View>
   )
 }

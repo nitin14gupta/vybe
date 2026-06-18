@@ -201,8 +201,8 @@ export default function ChatDetailScreen() {
   return (
     <KeyboardAvoidingView
       style={[s.root, { paddingBottom: insets.bottom }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={0}
+      behavior="padding"
+      keyboardVerticalOffset={Platform.OS === 'android' ? -24 : 0}
     >
       {/* Header */}
       <View style={[s.header, { paddingTop: insets.top + 8 }]}>

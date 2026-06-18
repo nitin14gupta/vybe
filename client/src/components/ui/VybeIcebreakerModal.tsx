@@ -1,8 +1,7 @@
-import { useState } from 'react'
-import {
-  Modal, View, Text, TextInput, Pressable, StyleSheet,
-  KeyboardAvoidingView, Platform,
-} from 'react-native'
+import { useState, useRef, useEffect } from 'react'
+import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native'
+import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
+import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { MessageCircle } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 
@@ -15,8 +14,26 @@ interface Props {
   onClose: () => void
 }
 
+function renderBackdrop(props: BottomSheetBackdropProps) {
+  return (
+    <BottomSheetBackdrop
+      {...props}
+      disappearsOnIndex={-1}
+      appearsOnIndex={0}
+      pressBehavior="close"
+      opacity={0.7}
+    />
+  )
+}
+
 export function VybeIcebreakerModal({ visible, partnerName, onSend, onClose }: Props) {
+  const sheetRef = useRef<BottomSheetModal>(null)
   const [message, setMessage] = useState('')
+
+  useEffect(() => {
+    if (visible) sheetRef.current?.present()
+    else sheetRef.current?.dismiss()
+  }, [visible])
 
   const handleSend = () => {
     const trimmed = message.trim()
@@ -29,75 +46,65 @@ export function VybeIcebreakerModal({ visible, partnerName, onSend, onClose }: P
   const canSend = message.trim().length > 0
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
-
-          <View style={styles.iconRow}>
-            <View style={styles.iconBg}>
-              <MessageCircle size={28} color={Colors.brandOrange} strokeWidth={1.8} />
-            </View>
+    <BottomSheetModal
+      ref={sheetRef}
+      enableDynamicSizing
+      enablePanDownToClose
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
+      onDismiss={onClose}
+      backdropComponent={renderBackdrop}
+      backgroundStyle={s.bg}
+      handleIndicatorStyle={s.handleIndicator}
+    >
+      <BottomSheetView style={s.content}>
+        <View style={s.iconRow}>
+          <View style={s.iconBg}>
+            <MessageCircle size={28} color={Colors.brandOrange} strokeWidth={1.8} />
           </View>
-
-          <Text style={styles.heading}>Write back to unlock the chat</Text>
-          <Text style={styles.sub}>
-            {partnerName ? `${partnerName} accepted your vybe!` : 'Vybe accepted!'} Write an icebreaker to start the conversation.
-          </Text>
-
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={styles.input}
-              value={message}
-              onChangeText={t => t.length <= MAX_CHARS && setMessage(t)}
-              placeholder="Start with something genuine..."
-              placeholderTextColor={Colors.inkDisabled}
-              multiline
-              maxLength={MAX_CHARS}
-              autoFocus
-            />
-            <Text style={[styles.charCount, charsLeft < 20 && styles.charCountWarn]}>
-              {charsLeft}
-            </Text>
-          </View>
-
-          <Pressable
-            style={[styles.sendBtn, !canSend && styles.sendBtnDisabled]}
-            onPress={handleSend}
-            disabled={!canSend}
-          >
-            <Text style={styles.sendBtnText}>Send & Start Chatting</Text>
-          </Pressable>
         </View>
-      </KeyboardAvoidingView>
-    </Modal>
+
+        <Text style={s.heading}>Write back to unlock the chat</Text>
+        <Text style={s.sub}>
+          {partnerName ? `${partnerName} accepted your vybe!` : 'Vybe accepted!'} Write an icebreaker to start the conversation.
+        </Text>
+
+        <View style={s.inputWrapper}>
+          <TextInput
+            style={s.input}
+            value={message}
+            onChangeText={t => t.length <= MAX_CHARS && setMessage(t)}
+            placeholder="Start with something genuine..."
+            placeholderTextColor={Colors.inkDisabled}
+            multiline
+            maxLength={MAX_CHARS}
+            autoFocus
+          />
+          <Text style={[s.charCount, charsLeft < 20 && s.charCountWarn]}>
+            {charsLeft}
+          </Text>
+        </View>
+
+        <Pressable
+          style={[s.sendBtn, !canSend && s.sendBtnDisabled]}
+          onPress={handleSend}
+          disabled={!canSend}
+        >
+          <Text style={s.sendBtnText}>Send & Start Chatting</Text>
+        </Pressable>
+      </BottomSheetView>
+    </BottomSheetModal>
   )
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.7)',
-  },
-  sheet: {
-    backgroundColor: '#1a1a1a',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+const s = StyleSheet.create({
+  bg: { backgroundColor: '#1a1a1a' },
+  handleIndicator: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  content: {
     paddingHorizontal: 20,
     paddingBottom: 36,
-    paddingTop: 12,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignSelf: 'center',
-    marginBottom: 20,
+    paddingTop: 8,
   },
   iconRow: { alignItems: 'center', marginBottom: 16 },
   iconBg: {

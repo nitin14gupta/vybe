@@ -1,10 +1,9 @@
-import React from 'react'
-import {
-  Modal, View, Text, StyleSheet, Pressable,
-  ActivityIndicator,
-} from 'react-native'
+import { useRef, useEffect } from 'react'
+import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native'
+import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
+import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Ban, MessageSquareOff, BellOff } from 'lucide-react-native'
+import { MessageSquareOff, BellOff } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 
 interface Props {
@@ -17,19 +16,41 @@ interface Props {
   onClose: () => void
 }
 
+function renderBackdrop(props: BottomSheetBackdropProps) {
+  return (
+    <BottomSheetBackdrop
+      {...props}
+      disappearsOnIndex={-1}
+      appearsOnIndex={0}
+      pressBehavior="close"
+      opacity={0.55}
+    />
+  )
+}
+
 export function BlockSheet({ visible, targetName, isBlocked, loading, onBlock, onUnblock, onClose }: Props) {
+  const sheetRef = useRef<BottomSheetModal>(null)
   const name = targetName ?? 'this user'
 
-  return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={s.backdrop} onPress={onClose} />
-      <View style={s.sheet}>
-        <View style={s.handle} />
+  useEffect(() => {
+    if (visible) sheetRef.current?.present()
+    else sheetRef.current?.dismiss()
+  }, [visible])
 
+  return (
+    <BottomSheetModal
+      ref={sheetRef}
+      enableDynamicSizing
+      enablePanDownToClose
+      onDismiss={onClose}
+      backdropComponent={renderBackdrop}
+      backgroundStyle={s.bg}
+      handleIndicatorStyle={s.handleIndicator}
+    >
+      <BottomSheetView style={s.content}>
         {!isBlocked && (
           <>
             <Text style={s.title}>Block {name}?</Text>
-
             <View style={s.bulletRow}>
               <MessageSquareOff size={18} color={Colors.inkSecondary} strokeWidth={1.8} />
               <Text style={s.bulletText}>They won't be able to message you or see your profile.</Text>
@@ -66,28 +87,18 @@ export function BlockSheet({ visible, targetName, isBlocked, loading, onBlock, o
         <Pressable style={s.cancelBtn} onPress={onClose}>
           <Text style={s.cancelText}>Cancel</Text>
         </Pressable>
-      </View>
-    </Modal>
+      </BottomSheetView>
+    </BottomSheetModal>
   )
 }
 
 const s = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-  },
-  sheet: {
-    backgroundColor: Colors.elevated,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+  bg: { backgroundColor: Colors.elevated },
+  handleIndicator: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  content: {
     paddingHorizontal: 24,
     paddingBottom: 36,
-    paddingTop: 12,
-  },
-  handle: {
-    width: 40, height: 4, borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignSelf: 'center', marginBottom: 20,
+    paddingTop: 8,
   },
   title: {
     fontFamily: FontFamily.headingBold,

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -15,6 +14,7 @@ import { ArrowLeft, Calendar, MapPin } from 'lucide-react-native'
 import { Image } from 'expo-image'
 import { Colors, FontFamily } from '@/constants'
 import ApiService, { type EventDetail } from '@/api/apiService'
+import { usePillStore } from '@/store/pillStore'
 
 function parseDate(iso: string | null | undefined) {
   if (!iso) return null
@@ -42,12 +42,13 @@ export default function BookScreen() {
   const [event, setEvent] = useState<EventDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [paying, setPaying] = useState(false)
+  const showPill = usePillStore(s => s.show)
 
   useEffect(() => {
     if (!id) return
     ApiService.getEvent(id)
       .then(setEvent)
-      .catch(() => Alert.alert('Error', 'Could not load event'))
+      .catch(() => showPill('Could not load event', 'error'))
       .finally(() => setLoading(false))
   }, [id])
 
@@ -65,11 +66,11 @@ export default function BookScreen() {
       if (res.status === 'going') {
         router.replace(`/(events)/${id}/ticket` as any)
       } else {
-        Alert.alert("You're on the waitlist", 'A spot will open up soon!')
+        showPill("You're on the waitlist — a spot will open up soon!", 'default')
         router.back()
       }
     } catch (e: any) {
-      Alert.alert('Booking failed', e.message)
+      showPill(e.message || 'Booking failed', 'error')
       setPaying(false)
     }
   }

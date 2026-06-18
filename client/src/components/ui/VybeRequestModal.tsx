@@ -1,8 +1,7 @@
-import { useState } from 'react'
-import {
-  Modal, View, Text, TextInput, Pressable, Image,
-  StyleSheet, KeyboardAvoidingView, Platform,
-} from 'react-native'
+import { useState, useRef, useEffect } from 'react'
+import { View, Text, TextInput, Pressable, Image, StyleSheet } from 'react-native'
+import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
+import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { Flame } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 import type { DiscoverUser } from '@/api/apiService'
@@ -16,8 +15,26 @@ interface Props {
   onClose: () => void
 }
 
+function renderBackdrop(props: BottomSheetBackdropProps) {
+  return (
+    <BottomSheetBackdrop
+      {...props}
+      disappearsOnIndex={-1}
+      appearsOnIndex={0}
+      pressBehavior="close"
+      opacity={0.6}
+    />
+  )
+}
+
 export function VybeRequestModal({ visible, user, onSend, onClose }: Props) {
+  const sheetRef = useRef<BottomSheetModal>(null)
   const [message, setMessage] = useState('')
+
+  useEffect(() => {
+    if (visible) sheetRef.current?.present()
+    else sheetRef.current?.dismiss()
+  }, [visible])
 
   const handleSend = () => {
     const trimmed = message.trim()
@@ -39,96 +56,79 @@ export function VybeRequestModal({ visible, user, onSend, onClose }: Props) {
   const avatar = user.photos[0]?.url
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
-      <KeyboardAvoidingView
-        style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
-
-        <View style={styles.sheet}>
-          {/* Handle bar */}
-          <View style={styles.handle} />
-
-          {/* Partner preview */}
-          <View style={styles.partnerRow}>
-            {avatar ? (
-              <Image source={{ uri: avatar }} style={styles.avatar} />
-            ) : (
-              <View style={[styles.avatar, styles.avatarFallback]}>
-                <Text style={styles.avatarInitial}>{(user.name ?? '?').charAt(0)}</Text>
-              </View>
-            )}
-            <View style={styles.partnerInfo}>
-              <Text style={styles.partnerName}>{user.name ?? 'Someone'}</Text>
-              {user.city ? <Text style={styles.partnerCity}>{user.city}</Text> : null}
+    <BottomSheetModal
+      ref={sheetRef}
+      enableDynamicSizing
+      enablePanDownToClose
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
+      onDismiss={handleClose}
+      backdropComponent={renderBackdrop}
+      backgroundStyle={s.bg}
+      handleIndicatorStyle={s.handleIndicator}
+    >
+      <BottomSheetView style={s.content}>
+        <View style={s.partnerRow}>
+          {avatar ? (
+            <Image source={{ uri: avatar }} style={s.avatar} />
+          ) : (
+            <View style={[s.avatar, s.avatarFallback]}>
+              <Text style={s.avatarInitial}>{(user.name ?? '?').charAt(0)}</Text>
             </View>
-            <View style={styles.flameBadge}>
-              <Flame size={18} color={Colors.brandOrange} fill={Colors.brandOrange} />
-            </View>
+          )}
+          <View style={s.partnerInfo}>
+            <Text style={s.partnerName}>{user.name ?? 'Someone'}</Text>
+            {user.city ? <Text style={s.partnerCity}>{user.city}</Text> : null}
           </View>
-
-          {/* Heading */}
-          <Text style={styles.heading}>Send your vybe</Text>
-          <Text style={styles.sub}>Say something genuine — they can see this before deciding</Text>
-
-          {/* Message input */}
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={styles.input}
-              value={message}
-              onChangeText={t => t.length <= MAX_CHARS && setMessage(t)}
-              placeholder="What made you want to connect?"
-              placeholderTextColor={Colors.inkDisabled}
-              multiline
-              maxLength={MAX_CHARS}
-              autoFocus
-            />
-            <Text style={[styles.charCount, charsLeft < 20 && styles.charCountWarn]}>
-              {charsLeft}
-            </Text>
+          <View style={s.flameBadge}>
+            <Flame size={18} color={Colors.brandOrange} fill={Colors.brandOrange} />
           </View>
-
-          {/* Actions */}
-          <Pressable
-            style={[styles.sendBtn, !canSend && styles.sendBtnDisabled]}
-            onPress={handleSend}
-            disabled={!canSend}
-          >
-            <Flame size={16} color="#111" fill="#111" />
-            <Text style={styles.sendBtnText}>Send Vybe</Text>
-          </Pressable>
-
-          <Pressable onPress={handleClose} style={styles.cancelBtn}>
-            <Text style={styles.cancelText}>Cancel</Text>
-          </Pressable>
         </View>
-      </KeyboardAvoidingView>
-    </Modal>
+
+        <Text style={s.heading}>Send your vybe</Text>
+        <Text style={s.sub}>Say something genuine — they can see this before deciding</Text>
+
+        <View style={s.inputWrapper}>
+          <TextInput
+            style={s.input}
+            value={message}
+            onChangeText={t => t.length <= MAX_CHARS && setMessage(t)}
+            placeholder="What made you want to connect?"
+            placeholderTextColor={Colors.inkDisabled}
+            multiline
+            maxLength={MAX_CHARS}
+            autoFocus
+          />
+          <Text style={[s.charCount, charsLeft < 20 && s.charCountWarn]}>
+            {charsLeft}
+          </Text>
+        </View>
+
+        <Pressable
+          style={[s.sendBtn, !canSend && s.sendBtnDisabled]}
+          onPress={handleSend}
+          disabled={!canSend}
+        >
+          <Flame size={16} color="#111" fill="#111" />
+          <Text style={s.sendBtnText}>Send Vybe</Text>
+        </Pressable>
+
+        <Pressable onPress={handleClose} style={s.cancelBtn}>
+          <Text style={s.cancelText}>Cancel</Text>
+        </Pressable>
+      </BottomSheetView>
+    </BottomSheetModal>
   )
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
-  sheet: {
-    backgroundColor: '#1a1a1a',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+const s = StyleSheet.create({
+  bg: { backgroundColor: '#1a1a1a' },
+  handleIndicator: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  content: {
     paddingHorizontal: 20,
     paddingBottom: 36,
-    paddingTop: 12,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignSelf: 'center',
-    marginBottom: 20,
+    paddingTop: 8,
   },
   partnerRow: {
     flexDirection: 'row',
@@ -208,9 +208,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginTop: 6,
   },
-  charCountWarn: {
-    color: Colors.brandCoral,
-  },
+  charCountWarn: { color: Colors.brandCoral },
   sendBtn: {
     height: 52,
     borderRadius: 26,
@@ -221,9 +219,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 12,
   },
-  sendBtnDisabled: {
-    opacity: 0.4,
-  },
+  sendBtnDisabled: { opacity: 0.4 },
   sendBtnText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 16,

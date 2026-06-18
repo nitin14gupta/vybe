@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -20,6 +19,7 @@ import { Step1Basics, Step2When, Step3Where, Step4Pricing } from '@/components/e
 import { useCreateEvent, type CreateEventForm } from '@/hooks/useCreateEvent'
 import { useEventDateTimePickers } from '@/hooks/useEventDateTimePickers'
 import ApiService, { type EventDetail } from '@/api/apiService'
+import { usePillStore } from '@/store/pillStore'
 
 export default function EditEventScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -34,6 +34,7 @@ export default function EditEventScreen() {
   const [saving, setSaving] = useState(false)
   const [locked, setLocked] = useState(false)
   const [hasAttendees, setHasAttendees] = useState(false)
+  const showPill = usePillStore(s => s.show)
 
   useEffect(() => {
     if (!id) return
@@ -61,18 +62,18 @@ export default function EditEventScreen() {
         if (new Date() > editDeadline) setLocked(true)
         if (ev.attendee_count > 0)     setHasAttendees(true)
       })
-      .catch(() => Alert.alert('Error', 'Could not load event'))
+      .catch(() => showPill('Could not load event', 'error'))
       .finally(() => setLoading(false))
   }, [id])
 
   const handleSave = async () => {
     if (saving || locked) return
-    if (!form.title.trim()) return Alert.alert('Error', 'Title is required')
-    if (!form.isFree && form.priceInr < 50) return Alert.alert('Error', 'Minimum ticket price is ₹50')
+    if (!form.title.trim()) { showPill('Title is required', 'error'); return }
+    if (!form.isFree && form.priceInr < 50) { showPill('Minimum ticket price is ₹50', 'error'); return }
 
     const start = form.dateTime ? new Date(form.dateTime) : new Date()
     const end   = form.endTime  ? new Date(form.endTime)  : null
-    if (end && end <= start) return Alert.alert('Error', 'End time must be after start time')
+    if (end && end <= start) { showPill('End time must be after start time', 'error'); return }
 
     setSaving(true)
     try {
@@ -93,7 +94,7 @@ export default function EditEventScreen() {
       })
       router.back()
     } catch (e: any) {
-      Alert.alert('Error', e.message)
+      showPill(e.message || 'Could not save event', 'error')
       setSaving(false)
     }
   }

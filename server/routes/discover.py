@@ -136,13 +136,31 @@ def get_discover_feed(
             WHERE u.id != %s
               AND u.profile_complete = TRUE
               AND u.is_active = TRUE
+              AND NOT EXISTS (
+                  SELECT 1 FROM follows
+                  WHERE follower_id = %s AND following_id = u.id
+              )
+              AND NOT EXISTS (
+                  SELECT 1 FROM vibe_requests
+                  WHERE status = 'accepted'
+                    AND (
+                      (sender_id = %s AND receiver_id = u.id)
+                      OR (sender_id = u.id AND receiver_id = %s)
+                    )
+              )
+              AND NOT EXISTS (
+                  SELECT 1 FROM user_blocks
+                  WHERE (blocker_id = %s AND blocked_id = u.id)
+                     OR (blocker_id = u.id AND blocked_id = %s)
+              )
               {extra_where}
             GROUP BY u.id
             ORDER BY RANDOM()
             LIMIT %s
         """
 
-        params = dist_params + [current_user["id"]] + filter_params + [limit]
+        uid = current_user["id"]
+        params = dist_params + [uid, uid, uid, uid, uid, uid] + filter_params + [limit]
         cur.execute(sql, params)
         rows = cur.fetchall()
 

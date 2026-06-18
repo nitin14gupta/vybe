@@ -1,15 +1,12 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { View, Text, StyleSheet, Pressable, PanResponder, Dimensions } from 'react-native'
 import {
-  Modal, View, Text, StyleSheet, Pressable,
-  Animated, PanResponder, Dimensions, ScrollView,
-} from 'react-native'
+  BottomSheetModal, BottomSheetScrollView, BottomSheetBackdrop,
+} from '@gorhom/bottom-sheet'
+import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { LinearGradient } from 'expo-linear-gradient'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Colors, FontFamily, Radius, Spacing } from '@/constants'
 import type { DiscoverFilters } from '@/hooks/useDiscover'
-
-const { height: SCREEN_H } = Dimensions.get('window')
-const SHEET_H = SCREEN_H * 0.62
 
 const GENDER_OPTIONS = ['Everyone', 'Women', 'Men'] as const
 type GenderOpt = typeof GENDER_OPTIONS[number]
@@ -33,31 +30,37 @@ interface Props {
   onClose: () => void
 }
 
+function renderBackdrop(props: BottomSheetBackdropProps) {
+  return (
+    <BottomSheetBackdrop
+      {...props}
+      disappearsOnIndex={-1}
+      appearsOnIndex={0}
+      pressBehavior="close"
+      opacity={0.55}
+    />
+  )
+}
+
 export function FilterSheet({ visible, filters, onApply, onClose }: Props) {
-  const insets = useSafeAreaInsets()
-  const slideY = useRef(new Animated.Value(SHEET_H)).current
+  const sheetRef = useRef<BottomSheetModal>(null)
 
   const [gender, setGender] = useState<GenderOpt>(filterToGender(filters.gender))
   const [minAge, setMinAge] = useState(filters.minAge ?? 18)
   const [maxAge, setMaxAge] = useState(filters.maxAge ?? 45)
   const [maxDist, setMaxDist] = useState(filters.maxDistanceKm ?? 50)
 
-  // Sync with incoming filters when sheet opens
   useEffect(() => {
     if (visible) {
       setGender(filterToGender(filters.gender))
       setMinAge(filters.minAge ?? 18)
       setMaxAge(filters.maxAge ?? 45)
       setMaxDist(filters.maxDistanceKm ?? 50)
-      Animated.spring(slideY, { toValue: 0, useNativeDriver: true, bounciness: 4 }).start()
+      sheetRef.current?.present()
     } else {
-      Animated.timing(slideY, { toValue: SHEET_H, duration: 220, useNativeDriver: true }).start()
+      sheetRef.current?.dismiss()
     }
   }, [visible, filters])
-
-  const close = useCallback(() => {
-    Animated.timing(slideY, { toValue: SHEET_H, duration: 220, useNativeDriver: true }).start(onClose)
-  }, [onClose])
 
   const reset = () => {
     setGender('Everyone')
@@ -75,91 +78,69 @@ export function FilterSheet({ visible, filters, onApply, onClose }: Props) {
     })
   }
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) => g.dy > 6,
-      onPanResponderMove: (_, g) => {
-        if (g.dy > 0) slideY.setValue(g.dy)
-      },
-      onPanResponderRelease: (_, g) => {
-        if (g.dy > 80 || g.vy > 0.5) {
-          Animated.timing(slideY, { toValue: SHEET_H, duration: 200, useNativeDriver: true }).start(onClose)
-        } else {
-          Animated.spring(slideY, { toValue: 0, useNativeDriver: true, bounciness: 4 }).start()
-        }
-      },
-    })
-  ).current
-
   return (
-    <Modal transparent visible={visible} animationType="none" onRequestClose={close}>
-      {/* Backdrop */}
-      <Pressable style={styles.backdrop} onPress={close} />
-
-      <Animated.View style={[styles.sheet, { transform: [{ translateY: slideY }], paddingBottom: insets.bottom + 16 }]}>
-        {/* Drag handle */}
-        <View {...panResponder.panHandlers} style={styles.handleArea}>
-          <View style={styles.handle} />
-        </View>
-
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Filters</Text>
-          <Pressable onPress={reset}>
-            <Text style={styles.resetText}>Reset</Text>
-          </Pressable>
-        </View>
-
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
-
-          {/* Show me */}
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Show me</Text>
-            <View style={styles.segRow}>
-              {GENDER_OPTIONS.map(opt => (
-                <Pressable
-                  key={opt}
-                  onPress={() => setGender(opt)}
-                  style={[styles.segBtn, gender === opt && styles.segBtnActive]}
-                >
-                  <Text style={[styles.segText, gender === opt && styles.segTextActive]}>{opt}</Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-
-          {/* Age range */}
-          <View style={styles.section}>
-            <View style={styles.rowBetween}>
-              <Text style={styles.sectionLabel}>Age range</Text>
-              <Text style={styles.valueLabel}>{minAge} – {maxAge === 45 ? '45+' : maxAge}</Text>
-            </View>
-            <AgeSlider minAge={minAge} maxAge={maxAge} onChangeMin={setMinAge} onChangeMax={setMaxAge} />
-          </View>
-
-          {/* Max distance */}
-          <View style={styles.section}>
-            <View style={styles.rowBetween}>
-              <Text style={styles.sectionLabel}>Max distance</Text>
-              <Text style={styles.valueLabel}>{maxDist === 50 ? 'Any' : `${maxDist} km`}</Text>
-            </View>
-            <SingleSlider value={maxDist} min={1} max={50} onChange={setMaxDist} />
-          </View>
-
-        </ScrollView>
-
-        {/* Apply button */}
-        <Pressable onPress={apply} style={styles.applyWrap}>
-          <LinearGradient
-            colors={[Colors.brandOrange, Colors.brandCoral]}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={styles.applyBtn}
-          >
-            <Text style={styles.applyText}>Apply Filters</Text>
-          </LinearGradient>
+    <BottomSheetModal
+      ref={sheetRef}
+      snapPoints={['62%']}
+      enablePanDownToClose
+      onDismiss={onClose}
+      backdropComponent={renderBackdrop}
+      backgroundStyle={s.bg}
+      handleIndicatorStyle={s.handleIndicator}
+    >
+      <View style={s.header}>
+        <Text style={s.title}>Filters</Text>
+        <Pressable onPress={reset}>
+          <Text style={s.resetText}>Reset</Text>
         </Pressable>
-      </Animated.View>
-    </Modal>
+      </View>
+
+      <BottomSheetScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={s.body}
+      >
+        <View style={s.section}>
+          <Text style={s.sectionLabel}>Show me</Text>
+          <View style={s.segRow}>
+            {GENDER_OPTIONS.map(opt => (
+              <Pressable
+                key={opt}
+                onPress={() => setGender(opt)}
+                style={[s.segBtn, gender === opt && s.segBtnActive]}
+              >
+                <Text style={[s.segText, gender === opt && s.segTextActive]}>{opt}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        <View style={s.section}>
+          <View style={s.rowBetween}>
+            <Text style={s.sectionLabel}>Age range</Text>
+            <Text style={s.valueLabel}>{minAge} – {maxAge === 45 ? '45+' : maxAge}</Text>
+          </View>
+          <AgeSlider minAge={minAge} maxAge={maxAge} onChangeMin={setMinAge} onChangeMax={setMaxAge} />
+        </View>
+
+        <View style={s.section}>
+          <View style={s.rowBetween}>
+            <Text style={s.sectionLabel}>Max distance</Text>
+            <Text style={s.valueLabel}>{maxDist === 50 ? 'Any' : `${maxDist} km`}</Text>
+          </View>
+          <SingleSlider value={maxDist} min={1} max={50} onChange={setMaxDist} />
+        </View>
+      </BottomSheetScrollView>
+
+      <Pressable onPress={apply} style={s.applyWrap}>
+        <LinearGradient
+          colors={[Colors.brandOrange, Colors.brandCoral]}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+          style={s.applyBtn}
+        >
+          <Text style={s.applyText}>Apply Filters</Text>
+        </LinearGradient>
+      </Pressable>
+    </BottomSheetModal>
   )
 }
 
@@ -224,7 +205,6 @@ function AgeSlider({ minAge, maxAge, onChangeMin, onChangeMax }: {
 
   return (
     <View style={slStyles.track}>
-      {/* Filled range between thumbs */}
       <View style={[
         slStyles.fill,
         { left: `${pctMin * 100}%`, width: `${(pctMax - pctMin) * 100}%` }
@@ -266,32 +246,9 @@ const slStyles = StyleSheet.create({
   },
 })
 
-const styles = StyleSheet.create({
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-  },
-  sheet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: SHEET_H,
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-  },
-  handleArea: {
-    alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 4,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.elevated,
-  },
+const s = StyleSheet.create({
+  bg: { backgroundColor: Colors.surface },
+  handleIndicator: { backgroundColor: Colors.elevated },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -345,9 +302,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: Radius.input - 2,
   },
-  segBtnActive: {
-    backgroundColor: Colors.brandOrange,
-  },
+  segBtnActive: { backgroundColor: Colors.brandOrange },
   segText: {
     fontFamily: FontFamily.bodyMedium,
     fontSize: 13,
@@ -360,6 +315,7 @@ const styles = StyleSheet.create({
   applyWrap: {
     paddingHorizontal: Spacing.screenPadding,
     paddingTop: 8,
+    paddingBottom: 24,
   },
   applyBtn: {
     borderRadius: Radius.pill,

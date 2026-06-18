@@ -2,6 +2,7 @@ import '../../global.css'
 import { useEffect, useState } from 'react'
 import { StyleSheet } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
 import { Slot, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
@@ -9,6 +10,7 @@ import { useVybeFonts } from '@/lib/fonts'
 import { useAuthStore } from '@/store/auth'
 import { tokenStorage } from '@/lib/tokenStorage'
 import ApiService from '@/api/apiService'
+import { PillOverlay } from '@/components/ui'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -93,8 +95,11 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={styles.root}>
-      <StatusBar style="light" />
-      <AuthGuard ready={authReady} />
+      <BottomSheetModalProvider>
+        <StatusBar style="light" />
+        <AuthGuard ready={authReady} />
+        <PillOverlay />
+      </BottomSheetModalProvider>
     </GestureHandlerRootView>
   )
 }

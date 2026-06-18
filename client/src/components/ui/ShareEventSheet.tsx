@@ -1,13 +1,13 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
+import { View, Text, StyleSheet, FlatList, Pressable, Image, TextInput, Share, ActivityIndicator } from 'react-native'
 import {
-  Modal, View, Text, StyleSheet, FlatList, Pressable, Image,
-  TextInput, Share, ActivityIndicator, KeyboardAvoidingView, Platform,
-} from 'react-native'
+  BottomSheetModal, BottomSheetView, BottomSheetBackdrop,
+} from '@gorhom/bottom-sheet'
+import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { Search, X, Link2 } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 import ApiService, { Conversation, EventDetail } from '@/api/apiService'
 
-// Simple inline icons for WhatsApp / Instagram — avoids external icon deps
 function WhatsAppIcon() {
   return <Text style={{ fontSize: 22 }}>💬</Text>
 }
@@ -21,13 +21,30 @@ interface Props {
   onClose: () => void
 }
 
+function renderBackdrop(props: BottomSheetBackdropProps) {
+  return (
+    <BottomSheetBackdrop
+      {...props}
+      disappearsOnIndex={-1}
+      appearsOnIndex={0}
+      pressBehavior="close"
+      opacity={0.65}
+    />
+  )
+}
+
 export function ShareEventSheet({ visible, event, onClose }: Props) {
+  const sheetRef = useRef<BottomSheetModal>(null)
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [sentIds, setSentIds] = useState<Set<string>>(new Set())
 
-  // Load active conversations sorted by most recent (they talk most = highest last_message_at)
+  useEffect(() => {
+    if (visible) sheetRef.current?.present()
+    else sheetRef.current?.dismiss()
+  }, [visible])
+
   useEffect(() => {
     if (!visible) return
     setLoading(true)
@@ -35,7 +52,6 @@ export function ShareEventSheet({ visible, event, onClose }: Props) {
     setSearch('')
     ApiService.getConversations()
       .then(data => {
-        // Sort: most recently active first (most talked to = on top)
         const sorted = [...data.active].sort((a, b) => {
           const aTime = a.last_sent_at ?? a.last_message_at ?? ''
           const bTime = b.last_sent_at ?? b.last_message_at ?? ''
@@ -65,7 +81,6 @@ export function ShareEventSheet({ visible, event, onClose }: Props) {
         cover_url: event.cover_photos?.[0]?.url ?? null,
       })
     } catch {
-      // Silently revert on failure
       setSentIds(prev => { const n = new Set(prev); n.delete(conv.id); return n })
     }
   }, [event, sentIds])
@@ -74,141 +89,127 @@ export function ShareEventSheet({ visible, event, onClose }: Props) {
     if (!event) return
     const text = `Check out "${event.title}" on VYBE! 🔥`
     if (platform === 'whatsapp') {
-      const url = `whatsapp://send?text=${encodeURIComponent(text)}`
-      Share.share({ message: text, url })
-    } else if (platform === 'instagram') {
-      // Instagram doesn't support deep-link text share; use native sheet which shows IG
-      Share.share({ message: text })
+      Share.share({ message: text, url: `whatsapp://send?text=${encodeURIComponent(text)}` })
     } else {
       Share.share({ message: text })
     }
   }, [event])
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={s.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-
-        <View style={s.sheet}>
-          {/* Handle */}
-          <View style={s.handle} />
-
-          {/* Header row */}
-          <View style={s.headerRow}>
-            <Text style={s.title}>Share Event</Text>
-            <Pressable onPress={onClose} hitSlop={8}>
-              <X size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
-            </Pressable>
-          </View>
-
-          {/* Native share buttons */}
-          <View style={s.nativeRow}>
-            <Pressable style={s.nativeBtn} onPress={() => handleNativeShare('whatsapp')}>
-              <View style={[s.nativeIcon, { backgroundColor: '#25D366' }]}>
-                <WhatsAppIcon />
-              </View>
-              <Text style={s.nativeLabel}>WhatsApp</Text>
-            </Pressable>
-
-            <Pressable style={s.nativeBtn} onPress={() => handleNativeShare('instagram')}>
-              <View style={[s.nativeIcon, { backgroundColor: '#E1306C' }]}>
-                <InstagramIcon />
-              </View>
-              <Text style={s.nativeLabel}>Instagram</Text>
-            </Pressable>
-
-            <Pressable style={s.nativeBtn} onPress={() => handleNativeShare()}>
-              <View style={[s.nativeIcon, { backgroundColor: '#333' }]}>
-                <Link2 size={20} color="#fff" strokeWidth={1.8} />
-              </View>
-              <Text style={s.nativeLabel}>Copy Link</Text>
-            </Pressable>
-          </View>
-
-          <View style={s.divider} />
-
-          {/* In-app connections */}
-          <Text style={s.sectionLabel}>Send to connections</Text>
-
-          <View style={s.searchBar}>
-            <Search size={14} color={Colors.inkDisabled} strokeWidth={1.8} />
-            <TextInput
-              style={s.searchInput}
-              value={search}
-              onChangeText={setSearch}
-              placeholder="Search people..."
-              placeholderTextColor={Colors.inkDisabled}
-            />
-          </View>
-
-          {loading ? (
-            <View style={s.loadingBox}>
-              <ActivityIndicator color={Colors.brandOrange} />
-            </View>
-          ) : filtered.length === 0 ? (
-            <View style={s.loadingBox}>
-              <Text style={s.emptyText}>
-                {conversations.length === 0
-                  ? 'Send vibes to people first to share with them'
-                  : 'No connections match your search'}
-              </Text>
-            </View>
-          ) : (
-            <FlatList
-              data={filtered}
-              keyExtractor={c => c.id}
-              style={s.list}
-              showsVerticalScrollIndicator={false}
-              renderItem={({ item }) => {
-                const sent = sentIds.has(item.id)
-                return (
-                  <View style={s.convRow}>
-                    {item.partner_avatar ? (
-                      <Image source={{ uri: item.partner_avatar }} style={s.convAvatar} />
-                    ) : (
-                      <View style={[s.convAvatar, s.convAvatarFallback]}>
-                        <Text style={s.convAvatarInitial}>{(item.partner_name ?? '?').charAt(0)}</Text>
-                      </View>
-                    )}
-                    <Text style={s.convName} numberOfLines={1}>{item.partner_name ?? 'User'}</Text>
-                    <Pressable
-                      style={[s.sendBtn, sent && s.sendBtnSent]}
-                      onPress={() => handleSendToChat(item)}
-                      disabled={sent}
-                    >
-                      <Text style={[s.sendBtnText, sent && s.sendBtnTextSent]}>
-                        {sent ? 'Sent ✓' : 'Send'}
-                      </Text>
-                    </Pressable>
-                  </View>
-                )
-              }}
-            />
-          )}
+    <BottomSheetModal
+      ref={sheetRef}
+      snapPoints={['80%']}
+      enablePanDownToClose
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      onDismiss={onClose}
+      backdropComponent={renderBackdrop}
+      backgroundStyle={s.bg}
+      handleIndicatorStyle={s.handleIndicator}
+    >
+      <BottomSheetView style={s.content}>
+        <View style={s.headerRow}>
+          <Text style={s.title}>Share Event</Text>
+          <Pressable onPress={onClose} hitSlop={8}>
+            <X size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
+          </Pressable>
         </View>
-      </KeyboardAvoidingView>
-    </Modal>
+
+        <View style={s.nativeRow}>
+          <Pressable style={s.nativeBtn} onPress={() => handleNativeShare('whatsapp')}>
+            <View style={[s.nativeIcon, { backgroundColor: '#25D366' }]}>
+              <WhatsAppIcon />
+            </View>
+            <Text style={s.nativeLabel}>WhatsApp</Text>
+          </Pressable>
+
+          <Pressable style={s.nativeBtn} onPress={() => handleNativeShare('instagram')}>
+            <View style={[s.nativeIcon, { backgroundColor: '#E1306C' }]}>
+              <InstagramIcon />
+            </View>
+            <Text style={s.nativeLabel}>Instagram</Text>
+          </Pressable>
+
+          <Pressable style={s.nativeBtn} onPress={() => handleNativeShare()}>
+            <View style={[s.nativeIcon, { backgroundColor: '#333' }]}>
+              <Link2 size={20} color="#fff" strokeWidth={1.8} />
+            </View>
+            <Text style={s.nativeLabel}>Copy Link</Text>
+          </Pressable>
+        </View>
+
+        <View style={s.divider} />
+
+        <Text style={s.sectionLabel}>Send to connections</Text>
+
+        <View style={s.searchBar}>
+          <Search size={14} color={Colors.inkDisabled} strokeWidth={1.8} />
+          <TextInput
+            style={s.searchInput}
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search people..."
+            placeholderTextColor={Colors.inkDisabled}
+          />
+        </View>
+
+        {loading ? (
+          <View style={s.loadingBox}>
+            <ActivityIndicator color={Colors.brandOrange} />
+          </View>
+        ) : filtered.length === 0 ? (
+          <View style={s.loadingBox}>
+            <Text style={s.emptyText}>
+              {conversations.length === 0
+                ? 'Send vibes to people first to share with them'
+                : 'No connections match your search'}
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filtered}
+            keyExtractor={c => c.id}
+            style={s.list}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item }) => {
+              const sent = sentIds.has(item.id)
+              return (
+                <View style={s.convRow}>
+                  {item.partner_avatar ? (
+                    <Image source={{ uri: item.partner_avatar }} style={s.convAvatar} />
+                  ) : (
+                    <View style={[s.convAvatar, s.convAvatarFallback]}>
+                      <Text style={s.convAvatarInitial}>{(item.partner_name ?? '?').charAt(0)}</Text>
+                    </View>
+                  )}
+                  <Text style={s.convName} numberOfLines={1}>{item.partner_name ?? 'User'}</Text>
+                  <Pressable
+                    style={[s.sendBtn, sent && s.sendBtnSent]}
+                    onPress={() => handleSendToChat(item)}
+                    disabled={sent}
+                  >
+                    <Text style={[s.sendBtnText, sent && s.sendBtnTextSent]}>
+                      {sent ? 'Sent ✓' : 'Send'}
+                    </Text>
+                  </Pressable>
+                </View>
+              )
+            }}
+          />
+        )}
+      </BottomSheetView>
+    </BottomSheetModal>
   )
 }
 
 const s = StyleSheet.create({
-  overlay: {
-    flex: 1, justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.65)',
-  },
-  sheet: {
-    backgroundColor: '#141414',
-    borderTopLeftRadius: 28, borderTopRightRadius: 28,
-    paddingHorizontal: 20, paddingBottom: 36, paddingTop: 12,
-    maxHeight: '80%',
-  },
-  handle: {
-    width: 40, height: 4, borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignSelf: 'center', marginBottom: 16,
+  bg: { backgroundColor: '#141414' },
+  handleIndicator: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  content: {
+    paddingHorizontal: 20,
+    paddingBottom: 36,
+    paddingTop: 8,
+    flex: 1,
   },
   headerRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
@@ -216,7 +217,6 @@ const s = StyleSheet.create({
   },
   title: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary },
 
-  // Native share row
   nativeRow: { flexDirection: 'row', gap: 24, marginBottom: 20 },
   nativeBtn: { alignItems: 'center', gap: 8 },
   nativeIcon: {
@@ -237,7 +237,6 @@ const s = StyleSheet.create({
     marginBottom: 12,
   },
 
-  // Search
   searchBar: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#1e1e1e',
@@ -260,7 +259,6 @@ const s = StyleSheet.create({
   },
   list: { maxHeight: 280 },
 
-  // Conversation rows
   convRow: {
     flexDirection: 'row', alignItems: 'center',
     paddingVertical: 10, gap: 12,

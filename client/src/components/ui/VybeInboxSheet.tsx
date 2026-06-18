@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { View, Text, StyleSheet, Pressable, Image, ActivityIndicator } from 'react-native'
 import {
-  Modal, View, Text, StyleSheet, Pressable, Image,
-  FlatList, KeyboardAvoidingView, Platform, ActivityIndicator,
-} from 'react-native'
+  BottomSheetModal, BottomSheetView, BottomSheetBackdrop, BottomSheetFlatList,
+} from '@gorhom/bottom-sheet'
+import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { router } from 'expo-router'
 import { X, Flame, Check } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
@@ -16,6 +17,18 @@ interface Props {
   onAccept: (vibeId: string, icebreaker: string) => void
   onPass: (vibeId: string) => void
   onClose: () => void
+}
+
+function renderBackdrop(props: BottomSheetBackdropProps) {
+  return (
+    <BottomSheetBackdrop
+      {...props}
+      disappearsOnIndex={-1}
+      appearsOnIndex={0}
+      pressBehavior="close"
+      opacity={0.65}
+    />
+  )
 }
 
 function RequestCard({
@@ -45,7 +58,6 @@ function RequestCard({
   return (
     <>
       <View style={[s.card, actioned && s.cardActioned]}>
-        {/* Profile tap → open full profile */}
         <Pressable
           style={s.cardLeft}
           onPress={() => router.push(`/(profile)/${req.sender_id}` as any)}
@@ -64,7 +76,6 @@ function RequestCard({
           </View>
         </Pressable>
 
-        {/* Action buttons */}
         {actioned === 'accepted' ? (
           <View style={s.actionedBadge}>
             <Check size={14} color="#4CAF50" strokeWidth={2.5} />
@@ -97,78 +108,89 @@ function RequestCard({
 }
 
 export function VybeInboxSheet({ visible, requests, loading, onAccept, onPass, onClose }: Props) {
-  return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={s.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={s.sheet}>
-          <View style={s.handle} />
+  const sheetRef = useRef<BottomSheetModal>(null)
 
-          <View style={s.headerRow}>
-            <View style={s.headerLeft}>
-              <Flame size={20} color={Colors.brandOrange} fill={Colors.brandOrange} />
-              <Text style={s.title}>Vybe Requests</Text>
-              {requests.length > 0 && (
-                <View style={s.countBadge}>
-                  <Text style={s.countBadgeText}>{requests.length}</Text>
-                </View>
-              )}
-            </View>
-            <Pressable onPress={onClose} hitSlop={10}>
-              <X size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
-            </Pressable>
+  useEffect(() => {
+    if (visible) sheetRef.current?.present()
+    else sheetRef.current?.dismiss()
+  }, [visible])
+
+  const ListHeader = (
+    <View style={s.headerRow}>
+      <View style={s.headerLeft}>
+        <Flame size={20} color={Colors.brandOrange} fill={Colors.brandOrange} />
+        <Text style={s.title}>Vybe Requests</Text>
+        {requests.length > 0 && (
+          <View style={s.countBadge}>
+            <Text style={s.countBadgeText}>{requests.length}</Text>
           </View>
+        )}
+      </View>
+      <Pressable onPress={onClose} hitSlop={10}>
+        <X size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
+      </Pressable>
+    </View>
+  )
 
-          {loading ? (
-            <View style={s.emptyBox}>
-              <ActivityIndicator color={Colors.brandOrange} />
-            </View>
-          ) : requests.length === 0 ? (
-            <View style={s.emptyBox}>
-              <Flame size={40} color={Colors.inkDisabled} strokeWidth={1.2} />
-              <Text style={s.emptyTitle}>No vybe requests</Text>
-              <Text style={s.emptySub}>When someone sends you a vybe, it'll show up here.</Text>
-            </View>
-          ) : (
-            <FlatList
-              data={requests}
-              keyExtractor={r => r.id}
-              style={s.list}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ gap: 12, paddingBottom: 8 }}
-              renderItem={({ item }) => (
-                <RequestCard
-                  req={item}
-                  onAccept={onAccept}
-                  onPass={onPass}
-                />
-              )}
+  return (
+    <BottomSheetModal
+      ref={sheetRef}
+      snapPoints={['80%']}
+      enablePanDownToClose
+      onDismiss={onClose}
+      backdropComponent={renderBackdrop}
+      backgroundStyle={s.bg}
+      handleIndicatorStyle={s.handleIndicator}
+    >
+      {loading ? (
+        <BottomSheetView style={s.fullContent}>
+          {ListHeader}
+          <View style={s.emptyBox}>
+            <ActivityIndicator color={Colors.brandOrange} />
+          </View>
+        </BottomSheetView>
+      ) : requests.length === 0 ? (
+        <BottomSheetView style={s.fullContent}>
+          {ListHeader}
+          <View style={s.emptyBox}>
+            <Flame size={40} color={Colors.inkDisabled} strokeWidth={1.2} />
+            <Text style={s.emptyTitle}>No vybe requests</Text>
+            <Text style={s.emptySub}>When someone sends you a vybe, it'll show up here.</Text>
+          </View>
+        </BottomSheetView>
+      ) : (
+        <BottomSheetFlatList
+          data={requests}
+          keyExtractor={r => r.id}
+          contentContainerStyle={s.listContent}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={ListHeader}
+          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+          renderItem={({ item }) => (
+            <RequestCard
+              req={item}
+              onAccept={onAccept}
+              onPass={onPass}
             />
           )}
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+        />
+      )}
+    </BottomSheetModal>
   )
 }
 
 const s = StyleSheet.create({
-  overlay: {
-    flex: 1, justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.65)',
+  bg: { backgroundColor: '#141414' },
+  handleIndicator: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  fullContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 36,
+    paddingTop: 8,
   },
-  sheet: {
-    backgroundColor: '#141414',
-    borderTopLeftRadius: 28, borderTopRightRadius: 28,
-    paddingHorizontal: 20, paddingBottom: 36, paddingTop: 12,
-    maxHeight: '80%',
-  },
-  handle: {
-    width: 40, height: 4, borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignSelf: 'center', marginBottom: 16,
+  listContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 36,
+    paddingTop: 8,
   },
   headerRow: {
     flexDirection: 'row', justifyContent: 'space-between',
@@ -182,8 +204,6 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   countBadgeText: { fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: '#111' },
-
-  list: { maxHeight: 480 },
 
   card: {
     flexDirection: 'row', alignItems: 'center',

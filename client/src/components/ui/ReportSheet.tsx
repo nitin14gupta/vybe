@@ -1,8 +1,7 @@
-import { useState } from 'react'
-import {
-  Modal, View, Text, StyleSheet, Pressable,
-  KeyboardAvoidingView, Platform, ActivityIndicator,
-} from 'react-native'
+import { useState, useRef, useEffect } from 'react'
+import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native'
+import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
+import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { X } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 
@@ -22,10 +21,28 @@ interface Props {
   onClose: () => void
 }
 
+function renderBackdrop(props: BottomSheetBackdropProps) {
+  return (
+    <BottomSheetBackdrop
+      {...props}
+      disappearsOnIndex={-1}
+      appearsOnIndex={0}
+      pressBehavior="close"
+      opacity={0.65}
+    />
+  )
+}
+
 export function ReportSheet({ visible, targetName, onSubmit, onClose }: Props) {
+  const sheetRef = useRef<BottomSheetModal>(null)
   const [selected, setSelected] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
+
+  useEffect(() => {
+    if (visible) sheetRef.current?.present()
+    else sheetRef.current?.dismiss()
+  }, [visible])
 
   const handleSubmit = async () => {
     if (!selected || loading) return
@@ -49,80 +66,72 @@ export function ReportSheet({ visible, targetName, onSubmit, onClose }: Props) {
   }
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
-      <KeyboardAvoidingView
-        style={s.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
-
-        <View style={s.sheet}>
-          <View style={s.handle} />
-
-          <View style={s.headerRow}>
-            <View>
-              <Text style={s.title}>Report {targetName ?? 'User'}</Text>
-              <Text style={s.subtitle}>We won't let them know you reported them.</Text>
-            </View>
-            <Pressable onPress={handleClose} hitSlop={10}>
-              <X size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
-            </Pressable>
+    <BottomSheetModal
+      ref={sheetRef}
+      enableDynamicSizing
+      enablePanDownToClose
+      onDismiss={handleClose}
+      backdropComponent={renderBackdrop}
+      backgroundStyle={s.bg}
+      handleIndicatorStyle={s.handleIndicator}
+    >
+      <BottomSheetView style={s.content}>
+        <View style={s.headerRow}>
+          <View>
+            <Text style={s.title}>Report {targetName ?? 'User'}</Text>
+            <Text style={s.subtitle}>We won't let them know you reported them.</Text>
           </View>
-
-          {done ? (
-            <View style={s.doneBox}>
-              <Text style={s.doneIcon}>✓</Text>
-              <Text style={s.doneText}>Report submitted. Thank you.</Text>
-            </View>
-          ) : (
-            <>
-              <View style={s.options}>
-                {REASONS.map((reason, i) => (
-                  <Pressable
-                    key={reason}
-                    style={[s.option, i < REASONS.length - 1 && s.optionBorder]}
-                    onPress={() => setSelected(reason)}
-                  >
-                    <Text style={s.optionText}>{reason}</Text>
-                    <View style={[s.radio, selected === reason && s.radioSelected]}>
-                      {selected === reason && <View style={s.radioDot} />}
-                    </View>
-                  </Pressable>
-                ))}
-              </View>
-
-              <Pressable
-                style={[s.submitBtn, !selected && s.submitBtnDisabled]}
-                onPress={handleSubmit}
-                disabled={!selected || loading}
-              >
-                {loading
-                  ? <ActivityIndicator color="#111" size="small" />
-                  : <Text style={s.submitBtnText}>SUBMIT REPORT</Text>
-                }
-              </Pressable>
-            </>
-          )}
+          <Pressable onPress={handleClose} hitSlop={10}>
+            <X size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
+          </Pressable>
         </View>
-      </KeyboardAvoidingView>
-    </Modal>
+
+        {done ? (
+          <View style={s.doneBox}>
+            <Text style={s.doneIcon}>✓</Text>
+            <Text style={s.doneText}>Report submitted. Thank you.</Text>
+          </View>
+        ) : (
+          <>
+            <View style={s.options}>
+              {REASONS.map((reason, i) => (
+                <Pressable
+                  key={reason}
+                  style={[s.option, i < REASONS.length - 1 && s.optionBorder]}
+                  onPress={() => setSelected(reason)}
+                >
+                  <Text style={s.optionText}>{reason}</Text>
+                  <View style={[s.radio, selected === reason && s.radioSelected]}>
+                    {selected === reason && <View style={s.radioDot} />}
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+
+            <Pressable
+              style={[s.submitBtn, !selected && s.submitBtnDisabled]}
+              onPress={handleSubmit}
+              disabled={!selected || loading}
+            >
+              {loading
+                ? <ActivityIndicator color="#111" size="small" />
+                : <Text style={s.submitBtnText}>SUBMIT REPORT</Text>
+              }
+            </Pressable>
+          </>
+        )}
+      </BottomSheetView>
+    </BottomSheetModal>
   )
 }
 
 const s = StyleSheet.create({
-  overlay: {
-    flex: 1, justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.65)',
-  },
-  sheet: {
-    backgroundColor: '#141414',
-    borderTopLeftRadius: 28, borderTopRightRadius: 28,
-    paddingHorizontal: 20, paddingBottom: 40, paddingTop: 12,
-  },
-  handle: {
-    width: 40, height: 4, borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignSelf: 'center', marginBottom: 20,
+  bg: { backgroundColor: '#141414' },
+  handleIndicator: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  content: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    paddingTop: 8,
   },
   headerRow: {
     flexDirection: 'row', justifyContent: 'space-between',

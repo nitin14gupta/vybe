@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
-import {
-  Modal, View, Text, StyleSheet, Pressable, Share,
-} from 'react-native'
+import { useState, useRef, useEffect } from 'react'
+import { View, Text, StyleSheet, Pressable, Share } from 'react-native'
+import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
+import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import * as Clipboard from 'expo-clipboard'
 import { Ban, Flag, Link2, Share2 } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
@@ -19,14 +19,55 @@ interface Props {
   onClose: () => void
 }
 
+function renderBackdrop(props: BottomSheetBackdropProps) {
+  return (
+    <BottomSheetBackdrop
+      {...props}
+      disappearsOnIndex={-1}
+      appearsOnIndex={0}
+      pressBehavior="close"
+      opacity={0.55}
+    />
+  )
+}
+
 export function ProfileMenuSheet({
   visible, username, targetName, isBlocked,
   onBlock, onUnblock, onReport, onClose,
 }: Props) {
+  const sheetRef = useRef<BottomSheetModal>(null)
   const [blockOpen, setBlockOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const [blockLoading, setBlockLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+
+  // Track sub-sheet transitions so onDismiss doesn't trigger onClose prematurely
+  const transitioning = useRef(false)
+
+  useEffect(() => {
+    if (visible) sheetRef.current?.present()
+    else sheetRef.current?.dismiss()
+  }, [visible])
+
+  const openBlock = () => {
+    transitioning.current = true
+    setBlockOpen(true)
+    sheetRef.current?.dismiss()
+  }
+
+  const openReport = () => {
+    transitioning.current = true
+    setReportOpen(true)
+    sheetRef.current?.dismiss()
+  }
+
+  const handleDismiss = () => {
+    if (transitioning.current) {
+      transitioning.current = false
+      return
+    }
+    onClose()
+  }
 
   const handleBlock = async () => {
     setBlockLoading(true)
@@ -68,19 +109,24 @@ export function ProfileMenuSheet({
 
   return (
     <>
-      <Modal visible={visible && !blockOpen && !reportOpen} transparent animationType="slide" onRequestClose={onClose}>
-        <Pressable style={s.backdrop} onPress={onClose} />
-        <View style={s.sheet}>
-          <View style={s.handle} />
-
-          <Pressable style={s.row} onPress={() => setBlockOpen(true)}>
+      <BottomSheetModal
+        ref={sheetRef}
+        enableDynamicSizing
+        enablePanDownToClose
+        onDismiss={handleDismiss}
+        backdropComponent={renderBackdrop}
+        backgroundStyle={s.bg}
+        handleIndicatorStyle={s.handleIndicator}
+      >
+        <BottomSheetView style={s.content}>
+          <Pressable style={s.row} onPress={openBlock}>
             <Ban size={20} color={isBlocked ? Colors.brandOrange : Colors.inkPrimary} strokeWidth={1.8} />
             <Text style={[s.rowText, isBlocked && s.rowTextOrange]}>
               {isBlocked ? 'Unblock User' : 'Block User'}
             </Text>
           </Pressable>
 
-          <Pressable style={s.row} onPress={() => setReportOpen(true)}>
+          <Pressable style={s.row} onPress={openReport}>
             <Flag size={20} color={Colors.inkPrimary} strokeWidth={1.8} />
             <Text style={s.rowText}>Report</Text>
           </Pressable>
@@ -100,8 +146,8 @@ export function ProfileMenuSheet({
           <Pressable style={s.cancelRow} onPress={onClose}>
             <Text style={s.cancelText}>Cancel</Text>
           </Pressable>
-        </View>
-      </Modal>
+        </BottomSheetView>
+      </BottomSheetModal>
 
       <BlockSheet
         visible={blockOpen}
@@ -110,7 +156,7 @@ export function ProfileMenuSheet({
         loading={blockLoading}
         onBlock={handleBlock}
         onUnblock={handleUnblock}
-        onClose={() => setBlockOpen(false)}
+        onClose={() => { setBlockOpen(false); onClose() }}
       />
 
       <ReportSheet
@@ -124,22 +170,12 @@ export function ProfileMenuSheet({
 }
 
 const s = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-  },
-  sheet: {
-    backgroundColor: Colors.elevated,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+  bg: { backgroundColor: Colors.elevated },
+  handleIndicator: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  content: {
     paddingHorizontal: 8,
     paddingBottom: 36,
-    paddingTop: 12,
-  },
-  handle: {
-    width: 40, height: 4, borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignSelf: 'center', marginBottom: 8,
+    paddingTop: 8,
   },
   row: {
     flexDirection: 'row',
@@ -154,9 +190,7 @@ const s = StyleSheet.create({
     fontSize: 16,
     color: Colors.inkPrimary,
   },
-  rowTextOrange: {
-    color: Colors.brandOrange,
-  },
+  rowTextOrange: { color: Colors.brandOrange },
   divider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: 'rgba(255,255,255,0.1)',

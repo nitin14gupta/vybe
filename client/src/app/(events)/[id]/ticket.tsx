@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   Share,
   StyleSheet,
@@ -15,6 +14,7 @@ import { ArrowLeft, Share2 } from 'lucide-react-native'
 import QRCode from 'react-native-qrcode-svg'
 import { Colors, FontFamily } from '@/constants'
 import ApiService, { type TicketInfo } from '@/api/apiService'
+import { usePillStore } from '@/store/pillStore'
 
 const EVENT_EMOJIS: Record<string, string> = {
   house_party: '🎉',
@@ -46,12 +46,13 @@ export default function TicketScreen() {
 
   const [ticket, setTicket] = useState<TicketInfo | null>(null)
   const [loading, setLoading] = useState(true)
+  const showPill = usePillStore(s => s.show)
 
   useEffect(() => {
     if (!id) return
     ApiService.getMyTicket(id)
       .then(setTicket)
-      .catch(() => Alert.alert('Error', 'Could not load ticket'))
+      .catch(() => showPill('Could not load ticket', 'error'))
       .finally(() => setLoading(false))
   }, [id])
 
@@ -145,7 +146,7 @@ export default function TicketScreen() {
               <View style={s.infoBlock}>
                 <Text style={s.infoLabel}>TICKET ID</Text>
                 <Text style={[s.infoValue, { fontFamily: FontFamily.bodyRegular, fontSize: 11 }]} numberOfLines={1}>
-                  {ticket.ticket_token.slice(0, 16)}…
+                  {ticket.ticket_token ? ticket.ticket_token.slice(0, 16) + '…' : '—'}
                 </Text>
               </View>
             </View>

@@ -337,7 +337,7 @@ def rsvp_event(event_id: str, body: RsvpBody, current_user: dict = Depends(get_c
     with get_db() as (cur, conn):
         # Fetch event + user dob for age check
         cur.execute(
-            "SELECT capacity, spots_left, age_restriction, date_time FROM events WHERE id = %s AND is_cancelled = FALSE",
+            "SELECT capacity, spots_left, age_restriction, date_time, end_time FROM events WHERE id = %s AND is_cancelled = FALSE",
             (event_id,),
         )
         ev = cur.fetchone()
@@ -345,6 +345,10 @@ def rsvp_event(event_id: str, body: RsvpBody, current_user: dict = Depends(get_c
             raise HTTPException(status_code=404, detail="Event not found")
 
         if body.action == "going":
+            # Prevent RSVP after event has ended
+            ev_end = ev["end_time"] if ev.get("end_time") else ev["date_time"] + timedelta(hours=6)
+            if datetime.now(timezone.utc) > ev_end:
+                raise HTTPException(status_code=400, detail="This event has ended")
             # Age check
             cur.execute("SELECT dob FROM users WHERE id = %s", (current_user["id"],))
             user = cur.fetchone()
@@ -373,7 +377,7 @@ def rsvp_event(event_id: str, body: RsvpBody, current_user: dict = Depends(get_c
                     (event_id,),
                 )
 
-            # Notify host about the new attendee
+            # Notify host about the new attendee (suppress if either party has blocked the other)
             if status == "going":
                 cur.execute("SELECT host_id::text, title FROM events WHERE id = %s", (event_id,))
                 ev_row = cur.fetchone()
@@ -381,8 +385,15 @@ def rsvp_event(event_id: str, body: RsvpBody, current_user: dict = Depends(get_c
                     cur.execute("SELECT name FROM users WHERE id = %s::uuid", (current_user["id"],))
                     attendee_row = cur.fetchone()
                     attendee_name = attendee_row["name"] if attendee_row else "Someone"
-                    from routes.notifications import notify_event_rsvp
-                    notify_event_rsvp(cur, ev_row["host_id"], current_user["id"], attendee_name, event_id, ev_row["title"])
+                    host_id = ev_row["host_id"]
+                    uid = current_user["id"]
+                    cur.execute(
+                        "SELECT 1 FROM user_blocks WHERE (blocker_id=%s::uuid AND blocked_id=%s::uuid) OR (blocker_id=%s::uuid AND blocked_id=%s::uuid)",
+                        (host_id, uid, uid, host_id),
+                    )
+                    if not cur.fetchone():
+                        from routes.notifications import notify_event_rsvp
+                        notify_event_rsvp(cur, host_id, uid, attendee_name, event_id, ev_row["title"])
 
             conn.commit()
             return {"ok": True, "status": status}
@@ -500,12 +511,20 @@ def get_my_ticket(event_id: str, current_user: dict = Depends(get_current_user))
 @router.post("/{event_id}/checkin")
 def checkin_attendee(event_id: str, body: CheckinBody, current_user: dict = Depends(get_current_user)):
     with get_db() as (cur, conn):
-        cur.execute("SELECT host_id::text FROM events WHERE id = %s", (event_id,))
+        cur.execute("SELECT host_id::text, date_time, end_time FROM events WHERE id = %s", (event_id,))
         ev = cur.fetchone()
         if not ev:
             raise HTTPException(status_code=404, detail="Event not found")
         if ev["host_id"] != current_user["id"]:
             raise HTTPException(status_code=403, detail="Only the host can check in attendees")
+
+        now = datetime.now(timezone.utc)
+        checkin_open = ev["date_time"] - timedelta(hours=3)
+        checkin_close = ev["end_time"] if ev["end_time"] else ev["date_time"] + timedelta(hours=6)
+        if now < checkin_open:
+            raise HTTPException(status_code=400, detail="Check-in opens 3 hours before the event")
+        if now > checkin_close:
+            raise HTTPException(status_code=400, detail="This event has ended")
 
         cur.execute(
             """

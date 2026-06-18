@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, Pressable, Image,
-  FlatList, ActivityIndicator, Alert, Dimensions,
+  FlatList, ActivityIndicator, Dimensions,
 } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -12,6 +12,7 @@ import {
 import { VybeRequestModal, PlaybackWave, ProfileMenuSheet } from '@/components/ui'
 import ApiService, { ExtendedProfile, EventSummary } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
+import { usePillStore } from '@/store/pillStore'
 
 const { width: W } = Dimensions.get('window')
 
@@ -48,6 +49,7 @@ export default function UserProfileScreen() {
   const [vybeSent, setVybeSent] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [blockedByMe, setBlockedByMe] = useState(false)
+  const showPill = usePillStore(s => s.show)
 
   useEffect(() => {
     if (!id) return
@@ -58,7 +60,7 @@ export default function UserProfileScreen() {
         setVybeSent(p.vybe_status === 'pending')
         setBlockedByMe(!!p.is_blocked_by_me)
       })
-      .catch(() => Alert.alert('Error', 'Could not load profile'))
+      .catch(() => showPill('Could not load profile', 'error'))
       .finally(() => setLoading(false))
   }, [id])
 

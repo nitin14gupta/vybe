@@ -1,10 +1,11 @@
 import React from 'react'
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { Plus, X } from 'lucide-react-native'
 import { Image } from 'expo-image'
 import * as ImagePicker from 'expo-image-picker'
 import { Colors } from '@/constants'
 import ApiService from '@/api/apiService'
+import { usePillStore } from '@/store/pillStore'
 import type { CreateEventForm } from '@/hooks/useCreateEvent'
 import { ef } from './styles'
 
@@ -22,10 +23,11 @@ interface Props {
 }
 
 function Inner({ form, set, errors, setErrors, submitError, priceLocked, priceLockNote, disabled }: Omit<Props, 'scrollable'>) {
+  const showPill = usePillStore(s => s.show)
   const pickPhoto = async (position: number) => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync()
     if (!perm.granted) {
-      Alert.alert('Permission needed', 'Allow photo library access to add event photos')
+      showPill('Allow photo library access to add event photos', 'error')
       return
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -41,7 +43,7 @@ function Inner({ form, set, errors, setErrors, submitError, priceLocked, priceLo
       photos[position] = url
       set('coverPhotos', photos)
     } catch (e: any) {
-      Alert.alert('Upload failed', e.message)
+      showPill(e.message || 'Upload failed', 'error')
     }
   }
 

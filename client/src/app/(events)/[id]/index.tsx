@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   FlatList,
   Pressable,
@@ -24,6 +23,7 @@ import {
   MapPin,
   MoreVertical,
   QrCode,
+  ScanLine,
   Share2,
   Shield,
   Star,
@@ -32,6 +32,8 @@ import {
 import { Colors, FontFamily } from '@/constants'
 import ApiService, { type EventDetail, type EventAttendee } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
+import { usePillStore } from '@/store/pillStore'
+import { ConfirmSheet } from '@/components/ui'
 
 const { width: W } = Dimensions.get('window')
 
@@ -94,6 +96,8 @@ export default function EventDetailScreen() {
   const [showFullDesc, setShowFullDesc] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
+  const [cancelConfirm, setCancelConfirm] = useState(false)
+  const showPill = usePillStore(s => s.show)
   const [attendees, setAttendees] = useState<EventAttendee[]>([])
   const [attendeesLoading, setAttendeesLoading] = useState(false)
 
@@ -110,7 +114,7 @@ export default function EventDetailScreen() {
             .finally(() => setAttendeesLoading(false))
         }
       })
-      .catch(() => Alert.alert('Error', 'Could not load event'))
+      .catch(() => showPill('Could not load event', 'error'))
       .finally(() => setLoading(false))
   }, [id, myId])
 
@@ -119,21 +123,15 @@ export default function EventDetailScreen() {
     router.push(`/(events)/${id}/book` as any)
   }
 
-  const handleCancelEvent = () => {
-    Alert.alert('Cancel Event', 'Are you sure? Attendees will be notified. This cannot be undone.', [
-      { text: 'Keep Event', style: 'cancel' },
-      {
-        text: 'Cancel Event', style: 'destructive',
-        onPress: async () => {
-          try {
-            await ApiService.cancelEvent(id!)
-            setEvent(prev => prev ? { ...prev, is_cancelled: true } : prev)
-          } catch (e: any) {
-            Alert.alert('Error', e.message)
-          }
-        },
-      },
-    ])
+  const handleCancelEvent = () => setCancelConfirm(true)
+
+  const doCancelEvent = async () => {
+    try {
+      await ApiService.cancelEvent(id!)
+      setEvent(prev => prev ? { ...prev, is_cancelled: true } : prev)
+    } catch (e: any) {
+      showPill(e.message || 'Could not cancel event', 'error')
+    }
   }
 
   const handleShare = () => {
@@ -377,7 +375,10 @@ export default function EventDetailScreen() {
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                   style={styles.hostBtnGradient}
                 >
-                  <Text style={styles.hostBtnPrimaryText}>🔍 Scanner</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <ScanLine size={16} color="#111" strokeWidth={2} />
+                    <Text style={styles.hostBtnPrimaryText}>Scanner</Text>
+                  </View>
                 </LinearGradient>
               </Pressable>
             </View>
@@ -452,6 +453,15 @@ export default function EventDetailScreen() {
         visible={shareOpen}
         event={event}
         onClose={() => setShareOpen(false)}
+      />
+      <ConfirmSheet
+        visible={cancelConfirm}
+        title="Cancel Event"
+        body="Are you sure? Attendees will be notified. This cannot be undone."
+        confirmLabel="Cancel Event"
+        destructive
+        onConfirm={doCancelEvent}
+        onClose={() => setCancelConfirm(false)}
       />
     </View>
   )
