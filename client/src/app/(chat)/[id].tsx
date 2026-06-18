@@ -1,17 +1,17 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import {
   View, Text, StyleSheet, FlatList, Pressable, TextInput,
-  Image, KeyboardAvoidingView, Platform, Alert, ActionSheetIOS,
+  Image, KeyboardAvoidingView, Platform,
   ActivityIndicator,
 } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
-import { ChevronLeft, MoreVertical, Plus, Send } from 'lucide-react-native'
+import { ChevronLeft, MoreVertical, Plus, Send, Ban, Trash2 } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useChat } from '@/hooks/useChat'
 import { useConversations } from '@/hooks/useConversations'
 import { useAuthStore } from '@/store/auth'
-import { ReportSheet } from '@/components/ui'
+import { BlockSheet, ReportSheet } from '@/components/ui'
 import ApiService, { Message } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
 
@@ -136,6 +136,8 @@ export default function ChatDetailScreen() {
   const [partnerUsername, setPartnerUsername] = useState<string | null>(null)
   const [partnerAvatar, setPartnerAvatar] = useState<string | null>(null)
   const [partnerId, setPartnerId] = useState<string | null>(null)
+  const [blockStatus, setBlockStatus] = useState<'none' | 'i_blocked' | 'they_blocked'>('none')
+  const [menuOpen, setMenuOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
 
   const { messages, isPartnerTyping, isPartnerOnline, loading, sendMessage, sendTyping, loadMore } = useChat(convId)
@@ -143,12 +145,13 @@ export default function ChatDetailScreen() {
   // Load conversation metadata (partner name/avatar)
   useEffect(() => {
     ApiService.getConversations().then(data => {
-      const conv = [...data.active, ...data.locked].find(c => c.id === convId)
+      const conv = [...data.active, ...data.locked, ...data.pending].find(c => c.id === convId)
       if (conv) {
         setPartnerName(conv.partner_name)
         setPartnerUsername(conv.partner_username ?? null)
         setPartnerAvatar(conv.partner_avatar)
         setPartnerId(conv.partner_id)
+        setBlockStatus((conv as any).block_status ?? 'none')
       }
     }).catch(() => {})
   }, [convId])
@@ -170,43 +173,26 @@ export default function ChatDetailScreen() {
     }
   }, [sendTyping])
 
-  const handleMenu = useCallback(() => {
-    const options = ['Block User', 'Report User', 'Cancel']
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options, cancelButtonIndex: 2, destructiveButtonIndex: 0 },
-        idx => {
-          if (idx === 0) confirmBlock()
-          if (idx === 1) confirmReport()
-        },
-      )
-    } else {
-      Alert.alert('Options', undefined, [
-        { text: 'Block User', style: 'destructive', onPress: confirmBlock },
-        { text: 'Report User', onPress: confirmReport },
-        { text: 'Cancel', style: 'cancel' },
-      ])
-    }
-  }, [])
+  const handleBlock = useCallback(async () => {
+    if (!partnerId) return
+    await ApiService.blockUser(partnerId)
+    setBlockStatus('i_blocked')
+  }, [partnerId])
 
-  const confirmBlock = useCallback(() => {
-    // Find partner id from conversations
-    ApiService.getConversations().then(data => {
-      const conv = [...data.active].find(c => c.id === convId)
-      if (!conv) return
-      Alert.alert('Block User', `Block ${conv.partner_name ?? 'this user'}? They won't be able to contact you.`, [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Block', style: 'destructive',
-          onPress: () => ApiService.blockUser(conv.partner_id).then(() => router.back()),
-        },
-      ])
-    })
+  const handleUnblock = useCallback(async () => {
+    if (!partnerId) return
+    await ApiService.unblockUser(partnerId)
+    setBlockStatus('none')
+  }, [partnerId])
+
+  const handleDeleteChat = useCallback(async () => {
+    await ApiService.deleteConversation(convId)
+    router.back()
   }, [convId])
 
-  const confirmReport = useCallback(() => {
-    setReportOpen(true)
-  }, [convId])
+  const handleReport = useCallback(async (reason: string) => {
+    if (partnerId) await ApiService.reportUser(partnerId, reason)
+  }, [partnerId])
 
   const renderItem = useCallback(({ item }: { item: Message }) => (
     <MsgBubble msg={item} isMine={item.sender_id === myId} />
@@ -246,7 +232,7 @@ export default function ChatDetailScreen() {
           </View>
         </Pressable>
 
-        <Pressable onPress={handleMenu} hitSlop={8}>
+        <Pressable onPress={() => setMenuOpen(true)} hitSlop={8}>
           <MoreVertical size={22} color={Colors.inkSecondary} strokeWidth={1.8} />
         </Pressable>
       </View>
@@ -271,38 +257,65 @@ export default function ChatDetailScreen() {
         />
       )}
 
-      {/* Input bar */}
-      <View style={[s.inputBar, { borderTopColor: 'rgba(255,255,255,0.08)' }]}>
-        <Pressable style={s.attachBtn} onPress={() => {}}>
-          <Plus size={22} color={Colors.inkSecondary} strokeWidth={1.8} />
-        </Pressable>
-
-        <View style={s.inputWrap}>
-          <TextInput
-            style={s.textInput}
-            value={inputText}
-            onChangeText={handleTextChange}
-            placeholder="Type a message..."
-            placeholderTextColor={Colors.inkDisabled}
-            multiline
-          />
+      {/* Input bar — varies by block status */}
+      {blockStatus === 'they_blocked' ? (
+        <View style={[s.blockNotice, { paddingBottom: insets.bottom + 8 }]}>
+          <Text style={s.blockNoticeText}>You can't message this person.</Text>
         </View>
+      ) : blockStatus === 'i_blocked' ? (
+        <View style={[s.blockBar, { paddingBottom: insets.bottom + 8 }]}>
+          <Text style={s.blockBarText}>You blocked this person.</Text>
+          <View style={s.blockBtnRow}>
+            <Pressable style={s.unblockBtn} onPress={handleUnblock}>
+              <Text style={s.unblockBtnText}>Unblock</Text>
+            </Pressable>
+            <Pressable style={s.deleteBtn} onPress={handleDeleteChat}>
+              <Trash2 size={14} color={Colors.brandCoral} strokeWidth={1.8} />
+              <Text style={s.deleteBtnText}>Delete Chat</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : (
+        <View style={[s.inputBar, { borderTopColor: 'rgba(255,255,255,0.08)' }]}>
+          <Pressable style={s.attachBtn} onPress={() => {}}>
+            <Plus size={22} color={Colors.inkSecondary} strokeWidth={1.8} />
+          </Pressable>
 
-        <Pressable
-          style={[s.sendBtn, !inputText.trim() && s.sendBtnDisabled]}
-          onPress={handleSend}
-          disabled={!inputText.trim()}
-        >
-          <Send size={18} color="#111" strokeWidth={2} fill={inputText.trim() ? '#111' : 'transparent'} />
-        </Pressable>
-      </View>
+          <View style={s.inputWrap}>
+            <TextInput
+              style={s.textInput}
+              value={inputText}
+              onChangeText={handleTextChange}
+              placeholder="Type a message..."
+              placeholderTextColor={Colors.inkDisabled}
+              multiline
+            />
+          </View>
+
+          <Pressable
+            style={[s.sendBtn, !inputText.trim() && s.sendBtnDisabled]}
+            onPress={handleSend}
+            disabled={!inputText.trim()}
+          >
+            <Send size={18} color="#111" strokeWidth={2} fill={inputText.trim() ? '#111' : 'transparent'} />
+          </Pressable>
+        </View>
+      )}
+
+      {/* Chat menu sheet */}
+      <BlockSheet
+        visible={menuOpen}
+        targetName={partnerName}
+        isBlocked={blockStatus === 'i_blocked'}
+        onBlock={async () => { await handleBlock(); setMenuOpen(false) }}
+        onUnblock={async () => { await handleUnblock(); setMenuOpen(false) }}
+        onClose={() => setMenuOpen(false)}
+      />
 
       <ReportSheet
         visible={reportOpen}
         targetName={partnerName}
-        onSubmit={async (reason) => {
-          if (partnerId) await ApiService.reportUser(partnerId, reason)
-        }}
+        onSubmit={handleReport}
         onClose={() => setReportOpen(false)}
       />
     </KeyboardAvoidingView>
@@ -398,6 +411,46 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.08)',
   },
   profileChipText: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkPrimary },
+
+  // Block notice bars
+  blockNotice: {
+    paddingHorizontal: 20, paddingTop: 14,
+    borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: Colors.background,
+    alignItems: 'center',
+  },
+  blockNoticeText: {
+    fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary,
+  },
+  blockBar: {
+    paddingHorizontal: 20, paddingTop: 14,
+    borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: Colors.background,
+    gap: 10,
+  },
+  blockBarText: {
+    fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary,
+    textAlign: 'center',
+  },
+  blockBtnRow: {
+    flexDirection: 'row', gap: 10,
+  },
+  unblockBtn: {
+    flex: 1, height: 40, borderRadius: 12,
+    borderWidth: 1, borderColor: Colors.brandOrange,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  unblockBtnText: {
+    fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandOrange,
+  },
+  deleteBtn: {
+    flex: 1, height: 40, borderRadius: 12,
+    borderWidth: 1, borderColor: Colors.brandCoral,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+  },
+  deleteBtnText: {
+    fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandCoral,
+  },
 
   // Input
   inputBar: {

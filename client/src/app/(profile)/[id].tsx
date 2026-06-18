@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, Pressable, Image,
-  FlatList, ActivityIndicator, Alert, Platform, ActionSheetIOS,
-  Dimensions,
+  FlatList, ActivityIndicator, Alert, Dimensions,
 } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   ChevronLeft, MoreVertical, Flame, UserPlus, UserCheck,
-  MessageCircle,
+  MessageCircle, Ban,
 } from 'lucide-react-native'
-import { VybeRequestModal, PlaybackWave, ReportSheet } from '@/components/ui'
+import { VybeRequestModal, PlaybackWave, ProfileMenuSheet } from '@/components/ui'
 import ApiService, { ExtendedProfile, EventSummary } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
 
@@ -47,7 +46,8 @@ export default function UserProfileScreen() {
   const [following, setFollowing] = useState(false)
   const [vybeModalOpen, setVybeModalOpen] = useState(false)
   const [vybeSent, setVybeSent] = useState(false)
-  const [reportOpen, setReportOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [blockedByMe, setBlockedByMe] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -56,6 +56,7 @@ export default function UserProfileScreen() {
         setProfile(p)
         setFollowing(!!p.is_following)
         setVybeSent(p.vybe_status === 'pending')
+        setBlockedByMe(!!p.is_blocked_by_me)
       })
       .catch(() => Alert.alert('Error', 'Could not load profile'))
       .finally(() => setLoading(false))
@@ -84,37 +85,22 @@ export default function UserProfileScreen() {
     }
   }
 
-  const handleMenuPress = () => {
-    const options = ['Block User', 'Report User', 'Cancel']
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options, cancelButtonIndex: 2, destructiveButtonIndex: 0 },
-        idx => {
-          if (idx === 0) confirmBlock()
-          if (idx === 1) confirmReport()
-        },
-      )
-    } else {
-      Alert.alert('Options', undefined, [
-        { text: 'Block User', style: 'destructive', onPress: confirmBlock },
-        { text: 'Report User', onPress: confirmReport },
-        { text: 'Cancel', style: 'cancel' },
-      ])
-    }
-  }
-
-  const confirmBlock = () => {
+  const handleBlock = async () => {
     if (!profile) return
-    Alert.alert('Block User', `Block ${profile.name ?? 'this user'}?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Block', style: 'destructive',
-        onPress: () => ApiService.blockUser(profile.id).then(() => router.back()),
-      },
-    ])
+    await ApiService.blockUser(profile.id)
+    setBlockedByMe(true)
   }
 
-  const confirmReport = () => setReportOpen(true)
+  const handleUnblock = async () => {
+    if (!profile) return
+    await ApiService.unblockUser(profile.id)
+    setBlockedByMe(false)
+  }
+
+  const handleReport = async (reason: string) => {
+    if (!profile) return
+    await ApiService.reportUser(profile.id, reason)
+  }
 
   if (loading) {
     return (
@@ -149,7 +135,7 @@ export default function UserProfileScreen() {
         <Pressable onPress={() => router.back()} style={s.headerCircleBtn} hitSlop={8}>
           <ChevronLeft size={22} color="#fff" strokeWidth={2.5} />
         </Pressable>
-        <Pressable onPress={handleMenuPress} style={s.headerCircleBtn} hitSlop={8}>
+        <Pressable onPress={() => setMenuOpen(true)} style={s.headerCircleBtn} hitSlop={8}>
           <MoreVertical size={20} color="#fff" strokeWidth={1.8} />
         </Pressable>
       </View>
@@ -210,13 +196,27 @@ export default function UserProfileScreen() {
             </View>
           )}
 
+          {/* Blocked overlay */}
+          {blockedByMe && (
+            <View style={s.blockedOverlay}>
+              <View style={s.blockedIconWrap}>
+                <Ban size={36} color={Colors.inkSecondary} strokeWidth={1.5} />
+              </View>
+              <Text style={s.blockedTitle}>You've blocked this account</Text>
+              <Text style={s.blockedSub}>Unblock to see their profile and content</Text>
+              <Pressable style={s.unblockBtn} onPress={handleUnblock}>
+                <Text style={s.unblockBtnText}>Unblock</Text>
+              </Pressable>
+            </View>
+          )}
+
           {/* Bio */}
-          {profile.bio ? (
+          {!blockedByMe && profile.bio ? (
             <Text style={s.bio}>{profile.bio}</Text>
           ) : null}
 
           {/* Interests */}
-          {profile.interests?.length > 0 && (
+          {!blockedByMe && profile.interests?.length > 0 && (
             <View style={s.chipsRow}>
               {profile.interests.map(tag => (
                 <View key={tag} style={s.chip}>
@@ -227,14 +227,14 @@ export default function UserProfileScreen() {
           )}
 
           {/* Voice intro */}
-          {profile.voice_url ? (
+          {!blockedByMe && profile.voice_url ? (
             <View style={s.voiceWrap}>
               <PlaybackWave uri={profile.voice_url} />
             </View>
           ) : null}
 
           {/* Events attending */}
-          {profile.events_attending?.length > 0 && (
+          {!blockedByMe && profile.events_attending?.length > 0 && (
             <View style={s.eventsSection}>
               <Text style={s.sectionLabel}>Going to</Text>
               <FlatList
@@ -250,8 +250,8 @@ export default function UserProfileScreen() {
         </View>
       </ScrollView>
 
-      {/* Sticky CTAs */}
-      <View style={[s.ctaBar, { paddingBottom: insets.bottom + 8 }]}>
+      {/* Sticky CTAs — hidden when blocked */}
+      {!blockedByMe && <View style={[s.ctaBar, { paddingBottom: insets.bottom + 8 }]}>
         {isConnected ? (
           <Pressable
             style={[s.ctaBtn, s.ctaBtnPrimary, { flex: 1 }]}
@@ -282,7 +282,7 @@ export default function UserProfileScreen() {
             {following ? 'Following' : 'Follow'}
           </Text>
         </Pressable>
-      </View>
+      </View>}
 
       <VybeRequestModal
         visible={vybeModalOpen}
@@ -304,13 +304,15 @@ export default function UserProfileScreen() {
         onClose={() => setVybeModalOpen(false)}
       />
 
-      <ReportSheet
-        visible={reportOpen}
-        targetName={profile.name}
-        onSubmit={async (reason) => {
-          await ApiService.reportUser(profile.id, reason)
-        }}
-        onClose={() => setReportOpen(false)}
+      <ProfileMenuSheet
+        visible={menuOpen}
+        username={profile.username ?? null}
+        targetName={profile.name ?? null}
+        isBlocked={blockedByMe}
+        onBlock={handleBlock}
+        onUnblock={handleUnblock}
+        onReport={handleReport}
+        onClose={() => setMenuOpen(false)}
       />
     </View>
   )
@@ -351,6 +353,33 @@ const s = StyleSheet.create({
   },
   photoDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.4)' },
   photoDotActive: { backgroundColor: '#fff', width: 16 },
+
+  // Blocked overlay
+  blockedOverlay: {
+    alignItems: 'center', paddingVertical: 32, gap: 10,
+  },
+  blockedIconWrap: {
+    width: 72, height: 72, borderRadius: 36,
+    backgroundColor: '#2a2a2a',
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 4,
+  },
+  blockedTitle: {
+    fontFamily: FontFamily.headingBold, fontSize: 18,
+    color: Colors.inkPrimary, textAlign: 'center',
+  },
+  blockedSub: {
+    fontFamily: FontFamily.bodyRegular, fontSize: 14,
+    color: Colors.inkSecondary, textAlign: 'center',
+  },
+  unblockBtn: {
+    marginTop: 8,
+    paddingHorizontal: 28, paddingVertical: 10,
+    borderRadius: 20, borderWidth: 1, borderColor: Colors.brandOrange,
+  },
+  unblockBtnText: {
+    fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandOrange,
+  },
 
   // Body
   body: { padding: 20, gap: 16 },

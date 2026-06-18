@@ -107,7 +107,21 @@ def list_conversations(current_user: dict = Depends(get_current_user)):
                     WHERE msg.conversation_id = c.id
                       AND msg.sender_id != %s::uuid
                       AND msg.read_at IS NULL
-                )::int AS unread_count
+                )::int AS unread_count,
+                -- Block status from current user's perspective
+                CASE
+                    WHEN EXISTS(
+                        SELECT 1 FROM user_blocks
+                        WHERE blocker_id = %s::uuid
+                          AND blocked_id = CASE WHEN c.user1_id = %s::uuid THEN c.user2_id ELSE c.user1_id END
+                    ) THEN 'i_blocked'
+                    WHEN EXISTS(
+                        SELECT 1 FROM user_blocks
+                        WHERE blocker_id = CASE WHEN c.user1_id = %s::uuid THEN c.user2_id ELSE c.user1_id END
+                          AND blocked_id = %s::uuid
+                    ) THEN 'they_blocked'
+                    ELSE 'none'
+                END AS block_status
             FROM conversations c
             JOIN users u1 ON u1.id = c.user1_id
             JOIN users u2 ON u2.id = c.user2_id
@@ -124,9 +138,10 @@ def list_conversations(current_user: dict = Depends(get_current_user)):
                 WHERE conversation_id = c.id ORDER BY sent_at DESC LIMIT 1
             ) m ON true
             WHERE (c.user1_id = %s::uuid OR c.user2_id = %s::uuid)
+              AND NOT (%s::uuid = ANY(COALESCE(c.hidden_by, '{}'::uuid[])))
             ORDER BY COALESCE(c.last_message_at, c.created_at) DESC
             """,
-            (uid, uid, uid, uid, uid, uid, uid),
+            (uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid),
         )
         rows = cur.fetchall()
 
@@ -201,6 +216,27 @@ def mark_read(conv_id: str, current_user: dict = Depends(get_current_user)):
     return {"ok": True}
 
 
+@router.delete("/chat/conversations/{conv_id}", status_code=200)
+def delete_conversation(conv_id: str, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    with get_db() as (cur, conn):
+        _get_conversation(cur, conv_id, uid)
+        cur.execute(
+            """
+            UPDATE conversations
+            SET hidden_by = array_append(
+                COALESCE(hidden_by, '{}'::uuid[]),
+                %s::uuid
+            )
+            WHERE id = %s::uuid
+              AND NOT (%s::uuid = ANY(COALESCE(hidden_by, '{}'::uuid[])))
+            """,
+            (uid, conv_id, uid),
+        )
+        conn.commit()
+    return {"ok": True}
+
+
 @router.post("/chat/conversations/{conv_id}/messages", status_code=201)
 def send_message_rest(
     conv_id: str,
@@ -251,21 +287,25 @@ async def chat_websocket(
         return
 
     uid = user["id"]
+    partner_id: str | None = None
 
-    # Verify participant + active status
+    # Verify participant + active status, fetch partner_id for block checks
     try:
         with get_db() as (cur, _):
             cur.execute(
                 """
-                SELECT id::text, status FROM conversations
+                SELECT id::text, status, user1_id::text, user2_id::text FROM conversations
                 WHERE id = %s::uuid AND (user1_id = %s::uuid OR user2_id = %s::uuid)
                   AND status = 'active'
                 """,
                 (conv_id, uid, uid),
             )
-            if not cur.fetchone():
+            conv_row = cur.fetchone()
+            if not conv_row:
                 await websocket.close(code=4003)
                 return
+            conv_row = dict(conv_row)
+            partner_id = conv_row["user2_id"] if conv_row["user1_id"] == uid else conv_row["user1_id"]
     except Exception:
         await websocket.close(code=4003)
         return
@@ -339,6 +379,21 @@ async def chat_websocket(
                 content = data.get("content")
                 content_type = data.get("content_type", "text")
                 metadata = data.get("metadata")
+
+                # Block check before inserting
+                if partner_id:
+                    with get_db() as (cur, _):
+                        cur.execute(
+                            """
+                            SELECT 1 FROM user_blocks
+                            WHERE (blocker_id = %s::uuid AND blocked_id = %s::uuid)
+                               OR (blocker_id = %s::uuid AND blocked_id = %s::uuid)
+                            """,
+                            (uid, partner_id, partner_id, uid),
+                        )
+                        if cur.fetchone():
+                            await websocket.send_text(json.dumps({"type": "error", "code": "blocked"}))
+                            continue
 
                 with get_db() as (cur, conn):
                     cur.execute(

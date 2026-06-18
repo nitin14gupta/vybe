@@ -51,6 +51,8 @@ export interface ProfileResponse extends UserResponse {
   vibers_count: number
   vibing_count: number
   is_following?: boolean
+  is_blocked_by_me?: boolean
+  is_blocked_by_them?: boolean
 }
 
 export interface ExtendedProfile extends ProfileResponse {
@@ -201,6 +203,20 @@ export interface BlockedUser {
   name: string | null
   city: string | null
   avatar: string | null
+  created_at: string
+}
+
+export interface AppNotification {
+  id: string
+  type: string
+  actor_id: string | null
+  actor_name: string | null
+  actor_avatar: string | null
+  entity_id: string | null
+  entity_type: string | null
+  title: string
+  body: string | null
+  read_at: string | null
   created_at: string
 }
 
@@ -506,6 +522,34 @@ class ApiService {
   static async reportUser(userId: string, reason: string): Promise<void> {
     const endpoint = ENDPOINTS.REPORT_USER.replace(':id', userId)
     await this.post<{ ok: boolean }>(endpoint, { reason })
+  }
+
+  static async deleteConversation(convId: string): Promise<void> {
+    const endpoint = ENDPOINTS.CONV_DELETE.replace(':id', convId)
+    await this.delete<{ ok: boolean }>(endpoint)
+  }
+
+  // ── Notifications ──────────────────────────────────────────────────────────
+
+  static async getNotifications(before?: string): Promise<AppNotification[]> {
+    const q = before ? `?before=${encodeURIComponent(before)}` : ''
+    return this.get<AppNotification[]>(`${ENDPOINTS.NOTIFICATIONS}${q}`)
+  }
+
+  static async getUnreadNotificationCount(): Promise<number> {
+    const items = await this.get<AppNotification[]>(
+      `${ENDPOINTS.NOTIFICATIONS}?unread_only=true&limit=1`
+    )
+    return items.length
+  }
+
+  static async markAllNotificationsRead(): Promise<void> {
+    await this.patch<{ ok: boolean }>(ENDPOINTS.NOTIFICATIONS_READ_ALL, {})
+  }
+
+  static async markNotificationRead(notifId: string): Promise<void> {
+    const endpoint = ENDPOINTS.NOTIFICATION_READ.replace(':id', notifId)
+    await this.patch<{ ok: boolean }>(endpoint, {})
   }
 
   static async checkUsername(username: string): Promise<{ available: boolean; error?: string }> {

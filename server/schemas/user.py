@@ -105,3 +105,5 @@ class UserResponse(BaseModel):
 
 class ProfileResponse(UserResponse):
     is_following: bool = False
+    is_blocked_by_me: bool = False
+    is_blocked_by_them: bool = False

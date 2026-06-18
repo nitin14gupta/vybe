@@ -36,6 +36,14 @@ _USER_SELECT = """
                 WHERE follower_id = %s::uuid AND following_id = u.id
             )
         END AS is_following,
+        EXISTS(
+            SELECT 1 FROM user_blocks
+            WHERE blocker_id = %s::uuid AND blocked_id = u.id
+        ) AS is_blocked_by_me,
+        EXISTS(
+            SELECT 1 FROM user_blocks
+            WHERE blocker_id = u.id AND blocked_id = %s::uuid
+        ) AS is_blocked_by_them,
         COALESCE(
             json_agg(
                 json_build_object('id', p.id::text, 'url', p.url, 'position', p.position)
@@ -51,7 +59,7 @@ _USER_SELECT = """
 def _fetch_user(cur, user_id: str, viewer_id: str) -> dict | None:
     cur.execute(
         _USER_SELECT + "WHERE u.id = %s GROUP BY u.id",
-        (viewer_id, viewer_id, user_id),
+        (viewer_id, viewer_id, viewer_id, viewer_id, user_id),
     )
     row = cur.fetchone()
     if not row:
@@ -64,6 +72,8 @@ def _fetch_user(cur, user_id: str, viewer_id: str) -> dict | None:
     d["vibers_count"] = d.get("vibers_count") or 0
     d["vibing_count"] = d.get("vibing_count") or 0
     d["is_following"] = bool(d.get("is_following", False))
+    d["is_blocked_by_me"] = bool(d.get("is_blocked_by_me", False))
+    d["is_blocked_by_them"] = bool(d.get("is_blocked_by_them", False))
     d["username"] = d.get("username")
     return d
 
@@ -342,6 +352,24 @@ def get_user_profile(user_id: str, current_user: dict = Depends(get_current_user
     }
 
 
+@router.get("/blocked")
+def get_blocked_users(current_user: dict = Depends(get_current_user)):
+    with get_db() as (cur, _):
+        cur.execute(
+            """
+            SELECT u.id::text, u.name, u.city, ub.created_at,
+                   (SELECT url FROM user_photos WHERE user_id = u.id ORDER BY position LIMIT 1) AS avatar
+            FROM user_blocks ub
+            JOIN users u ON u.id = ub.blocked_id
+            WHERE ub.blocker_id = %s::uuid
+            ORDER BY ub.created_at DESC
+            """,
+            (current_user["id"],),
+        )
+        rows = cur.fetchall()
+    return [dict(r) for r in rows]
+
+
 @router.get("/{user_id}", response_model=ProfileResponse)
 def get_profile(user_id: str, current_user: dict = Depends(get_current_user)):
     with get_db() as (cur, _):
@@ -417,24 +445,6 @@ def unblock_user(user_id: str, current_user: dict = Depends(get_current_user)):
         )
         conn.commit()
     return {"ok": True}
-
-
-@router.get("/blocked")
-def get_blocked_users(current_user: dict = Depends(get_current_user)):
-    with get_db() as (cur, _):
-        cur.execute(
-            """
-            SELECT u.id::text, u.name, u.city, ub.created_at,
-                   (SELECT url FROM user_photos WHERE user_id = u.id ORDER BY position LIMIT 1) AS avatar
-            FROM user_blocks ub
-            JOIN users u ON u.id = ub.blocked_id
-            WHERE ub.blocker_id = %s::uuid
-            ORDER BY ub.created_at DESC
-            """,
-            (current_user["id"],),
-        )
-        rows = cur.fetchall()
-    return [dict(r) for r in rows]
 
 
 # ── Report ────────────────────────────────────────────────────────────────────

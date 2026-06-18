@@ -8,6 +8,7 @@ from routes.discover import router as discover_router
 from routes.vibes import router as vibes_router
 from routes.events import router as events_router
 from routes.chat import router as chat_router
+from routes.notifications import router as notifications_router
 
 app = FastAPI(title="Vybe API", version="1.0.0")
 
@@ -27,6 +28,7 @@ app.include_router(discover_router)
 app.include_router(vibes_router)
 app.include_router(events_router)
 app.include_router(chat_router)
+app.include_router(notifications_router)
 
 
 @app.get("/health")

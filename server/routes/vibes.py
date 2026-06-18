@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from middleware.auth import get_current_user
 from db.config import get_db
+from routes.notifications import notify_vybe_accepted
 
 router = APIRouter(prefix="/vibes", tags=["vibes"])
 
@@ -220,6 +221,12 @@ def respond_to_vibe(
                     "UPDATE conversations SET last_message_at = NOW() WHERE id = %s::uuid",
                     (conv_id,),
                 )
+
+            # Notify the vybe sender that their request was accepted
+            cur.execute("SELECT name FROM users WHERE id = %s::uuid", (receiver_id,))
+            accepter = cur.fetchone()
+            if accepter:
+                notify_vybe_accepted(cur, sender_id, receiver_id, accepter["name"] or "Someone")
 
             conn.commit()
             return {"ok": True, "status": "accepted", "conversation_id": str(conv_id) if conv_id else None}

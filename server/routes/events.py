@@ -274,6 +274,14 @@ def create_event(body: CreateEventBody, current_user: dict = Depends(get_current
             ),
         )
         new_id = cur.fetchone()["id"]
+
+        # Notify followers about the new event
+        from routes.notifications import notify_followers_event_created
+        cur.execute("SELECT name FROM users WHERE id = %s::uuid", (current_user["id"],))
+        host_row = cur.fetchone()
+        host_name = host_row["name"] if host_row else "Someone"
+        notify_followers_event_created(cur, current_user["id"], new_id, body.title, host_name)
+
         conn.commit()
 
     return get_event(new_id, current_user)
@@ -364,6 +372,18 @@ def rsvp_event(event_id: str, body: RsvpBody, current_user: dict = Depends(get_c
                     "UPDATE events SET spots_left = GREATEST(0, spots_left - 1) WHERE id = %s",
                     (event_id,),
                 )
+
+            # Notify host about the new attendee
+            if status == "going":
+                cur.execute("SELECT host_id::text, title FROM events WHERE id = %s", (event_id,))
+                ev_row = cur.fetchone()
+                if ev_row:
+                    cur.execute("SELECT name FROM users WHERE id = %s::uuid", (current_user["id"],))
+                    attendee_row = cur.fetchone()
+                    attendee_name = attendee_row["name"] if attendee_row else "Someone"
+                    from routes.notifications import notify_event_rsvp
+                    notify_event_rsvp(cur, ev_row["host_id"], current_user["id"], attendee_name, event_id, ev_row["title"])
+
             conn.commit()
             return {"ok": True, "status": status}
 

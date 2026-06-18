@@ -31,7 +31,13 @@ export default function SettingsScreen() {
           <SettingRow
             icon={<Bell size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
             label="Notifications"
-            onPress={() => {}}
+            onPress={() => router.push('/(settings)/notifications')}
+            showSeparator={false}
+          />
+          <SettingRow
+            icon={<Bell size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
+            label="Blocked"
+            onPress={() => router.push('/(settings)/blocked')}
             showSeparator={false}
           />
         </View>
