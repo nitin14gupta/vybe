@@ -2,12 +2,7 @@ import { useCallback } from 'react'
 import { BackHandler } from 'react-native'
 import { useFocusEffect, useRouter } from 'expo-router'
 
-/**
- * Intercepts Android hardware back button using useFocusEffect so the
- * listener is only active while this screen is focused (not during transitions).
- * useEffect doesn't work here — it fires outside Expo Router's nav lifecycle.
- */
-export function useHardwareBack() {
+export function useHardwareBack(fallback: string = '/(tabs)') {
   const router = useRouter()
 
   useFocusEffect(
@@ -15,11 +10,12 @@ export function useHardwareBack() {
       const sub = BackHandler.addEventListener('hardwareBackPress', () => {
         if (router.canGoBack()) {
           router.back()
-          return true
+        } else {
+          router.replace(fallback as any)
         }
-        return false
+        return true
       })
       return () => sub.remove()
-    }, [router]),
+    }, [router, fallback]),
   )
 }

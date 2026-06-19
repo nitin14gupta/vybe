@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Dimensions,
@@ -9,11 +9,14 @@ import {
   Text,
   View,
 } from 'react-native'
+import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
+import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { ShareEventSheet } from '@/components/ui'
 import { StaticEventMap } from '@/components/maps'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useHardwareBack } from '@/hooks/useHardwareBack'
+import { useGoBack } from '@/hooks/useGoBack'
 import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
@@ -22,18 +25,61 @@ import {
   Clock,
   MapPin,
   MoreVertical,
+  Pencil,
   QrCode,
   ScanLine,
   Share2,
   Shield,
   Star,
   Users,
+  X as XIcon,
 } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 import ApiService, { type EventDetail, type EventAttendee } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
 import { usePillStore } from '@/store/pillStore'
 import { ConfirmSheet } from '@/components/ui'
+
+// ── Event options bottom sheet ────────────────────────────────────────────────
+
+function renderOptionsBackdrop(props: BottomSheetBackdropProps) {
+  return <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close" opacity={0.5} />
+}
+
+function EventOptionsSheetCore({ id, onCancel, onClose }: { id: string; onCancel: () => void; onClose: () => void }) {
+  const sheetRef = useRef<BottomSheetModal>(null)
+  const router = useRouter()
+  useEffect(() => { sheetRef.current?.present() }, [])
+  return (
+    <BottomSheetModal
+      ref={sheetRef}
+      snapPoints={['28%']}
+      enableDynamicSizing={false}
+      enablePanDownToClose
+      onDismiss={onClose}
+      backdropComponent={renderOptionsBackdrop}
+      backgroundStyle={styles.optionsBg}
+      handleIndicatorStyle={styles.optionsHandle}
+    >
+      <BottomSheetView style={styles.optionsContent}>
+        <Pressable style={styles.optionItem} onPress={() => { onClose(); router.push(`/(events)/${id}/edit` as any) }}>
+          <Pencil size={20} color={Colors.inkPrimary} strokeWidth={1.8} />
+          <Text style={styles.optionText}>Edit Event</Text>
+        </Pressable>
+        <View style={styles.optionDivider} />
+        <Pressable style={styles.optionItem} onPress={() => { onClose(); onCancel() }}>
+          <XIcon size={20} color={Colors.brandCoral} strokeWidth={1.8} />
+          <Text style={[styles.optionText, { color: Colors.brandCoral }]}>Cancel Event</Text>
+        </Pressable>
+      </BottomSheetView>
+    </BottomSheetModal>
+  )
+}
+
+function EventOptionsSheet({ visible, id, onCancel, onClose }: { visible: boolean; id: string; onCancel: () => void; onClose: () => void }) {
+  if (!visible) return null
+  return <EventOptionsSheetCore id={id} onCancel={onCancel} onClose={onClose} />
+}
 
 const { width: W } = Dimensions.get('window')
 
@@ -49,7 +95,7 @@ const EVENT_EMOJIS: Record<string, string> = {
 
 function parseDate(iso: string | null | undefined): Date | null {
   if (!iso) return null
-  const d = new Date(iso.replace(' ', 'T'))
+  const d = new Date(iso.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'))
   return isNaN(d.getTime()) ? null : d
 }
 
@@ -88,6 +134,7 @@ export default function EventDetailScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   useHardwareBack()
+  const goBack = useGoBack()
   const myId = useAuthStore(s => s.userId)
   const [event, setEvent] = useState<EventDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -95,7 +142,7 @@ export default function EventDetailScreen() {
   const [photoIdx, setPhotoIdx] = useState(0)
   const [showFullDesc, setShowFullDesc] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
-  const [moreOpen, setMoreOpen] = useState(false)
+  const [optionsOpen, setOptionsOpen] = useState(false)
   const [cancelConfirm, setCancelConfirm] = useState(false)
   const showPill = usePillStore(s => s.show)
   const [attendees, setAttendees] = useState<EventAttendee[]>([])
@@ -139,7 +186,7 @@ export default function EventDetailScreen() {
     setShareOpen(true)
   }
 
-  const isPast = event ? new Date(event.date_time.replace(' ', 'T')) < new Date() : false
+  const isPast = event ? new Date(event.date_time.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00')) < new Date() : false
   const hasTicket = !!(event?.my_ticket_token)
 
   if (loading) {
@@ -154,7 +201,7 @@ export default function EventDetailScreen() {
     return (
       <View style={[styles.root, styles.center]}>
         <Text style={styles.errorText}>Event not found</Text>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
+        <Pressable onPress={goBack} style={styles.backBtn}>
           <Text style={styles.backBtnText}>← Go back</Text>
         </Pressable>
       </View>
@@ -204,7 +251,7 @@ export default function EventDetailScreen() {
 
         {/* Overlay buttons */}
         <View style={[styles.heroOverlay, { top: insets.top + 8 }]}>
-          <Pressable style={styles.heroCircleBtn} onPress={() => router.back()}>
+          <Pressable style={styles.heroCircleBtn} onPress={goBack}>
             <ArrowLeft size={20} color="#fff" />
           </Pressable>
           <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -212,27 +259,13 @@ export default function EventDetailScreen() {
               <Share2 size={20} color="#fff" />
             </Pressable>
             {event?.host_id === myId && (
-              <Pressable style={styles.heroCircleBtn} onPress={() => setMoreOpen(true)}>
+              <Pressable style={styles.heroCircleBtn} onPress={() => setOptionsOpen(true)}>
                 <MoreVertical size={20} color="#fff" />
               </Pressable>
             )}
           </View>
         </View>
 
-        {/* Host ⋮ menu modal */}
-        {moreOpen && (
-          <Pressable style={styles.menuBackdrop} onPress={() => setMoreOpen(false)}>
-            <View style={[styles.menuSheet, { top: insets.top + 60 }]}>
-              <Pressable style={styles.menuItem} onPress={() => { setMoreOpen(false); router.push(`/(events)/${id}/edit` as any) }}>
-                <Text style={styles.menuItemText}>Edit Event</Text>
-              </Pressable>
-              <View style={styles.menuDivider} />
-              <Pressable style={styles.menuItem} onPress={() => { setMoreOpen(false); handleCancelEvent() }}>
-                <Text style={[styles.menuItemText, { color: Colors.brandCoral }]}>Cancel Event</Text>
-              </Pressable>
-            </View>
-          </Pressable>
-        )}
       </View>
 
       {/* Scrollable content */}
@@ -454,6 +487,12 @@ export default function EventDetailScreen() {
         event={event}
         onClose={() => setShareOpen(false)}
       />
+      <EventOptionsSheet
+        visible={optionsOpen}
+        id={id ?? ''}
+        onCancel={handleCancelEvent}
+        onClose={() => setOptionsOpen(false)}
+      />
       <ConfirmSheet
         visible={cancelConfirm}
         title="Cancel Event"
@@ -643,19 +682,12 @@ const styles = StyleSheet.create({
   },
   ticketBtnText: { color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold, fontSize: 14 },
 
-  menuBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100 },
-  menuSheet: {
-    position: 'absolute', right: 16,
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    borderWidth: 1, borderColor: Colors.divider,
-    minWidth: 160,
-    overflow: 'hidden',
-    zIndex: 101,
-  },
-  menuItem: { paddingHorizontal: 18, paddingVertical: 14 },
-  menuItemText: { fontFamily: FontFamily.bodyMedium, fontSize: 15, color: Colors.inkPrimary },
-  menuDivider: { height: 1, backgroundColor: Colors.divider },
+  optionsBg: { backgroundColor: Colors.surface },
+  optionsHandle: { backgroundColor: 'rgba(255,255,255,0.2)' },
+  optionsContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
+  optionItem: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16 },
+  optionText: { fontFamily: FontFamily.bodyMedium, fontSize: 16, color: Colors.inkPrimary },
+  optionDivider: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.divider },
 
   // Host bar
   hostBar: { flex: 1, gap: 10 },

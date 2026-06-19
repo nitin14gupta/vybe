@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react'
 import {
-  View, Text, StyleSheet, FlatList, Pressable,
+  View, Text, StyleSheet, SectionList, Pressable,
   ActivityIndicator, Image,
 } from 'react-native'
 import { router } from 'expo-router'
@@ -19,6 +19,32 @@ function timeAgo(iso: string): string {
   const h = Math.floor(m / 60)
   if (h < 24) return `${h}h ago`
   return `${Math.floor(h / 24)}d ago`
+}
+
+function groupByDate(notifs: AppNotification[]): { title: string; data: AppNotification[] }[] {
+  const now = new Date()
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const yesterdayStart = todayStart - 86400000
+  const weekStart = todayStart - 6 * 86400000
+
+  const groups: Record<string, AppNotification[]> = {
+    Today: [],
+    Yesterday: [],
+    'This Week': [],
+    Earlier: [],
+  }
+
+  for (const n of notifs) {
+    const t = new Date(n.created_at).getTime()
+    if (t >= todayStart) groups['Today'].push(n)
+    else if (t >= yesterdayStart) groups['Yesterday'].push(n)
+    else if (t >= weekStart) groups['This Week'].push(n)
+    else groups['Earlier'].push(n)
+  }
+
+  return Object.entries(groups)
+    .filter(([, data]) => data.length > 0)
+    .map(([title, data]) => ({ title, data }))
 }
 
 function NotifRow({ item, onPress }: { item: AppNotification; onPress: () => void }) {
@@ -96,10 +122,7 @@ export default function NotificationsScreen() {
     }
   }
 
-  const handleLoadMore = () => {
-    if (loadingMore || !hasMore) return
-    loadMore()
-  }
+  const sections = groupByDate(notifs)
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
@@ -124,14 +147,20 @@ export default function NotificationsScreen() {
           <Text style={s.emptySub}>We'll let you know when something happens</Text>
         </View>
       ) : (
-        <FlatList
-          data={notifs}
+        <SectionList
+          sections={sections}
           keyExtractor={n => n.id}
           renderItem={({ item }) => <NotifRow item={item} onPress={() => handleTap(item)} />}
+          renderSectionHeader={({ section }) => (
+            <View style={s.sectionHeader}>
+              <Text style={s.sectionHeaderText}>{section.title}</Text>
+            </View>
+          )}
           contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+          stickySectionHeadersEnabled={false}
           ListFooterComponent={
             hasMore ? (
-              <Pressable style={s.loadMoreBtn} onPress={handleLoadMore}>
+              <Pressable style={s.loadMoreBtn} onPress={() => { if (!loadingMore) loadMore() }}>
                 {loadingMore
                   ? <ActivityIndicator color={Colors.brandOrange} size="small" />
                   : <Text style={s.loadMoreText}>Load more</Text>}
@@ -158,7 +187,18 @@ const s = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32 },
   emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
   emptySub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center' },
-
+  sectionHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 6,
+  },
+  sectionHeaderText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 12,
+    color: Colors.inkSecondary,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
   row: {
     flexDirection: 'row', alignItems: 'flex-start',
     paddingHorizontal: 20, paddingVertical: 14, gap: 14,
@@ -180,11 +220,6 @@ const s = StyleSheet.create({
   title: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkPrimary, lineHeight: 20 },
   body: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, lineHeight: 18 },
   time: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, marginTop: 2 },
-
-  loadMoreBtn: {
-    alignItems: 'center', paddingVertical: 16,
-  },
-  loadMoreText: {
-    fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.brandOrange,
-  },
+  loadMoreBtn: { alignItems: 'center', paddingVertical: 16 },
+  loadMoreText: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.brandOrange },
 })

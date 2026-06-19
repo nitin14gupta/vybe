@@ -91,13 +91,13 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError, authReady])
 
-  if ((!fontsLoaded && !fontError) || !authReady) return null
-
+  // Always render the navigation tree so expo-router's useLinking stays mounted.
+  // SplashScreen covers the UI while fonts + auth bootstrap; hiding it is handled above.
   return (
     <GestureHandlerRootView style={styles.root}>
       <BottomSheetModalProvider>
         <StatusBar style="light" />
-        <AuthGuard ready={authReady} />
+        <AuthGuard ready={authReady && (fontsLoaded || !!fontError)} />
         <PillOverlay />
       </BottomSheetModalProvider>
     </GestureHandlerRootView>

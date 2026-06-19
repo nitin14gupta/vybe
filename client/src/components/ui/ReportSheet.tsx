@@ -5,14 +5,7 @@ import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { X } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 
-const REASONS = [
-  'Fake profile',
-  'Inappropriate photos',
-  'Harassment',
-  'Spam',
-  'Underage',
-  'Other',
-]
+const REASONS = ['Fake profile', 'Inappropriate photos', 'Harassment', 'Spam', 'Underage', 'Other']
 
 interface Props {
   visible: boolean
@@ -22,27 +15,16 @@ interface Props {
 }
 
 function renderBackdrop(props: BottomSheetBackdropProps) {
-  return (
-    <BottomSheetBackdrop
-      {...props}
-      disappearsOnIndex={-1}
-      appearsOnIndex={0}
-      pressBehavior="close"
-      opacity={0.65}
-    />
-  )
+  return <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close" opacity={0.65} />
 }
 
-export function ReportSheet({ visible, targetName, onSubmit, onClose }: Props) {
+function ReportSheetCore({ targetName, onSubmit, onClose }: Omit<Props, 'visible'>) {
   const sheetRef = useRef<BottomSheetModal>(null)
   const [selected, setSelected] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
 
-  useEffect(() => {
-    if (visible) sheetRef.current?.present()
-    else sheetRef.current?.dismiss()
-  }, [visible])
+  useEffect(() => { sheetRef.current?.present() }, [])
 
   const handleSubmit = async () => {
     if (!selected || loading) return
@@ -50,19 +32,9 @@ export function ReportSheet({ visible, targetName, onSubmit, onClose }: Props) {
     try {
       await onSubmit(selected)
       setDone(true)
-      setTimeout(() => {
-        setDone(false)
-        setSelected(null)
-        onClose()
-      }, 1500)
+      setTimeout(() => { setDone(false); setSelected(null); onClose() }, 1500)
     } catch {}
     finally { setLoading(false) }
-  }
-
-  const handleClose = () => {
-    setSelected(null)
-    setDone(false)
-    onClose()
   }
 
   return (
@@ -70,7 +42,7 @@ export function ReportSheet({ visible, targetName, onSubmit, onClose }: Props) {
       ref={sheetRef}
       enableDynamicSizing
       enablePanDownToClose
-      onDismiss={handleClose}
+      onDismiss={onClose}
       backdropComponent={renderBackdrop}
       backgroundStyle={s.bg}
       handleIndicatorStyle={s.handleIndicator}
@@ -81,7 +53,7 @@ export function ReportSheet({ visible, targetName, onSubmit, onClose }: Props) {
             <Text style={s.title}>Report {targetName ?? 'User'}</Text>
             <Text style={s.subtitle}>We won't let them know you reported them.</Text>
           </View>
-          <Pressable onPress={handleClose} hitSlop={10}>
+          <Pressable onPress={onClose} hitSlop={10}>
             <X size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
           </Pressable>
         </View>
@@ -107,16 +79,8 @@ export function ReportSheet({ visible, targetName, onSubmit, onClose }: Props) {
                 </Pressable>
               ))}
             </View>
-
-            <Pressable
-              style={[s.submitBtn, !selected && s.submitBtnDisabled]}
-              onPress={handleSubmit}
-              disabled={!selected || loading}
-            >
-              {loading
-                ? <ActivityIndicator color="#111" size="small" />
-                : <Text style={s.submitBtnText}>SUBMIT REPORT</Text>
-              }
+            <Pressable style={[s.submitBtn, !selected && s.submitBtnDisabled]} onPress={handleSubmit} disabled={!selected || loading}>
+              {loading ? <ActivityIndicator color="#111" size="small" /> : <Text style={s.submitBtnText}>SUBMIT REPORT</Text>}
             </Pressable>
           </>
         )}
@@ -125,71 +89,29 @@ export function ReportSheet({ visible, targetName, onSubmit, onClose }: Props) {
   )
 }
 
+export function ReportSheet({ visible, ...rest }: Props) {
+  if (!visible) return null
+  return <ReportSheetCore {...rest} />
+}
+
 const s = StyleSheet.create({
   bg: { backgroundColor: '#141414' },
   handleIndicator: { backgroundColor: 'rgba(255,255,255,0.18)' },
-  content: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-    paddingTop: 8,
-  },
-  headerRow: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'flex-start', marginBottom: 24,
-  },
-  title: {
-    fontFamily: FontFamily.headingBold, fontSize: 22,
-    color: Colors.inkPrimary, marginBottom: 4,
-  },
-  subtitle: {
-    fontFamily: FontFamily.bodyRegular, fontSize: 13,
-    color: Colors.inkSecondary,
-  },
-  options: {
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    overflow: 'hidden',
-    marginBottom: 20,
-  },
-  option: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 18, paddingVertical: 18,
-  },
-  optionBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
-  },
-  optionText: {
-    fontFamily: FontFamily.bodyRegular, fontSize: 16,
-    color: Colors.inkPrimary,
-  },
-  radio: {
-    width: 24, height: 24, borderRadius: 12,
-    borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)',
-    alignItems: 'center', justifyContent: 'center',
-  },
+  content: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 8 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
+  title: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.inkPrimary, marginBottom: 4 },
+  subtitle: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary },
+  options: { borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', overflow: 'hidden', marginBottom: 20 },
+  option: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 18 },
+  optionBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(255,255,255,0.08)' },
+  optionText: { fontFamily: FontFamily.bodyRegular, fontSize: 16, color: Colors.inkPrimary },
+  radio: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
   radioSelected: { borderColor: Colors.brandOrange },
-  radioDot: {
-    width: 12, height: 12, borderRadius: 6,
-    backgroundColor: Colors.brandOrange,
-  },
-  submitBtn: {
-    height: 56, borderRadius: 28,
-    backgroundColor: Colors.brandOrange,
-    alignItems: 'center', justifyContent: 'center',
-  },
+  radioDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: Colors.brandOrange },
+  submitBtn: { height: 56, borderRadius: 28, backgroundColor: Colors.brandOrange, alignItems: 'center', justifyContent: 'center' },
   submitBtnDisabled: { opacity: 0.45 },
-  submitBtnText: {
-    fontFamily: FontFamily.bodySemiBold, fontSize: 14,
-    color: '#111', letterSpacing: 1.2,
-  },
-  doneBox: {
-    alignItems: 'center', paddingVertical: 32, gap: 12,
-  },
+  submitBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: '#111', letterSpacing: 1.2 },
+  doneBox: { alignItems: 'center', paddingVertical: 32, gap: 12 },
   doneIcon: { fontSize: 40 },
-  doneText: {
-    fontFamily: FontFamily.bodyRegular, fontSize: 15,
-    color: Colors.inkSecondary, textAlign: 'center',
-  },
+  doneText: { fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkSecondary, textAlign: 'center' },
 })

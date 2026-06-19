@@ -12,6 +12,7 @@ interface Props {
   setErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>
   openDate: () => void
   openStartTime: () => void
+  openEndDate: () => void
   openEndTime: () => void
   /** Lock age restriction (e.g. attendees already joined) */
   ageLocked?: boolean
@@ -43,9 +44,10 @@ function PickerRow({
   )
 }
 
-function Inner({ form, set, errors, setErrors, openDate, openStartTime, openEndTime, ageLocked, ageLockNote, disabled }: Omit<Props, 'scrollable'>) {
+function Inner({ form, set, errors, setErrors, openDate, openStartTime, openEndDate, openEndTime, ageLocked, ageLockNote, disabled }: Omit<Props, 'scrollable'>) {
   return (
     <>
+      <Text style={ef.fieldLabel}>Starts</Text>
       <PickerRow
         icon={<Calendar size={18} color={Colors.brandOrange} />}
         label="Date"
@@ -54,26 +56,29 @@ function Inner({ form, set, errors, setErrors, openDate, openStartTime, openEndT
         onPress={disabled ? () => {} : openDate}
       />
       {errors.dateTime ? <Text style={ef.errorText}>{errors.dateTime}</Text> : null}
+      <PickerRow
+        icon={<Clock size={18} color={Colors.brandOrange} />}
+        label="Start Time"
+        value={form.dateTime ? fmtTime(form.dateTime) : ''}
+        placeholder="Select a time"
+        onPress={disabled ? () => {} : openStartTime}
+      />
 
-      <View style={ef.timeRow}>
-        <View style={{ flex: 1 }}>
-          <PickerRow
-            icon={<Clock size={18} color={Colors.brandOrange} />}
-            label="Start Time"
-            value={form.dateTime ? fmtTime(form.dateTime) : ''}
-            onPress={disabled ? () => {} : openStartTime}
-          />
-        </View>
-        <View style={{ flex: 1 }}>
-          <PickerRow
-            icon={<Clock size={18} color={Colors.inkSecondary} />}
-            label="End Time"
-            value={form.endTime ? fmtTime(form.endTime) : ''}
-            placeholder="Optional"
-            onPress={disabled ? () => {} : openEndTime}
-          />
-        </View>
-      </View>
+      <Text style={[ef.fieldLabel, { marginTop: 20 }]}>Ends (optional)</Text>
+      <PickerRow
+        icon={<Calendar size={18} color={Colors.inkSecondary} />}
+        label="End Date"
+        value={form.endTime ? fmt(form.endTime) : ''}
+        placeholder="Optional"
+        onPress={disabled ? () => {} : openEndDate}
+      />
+      <PickerRow
+        icon={<Clock size={18} color={Colors.inkSecondary} />}
+        label="End Time"
+        value={form.endTime ? fmtTime(form.endTime) : ''}
+        placeholder="Optional"
+        onPress={disabled ? () => {} : openEndTime}
+      />
       {errors.endTime ? <Text style={ef.errorText}>{errors.endTime}</Text> : null}
 
       <Text style={[ef.fieldLabel, { marginTop: 20 }]}>Max Guests</Text>
@@ -114,7 +119,7 @@ export function Step2When({ scrollable = true, ...props }: Props) {
   return (
     <ScrollView style={ef.stepScroll} contentContainerStyle={ef.stepContent} keyboardShouldPersistTaps="handled">
       <Text style={ef.stepTitle}>When is it happening?</Text>
-      <Text style={ef.stepSub}>Set the date, time, and capacity</Text>
+      <Text style={ef.stepSub}>Set the start date, end date, and capacity</Text>
       <Inner {...props} />
     </ScrollView>
   )

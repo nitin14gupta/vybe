@@ -27,7 +27,7 @@ export default function EditEventScreen() {
   const router = useRouter()
 
   const { form, set } = useCreateEvent()
-  const { openDate, openStartTime, openEndTime, picker } = useEventDateTimePickers(form, set)
+  const { openDate, openStartTime, openEndDate, openEndTime, picker } = useEventDateTimePickers(form, set)
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
@@ -54,11 +54,12 @@ export default function EditEventScreen() {
         set('priceInr',      ev.price_inr)
         set('coverPhotos',   ev.cover_photos?.map((p: { url: string }) => p.url) ?? [])
 
-        const dt = new Date(ev.date_time.replace(' ', 'T'))
+        const parseTs = (s: string) => new Date(s.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'))
+        const dt = parseTs(ev.date_time)
         set('dateTime', dt)
-        if (ev.end_time) set('endTime', new Date(ev.end_time.replace(' ', 'T')))
+        if (ev.end_time) set('endTime', parseTs(ev.end_time))
 
-        const editDeadline = new Date(ev.edit_deadline.replace(' ', 'T'))
+        const editDeadline = parseTs(ev.edit_deadline)
         if (new Date() > editDeadline) setLocked(true)
         if (ev.attendee_count > 0)     setHasAttendees(true)
       })
@@ -138,7 +139,7 @@ export default function EditEventScreen() {
         {/* Step 2 — When & who */}
         <Step2When
           form={form} set={set} errors={errors} setErrors={setErrors}
-          openDate={openDate} openStartTime={openStartTime} openEndTime={openEndTime}
+          openDate={openDate} openStartTime={openStartTime} openEndDate={openEndDate} openEndTime={openEndTime}
           scrollable={false} disabled={locked}
           ageLocked={hasAttendees}
           ageLockNote="Locked — attendees already joined"

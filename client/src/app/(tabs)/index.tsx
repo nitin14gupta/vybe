@@ -10,7 +10,7 @@ import Animated, {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useFocusEffect, router } from 'expo-router'
-import { X, Flame, Star, SlidersHorizontal, MapPin, Mic, Pause, Search, Bell } from 'lucide-react-native'
+import { X, Flame, Star, SlidersHorizontal, MapPin, Mic, Pause, Bell } from 'lucide-react-native'
 import { AppHeader, HeaderIconBtn, PlaybackWave, VybeRequestModal } from '@/components/ui'
 import { FilterSheet } from '@/components/ui/FilterSheet'
 import { useDiscover, type DiscoverFilters } from '@/hooks/useDiscover'
@@ -272,15 +272,6 @@ export default function DiscoverScreen() {
     <View style={styles.root}>
       <AppHeader
         showLogo
-        leftAction={
-          <HeaderIconBtn>
-            <View style={styles.menuDots}>
-              <View style={styles.dot} />
-              <View style={styles.dot} />
-              <View style={styles.dot} />
-            </View>
-          </HeaderIconBtn>
-        }
         rightAction={
           <View style={{ flexDirection: 'row', gap: 4 }}>
             <HeaderIconBtn onPress={() => router.push('/(settings)/notifications' as any)}>
@@ -288,9 +279,6 @@ export default function DiscoverScreen() {
                 <Bell size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
                 {unreadCount > 0 && <View style={styles.bellDot} />}
               </View>
-            </HeaderIconBtn>
-            <HeaderIconBtn onPress={() => router.push('/(search)/' as any)}>
-              <Search size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
             </HeaderIconBtn>
             <HeaderIconBtn onPress={() => setFilterOpen(true)}>
               <SlidersHorizontal size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
@@ -708,8 +696,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,184,48,0.35)',
   },
 
-  menuDots: { gap: 3, alignItems: 'center' },
-  dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.inkSecondary },
   bellDot: {
     position: 'absolute',
     top: -1,

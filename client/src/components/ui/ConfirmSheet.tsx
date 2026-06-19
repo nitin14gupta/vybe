@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react'
-import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { Text, Pressable, StyleSheet } from 'react-native'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { Colors, FontFamily } from '@/constants'
@@ -15,24 +15,13 @@ interface Props {
 }
 
 function renderBackdrop(props: BottomSheetBackdropProps) {
-  return (
-    <BottomSheetBackdrop
-      {...props}
-      disappearsOnIndex={-1}
-      appearsOnIndex={0}
-      pressBehavior="close"
-      opacity={0.6}
-    />
-  )
+  return <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close" opacity={0.6} />
 }
 
-export function ConfirmSheet({ visible, title, body, confirmLabel, destructive, onConfirm, onClose }: Props) {
+function ConfirmSheetCore({ title, body, confirmLabel, destructive, onConfirm, onClose }: Omit<Props, 'visible'>) {
   const sheetRef = useRef<BottomSheetModal>(null)
 
-  useEffect(() => {
-    if (visible) sheetRef.current?.present()
-    else sheetRef.current?.dismiss()
-  }, [visible])
+  useEffect(() => { sheetRef.current?.present() }, [])
 
   return (
     <BottomSheetModal
@@ -61,27 +50,18 @@ export function ConfirmSheet({ visible, title, body, confirmLabel, destructive, 
   )
 }
 
+export function ConfirmSheet({ visible, ...rest }: Props) {
+  if (!visible) return null
+  return <ConfirmSheetCore {...rest} />
+}
+
 const s = StyleSheet.create({
   bg: { backgroundColor: '#1a1a1a' },
   handleIndicator: { backgroundColor: 'rgba(255,255,255,0.18)' },
-  content: {
-    paddingHorizontal: 20,
-    paddingBottom: 36,
-    paddingTop: 8,
-    gap: 12,
-  },
-  title: {
-    fontFamily: FontFamily.headingBold, fontSize: 18,
-    color: Colors.inkPrimary, textAlign: 'center',
-  },
-  body: {
-    fontFamily: FontFamily.bodyRegular, fontSize: 14,
-    color: Colors.inkSecondary, textAlign: 'center', lineHeight: 20,
-  },
-  btn: {
-    height: 52, borderRadius: 999,
-    alignItems: 'center', justifyContent: 'center', marginTop: 4,
-  },
+  content: { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 8, gap: 12 },
+  title: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary, textAlign: 'center' },
+  body: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center', lineHeight: 20 },
+  btn: { height: 52, borderRadius: 999, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
   btnConfirm: { backgroundColor: Colors.brandOrange },
   btnDestructive: { backgroundColor: 'rgba(200,50,50,0.15)', borderWidth: 1, borderColor: 'rgba(200,50,50,0.4)' },
   btnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 16, color: '#111' },

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -7,6 +8,7 @@ import {
   Text,
   View,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Location from 'expo-location'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
@@ -16,6 +18,28 @@ import { DateTimePickerSheet, Screen } from '@/components/ui'
 import { Step1Basics, Step2When, Step3Where, Step4Pricing } from '@/components/event-form'
 import { useCreateEvent } from '@/hooks/useCreateEvent'
 import { useEventDateTimePickers } from '@/hooks/useEventDateTimePickers'
+
+// ── Step button ───────────────────────────────────────────────────────────────
+
+function StepButton({ step, loading, onPress }: { step: number; loading: boolean; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={s.nextBtn} disabled={loading}>
+      <LinearGradient
+        colors={['#FF6B35', '#FF3864']}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+        style={s.nextGradient}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" size="small" />
+        ) : (
+          <Text style={s.nextText}>
+            {step === 4 ? 'Publish Event 🔥' : 'Next Step →'}
+          </Text>
+        )}
+      </LinearGradient>
+    </Pressable>
+  )
+}
 
 // ── Step indicator ────────────────────────────────────────────────────────────
 
@@ -33,10 +57,12 @@ function StepBar({ step }: { step: number }) {
 
 export default function CreateScreen() {
   const router = useRouter()
+  const insets = useSafeAreaInsets()
   const { form, set, reset, submit, submitting, submitError } = useCreateEvent()
-  const { openDate, openStartTime, openEndTime, picker } = useEventDateTimePickers(form, set)
+  const { openDate, openStartTime, openEndDate, openEndTime, picker } = useEventDateTimePickers(form, set)
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [nextLoading, setNextLoading] = useState(false)
 
   const validateStep = (): boolean => {
     const errs: Record<string, string> = {}
@@ -52,9 +78,7 @@ export default function CreateScreen() {
         errs.dateTime = 'Events must be posted at least 24 hours in advance'
       }
       if (form.endTime && form.dateTime) {
-        const sm = form.dateTime.getHours() * 60 + form.dateTime.getMinutes()
-        const em = form.endTime.getHours() * 60 + form.endTime.getMinutes()
-        if (em <= sm) errs.endTime = 'End time must be after start time'
+        if (form.endTime <= form.dateTime) errs.endTime = 'End time must be after start time'
       }
       if (form.capacity < 5)   errs.capacity = 'Minimum 5 guests required'
       if (form.capacity > 200) errs.capacity = 'Maximum 200 guests allowed'
@@ -72,17 +96,22 @@ export default function CreateScreen() {
 
   const next = async () => {
     if (!validateStep()) return
-    if (step === 2 && form.locationLat == null) {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync()
-        if (status === 'granted') {
-          const { coords } = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
-          set('locationLat', coords.latitude)
-          set('locationLng', coords.longitude)
-        }
-      } catch {}
+    setNextLoading(true)
+    try {
+      if (step === 2 && form.locationLat == null) {
+        try {
+          const { status } = await Location.requestForegroundPermissionsAsync()
+          if (status === 'granted') {
+            const { coords } = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+            set('locationLat', coords.latitude)
+            set('locationLng', coords.longitude)
+          }
+        } catch {}
+      }
+      if (step < 4) setStep((step + 1) as 1 | 2 | 3 | 4)
+    } finally {
+      setNextLoading(false)
     }
-    if (step < 4) setStep((step + 1) as 1 | 2 | 3 | 4)
   }
 
   const back = () => { if (step > 1) setStep((step - 1) as 1 | 2 | 3 | 4) }
@@ -90,7 +119,11 @@ export default function CreateScreen() {
   const publish = async () => {
     if (!validateStep()) return
     const result = await submit()
-    if (result) { reset(); setStep(1); router.replace(`/(events)/${result.id}` as any) }
+    if (result) {
+      reset()
+      setStep(1)
+      router.replace(`/(events)/published?id=${result.id}&title=${encodeURIComponent(result.title)}` as any)
+    }
   }
 
   return (
@@ -116,7 +149,7 @@ export default function CreateScreen() {
         {step === 2 && (
           <Step2When
             form={form} set={set} errors={errors} setErrors={setErrors}
-            openDate={openDate} openStartTime={openStartTime} openEndTime={openEndTime}
+            openDate={openDate} openStartTime={openStartTime} openEndDate={openEndDate} openEndTime={openEndTime}
           />
         )}
         {step === 3 && (
@@ -129,18 +162,12 @@ export default function CreateScreen() {
           />
         )}
 
-        <View style={[s.bottomBar, { paddingBottom: 12 }]}>
-          <Pressable onPress={step === 4 ? publish : next} style={s.nextBtn} disabled={submitting}>
-            <LinearGradient
-              colors={['#FF6B35', '#FF3864']}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-              style={s.nextGradient}
-            >
-              <Text style={s.nextText}>
-                {submitting ? 'Publishing...' : step === 4 ? 'Publish Event 🔥' : 'Next Step →'}
-              </Text>
-            </LinearGradient>
-          </Pressable>
+        <View style={[s.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+          <StepButton
+            step={step}
+            loading={step === 4 ? submitting : nextLoading}
+            onPress={step === 4 ? publish : next}
+          />
         </View>
 
         <DateTimePickerSheet

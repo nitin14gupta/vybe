@@ -86,6 +86,7 @@ export interface EventSummary {
   host_avatar: string | null
   age_restriction: number
   attendee_count: number
+  is_cancelled?: boolean
 }
 
 export interface EventDetail extends EventSummary {
@@ -638,6 +639,14 @@ class ApiService {
     } catch {
       return null
     }
+  }
+
+  static async getMyHostedEvents(): Promise<EventSummary[]> {
+    return this.get<EventSummary[]>('/events/hosted')
+  }
+
+  static async getMyJoinedEvents(): Promise<EventSummary[]> {
+    return this.get<EventSummary[]>('/events/joined')
   }
 
   // ── Upload ─────────────────────────────────────────────────────────────────

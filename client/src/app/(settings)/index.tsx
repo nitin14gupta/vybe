@@ -2,19 +2,21 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import { router } from 'expo-router'
 import {
   User, Bell, HelpCircle, MessageSquare, Shield, FileText,
-  Info, LogOut,
+  Info, LogOut, Calendar, Ticket,
 } from 'lucide-react-native'
 import { Screen, BackButton, SettingRow, PrimaryButton } from '@/components/ui'
 import { useSettings } from '@/hooks/useSettings'
+import { useGoBack } from '@/hooks/useGoBack'
 import { Colors, FontFamily, Spacing } from '@/constants'
 
 export default function SettingsScreen() {
   const { appVersion, handleLogout } = useSettings()
+  const goBack = useGoBack()
 
   return (
     <Screen>
       <View style={styles.header}>
-        <BackButton onPress={() => router.back()} />
+        <BackButton onPress={goBack} />
         <Text style={styles.title}>Settings</Text>
         <View style={styles.headerEnd} />
       </View>
@@ -32,12 +34,27 @@ export default function SettingsScreen() {
             icon={<Bell size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
             label="Notifications"
             onPress={() => router.push('/(settings)/notifications')}
-            showSeparator={false}
           />
           <SettingRow
             icon={<Bell size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
             label="Blocked"
             onPress={() => router.push('/(settings)/blocked')}
+            showSeparator={false}
+          />
+        </View>
+
+        {/* Events */}
+        <Text style={styles.sectionLabel}>EVENTS</Text>
+        <View style={styles.card}>
+          <SettingRow
+            icon={<Calendar size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
+            label="My Events"
+            onPress={() => router.push('/(settings)/my-events' as any)}
+          />
+          <SettingRow
+            icon={<Ticket size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
+            label="Joined Events"
+            onPress={() => router.push('/(settings)/joined-events' as any)}
             showSeparator={false}
           />
         </View>

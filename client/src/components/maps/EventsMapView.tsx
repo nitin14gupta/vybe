@@ -100,10 +100,9 @@ function EventsMapGoogle({ events, userLat, userLng, activeEventId, onEventSelec
             key={ev.id}
             coordinate={{ latitude: ev.location_lat, longitude: ev.location_lng }}
             onPress={() => onEventSelect(ev, idx)}
+            anchor={{ x: 0.5, y: 1 }}
           >
-            <View style={[s.pin, ev.id === activeEventId && s.pinActive]}>
-              <Text style={s.pinEmoji}>{EVENT_EMOJIS[ev.event_type] ?? '🔥'}</Text>
-            </View>
+            <EventMapPin event={ev} active={ev.id === activeEventId} />
           </Marker>
         ) : null,
       )}
@@ -163,14 +162,19 @@ function EventsMapLibre({ events, userLat, userLng, activeEventId, onEventSelect
   }
 
   const circlePaint = {
-    'circle-radius': 10,
+    'circle-radius': [
+      'case',
+      ['==', ['get', 'id'], activeEventId ?? ''],
+      14,
+      11,
+    ] as any,
     'circle-color': [
       'case',
       ['==', ['get', 'id'], activeEventId ?? ''],
       Colors.brandCoral,
       Colors.brandOrange,
     ] as any,
-    'circle-stroke-width': 2.5,
+    'circle-stroke-width': 3,
     'circle-stroke-color': '#fff',
     'circle-opacity': 1,
   }
@@ -264,21 +268,53 @@ export function EventsMapView({
   )
 }
 
-const s = StyleSheet.create({
-  pin: {
+function EventMapPin({ event, active }: { event: EventSummary; active: boolean }) {
+  const emoji = EVENT_EMOJIS[event.event_type] ?? '🔥'
+  return (
+    <View style={p.wrap}>
+      <View style={[p.bubble, active && p.bubbleActive]}>
+        <Text style={p.emoji}>{emoji}</Text>
+      </View>
+      <View style={[p.tail, active && p.tailActive]} />
+    </View>
+  )
+}
+
+const p = StyleSheet.create({
+  wrap: { alignItems: 'center' },
+  bubble: {
     width: 44,
     height: 44,
     borderRadius: 22,
     backgroundColor: Colors.surface,
-    borderWidth: 2,
+    borderWidth: 2.5,
     borderColor: Colors.brandOrange,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
   },
-  pinActive: {
+  bubbleActive: {
+    backgroundColor: 'rgba(255,107,53,0.18)',
     borderColor: Colors.brandCoral,
-    backgroundColor: 'rgba(255,56,100,0.15)',
     transform: [{ scale: 1.15 }],
   },
-  pinEmoji: { fontSize: 20 },
+  tail: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 7,
+    borderRightWidth: 7,
+    borderTopWidth: 10,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: Colors.brandOrange,
+    marginTop: -1,
+  },
+  tailActive: { borderTopColor: Colors.brandCoral },
+  emoji: { fontSize: 20 },
 })
+
+const s = StyleSheet.create({})

@@ -1,5 +1,6 @@
 import os
 import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import JWTError, jwt
@@ -25,7 +26,7 @@ def create_access_token(user_id: str) -> str:
 def create_refresh_token(user_id: str) -> str:
     expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     return jwt.encode(
-        {"sub": user_id, "exp": expire, "type": "refresh"},
+        {"sub": user_id, "exp": expire, "type": "refresh", "jti": secrets.token_hex(16)},
         SECRET_KEY,
         algorithm=ALGORITHM,
     )

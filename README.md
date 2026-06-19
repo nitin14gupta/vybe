@@ -71,3 +71,33 @@ Social Explorer	Any urban 18-30	Meet people with similar interests IRL
 
 
 
+
+
+
+Scanner / Check-in (host side)
+
+A. scanner.tsx — Event starts in >3h → Countdown timer screen ("Check-in opens in 2h 34m 12s") instead of pill. You specifically mentioned this one. ✅ clear yes
+
+B. scanner.tsx — Event has already ended → "Event Ended" screen instead of the scanner just failing silently
+
+Booking flow (attendee side)
+
+C. book.tsx — API rejects due to age (e.g. user is 18, event is 21+) → Age gate screen with icon + "This event is for 21+ only". You mentioned this one. ✅ clear yes
+
+D. book.tsx — Booking returns status: waitlist → Waitlist confirmation screen ("You're on the waitlist at position #3, we'll notify you if a spot opens") instead of pill + back navigation
+
+E. index.tsx — spots_left = 0 at load time → Sold out screen/state instead of just disabling the Book button silently
+
+Event detail states
+
+F. index.tsx — Event is live right now (between date_time and end_time) → "Live Now" banner/state — orange pulsing dot, "Happening now until 4 AM"
+
+G. index.tsx — Event is cancelled → already shows a badge inline, but could be a more impactful full cancelled overlay when the detail screen loads
+
+Attendee ticket side
+
+H. ticket.tsx — User is already checked-in → "You're checked in!" celebration screen (green, timestamp) instead of just showing the QR code
+
+So that's 8 cases: A, B, C, D, E, F, G, H
+
+Which ones do you want as full UI screens? Say yes to each letter (or just "A C D" etc.) and I'll build them all in one go.

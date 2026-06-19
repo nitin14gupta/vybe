@@ -1,26 +1,23 @@
 import { Tabs } from "expo-router";
-import { View, StyleSheet } from "react-native";
-import {
-  Compass,
-  Ticket,
-  Plus,
-  MessageCircle,
-  User,
-} from "lucide-react-native";
+import { StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Compass, Ticket, MessageCircle, Search, User } from "lucide-react-native";
 import { Colors, ComponentSize } from "@/constants";
-import { Screen } from "@/components/ui";
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets()
+
   return (
-    // <Screen>
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [styles.tabBar, {
+          height: ComponentSize.navBar + insets.bottom,
+          paddingBottom: insets.bottom > 10 ? insets.bottom + 4 : 8,
+        }],
         tabBarActiveTintColor: Colors.brandOrange,
         tabBarInactiveTintColor: Colors.inkSecondary,
-        tabBarLabelStyle: styles.label,
-        tabBarShowLabel: true,
+        tabBarShowLabel: false,
       }}
     >
       <Tabs.Screen
@@ -42,22 +39,20 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="create"
-        options={{
-          tabBarLabel: "",
-          tabBarIcon: () => (
-            <View style={styles.vybeBtn}>
-              <Plus size={26} color={Colors.background} strokeWidth={2.5} />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="chat"
         options={{
           title: "Chat",
           tabBarIcon: ({ color }) => (
             <MessageCircle size={22} color={color} strokeWidth={1.8} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="search"
+        options={{
+          title: "Search",
+          tabBarIcon: ({ color }) => (
+            <Search size={22} color={color} strokeWidth={1.8} />
           ),
         }}
       />
@@ -70,9 +65,9 @@ export default function TabsLayout() {
           ),
         }}
       />
-
+      {/* Create is accessible via + button on Events tab, hidden from tab bar */}
+      <Tabs.Screen name="create" options={{ href: null }} />
     </Tabs>
-    // </Screen>
   );
 }
 
@@ -80,29 +75,8 @@ const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: Colors.background,
     borderTopWidth: 0,
-    height: ComponentSize.navBar,
-    paddingBottom: 8,
     paddingTop: 4,
     elevation: 0,
     shadowOpacity: 0,
-  },
-  label: {
-    fontSize: 10,
-    fontWeight: "500",
-    marginTop: 1,
-  },
-  vybeBtn: {
-    width: ComponentSize.navCenter,
-    height: ComponentSize.navCenter,
-    borderRadius: ComponentSize.navCenter / 2,
-    backgroundColor: Colors.brandOrange,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: ComponentSize.navCenterRaise,
-    shadowColor: Colors.brandOrange,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 8,
   },
 });

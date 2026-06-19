@@ -65,7 +65,7 @@ function ConvRow({ conv, onPress }: { conv: Conversation; onPress: () => void })
             style={[s.convPreview, conv.unread_count > 0 && s.convPreviewUnread, isLocked && s.convPreviewLocked]}
             numberOfLines={1}
           >
-            {isLocked ? '⏳ Pending vybe' : formatLastMessage(conv)}
+            {isLocked ? 'Pending vybe' : formatLastMessage(conv)}
           </Text>
           {conv.unread_count > 0 && (
             <View style={s.unreadBadge}>
@@ -173,6 +173,15 @@ export default function ChatScreen() {
               onPress={() => {
                 if (item.status === 'active') {
                   router.push(`/(chat)/${item.id}` as any)
+                } else {
+                  router.push({
+                    pathname: '/(chat)/pending' as any,
+                    params: {
+                      partnerName: item.partner_name ?? '',
+                      partnerAvatar: item.partner_avatar ?? '',
+                      message: item.last_message ?? '',
+                    },
+                  })
                 }
               }}
             />
@@ -307,7 +316,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
   },
-  convRowLocked: { opacity: 0.55 },
+  convRowLocked: { opacity: 0.75 },
   convAvatarWrap: { position: 'relative', marginRight: 14 },
   convAvatar: { width: 56, height: 56, borderRadius: 28 },
   convAvatarFallback: {

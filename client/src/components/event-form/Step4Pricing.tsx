@@ -1,12 +1,10 @@
 import React from 'react'
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { Plus, X } from 'lucide-react-native'
 import { Image } from 'expo-image'
-import * as ImagePicker from 'expo-image-picker'
 import { Colors } from '@/constants'
-import ApiService from '@/api/apiService'
-import { usePillStore } from '@/store/pillStore'
 import type { CreateEventForm } from '@/hooks/useCreateEvent'
+import { useEventPhotos } from '@/hooks/useEventPhotos'
 import { ef } from './styles'
 
 interface Props {
@@ -22,38 +20,62 @@ interface Props {
   scrollable?: boolean
 }
 
+function PhotoSlotView({
+  uri, uploading, onPress, onRemove, disabled, size,
+}: {
+  uri: string | null
+  uploading: boolean
+  onPress: () => void
+  onRemove: () => void
+  disabled?: boolean
+  size: 'cover' | 'small'
+}) {
+  const isCover = size === 'cover'
+  const slotStyle = isCover ? ef.photoCoverSlot : ef.photoSmallSlot
+  const filled = !!uri
+
+  return (
+    <Pressable
+      style={[slotStyle, filled && ef.photoSlotFilled]}
+      onPress={!disabled && !uploading ? onPress : undefined}
+    >
+      {uri ? (
+        <>
+          <Image
+            source={{ uri }}
+            contentFit="cover"
+            style={StyleSheet.absoluteFill}
+          />
+          {uploading && (
+            <View style={s.uploadOverlay}>
+              <ActivityIndicator size="small" color="#fff" />
+            </View>
+          )}
+          {!disabled && !uploading && (
+            <Pressable style={ef.photoRemove} onPress={onRemove} hitSlop={8}>
+              <X size={isCover ? 12 : 10} color="#fff" />
+            </Pressable>
+          )}
+        </>
+      ) : uploading ? (
+        <View style={s.uploadOverlay}>
+          <ActivityIndicator size="small" color={Colors.brandOrange} />
+        </View>
+      ) : isCover ? (
+        <View style={ef.photoPlaceholder}>
+          <Plus size={24} color={Colors.inkDisabled} />
+          <Text style={ef.photoPlaceholderText}>Cover</Text>
+        </View>
+      ) : (
+        <Plus size={18} color={Colors.inkDisabled} />
+      )}
+    </Pressable>
+  )
+}
+
 function Inner({ form, set, errors, setErrors, submitError, priceLocked, priceLockNote, disabled }: Omit<Props, 'scrollable'>) {
-  const showPill = usePillStore(s => s.show)
-  const pickPhoto = async (position: number) => {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync()
-    if (!perm.granted) {
-      showPill('Allow photo library access to add event photos', 'error')
-      return
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
-      allowsEditing: true,
-      aspect: [4, 3],
-    })
-    if (result.canceled) return
-    try {
-      const url = await ApiService.uploadEventPhoto(result.assets[0].uri)
-      const photos = [...form.coverPhotos]
-      photos[position] = url
-      set('coverPhotos', photos)
-    } catch (e: any) {
-      showPill(e.message || 'Upload failed', 'error')
-    }
-  }
-
-  const removePhoto = (position: number) => {
-    const photos = [...form.coverPhotos]
-    photos.splice(position, 1)
-    set('coverPhotos', photos)
-  }
-
-  const effectivlyLocked = disabled || priceLocked
+  const { slotStates, pickPhoto, removePhoto, displayUri } = useEventPhotos(form.coverPhotos, set)
+  const effectivelyLocked = disabled || priceLocked
 
   return (
     <>
@@ -66,13 +88,13 @@ function Inner({ form, set, errors, setErrors, submitError, priceLocked, priceLo
         <View style={ef.pricingToggle}>
           <Pressable
             style={[ef.pricingBtn, form.isFree && ef.pricingBtnActive]}
-            onPress={() => { if (!effectivlyLocked) { set('isFree', true); set('priceInr', 0) } }}
+            onPress={() => { if (!effectivelyLocked) { set('isFree', true); set('priceInr', 0) } }}
           >
             <Text style={[ef.pricingBtnText, form.isFree && ef.pricingBtnTextActive]}>Free</Text>
           </Pressable>
           <Pressable
             style={[ef.pricingBtn, !form.isFree && ef.pricingBtnActive]}
-            onPress={() => { if (!effectivlyLocked) set('isFree', false) }}
+            onPress={() => { if (!effectivelyLocked) set('isFree', false) }}
           >
             <Text style={[ef.pricingBtnText, !form.isFree && ef.pricingBtnTextActive]}>Paid</Text>
           </Pressable>
@@ -87,7 +109,7 @@ function Inner({ form, set, errors, setErrors, submitError, priceLocked, priceLo
               placeholder="Ticket price"
               placeholderTextColor={Colors.inkDisabled}
               keyboardType="numeric"
-              editable={!effectivlyLocked}
+              editable={!effectivelyLocked}
             />
           </View>
         )}
@@ -97,51 +119,25 @@ function Inner({ form, set, errors, setErrors, submitError, priceLocked, priceLo
       {/* Photos grid */}
       <Text style={[ef.fieldLabel, { marginTop: 24 }]}>Event Photos (up to 5)</Text>
       <View style={ef.photosGrid}>
-        <Pressable
-          style={[ef.photoCoverSlot, form.coverPhotos[0] ? ef.photoSlotFilled : null]}
-          onPress={() => !disabled && pickPhoto(0)}
-        >
-          {form.coverPhotos[0] ? (
-            <>
-              <View style={StyleSheet.absoluteFillObject}>
-                <Image source={{ uri: form.coverPhotos[0] }} contentFit="cover" style={{ flex: 1 }} />
-              </View>
-              {!disabled && (
-                <Pressable style={ef.photoRemove} onPress={() => removePhoto(0)}>
-                  <X size={12} color="#fff" />
-                </Pressable>
-              )}
-            </>
-          ) : (
-            <View style={ef.photoPlaceholder}>
-              <Plus size={24} color={Colors.inkDisabled} />
-              <Text style={ef.photoPlaceholderText}>Cover</Text>
-            </View>
-          )}
-        </Pressable>
-
+        <PhotoSlotView
+          uri={displayUri(0)}
+          uploading={slotStates[0] === 'uploading'}
+          onPress={() => pickPhoto(0)}
+          onRemove={() => removePhoto(0)}
+          disabled={disabled}
+          size="cover"
+        />
         <View style={ef.photoSmallGrid}>
           {[1, 2, 3, 4].map(i => (
-            <Pressable
+            <PhotoSlotView
               key={i}
-              style={[ef.photoSmallSlot, form.coverPhotos[i] ? ef.photoSlotFilled : null]}
-              onPress={() => !disabled && pickPhoto(i)}
-            >
-              {form.coverPhotos[i] ? (
-                <>
-                  <View style={StyleSheet.absoluteFillObject}>
-                    <Image source={{ uri: form.coverPhotos[i] }} contentFit="cover" style={{ flex: 1 }} />
-                  </View>
-                  {!disabled && (
-                    <Pressable style={ef.photoRemove} onPress={() => removePhoto(i)}>
-                      <X size={10} color="#fff" />
-                    </Pressable>
-                  )}
-                </>
-              ) : (
-                <Plus size={18} color={Colors.inkDisabled} />
-              )}
-            </Pressable>
+              uri={displayUri(i)}
+              uploading={slotStates[i] === 'uploading'}
+              onPress={() => pickPhoto(i)}
+              onRemove={() => removePhoto(i)}
+              disabled={disabled}
+              size="small"
+            />
           ))}
         </View>
       </View>
@@ -170,6 +166,12 @@ export function Step4Pricing({ scrollable = true, ...props }: Props) {
 
 const s = StyleSheet.create({
   lockedSection: { opacity: 0.45 },
+  uploadOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   submitError: {
     backgroundColor: 'rgba(255,56,100,0.15)',
     borderRadius: 10, padding: 12, marginTop: 12,
