@@ -62,6 +62,23 @@ export interface ExtendedProfile extends ProfileResponse {
   events_attending: EventSummary[]
 }
 
+export interface FollowUser {
+  id: string
+  name: string | null
+  username: string | null
+  city: string | null
+  avatar_url: string | null
+  is_following: boolean
+  follows_back: boolean
+  is_me: boolean
+}
+
+export interface FollowsPage {
+  users: FollowUser[]
+  total: number
+  has_more: boolean
+}
+
 export interface EventPhoto {
   url: string
   position: number
@@ -430,6 +447,21 @@ class ApiService {
   static async unfollowUser(userId: string): Promise<void> {
     const endpoint = ENDPOINTS.FOLLOW_USER.replace(':id', userId)
     await this.delete<{ ok: boolean }>(endpoint)
+  }
+
+  static async getFollowers(userId: string, limit = 20, offset = 0): Promise<FollowsPage> {
+    const ep = ENDPOINTS.USER_FOLLOWERS.replace(':id', userId)
+    return this.get<FollowsPage>(`${ep}?limit=${limit}&offset=${offset}`)
+  }
+
+  static async getFollowing(userId: string, limit = 20, offset = 0): Promise<FollowsPage> {
+    const ep = ENDPOINTS.USER_FOLLOWING.replace(':id', userId)
+    return this.get<FollowsPage>(`${ep}?limit=${limit}&offset=${offset}`)
+  }
+
+  static async removeFollower(followerId: string): Promise<void> {
+    const ep = ENDPOINTS.REMOVE_FOLLOWER.replace(':id', followerId)
+    await this.delete<{ ok: boolean }>(ep)
   }
 
   static async getCities(): Promise<CityResponse[]> {

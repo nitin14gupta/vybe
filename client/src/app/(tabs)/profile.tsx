@@ -117,11 +117,17 @@ export default function ProfileScreen() {
 
           {/* Stats row */}
           <View style={styles.statsRow}>
-            <StatCol value={vibers} label="Vibers"  sub="fans vibin'" />
+            <StatCol
+              value={vibers} label="Vibers" sub="fans vibin'"
+              onPress={() => profile && router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'followers', name: encodeURIComponent(profile.name ?? ''), vibersCount: vibers, vibingCount: vibing } } as any)}
+            />
             <View style={styles.statDivider} />
-            <StatCol value={vibing} label="Vibing"  sub="folks feelin'" />
+            <StatCol
+              value={vibing} label="Vibing" sub="folks feelin'"
+              onPress={() => profile && router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'following', name: encodeURIComponent(profile.name ?? ''), vibersCount: vibers, vibingCount: vibing } } as any)}
+            />
             <View style={styles.statDivider} />
-            <StatCol value={posts}  label="Posts"   sub="photos" />
+            <StatCol value={posts} label="Posts" sub="photos" />
           </View>
 
           {/* Divider */}
@@ -200,14 +206,18 @@ export default function ProfileScreen() {
   )
 }
 
-function StatCol({ value, label, sub }: { value: number; label: string; sub: string }) {
-  return (
-    <View style={styles.statCol}>
+function StatCol({ value, label, sub, onPress }: { value: number; label: string; sub: string; onPress?: () => void }) {
+  const inner = (
+    <>
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
       <Text style={styles.statSub}>{sub}</Text>
-    </View>
+    </>
   )
+  if (onPress) {
+    return <Pressable style={styles.statCol} onPress={onPress} android_ripple={{ color: 'rgba(255,107,53,0.1)', radius: 40 }}>{inner}</Pressable>
+  }
+  return <View style={styles.statCol}>{inner}</View>
 }
 
 const styles = StyleSheet.create({

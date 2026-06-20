@@ -33,6 +33,9 @@ export const ENDPOINTS = {
   GET_PROFILE: '/users/:id',
   GET_USER_PROFILE: '/users/:id/profile',
   FOLLOW_USER: '/users/:id/follow',
+  USER_FOLLOWERS: '/users/:id/followers',
+  USER_FOLLOWING: '/users/:id/following',
+  REMOVE_FOLLOWER: '/users/followers/:id',
   SEARCH_USERS: '/users/search',
   CHECK_USERNAME: '/users/check-username',
 

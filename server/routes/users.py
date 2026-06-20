@@ -379,6 +379,78 @@ def get_profile(user_id: str, current_user: dict = Depends(get_current_user)):
     return ProfileResponse(**user)
 
 
+# ── Followers / Following lists ───────────────────────────────────────────────
+
+def _follow_rows(cur, join_col: str, filter_col: str, viewer_id: str, target_id: str, limit: int, offset: int, include_follows_back: bool = False):
+    follows_back_col = ""
+    if include_follows_back:
+        # For following list: does this person also follow the profile owner (target_id)?
+        follows_back_col = f"""
+        ,EXISTS(
+            SELECT 1 FROM follows
+            WHERE follower_id = u.id AND following_id = '{target_id}'::uuid
+        ) AS follows_back"""
+
+    sql = f"""
+    SELECT
+        u.id::text,
+        u.name,
+        u.username,
+        u.city,
+        (SELECT url FROM user_photos WHERE user_id = u.id ORDER BY position LIMIT 1) AS avatar_url,
+        EXISTS(
+            SELECT 1 FROM follows
+            WHERE follower_id = %s::uuid AND following_id = u.id
+        ) AS is_following
+        {follows_back_col},
+        COUNT(*) OVER() AS total_count
+    FROM follows f
+    JOIN users u ON u.id = {join_col}
+    WHERE {filter_col} = %s::uuid
+    ORDER BY f.created_at DESC
+    LIMIT %s OFFSET %s
+    """
+    cur.execute(sql, (viewer_id, target_id, limit, offset))
+    rows = cur.fetchall()
+    total = int(rows[0]["total_count"]) if rows else 0
+    users = [
+        {
+            "id": r["id"],
+            "name": r["name"],
+            "username": r["username"],
+            "city": r["city"],
+            "avatar_url": r["avatar_url"],
+            "is_following": bool(r["is_following"]),
+            "follows_back": bool(r["follows_back"]) if include_follows_back else False,
+            "is_me": r["id"] == viewer_id,
+        }
+        for r in rows
+    ]
+    return {"users": users, "total": total, "has_more": offset + len(users) < total}
+
+
+@router.get("/{user_id}/followers")
+def get_followers(user_id: str, limit: int = 20, offset: int = 0, current_user: dict = Depends(get_current_user)):
+    with get_db() as (cur, _):
+        return _follow_rows(cur, "f.follower_id", "f.following_id", current_user["id"], user_id, limit, offset)
+
+
+@router.get("/{user_id}/following")
+def get_following(user_id: str, limit: int = 20, offset: int = 0, current_user: dict = Depends(get_current_user)):
+    with get_db() as (cur, _):
+        return _follow_rows(cur, "f.following_id", "f.follower_id", current_user["id"], user_id, limit, offset, include_follows_back=True)
+
+
+@router.delete("/followers/{follower_id}", status_code=status.HTTP_200_OK)
+def remove_follower(follower_id: str, current_user: dict = Depends(get_current_user)):
+    with get_db() as (cur, _):
+        cur.execute(
+            "DELETE FROM follows WHERE follower_id = %s::uuid AND following_id = %s::uuid",
+            (follower_id, current_user["id"]),
+        )
+    return {"ok": True}
+
+
 # ── Follow / Unfollow ─────────────────────────────────────────────────────────
 
 @router.post("/{user_id}/follow", status_code=status.HTTP_200_OK)

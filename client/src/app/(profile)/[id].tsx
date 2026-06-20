@@ -186,6 +186,27 @@ export default function UserProfileScreen() {
           ) : null}
           {profile.city ? <Text style={s.city}>{profile.city}</Text> : null}
 
+          {/* Vibers / Vibing stats */}
+          {!blockedByMe && (
+            <View style={s.statsRow}>
+              <Pressable
+                style={s.statItem}
+                onPress={() => router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'followers', name: encodeURIComponent(profile.name ?? ''), vibersCount: profile.vibers_count ?? 0, vibingCount: profile.vibing_count ?? 0 } } as any)}
+              >
+                <Text style={s.statValue}>{profile.vibers_count ?? 0}</Text>
+                <Text style={s.statLabel}>Vibers</Text>
+              </Pressable>
+              <View style={s.statDivider} />
+              <Pressable
+                style={s.statItem}
+                onPress={() => router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'following', name: encodeURIComponent(profile.name ?? ''), vibersCount: profile.vibers_count ?? 0, vibingCount: profile.vibing_count ?? 0 } } as any)}
+              >
+                <Text style={s.statValue}>{profile.vibing_count ?? 0}</Text>
+                <Text style={s.statLabel}>Vibing</Text>
+              </Pressable>
+            </View>
+          )}
+
           {/* Vybe status badge */}
           {isConnected && (
             <View style={[s.statusBadge, s.statusBadgeConnected]}>
@@ -390,6 +411,13 @@ const s = StyleSheet.create({
   mutual: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary },
   username: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.brandOrange, marginTop: -6 },
   city: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, marginTop: -10 },
+
+  // Stats
+  statsRow: { flexDirection: 'row', alignItems: 'center', marginTop: 14, gap: 0 },
+  statItem: { alignItems: 'center', paddingHorizontal: 20, paddingVertical: 6 },
+  statValue: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
+  statLabel: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary, marginTop: 1 },
+  statDivider: { width: 1, height: 28, backgroundColor: Colors.divider },
 
   // Status badge
   statusBadge: {
