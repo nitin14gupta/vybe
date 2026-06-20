@@ -13,11 +13,12 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarStyle: [styles.tabBar, {
           height: ComponentSize.navBar + insets.bottom,
-          paddingBottom: insets.bottom > 10 ? insets.bottom + 4 : 8,
+          paddingBottom: insets.bottom + 8,
         }],
         tabBarActiveTintColor: Colors.brandOrange,
         tabBarInactiveTintColor: Colors.inkSecondary,
-        tabBarShowLabel: false,
+        tabBarLabelStyle: styles.label,
+        tabBarShowLabel: true,
       }}
     >
       <Tabs.Screen
@@ -78,5 +79,10 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     elevation: 0,
     shadowOpacity: 0,
+  },
+  label: {
+    fontSize: 10,
+    fontWeight: "500",
+    marginTop: 1,
   },
 });
