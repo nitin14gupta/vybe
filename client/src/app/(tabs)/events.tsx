@@ -178,7 +178,7 @@ function EventCard({ event, onPress }: { event: EventSummary; onPress: () => voi
 export default function EventsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { events, loading, filters, setFilter, reload, loadInBounds, userLat, userLng } = useEvents();
+  const { events, loading, error, filters, setFilter, reload, loadInBounds, userLat, userLng } = useEvents();
   const [viewMode, setViewMode] = useState<"map" | "list">("map");
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [listCount, setListCount] = useState(LIST_PAGE);
@@ -195,6 +195,7 @@ export default function EventsScreen() {
     }, []),
   );
 
+  const hasError = !loading && !!error;
   const activeChip = filters.category
     ? filters.category
     : filters.is_free
@@ -243,7 +244,7 @@ export default function EventsScreen() {
   );
 
   const openEvent = (id: string) => router.push(`/(events)/${id}` as any);
-  const isEmpty = !loading && events.length === 0;
+  const isEmpty = !loading && !error && events.length === 0;
   const previewEvents = events.slice(0, PREVIEW_MAX);
   const extraCount = events.length - PREVIEW_MAX;
 
@@ -304,6 +305,18 @@ export default function EventsScreen() {
             </Pressable>
           </View>
         </View>
+
+        {/* Error overlay */}
+        {error && !loading && (
+          <View style={styles.mapEmpty} pointerEvents="box-none">
+            <View style={styles.mapEmptyCard}>
+              <Text style={styles.mapEmptyTitle}>Couldn't load events</Text>
+              <Pressable onPress={reload} style={styles.mapEmptyCta}>
+                <Text style={styles.mapEmptyCtaText}>Retry</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
 
         {/* No events overlay */}
         {isEmpty && (
@@ -397,7 +410,15 @@ export default function EventsScreen() {
       </ScrollView>
 
       {/* List */}
-      {isEmpty ? (
+      {error && !loading ? (
+        <View style={styles.listEmpty}>
+          <Text style={styles.listEmptyTitle}>Couldn't load events</Text>
+          <Text style={styles.listEmptySub}>Check your connection and try again</Text>
+          <Pressable onPress={reload} style={styles.listEmptyCta}>
+            <Text style={styles.listEmptyCtaText}>Retry</Text>
+          </Pressable>
+        </View>
+      ) : isEmpty ? (
         <View style={styles.listEmpty}>
           <Flame size={48} color={Colors.inkDisabled} strokeWidth={1.2} />
           <Text style={styles.listEmptyTitle}>No events nearby yet</Text>

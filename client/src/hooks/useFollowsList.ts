@@ -49,10 +49,14 @@ export function useFollowsList(userId: string, type: 'followers' | 'following') 
 
   useEffect(() => { load() }, [load])
 
+  const inFlightRef = useRef<Set<string>>(new Set())
+
   const toggleFollow = useCallback(async (targetId: string) => {
+    if (inFlightRef.current.has(targetId)) return
     const user = allUsers.find(u => u.id === targetId)
     if (!user) return
     const wasFollowing = user.is_following
+    inFlightRef.current.add(targetId)
     setAllUsers(prev => prev.map(u => u.id === targetId ? { ...u, is_following: !wasFollowing } : u))
     try {
       if (wasFollowing) await ApiService.unfollowUser(targetId)
@@ -60,6 +64,8 @@ export function useFollowsList(userId: string, type: 'followers' | 'following') 
     } catch {
       setAllUsers(prev => prev.map(u => u.id === targetId ? { ...u, is_following: wasFollowing } : u))
       showPill('Action failed', 'error')
+    } finally {
+      inFlightRef.current.delete(targetId)
     }
   }, [allUsers, showPill])
 

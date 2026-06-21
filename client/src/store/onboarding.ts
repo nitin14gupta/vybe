@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 interface OnboardingState {
   name: string
@@ -31,8 +33,28 @@ const initialState = {
   lng: null as number | null,
 }
 
-export const useOnboardingStore = create<OnboardingState>((set) => ({
-  ...initialState,
-  setField: (key, value) => set({ [key]: value } as Partial<OnboardingState>),
-  reset: () => set(initialState),
-}))
+export const useOnboardingStore = create<OnboardingState>()(
+  persist(
+    (set) => ({
+      ...initialState,
+      setField: (key, value) => set({ [key]: value } as Partial<OnboardingState>),
+      reset: () => set(initialState),
+    }),
+    {
+      name: 'vybe-onboarding',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        name: state.name,
+        dob: state.dob,
+        gender: state.gender,
+        bio: state.bio,
+        photoUris: state.photoUris,
+        voiceUri: state.voiceUri,
+        interests: state.interests,
+        city: state.city,
+        lat: state.lat,
+        lng: state.lng,
+      }),
+    },
+  ),
+)

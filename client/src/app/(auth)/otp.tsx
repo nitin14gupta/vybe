@@ -39,7 +39,7 @@ export default function OTPScreen() {
       if (next >= 3) {
         setErrorMsg('Too many attempts — request a new code.')
       } else {
-        setErrorMsg(e?.response?.data?.detail || 'Incorrect code. Try again.')
+        setErrorMsg(e?.message || 'Incorrect code. Try again.')
       }
       setCode('')
     } finally {
@@ -54,7 +54,10 @@ export default function OTPScreen() {
       setAttempts(0)
       setError(false)
       setErrorMsg('')
-    } catch {}
+    } catch (e: any) {
+      setError(true)
+      setErrorMsg(e?.message || 'Failed to resend code. Try again.')
+    }
   }
 
   return (

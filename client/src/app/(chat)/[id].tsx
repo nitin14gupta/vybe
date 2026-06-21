@@ -5,13 +5,12 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
-import { ChevronLeft, MoreVertical, Plus, Send, Ban, Trash2 } from 'lucide-react-native'
+import { ChevronLeft, MoreVertical, Plus, Send, Trash2 } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { LinearGradient } from 'expo-linear-gradient'
 import { useChat } from '@/hooks/useChat'
-import { useConversations } from '@/hooks/useConversations'
 import { useAuthStore } from '@/store/auth'
 import { BlockSheet, ReportSheet } from '@/components/ui'
+import { usePillStore } from '@/store/pillStore'
 import ApiService, { Message } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
 
@@ -140,7 +139,8 @@ export default function ChatDetailScreen() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
 
-  const { messages, isPartnerTyping, isPartnerOnline, loading, sendMessage, sendTyping, loadMore } = useChat(convId)
+  const { messages, isPartnerTyping, isPartnerOnline, isWsConnected, loading, sendMessage, sendTyping, loadMore } = useChat(convId)
+  const showPill = usePillStore(s => s.show)
 
   // Load conversation metadata (partner name/avatar)
   useEffect(() => {
@@ -156,13 +156,18 @@ export default function ChatDetailScreen() {
     }).catch(() => {})
   }, [convId])
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     const text = inputText.trim()
     if (!text) return
     setInputText('')
     sendTyping(false)
-    sendMessage(text)
-  }, [inputText, sendMessage, sendTyping])
+    try {
+      await sendMessage(text)
+    } catch {
+      setInputText(text)
+      showPill('Message failed to send. Tap to retry.', 'error')
+    }
+  }, [inputText, sendMessage, sendTyping, showPill])
 
   const handleTextChange = useCallback((t: string) => {
     setInputText(t)
@@ -175,24 +180,40 @@ export default function ChatDetailScreen() {
 
   const handleBlock = useCallback(async () => {
     if (!partnerId) return
-    await ApiService.blockUser(partnerId)
-    setBlockStatus('i_blocked')
-  }, [partnerId])
+    try {
+      await ApiService.blockUser(partnerId)
+      setBlockStatus('i_blocked')
+    } catch {
+      showPill('Could not block user', 'error')
+    }
+  }, [partnerId, showPill])
 
   const handleUnblock = useCallback(async () => {
     if (!partnerId) return
-    await ApiService.unblockUser(partnerId)
-    setBlockStatus('none')
-  }, [partnerId])
+    try {
+      await ApiService.unblockUser(partnerId)
+      setBlockStatus('none')
+    } catch {
+      showPill('Could not unblock user', 'error')
+    }
+  }, [partnerId, showPill])
 
   const handleDeleteChat = useCallback(async () => {
-    await ApiService.deleteConversation(convId)
-    router.back()
-  }, [convId])
+    try {
+      await ApiService.deleteConversation(convId)
+      router.back()
+    } catch {
+      showPill('Could not delete chat', 'error')
+    }
+  }, [convId, showPill])
 
   const handleReport = useCallback(async (reason: string) => {
-    if (partnerId) await ApiService.reportUser(partnerId, reason)
-  }, [partnerId])
+    try {
+      if (partnerId) await ApiService.reportUser(partnerId, reason)
+    } catch {
+      showPill('Could not submit report', 'error')
+    }
+  }, [partnerId, showPill])
 
   const renderItem = useCallback(({ item }: { item: Message }) => (
     <MsgBubble msg={item} isMine={item.sender_id === myId} />
@@ -201,8 +222,8 @@ export default function ChatDetailScreen() {
   return (
     <KeyboardAvoidingView
       style={[s.root, { paddingBottom: insets.bottom }]}
-      behavior="padding"
-      keyboardVerticalOffset={Platform.OS === 'android' ? -24 : 0}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={0}
     >
       {/* Header */}
       <View style={[s.header, { paddingTop: insets.top + 8 }]}>
@@ -236,6 +257,13 @@ export default function ChatDetailScreen() {
           <MoreVertical size={22} color={Colors.inkSecondary} strokeWidth={1.8} />
         </Pressable>
       </View>
+
+      {/* WS disconnect banner */}
+      {!isWsConnected && !loading && (
+        <View style={s.disconnectBanner}>
+          <Text style={s.disconnectBannerText}>Reconnecting…</Text>
+        </View>
+      )}
 
       {/* Messages */}
       {loading ? (
@@ -277,7 +305,7 @@ export default function ChatDetailScreen() {
         </View>
       ) : (
         <View style={[s.inputBar, { borderTopColor: 'rgba(255,255,255,0.08)' }]}>
-          <Pressable style={s.attachBtn} onPress={() => {}}>
+          <Pressable style={s.attachBtn} onPress={() => showPill('Attachments coming soon')}>
             <Plus size={22} color={Colors.inkSecondary} strokeWidth={1.8} />
           </Pressable>
 
@@ -343,6 +371,14 @@ const s = StyleSheet.create({
   headerName: { fontFamily: FontFamily.headingBold, fontSize: 17, color: Colors.brandOrange },
   headerSub: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkSecondary },
   onlineDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#4CAF50' },
+  disconnectBanner: {
+    backgroundColor: 'rgba(255,107,53,0.12)',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(255,107,53,0.3)',
+    paddingVertical: 5,
+    alignItems: 'center',
+  },
+  disconnectBannerText: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.brandOrange },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   msgList: { paddingHorizontal: 16, paddingVertical: 12 },

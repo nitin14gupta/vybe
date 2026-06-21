@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet, Linking } from 'react-native'
 import { router } from 'expo-router'
 import { BackButton, PhoneInput, PrimaryButton, KeyboardAvoidingWrapper } from '@/components/ui'
 import { useAuthStore } from '@/store/auth'
@@ -55,9 +55,9 @@ export default function PhoneScreen() {
         />
         <Text style={styles.legal}>
           By continuing you agree to our{' '}
-          <Text style={styles.legalLink}>Terms</Text>
+          <Text style={styles.legalLink} onPress={() => Linking.openURL('https://vybe.app/terms')}>Terms</Text>
           {' '}&amp;{' '}
-          <Text style={styles.legalLink}>Privacy Policy</Text>
+          <Text style={styles.legalLink} onPress={() => Linking.openURL('https://vybe.app/privacy')}>Privacy Policy</Text>
         </Text>
       </View>
       </KeyboardAvoidingWrapper>

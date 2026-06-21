@@ -16,6 +16,7 @@ export default function SearchScreen() {
   const [results, setResults] = useState<DiscoverUser[]>([])
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
+  const [searchError, setSearchError] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -24,16 +25,20 @@ export default function SearchScreen() {
     if (!q) {
       setResults([])
       setSearched(false)
+      setSearchError(false)
       return
     }
     debounceRef.current = setTimeout(async () => {
       setLoading(true)
+      setSearchError(false)
       try {
         const data = await ApiService.searchUsers(q)
         setResults(data.users)
         setSearched(true)
       } catch {
         setResults([])
+        setSearched(true)
+        setSearchError(true)
       } finally {
         setLoading(false)
       }
@@ -80,6 +85,11 @@ export default function SearchScreen() {
           <Users size={52} color={Colors.inkDisabled} strokeWidth={1.2} />
           <Text style={s.emptyTitle}>Find people</Text>
           <Text style={s.emptySub}>Search by name or @username</Text>
+        </View>
+      ) : searchError ? (
+        <View style={s.center}>
+          <Text style={s.emptyTitle}>Search failed</Text>
+          <Text style={s.emptySub}>Check your connection and try again</Text>
         </View>
       ) : results.length === 0 ? (
         <View style={s.center}>

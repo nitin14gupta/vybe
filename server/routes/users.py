@@ -288,9 +288,8 @@ def get_user_profile(user_id: str, current_user: dict = Depends(get_current_user
         mutual_count = cur.fetchone()["count"] or 0
 
         # Vybe status between viewer and this user
-        u1, u2 = (viewer_id, user_id) if viewer_id < user_id else (user_id, viewer_id)
         cur.execute("""
-            SELECT status FROM vibe_requests
+            SELECT id::text, sender_id::text, status FROM vibe_requests
             WHERE (sender_id = %s::uuid AND receiver_id = %s::uuid)
                OR (sender_id = %s::uuid AND receiver_id = %s::uuid)
             ORDER BY created_at DESC LIMIT 1
@@ -308,10 +307,16 @@ def get_user_profile(user_id: str, current_user: dict = Depends(get_current_user
 
         if conv:
             vybe_status = "connected"
+            vybe_id = None
+            vybe_sent_by_me = False
         elif vr and vr["status"] == "pending":
             vybe_status = "pending"
+            vybe_id = vr["id"]
+            vybe_sent_by_me = (vr["sender_id"] == viewer_id)
         else:
             vybe_status = "none"
+            vybe_id = None
+            vybe_sent_by_me = False
 
         # Events this user is attending (upcoming), cover_photos lives on the events row
         cur.execute("""
@@ -347,6 +352,8 @@ def get_user_profile(user_id: str, current_user: dict = Depends(get_current_user
         **user,
         "mutual_count": mutual_count,
         "vybe_status": vybe_status,
+        "vybe_id": vybe_id,
+        "vybe_sent_by_me": vybe_sent_by_me,
         "conversation_id": conv["id"] if conv else None,
         "events_attending": events_attending,
     }

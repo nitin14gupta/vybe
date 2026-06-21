@@ -19,6 +19,7 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: Colors.inkSecondary,
         tabBarLabelStyle: styles.label,
         tabBarShowLabel: true,
+        tabBarPressColor: 'transparent',
       }}
     >
       <Tabs.Screen

@@ -58,6 +58,8 @@ export interface ProfileResponse extends UserResponse {
 export interface ExtendedProfile extends ProfileResponse {
   mutual_count: number
   vybe_status: 'none' | 'pending' | 'connected'
+  vybe_id: string | null
+  vybe_sent_by_me: boolean
   conversation_id: string | null
   events_attending: EventSummary[]
 }
@@ -250,6 +252,12 @@ class ApiService {
     }
   }
 
+  private static fetchWithTimeout(url: string, opts: RequestInit, ms = 10000): Promise<Response> {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), ms)
+    return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timer))
+  }
+
   private static async handleResponse<T>(
     response: Response,
     endpoint: string,
@@ -307,7 +315,7 @@ class ApiService {
 
   static async get<T>(endpoint: string, token?: string | null): Promise<T> {
     const call = () =>
-      fetch(`${API_BASE_URL}${endpoint}`, {
+      this.fetchWithTimeout(`${API_BASE_URL}${endpoint}`, {
         method: 'GET',
         headers: this.createHeaders(useAuthStore.getState().accessToken ?? token),
       }).then(res => this.handleResponse<T>(res, endpoint, call))
@@ -316,7 +324,7 @@ class ApiService {
 
   static async post<T>(endpoint: string, body: unknown, token?: string | null): Promise<T> {
     const call = () =>
-      fetch(`${API_BASE_URL}${endpoint}`, {
+      this.fetchWithTimeout(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: this.createHeaders(useAuthStore.getState().accessToken ?? token),
         body: JSON.stringify(body),
@@ -326,7 +334,7 @@ class ApiService {
 
   static async patch<T>(endpoint: string, body: unknown, token?: string | null): Promise<T> {
     const call = () =>
-      fetch(`${API_BASE_URL}${endpoint}`, {
+      this.fetchWithTimeout(`${API_BASE_URL}${endpoint}`, {
         method: 'PATCH',
         headers: this.createHeaders(useAuthStore.getState().accessToken ?? token),
         body: JSON.stringify(body),
@@ -336,7 +344,7 @@ class ApiService {
 
   static async put<T>(endpoint: string, body: unknown, token?: string | null): Promise<T> {
     const call = () =>
-      fetch(`${API_BASE_URL}${endpoint}`, {
+      this.fetchWithTimeout(`${API_BASE_URL}${endpoint}`, {
         method: 'PUT',
         headers: this.createHeaders(useAuthStore.getState().accessToken ?? token),
         body: JSON.stringify(body),
@@ -346,7 +354,7 @@ class ApiService {
 
   static async delete<T>(endpoint: string, token?: string | null): Promise<T> {
     const call = () =>
-      fetch(`${API_BASE_URL}${endpoint}`, {
+      this.fetchWithTimeout(`${API_BASE_URL}${endpoint}`, {
         method: 'DELETE',
         headers: this.createHeaders(useAuthStore.getState().accessToken ?? token),
       }).then(res => this.handleResponse<T>(res, endpoint, call))
@@ -356,11 +364,11 @@ class ApiService {
   static async postFormData<T>(endpoint: string, formData: FormData, token?: string | null): Promise<T> {
     const resolvedToken = useAuthStore.getState().accessToken ?? token
     const call = () =>
-      fetch(`${API_BASE_URL}${endpoint}`, {
+      this.fetchWithTimeout(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: resolvedToken ? createAuthHeader(resolvedToken) : {},
         body: formData,
-      }).then(res => this.handleResponse<T>(res, endpoint, call))
+      }, 30000).then(res => this.handleResponse<T>(res, endpoint, call))
     return call()
   }
 

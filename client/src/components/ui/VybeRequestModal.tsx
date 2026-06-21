@@ -27,14 +27,11 @@ function renderBackdrop(props: BottomSheetBackdropProps) {
   )
 }
 
-export function VybeRequestModal({ visible, user, onSend, onClose }: Props) {
+function VybeRequestModalCore({ user, onSend, onClose }: Omit<Props, 'visible'>) {
   const sheetRef = useRef<BottomSheetModal>(null)
   const [message, setMessage] = useState('')
 
-  useEffect(() => {
-    if (visible) sheetRef.current?.present()
-    else sheetRef.current?.dismiss()
-  }, [visible])
+  useEffect(() => { sheetRef.current?.present() }, [])
 
   const handleSend = () => {
     const trimmed = message.trim()
@@ -50,19 +47,16 @@ export function VybeRequestModal({ visible, user, onSend, onClose }: Props) {
 
   const charsLeft = MAX_CHARS - message.length
   const canSend = message.trim().length > 0
-
-  if (!user) return null
-
   const avatar = user.photos[0]?.url
 
   return (
     <BottomSheetModal
       ref={sheetRef}
-      enableDynamicSizing
+      snapPoints={['85%']}
+      enableDynamicSizing={false}
       enablePanDownToClose
-      keyboardBehavior="interactive"
+      keyboardBehavior="extend"
       keyboardBlurBehavior="restore"
-      android_keyboardInputMode="adjustResize"
       onDismiss={handleClose}
       backdropComponent={renderBackdrop}
       backgroundStyle={s.bg}
@@ -120,6 +114,11 @@ export function VybeRequestModal({ visible, user, onSend, onClose }: Props) {
       </BottomSheetView>
     </BottomSheetModal>
   )
+}
+
+export function VybeRequestModal({ visible, user, onSend, onClose }: Props) {
+  if (!visible || !user) return null
+  return <VybeRequestModalCore user={user} onSend={onSend} onClose={onClose} />
 }
 
 const s = StyleSheet.create({

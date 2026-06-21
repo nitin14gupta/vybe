@@ -7,12 +7,14 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   ChevronLeft, MoreVertical, Flame, UserPlus, UserCheck,
-  MessageCircle, Ban,
+  MessageCircle, Ban, Play, Pause, Check,
 } from 'lucide-react-native'
-import { VybeRequestModal, PlaybackWave, ProfileMenuSheet } from '@/components/ui'
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
+import { VybeRequestModal, VybeIcebreakerModal, PlaybackWave, ProfileMenuSheet } from '@/components/ui'
 import ApiService, { ExtendedProfile, EventSummary } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
 import { usePillStore } from '@/store/pillStore'
+import { useVybeStore } from '@/store/vybeStore'
 
 const { width: W } = Dimensions.get('window')
 
@@ -47,9 +49,14 @@ export default function UserProfileScreen() {
   const [following, setFollowing] = useState(false)
   const [vybeModalOpen, setVybeModalOpen] = useState(false)
   const [vybeSent, setVybeSent] = useState(false)
+  const [acceptModalOpen, setAcceptModalOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [blockedByMe, setBlockedByMe] = useState(false)
   const showPill = usePillStore(s => s.show)
+  const { markSent, markCleared, isSentTo } = useVybeStore()
+
+  const voicePlayer = useAudioPlayer(null)
+  const voiceStatus = useAudioPlayerStatus(voicePlayer)
 
   useEffect(() => {
     if (!id) return
@@ -57,8 +64,9 @@ export default function UserProfileScreen() {
       .then(p => {
         setProfile(p)
         setFollowing(!!p.is_following)
-        setVybeSent(p.vybe_status === 'pending')
+        setVybeSent(p.vybe_status === 'pending' || isSentTo(p.id))
         setBlockedByMe(!!p.is_blocked_by_me)
+        if (p.voice_url) voicePlayer.replace({ uri: p.voice_url })
       })
       .catch(() => showPill('Could not load profile', 'error'))
       .finally(() => setLoading(false))
@@ -80,28 +88,60 @@ export default function UserProfileScreen() {
     if (!profile) return
     setVybeModalOpen(false)
     setVybeSent(true)
+    markSent(profile.id)
     try {
       await ApiService.sendVibe(profile.id, message)
     } catch {
       setVybeSent(false)
+      markCleared(profile.id)
     }
   }
 
+  const handleAcceptVybe = async (icebreaker: string) => {
+    if (!profile?.vybe_id) return
+    setAcceptModalOpen(false)
+    try {
+      const result = await ApiService.respondToVybe(profile.vybe_id, 'accept', icebreaker)
+      if (result.conversation_id) {
+        router.replace(`/(chat)/${result.conversation_id}` as any)
+      }
+    } catch {
+      showPill('Could not accept vybe', 'error')
+    }
+  }
+
+  useEffect(() => {
+    return () => { voicePlayer.pause() }
+  }, [])
+
   const handleBlock = async () => {
     if (!profile) return
-    await ApiService.blockUser(profile.id)
-    setBlockedByMe(true)
+    try {
+      await ApiService.blockUser(profile.id)
+      setBlockedByMe(true)
+    } catch {
+      showPill('Could not block user', 'error')
+    }
   }
 
   const handleUnblock = async () => {
     if (!profile) return
-    await ApiService.unblockUser(profile.id)
-    setBlockedByMe(false)
+    try {
+      await ApiService.unblockUser(profile.id)
+      setBlockedByMe(false)
+    } catch {
+      showPill('Could not unblock user', 'error')
+    }
   }
 
   const handleReport = async (reason: string) => {
     if (!profile) return
-    await ApiService.reportUser(profile.id, reason)
+    try {
+      await ApiService.reportUser(profile.id, reason)
+      showPill('Report submitted', 'success')
+    } catch {
+      showPill('Could not submit report', 'error')
+    }
   }
 
   if (loading) {
@@ -125,7 +165,8 @@ export default function UserProfileScreen() {
 
   const photos = profile.photos ?? []
   const isConnected = profile.vybe_status === 'connected'
-  const isPending = vybeSent || profile.vybe_status === 'pending'
+  const isPending = vybeSent || (profile.vybe_status === 'pending' && !!profile.vybe_sent_by_me)
+  const theySentVybe = profile.vybe_status === 'pending' && !profile.vybe_sent_by_me && !vybeSent
   const age = profile.dob
     ? Math.floor((Date.now() - new Date(profile.dob).getTime()) / 3.156e10)
     : profile.age
@@ -191,6 +232,7 @@ export default function UserProfileScreen() {
             <View style={s.statsRow}>
               <Pressable
                 style={s.statItem}
+                android_ripple={null}
                 onPress={() => router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'followers', name: encodeURIComponent(profile.name ?? ''), vibersCount: profile.vibers_count ?? 0, vibingCount: profile.vibing_count ?? 0 } } as any)}
               >
                 <Text style={s.statValue}>{profile.vibers_count ?? 0}</Text>
@@ -199,6 +241,7 @@ export default function UserProfileScreen() {
               <View style={s.statDivider} />
               <Pressable
                 style={s.statItem}
+                android_ripple={null}
                 onPress={() => router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'following', name: encodeURIComponent(profile.name ?? ''), vibersCount: profile.vibers_count ?? 0, vibingCount: profile.vibing_count ?? 0 } } as any)}
               >
                 <Text style={s.statValue}>{profile.vibing_count ?? 0}</Text>
@@ -215,7 +258,7 @@ export default function UserProfileScreen() {
           )}
           {isPending && !isConnected && (
             <View style={[s.statusBadge, s.statusBadgePending]}>
-              <Text style={s.statusBadgeText}>⏳ Vybe Pending</Text>
+              <Text style={s.statusBadgeText}>Vybe Pending</Text>
             </View>
           )}
 
@@ -252,7 +295,16 @@ export default function UserProfileScreen() {
           {/* Voice intro */}
           {!blockedByMe && profile.voice_url ? (
             <View style={s.voiceWrap}>
-              <PlaybackWave uri={profile.voice_url} />
+              <Pressable
+                onPress={() => voiceStatus.playing ? voicePlayer.pause() : voicePlayer.play()}
+                style={s.voicePlayBtn}
+                android_ripple={null}
+              >
+                {voiceStatus.playing
+                  ? <Pause size={15} color={Colors.background} strokeWidth={2.5} />
+                  : <Play  size={15} color={Colors.background} strokeWidth={2.5} />}
+              </Pressable>
+              <PlaybackWave isActive={voiceStatus.playing} compact />
             </View>
           ) : null}
 
@@ -278,19 +330,37 @@ export default function UserProfileScreen() {
         {isConnected ? (
           <Pressable
             style={[s.ctaBtn, s.ctaBtnPrimary, { flex: 1 }]}
-            onPress={() => profile.conversation_id && router.push(`/(chat)/${profile.conversation_id}` as any)}
+            onPress={() => {
+              if (profile.conversation_id) {
+                router.push(`/(chat)/${profile.conversation_id}` as any)
+              } else {
+                showPill('Chat not available', 'error')
+              }
+            }}
           >
             <MessageCircle size={18} color="#111" strokeWidth={2} />
             <Text style={s.ctaBtnPrimaryText}>Message</Text>
           </Pressable>
+        ) : theySentVybe ? (
+          <Pressable
+            style={[s.ctaBtn, s.ctaBtnPrimary, { flex: 1.6 }]}
+            onPress={() => setAcceptModalOpen(true)}
+          >
+            <Check size={18} color="#111" strokeWidth={2.5} />
+            <Text style={s.ctaBtnPrimaryText}>Accept Vybe</Text>
+          </Pressable>
+        ) : isPending ? (
+          <Pressable style={[s.ctaBtn, s.ctaBtnPending]} disabled>
+            <Flame size={18} color={Colors.brandOrange} fill="transparent" strokeWidth={1.8} />
+            <Text style={s.ctaBtnPendingText}>Vybe Sent</Text>
+          </Pressable>
         ) : (
           <Pressable
-            style={[s.ctaBtn, s.ctaBtnPrimary, isPending && s.ctaBtnDisabled]}
-            onPress={() => !isPending && setVybeModalOpen(true)}
-            disabled={isPending}
+            style={[s.ctaBtn, s.ctaBtnPrimary]}
+            onPress={() => setVybeModalOpen(true)}
           >
-            <Flame size={18} color="#111" fill={isPending ? 'transparent' : '#111'} />
-            <Text style={s.ctaBtnPrimaryText}>{isPending ? 'Vybe Sent' : 'Send Vybe'}</Text>
+            <Flame size={18} color="#111" fill="#111" strokeWidth={2} />
+            <Text style={s.ctaBtnPrimaryText}>Send Vybe</Text>
           </Pressable>
         )}
 
@@ -325,6 +395,13 @@ export default function UserProfileScreen() {
         }}
         onSend={handleSendVybe}
         onClose={() => setVybeModalOpen(false)}
+      />
+
+      <VybeIcebreakerModal
+        visible={acceptModalOpen}
+        partnerName={profile.name}
+        onSend={handleAcceptVybe}
+        onClose={() => setAcceptModalOpen(false)}
       />
 
       <ProfileMenuSheet
@@ -442,7 +519,12 @@ const s = StyleSheet.create({
   chipText: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkPrimary },
 
   // Voice
-  voiceWrap: { marginTop: 4 },
+  voiceWrap: { marginTop: 4, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  voicePlayBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: Colors.brandOrange,
+    alignItems: 'center', justifyContent: 'center',
+  },
 
   // Events
   eventsSection: { gap: 10 },
@@ -482,6 +564,11 @@ const s = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   ctaBtnSecondaryText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.inkPrimary },
+  ctaBtnPending: {
+    flex: 1.6, borderWidth: 1.5, borderColor: Colors.brandOrange,
+    backgroundColor: 'rgba(255,107,53,0.08)',
+  },
+  ctaBtnPendingText: { fontFamily: FontFamily.bodySemiBold, fontSize: 16, color: Colors.brandOrange },
   ctaBtnDisabled: { opacity: 0.5, backgroundColor: '#333' },
   ctaBtnFollowing: { borderColor: Colors.brandOrange },
   ctaBtnFollowingText: { color: Colors.brandOrange },

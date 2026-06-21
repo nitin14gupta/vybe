@@ -7,8 +7,10 @@ export function useConversations() {
   const [lockedConversations, setLockedConversations] = useState<Conversation[]>([])
   const [pendingVibes, setPendingVibes] = useState<VybeRequest[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
 
   const refresh = useCallback(async () => {
+    setError(false)
     try {
       const [convData, vibeData] = await Promise.all([
         ApiService.getConversations(),
@@ -20,10 +22,9 @@ export function useConversations() {
         )
       setActiveConversations([...convData.active].sort(byRecent))
       setLockedConversations([...convData.locked].sort(byRecent))
-      // Newest vybe request first in the strip
       setPendingVibes([...vibeData].sort((a, b) => b.created_at.localeCompare(a.created_at)))
-    } catch (e) {
-      // Silently ignore — show empty state
+    } catch {
+      setError(true)
     } finally {
       setLoading(false)
     }
@@ -35,18 +36,14 @@ export function useConversations() {
     }, [refresh]),
   )
 
-  const acceptVybe = useCallback(async (vibeId: string, icebreaker: string) => {
-    try {
-      await ApiService.respondToVibe(vibeId, 'accept', icebreaker)
-      await refresh()
-    } catch {}
+  const acceptVybe = useCallback(async (vibeId: string, icebreaker: string): Promise<void> => {
+    await ApiService.respondToVibe(vibeId, 'accept', icebreaker)
+    await refresh()
   }, [refresh])
 
-  const passVybe = useCallback(async (vibeId: string) => {
-    try {
-      await ApiService.respondToVibe(vibeId, 'pass')
-      setPendingVibes(prev => prev.filter(v => v.id !== vibeId))
-    } catch {}
+  const passVybe = useCallback(async (vibeId: string): Promise<void> => {
+    await ApiService.respondToVibe(vibeId, 'pass')
+    setPendingVibes(prev => prev.filter(v => v.id !== vibeId))
   }, [])
 
   return {
@@ -54,6 +51,7 @@ export function useConversations() {
     lockedConversations,
     pendingVibes,
     loading,
+    error,
     refresh,
     acceptVybe,
     passVybe,

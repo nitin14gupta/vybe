@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/store/auth'
+import { useOnboardingStore } from '@/store/onboarding'
 import { tokenStorage } from '@/lib/tokenStorage'
 import { sendOTP, verifyOTP, logout as apiLogout } from '@/api/auth'
 
@@ -35,6 +36,7 @@ export function useAuth() {
       } catch {}
     }
     store.clearAuth()
+    useOnboardingStore.getState().reset()
   }
 
   return {

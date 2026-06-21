@@ -94,7 +94,7 @@ export default function EditProfileScreen() {
           <Text style={styles.label}>CITY</Text>
           <View style={styles.cityRow}>
             <Text style={styles.cityValue}>{city ?? 'Not set'}</Text>
-            <Pressable onPress={() => router.push('/(onboarding)/location')} style={styles.changeBtn}>
+            <Pressable onPress={() => router.push('/(profile)/location')} style={styles.changeBtn}>
               <Text style={styles.changeBtnText}>Change</Text>
             </Pressable>
           </View>

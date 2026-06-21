@@ -37,11 +37,11 @@ function VybeIcebreakerCore({ partnerName, onSend, onClose }: Omit<Props, 'visib
   return (
     <BottomSheetModal
       ref={sheetRef}
-      enableDynamicSizing
+      snapPoints={['62%']}
+      enableDynamicSizing={false}
       enablePanDownToClose
-      keyboardBehavior="interactive"
+      keyboardBehavior="extend"
       keyboardBlurBehavior="restore"
-      android_keyboardInputMode="adjustResize"
       onDismiss={onClose}
       backdropComponent={renderBackdrop}
       backgroundStyle={s.bg}

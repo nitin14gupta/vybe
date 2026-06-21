@@ -12,7 +12,8 @@ import { useLocalSearchParams } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowUpDown, Search, Users, X as XIcon } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
-import { ReportSheet, BlockSheet } from '@/components/ui'
+import { ReportSheet, BlockSheet, SortSheet, DotsSheet, ConfirmSheet } from '@/components/ui'
+import type { SortOption } from '@/components/ui'
 import { useGoBack } from '@/hooks/useGoBack'
 import { useFollowsList } from '@/hooks/useFollowsList'
 import { UserFollowCard } from '@/components/profile/UserFollowCard'
@@ -21,11 +22,16 @@ import type { FollowUser } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 
 type SortKey = 'default' | 'az' | 'za' | 'earliest'
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: 'default', label: 'Default (Recent)' },
-  { key: 'az',      label: 'Name A → Z' },
-  { key: 'za',      label: 'Name Z → A' },
-  { key: 'earliest',label: 'Earliest first' },
+const SORT_OPTIONS: SortOption<SortKey>[] = [
+  { key: 'default',  label: 'Default (Recent)' },
+  { key: 'az',       label: 'Name A → Z' },
+  { key: 'za',       label: 'Name Z → A' },
+  { key: 'earliest', label: 'Earliest first' },
+]
+
+const DOTS_ACTIONS = [
+  { key: 'report', label: 'Report' },
+  { key: 'block',  label: 'Block', destructive: true },
 ]
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -50,6 +56,7 @@ export default function FollowsScreen() {
   const [dotsTarget, setDotsTarget] = useState<FollowUser | null>(null)
   const [reportTarget, setReportTarget] = useState<FollowUser | null>(null)
   const [blockTarget, setBlockTarget] = useState<FollowUser | null>(null)
+  const [confirmTarget, setConfirmTarget] = useState<{ user: FollowUser; action: 'unfollow' | 'remove' } | null>(null)
 
   const displayName = decodeURIComponent(name ?? '')
 
@@ -95,14 +102,20 @@ export default function FollowsScreen() {
     }
   }
 
+  const handleDotsAction = (key: string) => {
+    if (!dotsTarget) return
+    if (key === 'report') { setReportTarget(dotsTarget); setDotsTarget(null) }
+    if (key === 'block')  { setBlockTarget(dotsTarget);  setDotsTarget(null) }
+  }
+
   const renderItem = ({ item }: { item: FollowUser }) => (
     <UserFollowCard
       user={item}
       type={activeTab}
       isMyProfile={active.isMyProfile}
       onFollow={active.toggleFollow}
-      onUnfollow={active.toggleFollow}
-      onRemove={active.removeFollower}
+      onUnfollow={() => setConfirmTarget({ user: item, action: 'unfollow' })}
+      onRemove={() => setConfirmTarget({ user: item, action: 'remove' })}
       onDots={(u) => setDotsTarget(u)}
     />
   )
@@ -118,7 +131,7 @@ export default function FollowsScreen() {
 
       {/* ── Header ── */}
       <View style={s.header}>
-        <Pressable onPress={goBack} style={s.backBtn} hitSlop={8}>
+        <Pressable onPress={goBack} style={s.backBtn} hitSlop={8} android_ripple={null}>
           <Text style={s.backArrow}>←</Text>
         </Pressable>
         <Text style={s.headerName} numberOfLines={1}>{displayName || 'Profile'}</Text>
@@ -127,23 +140,25 @@ export default function FollowsScreen() {
 
       {/* ── Tab switcher ── */}
       <View style={s.tabs}>
-        <Pressable style={[s.tab, activeTab === 'followers' && s.tabActive]} onPress={() => setActiveTab('followers')}>
-          <Text style={[s.tabCount, activeTab === 'followers' && s.tabCountActive]}>{liveVibersCount}</Text>
-          <Text style={[s.tabLabel, activeTab === 'followers' && s.tabLabelActive]}>Vibers</Text>
+        <Pressable style={[s.tab, activeTab === 'followers' && s.tabActive]} android_ripple={null} onPress={() => setActiveTab('followers')}>
+          <Text style={[s.tabInline, activeTab === 'followers' && s.tabInlineActive]}>
+            <Text style={[s.tabCount, activeTab === 'followers' && s.tabCountActive]}>{liveVibersCount} </Text>
+            <Text style={[s.tabLabel, activeTab === 'followers' && s.tabLabelActive]}>Vibers</Text>
+          </Text>
         </Pressable>
-        <Pressable style={[s.tab, activeTab === 'following' && s.tabActive]} onPress={() => setActiveTab('following')}>
-          <Text style={[s.tabCount, activeTab === 'following' && s.tabCountActive]}>{liveVibingCount}</Text>
-          <Text style={[s.tabLabel, activeTab === 'following' && s.tabLabelActive]}>Vibing</Text>
+        <Pressable style={[s.tab, activeTab === 'following' && s.tabActive]} android_ripple={null} onPress={() => setActiveTab('following')}>
+          <Text style={[s.tabInline, activeTab === 'following' && s.tabInlineActive]}>
+            <Text style={[s.tabCount, activeTab === 'following' && s.tabCountActive]}>{liveVibingCount} </Text>
+            <Text style={[s.tabLabel, activeTab === 'following' && s.tabLabelActive]}>Vibing</Text>
+          </Text>
         </Pressable>
       </View>
 
       {/* ── Sort row + search ── */}
-      <View style={s.toolbar}>
-        <Pressable style={s.sortBtn} onPress={() => setSortSheetOpen(true)}>
-          <Text style={s.sortText}>Sorted by <Text style={s.sortBold}>{sortLabel}</Text></Text>
-          <ArrowUpDown size={14} color={Colors.inkSecondary} strokeWidth={1.5} />
-        </Pressable>
-      </View>
+      <Pressable style={s.toolbar} onPress={() => setSortSheetOpen(true)} android_ripple={null}>
+        <Text style={s.sortText}>Sorted by <Text style={s.sortBold}>{sortLabel}</Text></Text>
+        <ArrowUpDown size={15} color={Colors.inkSecondary} strokeWidth={1.5} />
+      </Pressable>
 
       <View style={s.searchWrap}>
         <Search size={15} color={Colors.inkSecondary} strokeWidth={1.5} />
@@ -157,7 +172,7 @@ export default function FollowsScreen() {
           returnKeyType="search"
         />
         {active.query.length > 0 && (
-          <Pressable onPress={() => active.setQuery('')} hitSlop={8}>
+          <Pressable onPress={() => active.setQuery('')} hitSlop={8} android_ripple={null}>
             <XIcon size={14} color={Colors.inkSecondary} />
           </Pressable>
         )}
@@ -171,7 +186,7 @@ export default function FollowsScreen() {
       ) : active.error && sortedUsers.length === 0 ? (
         <View style={s.center}>
           <Text style={s.emptyTitle}>Something went wrong</Text>
-          <Pressable onPress={active.load} style={s.retryBtn}>
+          <Pressable onPress={active.load} style={s.retryBtn} android_ripple={null}>
             <Text style={s.retryText}>Tap to retry</Text>
           </Pressable>
         </View>
@@ -181,7 +196,7 @@ export default function FollowsScreen() {
           data={sortedUsers}
           keyExtractor={u => u.id}
           renderItem={renderItem}
-          ItemSeparatorComponent={() => <View style={s.sep} />}
+          ItemSeparatorComponent={null}
           estimatedItemSize={72}
           onEndReached={active.loadMore}
           onEndReachedThreshold={0.4}
@@ -200,42 +215,24 @@ export default function FollowsScreen() {
         />
       )}
 
-      {/* ── Sort bottom sheet ── */}
-      {sortSheetOpen && (
-        <Pressable style={s.overlay} onPress={() => setSortSheetOpen(false)}>
-          <View style={[s.sheet, { paddingBottom: insets.bottom + 8 }]}>
-            <View style={s.sheetHandle} />
-            <Text style={s.sheetTitle}>Sort by</Text>
-            {SORT_OPTIONS.map(opt => (
-              <Pressable
-                key={opt.key}
-                style={[s.sheetRow, sort === opt.key && s.sheetRowActive]}
-                onPress={() => { setSort(opt.key); setSortSheetOpen(false) }}
-              >
-                <Text style={[s.sheetRowText, sort === opt.key && s.sheetRowTextActive]}>{opt.label}</Text>
-                {sort === opt.key && <View style={s.sheetRowDot} />}
-              </Pressable>
-            ))}
-          </View>
-        </Pressable>
-      )}
+      {/* ── Sort bottom sheet (gorhom) ── */}
+      <SortSheet
+        visible={sortSheetOpen}
+        title="Sort by"
+        options={SORT_OPTIONS}
+        selected={sort}
+        onSelect={(key) => setSort(key)}
+        onClose={() => setSortSheetOpen(false)}
+      />
 
-      {/* Dots action sheet */}
-      {dotsTarget && (
-        <Pressable style={s.overlay} onPress={() => setDotsTarget(null)}>
-          <View style={[s.sheet, { paddingBottom: insets.bottom + 8 }]}>
-            <View style={s.sheetHandle} />
-            <Text style={s.sheetTitle}>{dotsTarget.name ?? dotsTarget.username ?? 'User'}</Text>
-            <Pressable style={s.sheetRow} onPress={() => { setReportTarget(dotsTarget); setDotsTarget(null) }}>
-              <Text style={s.sheetRowText}>Report</Text>
-            </Pressable>
-            <View style={{ height: 1, backgroundColor: Colors.divider }} />
-            <Pressable style={s.sheetRow} onPress={() => { setBlockTarget(dotsTarget); setDotsTarget(null) }}>
-              <Text style={[s.sheetRowText, { color: Colors.brandCoral }]}>Block</Text>
-            </Pressable>
-          </View>
-        </Pressable>
-      )}
+      {/* ── Dots action sheet (gorhom) ── */}
+      <DotsSheet
+        visible={!!dotsTarget}
+        title={dotsTarget?.name ?? dotsTarget?.username ?? 'User'}
+        actions={DOTS_ACTIONS}
+        onAction={handleDotsAction}
+        onClose={() => setDotsTarget(null)}
+      />
 
       <ReportSheet
         visible={!!reportTarget}
@@ -251,6 +248,28 @@ export default function FollowsScreen() {
         onBlock={handleBlock}
         onUnblock={() => {}}
         onClose={() => setBlockTarget(null)}
+      />
+
+      <ConfirmSheet
+        visible={!!confirmTarget}
+        title={
+          confirmTarget?.action === 'unfollow'
+            ? `Unfollow ${confirmTarget.user.name ?? confirmTarget.user.username ?? 'this person'}?`
+            : `Remove ${confirmTarget?.user.name ?? confirmTarget?.user.username ?? 'this person'}?`
+        }
+        body={
+          confirmTarget?.action === 'unfollow'
+            ? "Their posts won't appear in your feed anymore. You can follow them again anytime."
+            : "They won't be notified that you removed them. They can still follow you again."
+        }
+        confirmLabel={confirmTarget?.action === 'unfollow' ? 'Unfollow' : 'Remove'}
+        destructive
+        onConfirm={() => {
+          if (!confirmTarget) return
+          if (confirmTarget.action === 'unfollow') active.toggleFollow(confirmTarget.user.id)
+          else active.removeFollower(confirmTarget.user.id)
+        }}
+        onClose={() => setConfirmTarget(null)}
       />
     </View>
   )
@@ -285,37 +304,36 @@ const s = StyleSheet.create({
   tab: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 11,
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
-    gap: 1,
   },
-  tabActive: { borderBottomColor: Colors.brandOrange },
+  tabActive: { borderBottomColor: Colors.inkPrimary },
+  tabInline: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 14,
+    color: Colors.inkSecondary,
+  },
+  tabInlineActive: { color: Colors.inkPrimary },
   tabCount: {
     fontFamily: FontFamily.headingBold,
-    fontSize: 17,
-    color: Colors.inkSecondary,
+    fontSize: 14,
   },
-  tabCountActive: { color: Colors.inkPrimary },
+  tabCountActive: {},
   tabLabel: {
     fontFamily: FontFamily.bodyRegular,
-    fontSize: 12,
-    color: Colors.inkSecondary,
+    fontSize: 14,
   },
-  tabLabelActive: { color: Colors.inkSecondary },
+  tabLabelActive: {},
 
   // Toolbar
   toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 11,
     paddingBottom: 4,
-  },
-  sortBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
   },
   sortText: {
     fontFamily: FontFamily.bodyRegular,
@@ -362,54 +380,4 @@ const s = StyleSheet.create({
     borderRadius: 20, borderWidth: 1, borderColor: Colors.divider,
   },
   retryText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.inkPrimary },
-
-  // Sort sheet
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 12,
-    paddingHorizontal: 0,
-  },
-  sheetHandle: {
-    width: 36, height: 4, borderRadius: 2,
-    backgroundColor: Colors.divider,
-    alignSelf: 'center',
-    marginBottom: 12,
-  },
-  sheetTitle: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 14,
-    color: Colors.inkSecondary,
-    letterSpacing: 0.8,
-    paddingHorizontal: 20,
-    paddingBottom: 8,
-    textTransform: 'uppercase',
-  },
-  sheetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  sheetRowActive: { backgroundColor: 'rgba(255,107,53,0.06)' },
-  sheetRowText: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 15,
-    color: Colors.inkPrimary,
-  },
-  sheetRowTextActive: {
-    fontFamily: FontFamily.bodySemiBold,
-    color: Colors.brandOrange,
-  },
-  sheetRowDot: {
-    width: 8, height: 8, borderRadius: 4,
-    backgroundColor: Colors.brandOrange,
-  },
 })

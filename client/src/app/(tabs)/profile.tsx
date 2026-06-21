@@ -22,7 +22,7 @@ const GENDER_DISPLAY: Record<string, string> = {
 }
 
 export default function ProfileScreen() {
-  const { profile, loading } = useProfile()
+  const { profile, loading, error, refresh } = useProfile()
 
   const player = useAudioPlayer(null)
   const status = useAudioPlayerStatus(player)
@@ -35,10 +35,27 @@ export default function ProfileScreen() {
     if (status.playing) { player.pause() } else { player.seekTo(0); player.play() }
   }
 
+  useEffect(() => {
+    return () => { player.pause() }
+  }, [])
+
   if (loading) {
     return (
       <View style={styles.loader}>
         <ActivityIndicator color={Colors.brandOrange} />
+      </View>
+    )
+  }
+
+  if (error || !profile) {
+    return (
+      <View style={styles.loader}>
+        <Text style={{ color: Colors.inkSecondary, fontFamily: FontFamily.bodyRegular, fontSize: 14, marginBottom: 16 }}>
+          {error ?? 'Could not load profile'}
+        </Text>
+        <Pressable onPress={refresh} style={{ paddingHorizontal: 24, paddingVertical: 10, borderRadius: 20, borderWidth: 1, borderColor: Colors.brandOrange }}>
+          <Text style={{ color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold, fontSize: 14 }}>Retry</Text>
+        </Pressable>
       </View>
     )
   }
@@ -215,7 +232,7 @@ function StatCol({ value, label, sub, onPress }: { value: number; label: string;
     </>
   )
   if (onPress) {
-    return <Pressable style={styles.statCol} onPress={onPress} android_ripple={{ color: 'rgba(255,107,53,0.1)', radius: 40 }}>{inner}</Pressable>
+    return <Pressable style={styles.statCol} onPress={onPress} android_ripple={null}>{inner}</Pressable>
   }
   return <View style={styles.statCol}>{inner}</View>
 }

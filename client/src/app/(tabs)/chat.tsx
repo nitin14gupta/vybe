@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   View, Text, StyleSheet, FlatList, Pressable, Image,
   TextInput, ActivityIndicator,
 } from 'react-native'
 import { router } from 'expo-router'
-import { Search, MessageCircle, Flame } from 'lucide-react-native'
+import { Search, MessageCircle, Flame, RefreshCw } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { VybeInboxSheet } from '@/components/ui'
+import { usePillStore } from '@/store/pillStore'
 import { useConversations } from '@/hooks/useConversations'
 import { Colors, FontFamily } from '@/constants'
 import type { Conversation } from '@/api/apiService'
@@ -84,16 +85,29 @@ export default function ChatScreen() {
   const insets = useSafeAreaInsets()
   const [search, setSearch] = useState('')
   const [inboxOpen, setInboxOpen] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+
+  const showPill = usePillStore(s => s.show)
 
   const {
     activeConversations,
     lockedConversations,
     pendingVibes,
     loading,
+    error,
     refresh,
     acceptVybe,
     passVybe,
   } = useConversations()
+
+  // Refresh received vybes every time the inbox sheet is opened
+  useEffect(() => { if (inboxOpen) refresh() }, [inboxOpen])
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    await refresh()
+    setRefreshing(false)
+  }
 
   // Active first (sorted by most recent message), locked at bottom
   const sortByRecent = (a: Conversation, b: Conversation) => {
@@ -113,7 +127,7 @@ export default function ChatScreen() {
       )
     : allConvs
 
-  const isEmpty = !loading && allConvs.length === 0 && pendingVibes.length === 0
+  const isEmpty = !loading && !error && allConvs.length === 0 && pendingVibes.length === 0
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
@@ -149,6 +163,15 @@ export default function ChatScreen() {
         <View style={s.center}>
           <ActivityIndicator color={Colors.brandOrange} />
         </View>
+      ) : error ? (
+        <View style={s.center}>
+          <Text style={s.emptyTitle}>Couldn't load messages</Text>
+          <Text style={s.emptySub}>Check your connection and try again</Text>
+          <Pressable onPress={refresh} style={s.retryBtn} android_ripple={null}>
+            <RefreshCw size={16} color={Colors.brandOrange} strokeWidth={1.8} />
+            <Text style={s.retryBtnText}>Retry</Text>
+          </Pressable>
+        </View>
       ) : isEmpty ? (
         <View style={s.center}>
           <MessageCircle size={52} color={Colors.inkDisabled} strokeWidth={1.2} />
@@ -163,8 +186,8 @@ export default function ChatScreen() {
           data={filtered}
           keyExtractor={c => c.id}
           showsVerticalScrollIndicator={false}
-          onRefresh={refresh}
-          refreshing={false}
+          onRefresh={handleRefresh}
+          refreshing={refreshing}
           contentContainerStyle={s.listContent}
           ListHeaderComponent={null}
           renderItem={({ item }) => (
@@ -197,11 +220,19 @@ export default function ChatScreen() {
       <VybeInboxSheet
         visible={inboxOpen}
         requests={pendingVibes}
-        onAccept={(vibeId, icebreaker) => {
-          acceptVybe(vibeId, icebreaker)
+        onAccept={async (vibeId, icebreaker) => {
+          try {
+            await acceptVybe(vibeId, icebreaker)
+          } catch {
+            showPill('Could not accept vybe', 'error')
+          }
         }}
-        onPass={(vibeId) => {
-          passVybe(vibeId)
+        onPass={async (vibeId) => {
+          try {
+            await passVybe(vibeId)
+          } catch {
+            showPill('Could not pass vybe', 'error')
+          }
         }}
         onClose={() => setInboxOpen(false)}
       />
@@ -263,6 +294,12 @@ const s = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 32 },
   emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary },
   emptySub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center' },
+  retryBtn: {
+    marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24,
+    borderWidth: 1, borderColor: Colors.brandOrange,
+  },
+  retryBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandOrange },
   exploreBtn: {
     marginTop: 12,
     paddingHorizontal: 28,

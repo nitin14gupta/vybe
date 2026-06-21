@@ -4,14 +4,16 @@ import {
   User, Bell, HelpCircle, MessageSquare, Shield, FileText,
   Info, LogOut, Calendar, Ticket,
 } from 'lucide-react-native'
-import { Screen, BackButton, SettingRow, PrimaryButton } from '@/components/ui'
+import { Screen, BackButton, SettingRow, ConfirmSheet } from '@/components/ui'
 import { useSettings } from '@/hooks/useSettings'
 import { useGoBack } from '@/hooks/useGoBack'
+import { useLogoutConfirm } from '@/hooks/useLogoutConfirm'
 import { Colors, FontFamily, Spacing } from '@/constants'
 
 export default function SettingsScreen() {
-  const { appVersion, handleLogout } = useSettings()
+  const { appVersion } = useSettings()
   const goBack = useGoBack()
+  const { visible: logoutConfirm, show: showLogout, confirm: confirmLogout, dismiss: dismissLogout } = useLogoutConfirm()
 
   return (
     <Screen>
@@ -108,12 +110,22 @@ export default function SettingsScreen() {
           <SettingRow
             icon={<LogOut size={18} color={Colors.brandCoral} strokeWidth={1.5} />}
             label="Log Out"
-            onPress={handleLogout}
+            onPress={showLogout}
             destructive
             showSeparator={false}
           />
         </View>
       </ScrollView>
+
+      <ConfirmSheet
+        visible={logoutConfirm}
+        title="Log out?"
+        body="You'll need to verify your phone number to log back in."
+        confirmLabel="Log Out"
+        destructive
+        onConfirm={confirmLogout}
+        onClose={dismissLogout}
+      />
     </Screen>
   )
 }

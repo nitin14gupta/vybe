@@ -199,6 +199,7 @@ export default function DiscoverScreen() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [showExitPill, setShowExitPill] = useState(false)
   const [vybeSentPill, setVybeSentPill] = useState(false)
+  const [starPill, setStarPill] = useState(false)
   const lastBackRef = useRef(0)
   const flameScale = useSharedValue(1)
   const flameAnimStyle = useAnimatedStyle(() => ({ transform: [{ scale: flameScale.value }] }))
@@ -256,8 +257,8 @@ export default function DiscoverScreen() {
     if (!activeUser) return
     // Bounce the flame button
     flameScale.value = withSequence(
-      withSpring(1.45, { damping: 4, stiffness: 400 }),
-      withSpring(1, { damping: 6, stiffness: 300 }),
+      withSpring(1.18, { damping: 10, stiffness: 380 }),
+      withSpring(1, { damping: 14, stiffness: 280 }),
     )
     handleVybe(activeUser)
   }, [activeUser, handleVybe, flameScale])
@@ -373,6 +374,8 @@ export default function DiscoverScreen() {
               onPress={() => {
                 handleStar(activeUser?.id ?? '')
                 cardRef.current?.swipeStar()
+                setStarPill(true)
+                setTimeout(() => setStarPill(false), 2000)
               }}
               style={[styles.actionBtn, styles.starBtn]}
             >
@@ -405,6 +408,18 @@ export default function DiscoverScreen() {
           pointerEvents="none"
         >
           <Text style={styles.vybeSentText}>Vybe sent 🔥</Text>
+        </Animated.View>
+      )}
+
+      {/* Star / follow confirmation pill */}
+      {starPill && (
+        <Animated.View
+          entering={FadeIn.duration(200)}
+          exiting={FadeOut.duration(300)}
+          style={styles.vybeSentPill}
+          pointerEvents="none"
+        >
+          <Text style={styles.vybeSentText}>Followed ⭐</Text>
         </Animated.View>
       )}
 

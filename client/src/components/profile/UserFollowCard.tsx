@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
 import { Image } from 'expo-image'
-import { MoreVertical, MapPin } from 'lucide-react-native'
+import { MoreVertical } from 'lucide-react-native'
 import { router } from 'expo-router'
 import { Colors, FontFamily } from '@/constants'
 import type { FollowUser } from '@/api/apiService'
@@ -24,55 +24,46 @@ export function UserFollowCard({ user, type, isMyProfile, onFollow, onUnfollow, 
   const handleAction = async (fn: () => void) => {
     setActionLoading(true)
     fn()
-    // optimistic — loading clears on re-render from parent state update
     setTimeout(() => setActionLoading(false), 600)
   }
 
   const renderButton = () => {
     if (user.is_me) return null
 
-    // My profile → followers list: Remove button
     if (isMyProfile && type === 'followers') {
       return (
         <Pressable
-          style={[s.btn, s.btnRemove]}
-          onPress={() => handleAction(() => onRemove(user.id))}
-          disabled={actionLoading}
+          style={[s.btn, s.btnOutline]}
+          android_ripple={{ color: 'rgba(255,255,255,0.06)' }}
+          onPress={() => onRemove(user.id)}
         >
-          {actionLoading
-            ? <ActivityIndicator size="small" color={Colors.inkSecondary} />
-            : <Text style={s.btnRemoveText}>Remove</Text>
-          }
+          <Text style={s.btnOutlineText}>Remove</Text>
         </Pressable>
       )
     }
 
-    // My profile → following list: Unfollow button
     if (isMyProfile && type === 'following') {
       return (
         <Pressable
-          style={[s.btn, s.btnSecondary]}
-          onPress={() => handleAction(() => onUnfollow(user.id))}
-          disabled={actionLoading}
+          style={[s.btn, s.btnOutline]}
+          android_ripple={{ color: 'rgba(255,255,255,0.06)' }}
+          onPress={() => onUnfollow(user.id)}
         >
-          {actionLoading
-            ? <ActivityIndicator size="small" color={Colors.inkPrimary} />
-            : <Text style={s.btnSecondaryText}>Unfollow</Text>
-          }
+          <Text style={s.btnOutlineText}>Unfollow</Text>
         </Pressable>
       )
     }
 
-    // Other user's profile: Follow / Following toggle
     return (
       <Pressable
-        style={[s.btn, user.is_following ? s.btnSecondary : s.btnPrimary]}
+        style={[s.btn, user.is_following ? s.btnOutline : s.btnFill]}
+        android_ripple={{ color: 'rgba(255,255,255,0.06)' }}
         onPress={() => handleAction(() => user.is_following ? onUnfollow(user.id) : onFollow(user.id))}
         disabled={actionLoading}
       >
         {actionLoading
           ? <ActivityIndicator size="small" color={user.is_following ? Colors.inkPrimary : '#fff'} />
-          : <Text style={user.is_following ? s.btnSecondaryText : s.btnPrimaryText}>
+          : <Text style={user.is_following ? s.btnOutlineText : s.btnFillText}>
               {user.is_following ? 'Following' : 'Follow'}
             </Text>
         }
@@ -84,7 +75,7 @@ export function UserFollowCard({ user, type, isMyProfile, onFollow, onUnfollow, 
     <Pressable
       style={s.row}
       onPress={() => router.push(`/(profile)/${user.id}` as any)}
-      android_ripple={{ color: 'rgba(255,255,255,0.05)' }}
+      android_ripple={{ color: 'rgba(255,255,255,0.04)' }}
     >
       {/* Avatar */}
       <View style={s.avatar}>
@@ -97,21 +88,15 @@ export function UserFollowCard({ user, type, isMyProfile, onFollow, onUnfollow, 
 
       {/* Info */}
       <View style={s.info}>
-        <Text style={s.name} numberOfLines={1}>
-          {user.name ?? user.username ?? 'Unnamed'}
+        <Text style={s.username} numberOfLines={1}>
+          {user.username ?? user.name ?? 'user'}
           {user.is_me ? <Text style={s.youBadge}> · You</Text> : null}
         </Text>
-        {user.username ? (
-          <Text style={s.username} numberOfLines={1}>@{user.username}</Text>
+        {user.name ? (
+          <Text style={s.name} numberOfLines={1}>{user.name}</Text>
         ) : null}
         {user.follows_back && type === 'following' ? (
           <Text style={s.followsBack}>Follows you back</Text>
-        ) : null}
-        {user.city ? (
-          <View style={s.cityRow}>
-            <MapPin size={11} color={Colors.inkSecondary} strokeWidth={1.5} />
-            <Text style={s.city} numberOfLines={1}>{user.city}</Text>
-          </View>
         ) : null}
       </View>
 
@@ -123,8 +108,9 @@ export function UserFollowCard({ user, type, isMyProfile, onFollow, onUnfollow, 
             style={s.dotsBtn}
             onPress={() => onDots(user)}
             hitSlop={8}
+            android_ripple={null}
           >
-            <MoreVertical size={18} color={Colors.inkSecondary} strokeWidth={1.5} />
+            <MoreVertical size={17} color={Colors.inkSecondary} strokeWidth={1.5} />
           </Pressable>
         )}
       </View>
@@ -137,13 +123,13 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
+    paddingVertical: 9,
+    gap: 10,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: Colors.elevated,
     overflow: 'hidden',
     alignItems: 'center',
@@ -152,16 +138,16 @@ const s = StyleSheet.create({
   },
   avatarInitial: {
     fontFamily: FontFamily.headingBold,
-    fontSize: 18,
+    fontSize: 17,
     color: Colors.inkSecondary,
   },
   info: {
     flex: 1,
-    gap: 2,
+    gap: 1,
   },
-  name: {
+  username: {
     fontFamily: FontFamily.bodySemiBold,
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.inkPrimary,
   },
   youBadge: {
@@ -169,7 +155,7 @@ const s = StyleSheet.create({
     fontSize: 12,
     color: Colors.inkSecondary,
   },
-  username: {
+  name: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 12,
     color: Colors.inkSecondary,
@@ -180,63 +166,42 @@ const s = StyleSheet.create({
     color: Colors.brandOrange,
     marginTop: 1,
   },
-  cityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    marginTop: 1,
-  },
-  city: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 11,
-    color: Colors.inkSecondary,
-  },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
     flexShrink: 0,
   },
   btn: {
     paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    minWidth: 80,
+    paddingVertical: 6,
+    borderRadius: 8,
+    minWidth: 82,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 34,
+    minHeight: 32,
   },
-  btnPrimary: {
+  btnFill: {
     backgroundColor: Colors.brandOrange,
   },
-  btnPrimaryText: {
+  btnFillText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
     color: '#fff',
   },
-  btnSecondary: {
+  btnOutline: {
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: Colors.divider,
   },
-  btnSecondaryText: {
+  btnOutlineText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
     color: Colors.inkPrimary,
   },
-  btnRemove: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: 'rgba(255,56,100,0.4)',
-  },
-  btnRemoveText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 13,
-    color: Colors.brandCoral,
-  },
   dotsBtn: {
-    width: 32,
-    height: 32,
+    width: 30,
+    height: 30,
     alignItems: 'center',
     justifyContent: 'center',
   },
