@@ -44,6 +44,7 @@
     "react-native": "0.85.3",
     "react-native-fast-confetti": "^2.0.0",
     "react-native-gesture-handler": "~2.31.1",
+    "react-native-keyboard-controller": "^1.21.12",
     "react-native-maps": "1.27.2",
     "react-native-qrcode-svg": "^6.3.21",
     "react-native-reanimated": "~4.3.1",

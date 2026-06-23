@@ -5,14 +5,13 @@ import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { router } from 'expo-router'
 import { X, Flame, Check } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
-import { VybeIcebreakerModal } from './VybeIcebreakerModal'
 import type { VybeRequest } from '@/api/apiService'
 
 interface Props {
   visible: boolean
   requests: VybeRequest[]
   loading?: boolean
-  onAccept: (vibeId: string, icebreaker: string) => void
+  onBeginAccept: (vibeId: string, senderName: string | null) => void
   onPass: (vibeId: string) => void
   onClose: () => void
 }
@@ -21,54 +20,45 @@ function renderBackdrop(props: BottomSheetBackdropProps) {
   return <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close" opacity={0.65} />
 }
 
-function RequestCard({ req, onAccept, onPass }: { req: VybeRequest; onAccept: (id: string, ice: string) => void; onPass: (id: string) => void }) {
-  const [icebreakerOpen, setIcebreakerOpen] = useState(false)
-  const [actioned, setActioned] = useState<'accepted' | 'passed' | null>(null)
+function RequestCard({ req, onBeginAccept, onPass }: { req: VybeRequest; onBeginAccept: (id: string, name: string | null) => void; onPass: (id: string) => void }) {
+  const [actioned, setActioned] = useState<'pending' | 'passed' | null>(null)
   const avatar = req.photos[0]?.url
 
   return (
-    <>
-      <View style={[s.card, actioned && s.cardActioned]}>
-        <Pressable style={s.cardLeft} onPress={() => router.push(`/(profile)/${req.sender_id}` as any)}>
-          {avatar ? (
-            <Image source={{ uri: avatar }} style={s.cardAvatar} />
-          ) : (
-            <View style={[s.cardAvatar, s.cardAvatarFallback]}>
-              <Text style={s.cardAvatarInitial}>{(req.name ?? '?').charAt(0)}</Text>
-            </View>
-          )}
-          <View style={s.cardInfo}>
-            <Text style={s.cardName} numberOfLines={1}>{req.name ?? 'Someone'}</Text>
-            {req.city ? <Text style={s.cardCity} numberOfLines={1}>{req.city}</Text> : null}
-            <Text style={s.cardMsg} numberOfLines={2}>"{req.message}"</Text>
-          </View>
-        </Pressable>
-        {actioned === 'accepted' ? (
-          <View style={s.actionedBadge}><Check size={14} color="#4CAF50" strokeWidth={2.5} /><Text style={s.actionedText}>Accepted</Text></View>
-        ) : actioned === 'passed' ? (
-          <View style={[s.actionedBadge, s.actionedBadgePassed]}><Text style={s.actionedText}>Passed</Text></View>
+    <View style={[s.card, actioned && s.cardActioned]}>
+      <Pressable style={s.cardLeft} onPress={() => router.push(`/(profile)/${req.sender_id}` as any)}>
+        {avatar ? (
+          <Image source={{ uri: avatar }} style={s.cardAvatar} />
         ) : (
-          <View style={s.cardActions}>
-            <Pressable style={s.passBtn} onPress={() => { setActioned('passed'); onPass(req.id) }}>
-              <X size={18} color={Colors.inkSecondary} strokeWidth={2} />
-            </Pressable>
-            <Pressable style={s.acceptBtn} onPress={() => setIcebreakerOpen(true)}>
-              <Flame size={16} color="#111" fill="#111" />
-            </Pressable>
+          <View style={[s.cardAvatar, s.cardAvatarFallback]}>
+            <Text style={s.cardAvatarInitial}>{(req.name ?? '?').charAt(0)}</Text>
           </View>
         )}
-      </View>
-      <VybeIcebreakerModal
-        visible={icebreakerOpen}
-        partnerName={req.name}
-        onSend={(ice) => { setIcebreakerOpen(false); setActioned('accepted'); onAccept(req.id, ice) }}
-        onClose={() => setIcebreakerOpen(false)}
-      />
-    </>
+        <View style={s.cardInfo}>
+          <Text style={s.cardName} numberOfLines={1}>{req.name ?? 'Someone'}</Text>
+          {req.city ? <Text style={s.cardCity} numberOfLines={1}>{req.city}</Text> : null}
+          <Text style={s.cardMsg} numberOfLines={2}>"{req.message}"</Text>
+        </View>
+      </Pressable>
+      {actioned === 'pending' ? (
+        <View style={s.actionedBadge}><Check size={14} color="#4CAF50" strokeWidth={2.5} /><Text style={s.actionedText}>Accepting…</Text></View>
+      ) : actioned === 'passed' ? (
+        <View style={[s.actionedBadge, s.actionedBadgePassed]}><Text style={s.actionedText}>Passed</Text></View>
+      ) : (
+        <View style={s.cardActions}>
+          <Pressable style={s.passBtn} onPress={() => { setActioned('passed'); onPass(req.id) }}>
+            <X size={18} color={Colors.inkSecondary} strokeWidth={2} />
+          </Pressable>
+          <Pressable style={s.acceptBtn} onPress={() => { setActioned('pending'); onBeginAccept(req.id, req.name) }}>
+            <Flame size={16} color="#111" fill="#111" />
+          </Pressable>
+        </View>
+      )}
+    </View>
   )
 }
 
-function VybeInboxSheetCore({ requests, loading, onAccept, onPass, onClose }: Omit<Props, 'visible'>) {
+function VybeInboxSheetCore({ requests, loading, onBeginAccept, onPass, onClose }: Omit<Props, 'visible'>) {
   const sheetRef = useRef<BottomSheetModal>(null)
 
   useEffect(() => { sheetRef.current?.present() }, [])
@@ -121,7 +111,7 @@ function VybeInboxSheetCore({ requests, loading, onAccept, onPass, onClose }: Om
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={Header}
           ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-          renderItem={({ item }) => <RequestCard req={item} onAccept={onAccept} onPass={onPass} />}
+          renderItem={({ item }) => <RequestCard req={item} onBeginAccept={onBeginAccept} onPass={onPass} />}
         />
       )}
     </BottomSheetModal>

@@ -64,7 +64,7 @@ export default function UserProfileScreen() {
       .then(p => {
         setProfile(p)
         setFollowing(!!p.is_following)
-        setVybeSent(p.vybe_status === 'pending' || isSentTo(p.id))
+        setVybeSent((p.vybe_status === 'pending' && !!p.vybe_sent_by_me) || isSentTo(p.id))
         setBlockedByMe(!!p.is_blocked_by_me)
         if (p.voice_url) voicePlayer.replace({ uri: p.voice_url })
       })
@@ -109,10 +109,6 @@ export default function UserProfileScreen() {
       showPill('Could not accept vybe', 'error')
     }
   }
-
-  useEffect(() => {
-    return () => { voicePlayer.pause() }
-  }, [])
 
   const handleBlock = async () => {
     if (!profile) return

@@ -1,18 +1,32 @@
 import asyncio
 import json
-import os
-from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from typing import Optional
 from middleware.auth import get_current_user
 from db.config import get_db
-from jose import jwt, JWTError
+from utils.jwt import decode_token
 
 router = APIRouter(tags=["chat"])
 
-JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-change-in-production")
-JWT_ALGORITHM = "HS256"
+# ── In-memory socket registry (fallback when Redis is unavailable) ────────────
+
+_conv_sockets: dict[str, set] = {}
+
+
+async def _broadcast_local(conv_id: str, data: dict, exclude=None) -> None:
+    """Broadcast directly to every WS in this conversation except the sender."""
+    room = _conv_sockets.get(conv_id, set())
+    dead = set()
+    for ws in list(room):
+        if ws is exclude:
+            continue
+        try:
+            await ws.send_text(json.dumps(data))
+        except Exception:
+            dead.add(ws)
+    room -= dead
+
 
 # ── Redis helpers ─────────────────────────────────────────────────────────────
 
@@ -42,14 +56,11 @@ async def _publish(channel: str, data: dict) -> None:
 # ── Auth helper for WebSocket ─────────────────────────────────────────────────
 
 def _user_from_token(token: str) -> dict:
-    try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        user_id: str = payload.get("sub")
-        if not user_id:
-            raise ValueError("no sub")
-        return {"id": user_id}
-    except (JWTError, Exception):
+    payload = decode_token(token)
+    user_id = payload.get("sub") if payload else None
+    if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token")
+    return {"id": user_id}
 
 
 # ── Pydantic models ───────────────────────────────────────────────────────────
@@ -312,6 +323,9 @@ async def chat_websocket(
 
     await websocket.accept()
 
+    # Register this socket for direct in-memory broadcast
+    _conv_sockets.setdefault(conv_id, set()).add(websocket)
+
     r = await _get_redis()
 
     async def redis_listener():
@@ -359,7 +373,13 @@ async def chat_websocket(
                     await r.set(f"online:{uid}", "1", ex=35)
 
             elif msg_type == "typing":
-                payload = {"type": "typing", "user_id": uid, "is_typing": data.get("is_typing", False)}
+                payload = {
+                    "type": "typing",
+                    "user_id": uid,
+                    "is_typing": data.get("is_typing", False),
+                    "mode": data.get("mode", "text"),
+                }
+                await _broadcast_local(conv_id, payload, exclude=websocket)
                 await _publish(f"conv:{conv_id}", payload)
 
             elif msg_type == "read":
@@ -419,13 +439,16 @@ async def chat_websocket(
                 }
                 # Echo back to sender immediately
                 await websocket.send_text(json.dumps(out))
-                # Broadcast to partner via Redis
+                # Broadcast to partner — in-memory first (always works), Redis as fallback for multi-server
+                await _broadcast_local(conv_id, out, exclude=websocket)
                 await _publish(f"conv:{conv_id}", out)
 
     except (WebSocketDisconnect, Exception):
         pass
     finally:
         listener_task.cancel()
+        # Deregister from in-memory room
+        _conv_sockets.get(conv_id, set()).discard(websocket)
         if r:
             try:
                 await r.delete(f"online:{uid}")

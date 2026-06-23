@@ -6,7 +6,7 @@ import {
 import { router } from 'expo-router'
 import { Search, MessageCircle, Flame, RefreshCw } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { VybeInboxSheet } from '@/components/ui'
+import { VybeInboxSheet, VybeIcebreakerModal } from '@/components/ui'
 import { usePillStore } from '@/store/pillStore'
 import { useConversations } from '@/hooks/useConversations'
 import { Colors, FontFamily } from '@/constants'
@@ -86,6 +86,7 @@ export default function ChatScreen() {
   const [search, setSearch] = useState('')
   const [inboxOpen, setInboxOpen] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  const [pendingAccept, setPendingAccept] = useState<{ vibeId: string; name: string | null } | null>(null)
 
   const showPill = usePillStore(s => s.show)
 
@@ -220,12 +221,9 @@ export default function ChatScreen() {
       <VybeInboxSheet
         visible={inboxOpen}
         requests={pendingVibes}
-        onAccept={async (vibeId, icebreaker) => {
-          try {
-            await acceptVybe(vibeId, icebreaker)
-          } catch {
-            showPill('Could not accept vybe', 'error')
-          }
+        onBeginAccept={(vibeId, name) => {
+          setInboxOpen(false)
+          setPendingAccept({ vibeId, name })
         }}
         onPass={async (vibeId) => {
           try {
@@ -235,6 +233,22 @@ export default function ChatScreen() {
           }
         }}
         onClose={() => setInboxOpen(false)}
+      />
+
+      <VybeIcebreakerModal
+        visible={!!pendingAccept}
+        partnerName={pendingAccept?.name ?? null}
+        onSend={async (icebreaker) => {
+          if (!pendingAccept) return
+          const { vibeId } = pendingAccept
+          setPendingAccept(null)
+          try {
+            await acceptVybe(vibeId, icebreaker)
+          } catch {
+            showPill('Could not accept vybe', 'error')
+          }
+        }}
+        onClose={() => setPendingAccept(null)}
       />
     </View>
   )

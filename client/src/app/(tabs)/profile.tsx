@@ -35,10 +35,6 @@ export default function ProfileScreen() {
     if (status.playing) { player.pause() } else { player.seekTo(0); player.play() }
   }
 
-  useEffect(() => {
-    return () => { player.pause() }
-  }, [])
-
   if (loading) {
     return (
       <View style={styles.loader}>

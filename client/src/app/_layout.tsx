@@ -1,7 +1,11 @@
 import '../../global.css'
 import { useEffect, useState } from 'react'
 import { StyleSheet } from 'react-native'
+import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated'
+
+configureReanimatedLogger({ level: ReanimatedLogLevel.warn, strict: false })
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
 import { Slot, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
@@ -95,11 +99,13 @@ export default function RootLayout() {
   // SplashScreen covers the UI while fonts + auth bootstrap; hiding it is handled above.
   return (
     <GestureHandlerRootView style={styles.root}>
+      <KeyboardProvider>
       <BottomSheetModalProvider>
         <StatusBar style="light" />
         <AuthGuard ready={authReady && (fontsLoaded || !!fontError)} />
         <PillOverlay />
       </BottomSheetModalProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   )
 }

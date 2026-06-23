@@ -212,7 +212,7 @@ export interface Message {
   conversation_id: string
   sender_id: string
   content: string | null
-  content_type: 'text' | 'event' | 'profile' | 'image'
+  content_type: 'text' | 'event' | 'profile' | 'image' | 'voice'
   metadata: Record<string, any> | null
   sent_at: string
   read_at: string | null

@@ -7,18 +7,22 @@ export function useChat(conversationId: string) {
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
   const [isPartnerTyping, setIsPartnerTyping] = useState(false)
+  const [isPartnerRecording, setIsPartnerRecording] = useState(false)
   const [isPartnerOnline, setIsPartnerOnline] = useState(false)
   const [isWsConnected, setIsWsConnected] = useState(false)
+  const [wsError, setWsError] = useState<string | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
   const retryCountRef = useRef(0)
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingTempIds = useRef<Set<string>>(new Set())
+  const noMoreRef = useRef(false)
   const isBackgrounded = useRef(false)
   const myId = useAuthStore.getState().userId
 
   // Initial load + mark read
   useEffect(() => {
+    noMoreRef.current = false
     ApiService.getMessages(conversationId)
       .then(msgs => {
         setMessages(msgs)
@@ -30,6 +34,12 @@ export function useChat(conversationId: string) {
 
   const connect = useCallback(() => {
     if (isBackgrounded.current) return
+    // Guard: don't create a second connection if one is already live
+    const existing = wsRef.current
+    if (existing && (existing.readyState === WebSocket.OPEN || existing.readyState === WebSocket.CONNECTING)) {
+      return
+    }
+
     const { accessToken } = useAuthStore.getState()
     if (!accessToken || !conversationId) return
 
@@ -57,14 +67,28 @@ export function useChat(conversationId: string) {
               }
             }
             if (prev.some(m => m.id === data.id)) return prev
+            // Incoming message from partner — mark read immediately via WS
+            if (data.sender_id !== myId) {
+              const liveWs = wsRef.current
+              if (liveWs && liveWs.readyState === WebSocket.OPEN) {
+                liveWs.send(JSON.stringify({ type: 'read' }))
+              }
+            }
             return [data as Message, ...prev]
           })
+        } else if (data.type === 'error') {
+          if (data.code === 'blocked') setWsError('blocked')
         } else if (data.type === 'typing') {
           if (data.user_id !== myId) {
-            setIsPartnerTyping(!!data.is_typing)
-            if (data.is_typing) {
-              if (typingTimerRef.current) clearTimeout(typingTimerRef.current)
-              typingTimerRef.current = setTimeout(() => setIsPartnerTyping(false), 3000)
+            const mode: string = data.mode ?? 'text'
+            if (mode === 'voice') {
+              setIsPartnerRecording(!!data.is_typing)
+            } else {
+              setIsPartnerTyping(!!data.is_typing)
+              if (data.is_typing) {
+                if (typingTimerRef.current) clearTimeout(typingTimerRef.current)
+                typingTimerRef.current = setTimeout(() => setIsPartnerTyping(false), 3000)
+              }
             }
           }
         } else if (data.type === 'online') {
@@ -146,25 +170,40 @@ export function useChat(conversationId: string) {
     }
   }, [])
 
-  const loadMore = useCallback(async () => {
-    if (messages.length === 0) return
+  const sendVoiceTyping = useCallback((isRecording: boolean) => {
+    const ws = wsRef.current
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'typing', is_typing: isRecording, mode: 'voice' }))
+    }
+  }, [])
+
+  const loadMore = useCallback(async (): Promise<boolean> => {
+    if (messages.length === 0 || noMoreRef.current) return false
     const oldest = messages[messages.length - 1]
     try {
       const older = await ApiService.getMessages(conversationId, oldest.sent_at)
       if (older.length > 0) {
         setMessages(prev => [...prev, ...older])
+        return true
       }
-    } catch {}
+      noMoreRef.current = true
+      return false
+    } catch {
+      return false
+    }
   }, [conversationId, messages])
 
   return {
     messages,
     isPartnerTyping,
+    isPartnerRecording,
     isPartnerOnline,
     isWsConnected,
+    wsError,
     loading,
     sendMessage,
     sendTyping,
+    sendVoiceTyping,
     loadMore,
   }
 }
