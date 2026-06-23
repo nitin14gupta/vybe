@@ -11,6 +11,7 @@ export function useChat(conversationId: string) {
   const [isPartnerOnline, setIsPartnerOnline] = useState(false)
   const [isWsConnected, setIsWsConnected] = useState(false)
   const [wsError, setWsError] = useState<string | null>(null)
+  const [partnerSeenAt, setPartnerSeenAt] = useState<string | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
   const retryCountRef = useRef(0)
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -28,9 +29,24 @@ export function useChat(conversationId: string) {
         setMessages(msgs)
         setLoading(false)
         ApiService.markRead(conversationId).catch(() => {})
+        // Initialise partnerSeenAt from the first message I sent that has been read
+        const firstRead = msgs.find(msg => msg.sender_id === myId && msg.read_at != null)
+        if (firstRead) {
+          setPartnerSeenAt(firstRead.read_at)
+        }
       })
       .catch(() => setLoading(false))
   }, [conversationId])
+
+  const applyReactionUpdate = useCallback((messageId: string, userId: string, emoji: string | null) => {
+    setMessages(prev => prev.map(m => {
+      if (m.id !== messageId) return m
+      const curr = { ...(m.reactions ?? {}) }
+      if (emoji) curr[userId] = emoji
+      else delete curr[userId]
+      return { ...m, reactions: Object.keys(curr).length > 0 ? curr : null }
+    }))
+  }, [])
 
   const connect = useCallback(() => {
     if (isBackgrounded.current) return
@@ -93,6 +109,12 @@ export function useChat(conversationId: string) {
           }
         } else if (data.type === 'online') {
           setIsPartnerOnline(!!data.is_online)
+        } else if (data.type === 'read') {
+          if (data.user_id !== myId) {
+            setPartnerSeenAt(new Date().toISOString())
+          }
+        } else if (data.type === 'reaction') {
+          applyReactionUpdate(data.message_id, data.user_id, data.emoji ?? null)
         }
       } catch {}
     }
@@ -109,7 +131,7 @@ export function useChat(conversationId: string) {
     ws.onerror = () => {}
 
     wsRef.current = ws
-  }, [conversationId, myId])
+  }, [conversationId, myId, applyReactionUpdate])
 
   // Pause reconnection when app goes to background; resume + reconnect on foreground
   useEffect(() => {
@@ -152,6 +174,7 @@ export function useChat(conversationId: string) {
         metadata: metadata ?? null,
         sent_at: new Date().toISOString(),
         read_at: null,
+        reactions: null,
       }
       pendingTempIds.current.add(tempId)
       setMessages(prev => [optimistic, ...prev])
@@ -193,6 +216,14 @@ export function useChat(conversationId: string) {
     }
   }, [conversationId, messages])
 
+  const reactToMessage = useCallback((msgId: string, emoji: string | null): void => {
+    const ws = wsRef.current
+    if (!ws || ws.readyState !== WebSocket.OPEN) return
+    ws.send(JSON.stringify({ type: 'reaction', message_id: msgId, emoji }))
+    // Optimistic update using myId as the key
+    applyReactionUpdate(msgId, myId ?? '', emoji)
+  }, [myId, applyReactionUpdate])
+
   return {
     messages,
     isPartnerTyping,
@@ -201,9 +232,11 @@ export function useChat(conversationId: string) {
     isWsConnected,
     wsError,
     loading,
+    partnerSeenAt,
     sendMessage,
     sendTyping,
     sendVoiceTyping,
     loadMore,
+    reactToMessage,
   }
 }

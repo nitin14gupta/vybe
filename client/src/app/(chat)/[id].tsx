@@ -1,13 +1,19 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, forwardRef, useMemo } from 'react'
 import {
   View, Text, StyleSheet, FlatList, Pressable, TextInput,
-  Image, Platform, ActivityIndicator,
+  Image, ActivityIndicator,
+  type ScrollViewProps, type LayoutChangeEvent,
 } from 'react-native'
-import Animated, { useAnimatedStyle } from 'react-native-reanimated'
-import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller'
+import { useSharedValue, withTiming } from 'react-native-reanimated'
+import {
+  KeyboardChatScrollView,
+  KeyboardGestureArea,
+  KeyboardStickyView,
+  type KeyboardChatScrollViewProps,
+} from 'react-native-keyboard-controller'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router'
 import { ChevronLeft, MoreVertical, Send, Trash2, Mic, Square, Play, Pause } from 'lucide-react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   useAudioRecorder, useAudioRecorderState,
   useAudioPlayer, useAudioPlayerStatus,
@@ -20,13 +26,89 @@ import { usePillStore } from '@/store/pillStore'
 import ApiService, { Message } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
 
+const MARGIN = 8
+const MIN_INPUT_HEIGHT = 44
+
+// ── Date separator helpers ────────────────────────────────────────────────────
+
+type ListItem = Message | { type: 'date_sep'; label: string; id: string }
+
+function getDateLabel(dateStr: string): string {
+  const d = new Date(dateStr)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1)
+  const msgDay = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+
+  if (msgDay.getTime() === today.getTime()) return 'Today'
+  if (msgDay.getTime() === yesterday.getTime()) return 'Yesterday'
+  return d.toLocaleDateString('en-US', {
+    month: 'long', day: 'numeric',
+    ...(d.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}),
+  })
+}
+
+// messages is newest-first; insert a date label above each day group
+function buildListData(messages: Message[]): ListItem[] {
+  const result: ListItem[] = []
+  for (let i = 0; i < messages.length; i++) {
+    result.push(messages[i])
+    const curr = new Date(messages[i].sent_at).toDateString()
+    const next = i + 1 < messages.length ? new Date(messages[i + 1].sent_at).toDateString() : null
+    if (curr !== next) {
+      result.push({ type: 'date_sep', label: getDateLabel(messages[i].sent_at), id: `sep_${messages[i].id}` })
+    }
+  }
+  return result
+}
+
+function DateSeparator({ label }: { label: string }) {
+  return (
+    <View style={ds.wrap}>
+      <View style={ds.line} />
+      <Text style={ds.label}>{label}</Text>
+      <View style={ds.line} />
+    </View>
+  )
+}
+
+const ds = StyleSheet.create({
+  wrap: { flexDirection: 'row', alignItems: 'center', marginVertical: 16, marginHorizontal: 16 },
+  line: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.1)' },
+  label: {
+    fontFamily: FontFamily.bodyRegular, fontSize: 11,
+    color: 'rgba(255,255,255,0.35)',
+    marginHorizontal: 10, letterSpacing: 0.5,
+  },
+})
+
+// ── FlatList scroll component — wraps KeyboardChatScrollView ──────────────────
+// Defined outside the screen so the reference is stable across renders.
+
+type ChatScrollRef = React.ElementRef<typeof KeyboardChatScrollView>
+type ChatScrollProps = ScrollViewProps & KeyboardChatScrollViewProps
+
+const ChatScrollView = forwardRef<ChatScrollRef, ChatScrollProps>(
+  ({ inverted, ...props }, ref) => {
+    const { bottom } = useSafeAreaInsets()
+    return (
+      <KeyboardChatScrollView
+        ref={ref}
+        automaticallyAdjustContentInsets={false}
+        contentInsetAdjustmentBehavior="never"
+        keyboardDismissMode="interactive"
+        offset={bottom - MARGIN}
+        inverted={inverted}
+        {...props}
+      />
+    )
+  }
+)
+
 // ── Voice message bubble ──────────────────────────────────────────────────────
 
 function VoiceBubble({ url, duration, isMine, sentAt }: {
-  url: string
-  duration?: number
-  isMine: boolean
-  sentAt: string
+  url: string; duration?: number; isMine: boolean; sentAt: string
 }) {
   const player = useAudioPlayer(null)
   const status = useAudioPlayerStatus(player)
@@ -37,9 +119,8 @@ function VoiceBubble({ url, duration, isMine, sentAt }: {
     if (status.playing) { player.pause() } else { player.seekTo(0); player.play() }
   }
 
-  const durationStr = duration
-    ? `${Math.floor(duration / 60)}:${String(duration % 60).padStart(2, '0')}`
-    : '0:00'
+  const dur = duration ?? 0
+  const durationStr = `${Math.floor(dur / 60)}:${String(dur % 60).padStart(2, '0')}`
 
   return (
     <View style={[s.bubbleWrap, isMine ? s.bubbleWrapMine : s.bubbleWrapTheirs]}>
@@ -64,7 +145,7 @@ function VoiceBubble({ url, duration, isMine, sentAt }: {
   )
 }
 
-// ── Message bubble ────────────────────────────────────────────────────────────
+// ── Message bubbles ───────────────────────────────────────────────────────────
 
 function MsgBubble({ msg, isMine }: { msg: Message; isMine: boolean }) {
   if (msg.content_type === 'voice' && msg.metadata?.url) {
@@ -120,7 +201,9 @@ function ProfileCard({ metadata, isMine, sentAt }: { metadata: Record<string, an
         <View style={s.profileCardRow}>
           {metadata.avatar_url
             ? <Image source={{ uri: metadata.avatar_url }} style={s.profileAvatar} />
-            : <View style={[s.profileAvatar, s.profileAvatarFallback]}><Text style={s.profileAvatarInitial}>{(metadata.name ?? '?').charAt(0)}</Text></View>
+            : <View style={[s.profileAvatar, s.profileAvatarFallback]}>
+                <Text style={s.profileAvatarInitial}>{(metadata.name ?? '?').charAt(0)}</Text>
+              </View>
           }
           <View style={{ flex: 1 }}>
             <Text style={s.richCardTitle}>{metadata.name}</Text>
@@ -168,7 +251,7 @@ function VoiceIndicator() {
   )
 }
 
-// ── Chat screen ───────────────────────────────────────────────────────────────
+// ── Screen ────────────────────────────────────────────────────────────────────
 
 type RecordState = 'idle' | 'recording' | 'sending'
 
@@ -180,13 +263,13 @@ function formatRecordTime(ms: number): string {
 export default function ChatDetailScreen() {
   const { id: convId } = useLocalSearchParams<{ id: string }>()
   const insets = useSafeAreaInsets()
-  const myId = useAuthStore(s => s.userId)
-  const flatRef = useRef<FlatList>(null)
+  const myId = useAuthStore(st => st.userId)
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const recordAutoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const recordStartRef = useRef(0)
 
   const [inputText, setInputText] = useState('')
+  const [inputBarHeight, setInputBarHeight] = useState(MIN_INPUT_HEIGHT)
   const [partnerName, setPartnerName] = useState<string | null>(null)
   const [partnerUsername, setPartnerUsername] = useState<string | null>(null)
   const [partnerAvatar, setPartnerAvatar] = useState<string | null>(null)
@@ -196,30 +279,29 @@ export default function ChatDetailScreen() {
   const [reportOpen, setReportOpen] = useState(false)
   const [recordState, setRecordState] = useState<RecordState>('idle')
 
+  // Tracks how much the multiline input has grown above its baseline height
+  const extraContentPadding = useSharedValue(0)
+
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY)
   const recorderState = useAudioRecorderState(recorder, 250)
-
-  // ── Keyboard animation (react-native-keyboard-controller) ─────────────────
-  // `height` goes from 0 → negative keyboard height as keyboard opens
-  const { height: kbHeight } = useReanimatedKeyboardAnimation()
-
-  // Spacer at the bottom expands to push content up as keyboard opens — no KAV needed
-  const kbSpacerStyle = useAnimatedStyle(() => ({
-    height: Math.abs(kbHeight.value),
-  }))
-
-  // Input bar bottom padding: safe-area inset when keyboard closed, none when open
-  const insetsBottom = insets.bottom
-  const inputPadStyle = useAnimatedStyle(() => ({
-    paddingBottom: Math.abs(kbHeight.value) > 0 ? 0 : insetsBottom,
-  }))
 
   const {
     messages, isPartnerTyping, isPartnerRecording, isPartnerOnline,
     isWsConnected, wsError, loading,
     sendMessage, sendTyping, sendVoiceTyping, loadMore,
   } = useChat(convId)
-  const showPill = usePillStore(s => s.show)
+  const showPill = usePillStore(st => st.show)
+
+  // renderScrollComponent must be stable — useCallback with SharedValue dep (ref-stable)
+  const renderScrollComponent = useCallback(
+    (props: ScrollViewProps) => (
+      <ChatScrollView {...props} extraContentPadding={extraContentPadding} />
+    ),
+    [extraContentPadding]
+  )
+
+  // opened offset: when keyboard is open the sticky view sits MARGIN above safe area
+  const stickyOffset = useMemo(() => ({ opened: insets.bottom - MARGIN }), [insets.bottom])
 
   useEffect(() => {
     if (wsError === 'blocked') setBlockStatus(prev => prev === 'none' ? 'they_blocked' : prev)
@@ -247,12 +329,8 @@ export default function ChatDetailScreen() {
     if (!text) return
     setInputText('')
     sendTyping(false)
-    try {
-      await sendMessage(text)
-    } catch {
-      setInputText(text)
-      showPill('Message failed to send', 'error')
-    }
+    try { await sendMessage(text) }
+    catch { setInputText(text); showPill('Message failed to send', 'error') }
   }, [inputText, sendMessage, sendTyping, showPill])
 
   const handleTextChange = useCallback((t: string) => {
@@ -264,6 +342,13 @@ export default function ChatDetailScreen() {
     }
   }, [sendTyping])
 
+  // Tracks input growth for KeyboardGestureArea + extraContentPadding
+  const handleInputLayout = useCallback((e: LayoutChangeEvent) => {
+    const h = e.nativeEvent.layout.height
+    setInputBarHeight(h)
+    extraContentPadding.value = withTiming(Math.max(h - MIN_INPUT_HEIGHT, 0), { duration: 200 })
+  }, [extraContentPadding])
+
   const handleRecordStop = useCallback(async () => {
     if (recordAutoStopRef.current) clearTimeout(recordAutoStopRef.current)
     sendVoiceTyping(false)
@@ -271,13 +356,11 @@ export default function ChatDetailScreen() {
     try {
       await recorder.stop()
       const uri = recorder.uri
-      if (!uri) throw new Error('No recording URI')
+      if (!uri) throw new Error('No URI')
       const url = await ApiService.uploadVoice(uri)
       const duration = Math.round((Date.now() - recordStartRef.current) / 1000)
       await sendMessage('', 'voice', { url, duration })
-    } catch {
-      showPill('Failed to send voice message', 'error')
-    }
+    } catch { showPill('Failed to send voice message', 'error') }
     try { await setAudioModeAsync({ allowsRecording: false }) } catch {}
     setRecordState('idle')
   }, [recorder, sendMessage, sendVoiceTyping, showPill])
@@ -293,9 +376,7 @@ export default function ChatDetailScreen() {
       sendVoiceTyping(true)
       setRecordState('recording')
       recordAutoStopRef.current = setTimeout(() => handleRecordStop(), 120_000)
-    } catch {
-      showPill('Could not start recording', 'error')
-    }
+    } catch { showPill('Could not start recording', 'error') }
   }, [recorder, sendVoiceTyping, handleRecordStop, showPill])
 
   const handleRecordCancel = useCallback(async () => {
@@ -327,26 +408,31 @@ export default function ChatDetailScreen() {
     catch { showPill('Could not submit report', 'error') }
   }, [partnerId, showPill])
 
-  const renderItem = useCallback(({ item }: { item: Message }) => (
-    <MsgBubble msg={item} isMine={item.sender_id === myId} />
-  ), [myId])
+  const listData = useMemo(() => buildListData(messages), [messages])
+
+  const renderItem = useCallback(({ item }: { item: ListItem }) => {
+    if ('type' in item && item.type === 'date_sep') return <DateSeparator label={item.label} />
+    const msg = item as Message
+    return <MsgBubble msg={msg} isMine={msg.sender_id === myId} />
+  }, [myId])
 
   const listHeader = isPartnerRecording
     ? <VoiceIndicator />
     : isPartnerTyping ? <TypingIndicator /> : null
 
-  // ── Render input area based on state ──────────────────────────────────────
-  const renderInputArea = () => {
+  // ── Input bar content ────────────────────────────────────────────────────
+
+  const renderInputContent = () => {
     if (blockStatus === 'they_blocked') {
       return (
-        <Animated.View style={[s.blockNotice, inputPadStyle]}>
+        <View style={s.blockNotice}>
           <Text style={s.blockNoticeText}>You can't message this person.</Text>
-        </Animated.View>
+        </View>
       )
     }
     if (blockStatus === 'i_blocked') {
       return (
-        <Animated.View style={[s.blockBar, inputPadStyle]}>
+        <View style={s.blockBar}>
           <Text style={s.blockBarText}>You blocked this person.</Text>
           <View style={s.blockBtnRow}>
             <Pressable style={s.unblockBtn} onPress={handleUnblock}>
@@ -357,12 +443,12 @@ export default function ChatDetailScreen() {
               <Text style={s.deleteBtnText}>Delete Chat</Text>
             </Pressable>
           </View>
-        </Animated.View>
+        </View>
       )
     }
     if (recordState === 'recording') {
       return (
-        <Animated.View style={[s.recordBar, inputPadStyle]}>
+        <View style={s.recordBar}>
           <Pressable style={s.recordCancelBtn} onPress={handleRecordCancel} hitSlop={8}>
             <Text style={s.recordCancelText}>Cancel</Text>
           </Pressable>
@@ -373,24 +459,26 @@ export default function ChatDetailScreen() {
           <Pressable style={s.recordStopBtn} onPress={handleRecordStop}>
             <Square size={16} color="#111" strokeWidth={0} fill="#111" />
           </Pressable>
-        </Animated.View>
+        </View>
       )
     }
     if (recordState === 'sending') {
       return (
-        <Animated.View style={[s.recordBar, inputPadStyle]}>
+        <View style={s.recordBar}>
           <ActivityIndicator size="small" color={Colors.brandOrange} />
           <Text style={s.sendingText}>Sending voice…</Text>
-        </Animated.View>
+        </View>
       )
     }
     return (
-      <Animated.View style={[s.inputBar, inputPadStyle]}>
+      <View style={s.inputBar}>
         <View style={s.inputWrap}>
           <TextInput
+            nativeID="chat-input"
             style={s.textInput}
             value={inputText}
             onChangeText={handleTextChange}
+            onLayout={handleInputLayout}
             placeholder="Type a message..."
             placeholderTextColor={Colors.inkDisabled}
             multiline
@@ -405,25 +493,28 @@ export default function ChatDetailScreen() {
             <Mic size={20} color="#111" strokeWidth={2} />
           </Pressable>
         )}
-      </Animated.View>
+      </View>
     )
   }
 
   return (
     <View style={s.root}>
-      {/* ── Fixed header — never moves with keyboard ────────────── */}
+
+      {/* ── Header — never moves ─────────────────────────────────── */}
       <View style={[s.header, { paddingTop: insets.top + 8 }]}>
         <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
           <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
         </Pressable>
-        <Pressable style={s.headerCenter} onPress={() => partnerId && router.push(`/(profile)/${partnerId}` as any)}>
-          {partnerAvatar ? (
-            <Image source={{ uri: partnerAvatar }} style={s.headerAvatar} />
-          ) : (
-            <View style={[s.headerAvatar, s.headerAvatarFallback]}>
-              <Text style={s.headerAvatarInitial}>{(partnerName ?? '?').charAt(0)}</Text>
-            </View>
-          )}
+        <Pressable
+          style={s.headerCenter}
+          onPress={() => partnerId && router.push(`/(profile)/${partnerId}` as any)}
+        >
+          {partnerAvatar
+            ? <Image source={{ uri: partnerAvatar }} style={s.headerAvatar} />
+            : <View style={[s.headerAvatar, s.headerAvatarFallback]}>
+                <Text style={s.headerAvatarInitial}>{(partnerName ?? '?').charAt(0)}</Text>
+              </View>
+          }
           <View>
             <View style={s.headerNameRow}>
               <Text style={s.headerName}>{partnerName ?? 'Chat'}</Text>
@@ -439,45 +530,51 @@ export default function ChatDetailScreen() {
         </Pressable>
       </View>
 
-      {/* Reconnecting banner */}
       {!isWsConnected && !loading && (
         <View style={s.disconnectBanner}>
           <Text style={s.disconnectBannerText}>Reconnecting…</Text>
         </View>
       )}
 
-      {/* ── Messages list ───────────────────────────────────────── */}
-      {loading ? (
-        <View style={s.center}>
-          <ActivityIndicator color={Colors.brandOrange} />
-        </View>
-      ) : (
-        <FlatList
-          ref={flatRef}
-          style={{ flex: 1 }}
-          data={messages}
-          keyExtractor={m => m.id}
-          renderItem={renderItem}
-          inverted
-          contentContainerStyle={s.msgList}
-          showsVerticalScrollIndicator={false}
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.2}
-          ListHeaderComponent={listHeader}
-          keyboardShouldPersistTaps="handled"
-          maintainVisibleContentPosition={{ minIndexForVisible: 0, autoscrollToTopThreshold: 100 }}
-        />
-      )}
+      {/* ── Chat body ────────────────────────────────────────────────
+          SafeAreaView edges={["bottom"]} handles home indicator padding.
+          KeyboardGestureArea enables interactive swipe-to-dismiss.
+          KeyboardChatScrollView (via renderScrollComponent) drives
+          smooth content repositioning as the keyboard moves.
+          KeyboardStickyView pins the input bar to the keyboard edge. */}
+      <SafeAreaView edges={['bottom']} style={s.chatBody}>
+        {loading ? (
+          <View style={s.center}>
+            <ActivityIndicator color={Colors.brandOrange} />
+          </View>
+        ) : (
+          <KeyboardGestureArea
+            interpolator="ios"
+            offset={inputBarHeight}
+            style={s.chatBody}
+            textInputNativeID="chat-input"
+          >
+            <FlatList
+              data={listData}
+              keyExtractor={item => 'type' in item && item.type === 'date_sep' ? item.id : (item as Message).id}
+              renderItem={renderItem}
+              inverted
+              contentContainerStyle={s.msgList}
+              showsVerticalScrollIndicator={false}
+              onEndReached={loadMore}
+              onEndReachedThreshold={0.2}
+              ListHeaderComponent={listHeader}
+              keyboardShouldPersistTaps="handled"
+              renderScrollComponent={renderScrollComponent}
+            />
 
-      {/* ── Input bar / recording / block notice ────────────────── */}
-      {renderInputArea()}
+            <KeyboardStickyView offset={stickyOffset} style={s.stickyWrap}>
+              {renderInputContent()}
+            </KeyboardStickyView>
+          </KeyboardGestureArea>
+        )}
+      </SafeAreaView>
 
-      {/* ── Keyboard spacer — expands smoothly with keyboard ──────
-          This is the core trick: no KAV, just an animated view that
-          grows from 0 to keyboardHeight, pushing everything up. */}
-      <Animated.View style={kbSpacerStyle} />
-
-      {/* Sheets */}
       <BlockSheet
         visible={menuOpen}
         targetName={partnerName}
@@ -496,8 +593,12 @@ export default function ChatDetailScreen() {
   )
 }
 
+// ── Styles ────────────────────────────────────────────────────────────────────
+
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
+  chatBody: { flex: 1 },
+  stickyWrap: { backgroundColor: Colors.background },
 
   header: {
     flexDirection: 'row',
@@ -600,15 +701,15 @@ const s = StyleSheet.create({
 
   // Block bars
   blockNotice: {
-    paddingHorizontal: 20, paddingTop: 14, paddingBottom: 14,
+    paddingHorizontal: 20, paddingVertical: 14,
     borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)',
-    backgroundColor: Colors.background, alignItems: 'center',
+    alignItems: 'center',
   },
   blockNoticeText: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary },
   blockBar: {
     paddingHorizontal: 20, paddingTop: 14, paddingBottom: 10,
     borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)',
-    backgroundColor: Colors.background, gap: 10,
+    gap: 10,
   },
   blockBarText: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, textAlign: 'center' },
   blockBtnRow: { flexDirection: 'row', gap: 10 },
@@ -628,9 +729,9 @@ const s = StyleSheet.create({
   // Input bar
   inputBar: {
     flexDirection: 'row', alignItems: 'flex-end',
-    paddingHorizontal: 12, paddingTop: 10,
+    paddingHorizontal: 12, paddingVertical: 8,
     borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)',
-    gap: 8, backgroundColor: Colors.background,
+    gap: 8,
   },
   inputWrap: {
     flex: 1, backgroundColor: '#1a1a1a',
@@ -654,7 +755,7 @@ const s = StyleSheet.create({
   // Recording bar
   recordBar: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12,
+    paddingHorizontal: 16, paddingVertical: 12,
     borderTopWidth: 1, borderTopColor: 'rgba(255,107,53,0.25)',
     backgroundColor: 'rgba(255,107,53,0.06)', gap: 12,
   },
