@@ -212,10 +212,11 @@ export interface Message {
   conversation_id: string
   sender_id: string
   content: string | null
-  content_type: 'text' | 'event' | 'profile' | 'image' | 'voice'
+  content_type: 'text' | 'event' | 'profile' | 'image' | 'voice' | 'video' | 'gif'
   metadata: Record<string, any> | null
   sent_at: string
   read_at: string | null
+  reactions: Record<string, string> | null
 }
 
 export interface BlockedUser {
@@ -800,6 +801,71 @@ class ApiService {
 
     try {
       return JSON.parse(result.body).url
+    } catch {
+      throw new Error('Invalid server response')
+    }
+  }
+
+  static async uploadChatVoice(uri: string): Promise<string> {
+    const token = useAuthStore.getState().accessToken
+    const ext = (uri.split('/').pop() ?? 'voice.m4a').split('.').pop()?.toLowerCase() ?? 'm4a'
+    const mime = ext === 'mp4' ? 'audio/mp4' : ext === '3gp' ? 'audio/3gpp' : 'audio/m4a'
+
+    const result = await FileSystem.uploadAsync(
+      `${API_BASE_URL}${ENDPOINTS.UPLOAD_CHAT_VOICE}`,
+      uri,
+      {
+        httpMethod: 'POST',
+        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+        fieldName: 'file',
+        mimeType: mime,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      },
+    )
+
+    if (result.status < 200 || result.status >= 300) {
+      let detail = `Upload failed (${result.status})`
+      try { detail = JSON.parse(result.body)?.detail ?? detail } catch {}
+      throw new Error(detail)
+    }
+
+    try {
+      return JSON.parse(result.body).url
+    } catch {
+      throw new Error('Invalid server response')
+    }
+  }
+
+  static async uploadChatMedia(uri: string): Promise<{ url: string; media_type: string }> {
+    const token = useAuthStore.getState().accessToken
+    const ext = (uri.split('/').pop() ?? 'image.jpg').split('.').pop()?.toLowerCase() ?? 'jpg'
+    const mimeMap: Record<string, string> = {
+      jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
+      webp: 'image/webp', gif: 'image/gif',
+      mp4: 'video/mp4', mov: 'video/quicktime', m4v: 'video/x-m4v',
+    }
+    const mime = mimeMap[ext] ?? 'image/jpeg'
+
+    const result = await FileSystem.uploadAsync(
+      `${API_BASE_URL}${ENDPOINTS.UPLOAD_CHAT_MEDIA}`,
+      uri,
+      {
+        httpMethod: 'POST',
+        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+        fieldName: 'file',
+        mimeType: mime,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      },
+    )
+
+    if (result.status < 200 || result.status >= 300) {
+      let detail = `Upload failed (${result.status})`
+      try { detail = JSON.parse(result.body)?.detail ?? detail } catch {}
+      throw new Error(detail)
+    }
+
+    try {
+      return JSON.parse(result.body)
     } catch {
       throw new Error('Invalid server response')
     }

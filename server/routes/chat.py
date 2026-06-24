@@ -170,7 +170,7 @@ def list_conversations(current_user: dict = Depends(get_current_user)):
 
 
 @router.get("/chat/conversations/{conv_id}/messages")
-def list_messages(
+async def list_messages(
     conv_id: str,
     before: Optional[str] = Query(None),
     limit: int = Query(50, le=100),
@@ -181,11 +181,24 @@ def list_messages(
         if conv["status"] != "active":
             raise HTTPException(status_code=403, detail="Conversation not yet active")
 
+    # Redis cache for the initial page (no cursor) — TTL 60s
+    cache_key = f"conv_msgs:{conv_id}:{limit}"
+    if not before:
+        r = await _get_redis()
+        if r:
+            try:
+                cached = await r.get(cache_key)
+                if cached:
+                    return json.loads(cached)
+            except Exception:
+                pass
+
+    with get_db() as (cur, _):
         if before:
             cur.execute(
                 """
                 SELECT id::text, conversation_id::text, sender_id::text,
-                       content, content_type, metadata, sent_at, read_at
+                       content, content_type, metadata, sent_at, read_at, reactions
                 FROM messages
                 WHERE conversation_id = %s::uuid AND sent_at < %s
                 ORDER BY sent_at DESC
@@ -197,7 +210,7 @@ def list_messages(
             cur.execute(
                 """
                 SELECT id::text, conversation_id::text, sender_id::text,
-                       content, content_type, metadata, sent_at, read_at
+                       content, content_type, metadata, sent_at, read_at, reactions
                 FROM messages
                 WHERE conversation_id = %s::uuid
                 ORDER BY sent_at DESC
@@ -206,7 +219,24 @@ def list_messages(
                 (conv_id, limit),
             )
         rows = cur.fetchall()
-    return [dict(r) for r in rows]
+
+    result = []
+    for r_row in rows:
+        d = dict(r_row)
+        if d.get("sent_at"):
+            d["sent_at"] = d["sent_at"].isoformat()
+        result.append(d)
+
+    # Cache the initial page
+    if not before:
+        r = await _get_redis()
+        if r:
+            try:
+                await r.set(cache_key, json.dumps(result), ex=60)
+            except Exception:
+                pass
+
+    return result
 
 
 @router.patch("/chat/conversations/{conv_id}/read")
@@ -249,7 +279,7 @@ def delete_conversation(conv_id: str, current_user: dict = Depends(get_current_u
 
 
 @router.post("/chat/conversations/{conv_id}/messages", status_code=201)
-def send_message_rest(
+async def send_message_rest(
     conv_id: str,
     body: SendMessageRequest,
     current_user: dict = Depends(get_current_user),
@@ -275,11 +305,15 @@ def send_message_rest(
         )
         conn.commit()
 
-    # Publish to Redis for real-time delivery
-    asyncio.create_task(
-        _publish(f"conv:{conv_id}", {"type": "message", **msg, "sent_at": msg["sent_at"].isoformat()})
-    )
-    return msg
+    out = {**msg, "sent_at": msg["sent_at"].isoformat()}
+    r = await _get_redis()
+    if r:
+        try:
+            await r.delete(f"conv_msgs:{conv_id}:50")
+        except Exception:
+            pass
+    asyncio.create_task(_publish(f"conv:{conv_id}", {"type": "message", **out}))
+    return out
 
 
 # ── WebSocket ─────────────────────────────────────────────────────────────────
@@ -395,6 +429,29 @@ async def chat_websocket(
                     conn.commit()
                 await _publish(f"conv:{conv_id}", {"type": "read", "user_id": uid})
 
+            elif msg_type == "reaction":
+                msg_id = data.get("message_id")
+                emoji = data.get("emoji")
+                if msg_id:
+                    with get_db() as (cur, conn):
+                        if emoji:
+                            cur.execute(
+                                "UPDATE messages SET reactions = COALESCE(reactions, '{}'::jsonb) || %s::jsonb "
+                                "WHERE id = %s::uuid AND conversation_id = %s::uuid",
+                                (json.dumps({uid: emoji}), msg_id, conv_id),
+                            )
+                        else:
+                            cur.execute(
+                                "UPDATE messages SET reactions = COALESCE(reactions, '{}'::jsonb) - %s "
+                                "WHERE id = %s::uuid AND conversation_id = %s::uuid",
+                                (uid, msg_id, conv_id),
+                            )
+                        conn.commit()
+                    payload = {"type": "reaction", "message_id": msg_id, "user_id": uid, "emoji": emoji}
+                    await websocket.send_text(json.dumps(payload))
+                    await _broadcast_local(conv_id, payload, exclude=websocket)
+                    await _publish(f"conv:{conv_id}", payload)
+
             elif msg_type == "message":
                 content = data.get("content")
                 content_type = data.get("content_type", "text")
@@ -415,36 +472,50 @@ async def chat_websocket(
                             await websocket.send_text(json.dumps({"type": "error", "code": "blocked"}))
                             continue
 
-                with get_db() as (cur, conn):
-                    cur.execute(
-                        """
-                        INSERT INTO messages (conversation_id, sender_id, content, content_type, metadata)
-                        VALUES (%s::uuid, %s::uuid, %s, %s, %s)
-                        RETURNING id::text, sender_id::text, content, content_type, metadata, sent_at
-                        """,
-                        (conv_id, uid, content, content_type,
-                         json.dumps(metadata) if metadata else None),
-                    )
-                    msg = dict(cur.fetchone())
-                    cur.execute(
-                        "UPDATE conversations SET last_message_at = NOW() WHERE id = %s::uuid",
-                        (conv_id,),
-                    )
-                    conn.commit()
+                try:
+                    with get_db() as (cur, conn):
+                        cur.execute(
+                            """
+                            INSERT INTO messages (conversation_id, sender_id, content, content_type, metadata)
+                            VALUES (%s::uuid, %s::uuid, %s, %s, %s)
+                            RETURNING id::text, conversation_id::text, sender_id::text,
+                                      content, content_type, metadata, sent_at, read_at, reactions
+                            """,
+                            (conv_id, uid, content, content_type,
+                             json.dumps(metadata) if metadata else None),
+                        )
+                        msg = dict(cur.fetchone())
+                        cur.execute(
+                            "UPDATE conversations SET last_message_at = NOW() WHERE id = %s::uuid",
+                            (conv_id,),
+                        )
+                        conn.commit()
+                except Exception as db_err:
+                    print(f"[WS] message insert failed: {db_err}", flush=True)
+                    await websocket.send_text(json.dumps({"type": "error", "code": "send_failed"}))
+                    continue
 
                 out = {
                     "type": "message",
                     **msg,
                     "sent_at": msg["sent_at"].isoformat(),
                 }
+                # Invalidate the cached initial message page for this conversation
+                if r:
+                    try:
+                        await r.delete(f"conv_msgs:{conv_id}:50")
+                    except Exception:
+                        pass
                 # Echo back to sender immediately
                 await websocket.send_text(json.dumps(out))
                 # Broadcast to partner — in-memory first (always works), Redis as fallback for multi-server
                 await _broadcast_local(conv_id, out, exclude=websocket)
                 await _publish(f"conv:{conv_id}", out)
 
-    except (WebSocketDisconnect, Exception):
+    except WebSocketDisconnect:
         pass
+    except Exception as e:
+        print(f"[WS] chat/{conv_id} unexpected error: {e}", flush=True)
     finally:
         listener_task.cancel()
         # Deregister from in-memory room

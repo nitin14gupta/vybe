@@ -23,6 +23,8 @@ export const ENDPOINTS = {
   SWAP_PHOTOS: '/upload/photo/swap',
   DELETE_PHOTO: '/upload/photo/{id}',
   UPLOAD_VOICE: '/upload/voice',
+  UPLOAD_CHAT_VOICE: '/upload/chat-voice',
+  UPLOAD_CHAT_MEDIA: '/upload/chat-media',
 
   // Places
   GET_CITIES: '/places/cities',

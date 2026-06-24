@@ -37,10 +37,9 @@ function VybeIcebreakerCore({ partnerName, onSend, onClose }: Omit<Props, 'visib
   return (
     <BottomSheetModal
       ref={sheetRef}
-      snapPoints={['62%']}
-      enableDynamicSizing={false}
+      enableDynamicSizing
       enablePanDownToClose
-      keyboardBehavior="extend"
+      keyboardBehavior="interactive"
       keyboardBlurBehavior="restore"
       onDismiss={onClose}
       backdropComponent={renderBackdrop}

@@ -52,10 +52,9 @@ function VybeRequestModalCore({ user, onSend, onClose }: Omit<Props, 'visible'>)
   return (
     <BottomSheetModal
       ref={sheetRef}
-      snapPoints={['85%']}
-      enableDynamicSizing={false}
+      enableDynamicSizing
       enablePanDownToClose
-      keyboardBehavior="extend"
+      keyboardBehavior="interactive"
       keyboardBlurBehavior="restore"
       onDismiss={handleClose}
       backdropComponent={renderBackdrop}

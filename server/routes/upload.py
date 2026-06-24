@@ -145,6 +145,71 @@ async def upload_voice(
     return {"url": result["url"]}
 
 
+@router.post("/chat-voice")
+async def upload_chat_voice(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+):
+    contents = await file.read()
+
+    if len(contents) > MAX_VOICE_SIZE:
+        raise HTTPException(status_code=400, detail="Voice message must be under 5 MB")
+
+    if len(contents) == 0:
+        raise HTTPException(status_code=400, detail="Empty audio file received")
+
+    try:
+        result = r2_client.upload_file(
+            io.BytesIO(contents),
+            file.filename or "voice.m4a",
+            folder="chat/voice",
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
+
+    return {"url": result["url"]}
+
+
+MAX_MEDIA_SIZE = 50 * 1024 * 1024  # 50 MB (videos)
+
+ALLOWED_MEDIA_CONTENT_TYPES = {
+    "image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif",
+    "video/mp4", "video/quicktime", "video/x-m4v", "video/3gpp",
+    "application/octet-stream",
+}
+
+
+@router.post("/chat-media")
+async def upload_chat_media(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+):
+    ct = (file.content_type or "").lower()
+    name = (file.filename or "").lower()
+    is_video = ct.startswith("video/") or any(name.endswith(e) for e in (".mp4", ".mov", ".m4v", ".3gp"))
+    is_gif = ct == "image/gif" or name.endswith(".gif")
+
+    max_size = MAX_MEDIA_SIZE if is_video else MAX_PHOTO_SIZE
+    contents = await file.read()
+
+    if len(contents) == 0:
+        raise HTTPException(status_code=400, detail="Empty file received")
+    if len(contents) > max_size:
+        raise HTTPException(status_code=400, detail="File too large")
+
+    try:
+        result = r2_client.upload_file(
+            io.BytesIO(contents),
+            file.filename or ("video.mp4" if is_video else "image.jpg"),
+            folder="chat/media",
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
+
+    media_type = "video" if is_video else ("gif" if is_gif else "image")
+    return {"url": result["url"], "media_type": media_type}
+
+
 class SwapRequest(BaseModel):
     position_a: int
     position_b: int

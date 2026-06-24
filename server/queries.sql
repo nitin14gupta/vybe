@@ -92,9 +92,10 @@ CREATE TABLE IF NOT EXISTS public.messages (
   content text,
   content_type text DEFAULT 'text'::text,
   metadata jsonb,
+  reactions jsonb,
   sent_at timestamp with time zone DEFAULT now(),
   read_at timestamp with time zone,
-  CONSTRAINT messages_content_type_check CHECK (content_type = ANY (ARRAY['text'::text, 'event'::text, 'profile'::text, 'image'::text])),
+  CONSTRAINT messages_content_type_check CHECK (content_type = ANY (ARRAY['text'::text, 'event'::text, 'profile'::text, 'image'::text, 'voice'::text, 'video'::text, 'gif'::text])),
   CONSTRAINT messages_pkey PRIMARY KEY (id)
 );
 
