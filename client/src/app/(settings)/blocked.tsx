@@ -10,9 +10,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import ApiService, { BlockedUser } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
 import { ConfirmSheet } from '@/components/ui'
+import { usePillStore } from '@/store/pillStore'
 
 export default function BlockedUsersScreen() {
   const insets = useSafeAreaInsets()
+  const showPill = usePillStore(s => s.show)
   const [blocked, setBlocked] = useState<BlockedUser[]>([])
   const [loading, setLoading] = useState(true)
   const [confirmUser, setConfirmUser] = useState<BlockedUser | null>(null)
@@ -29,8 +31,12 @@ export default function BlockedUsersScreen() {
 
   const doUnblock = async () => {
     if (!confirmUser) return
-    await ApiService.unblockUser(confirmUser.id).catch(() => {})
-    setBlocked(prev => prev.filter(u => u.id !== confirmUser.id))
+    try {
+      await ApiService.unblockUser(confirmUser.id)
+      setBlocked(prev => prev.filter(u => u.id !== confirmUser.id))
+    } catch {
+      showPill("Couldn't unblock, try again", 'error')
+    }
   }
 
   return (

@@ -63,7 +63,7 @@ export default function EditEventScreen() {
         if (new Date() > editDeadline) setLocked(true)
         if (ev.attendee_count > 0)     setHasAttendees(true)
       })
-      .catch(() => showPill('Could not load event', 'error'))
+      .catch(() => showPill("Couldn't load this event", 'error'))
       .finally(() => setLoading(false))
   }, [id])
 
@@ -95,7 +95,7 @@ export default function EditEventScreen() {
       })
       router.back()
     } catch (e: any) {
-      showPill(e.message || 'Could not save event', 'error')
+      showPill("Couldn't save your changes, try again", 'error')
       setSaving(false)
     }
   }

@@ -86,7 +86,7 @@ export default function ScannerScreen() {
       showResult(res)
       setAttendees(prev => prev.map(a => a.id === attendee.id ? { ...a, status: 'checked_in' } : a))
     } catch (e: any) {
-      showPill(e.message || 'Check-in failed', 'error')
+      showPill("Check-in didn't work, scan again", 'error')
     } finally {
       setCheckingIn(null)
     }

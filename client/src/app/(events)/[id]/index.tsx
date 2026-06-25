@@ -161,7 +161,7 @@ export default function EventDetailScreen() {
             .finally(() => setAttendeesLoading(false))
         }
       })
-      .catch(() => showPill('Could not load event', 'error'))
+      .catch(() => showPill("Couldn't load this event", 'error'))
       .finally(() => setLoading(false))
   }, [id, myId])
 
@@ -177,7 +177,7 @@ export default function EventDetailScreen() {
       await ApiService.cancelEvent(id!)
       setEvent(prev => prev ? { ...prev, is_cancelled: true } : prev)
     } catch (e: any) {
-      showPill(e.message || 'Could not cancel event', 'error')
+      showPill("Couldn't cancel this event, try again", 'error')
     }
   }
 

@@ -86,7 +86,7 @@ export default function FollowsScreen() {
       await ApiService.reportUser(reportTarget.id, reason)
       showPill('Report submitted', 'success')
     } catch {
-      showPill('Could not submit report', 'error')
+      showPill('Report not sent, try again', 'error')
     }
   }
 
@@ -98,7 +98,7 @@ export default function FollowsScreen() {
       followersList.removeFollower(blockTarget.id)
       followingList.removeFollower(blockTarget.id)
     } catch {
-      showPill('Could not block user', 'error')
+      showPill("Couldn't block this person", 'error')
     }
   }
 

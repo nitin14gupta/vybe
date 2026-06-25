@@ -53,7 +53,7 @@ export default function ReviewScreen() {
       showPill('Review submitted — thanks!', 'success')
       setTimeout(() => router.back(), 1200)
     } catch (e: any) {
-      showPill(e.message || 'Could not submit review', 'error')
+      showPill("Couldn't submit your review, try again", 'error')
       setSubmitting(false)
     }
   }

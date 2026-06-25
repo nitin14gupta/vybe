@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import ApiService, { DiscoverUser } from '@/api/apiService'
+import { usePillStore } from '@/store/pillStore'
 
 export interface DiscoverFilters {
   gender?: string
@@ -9,6 +10,7 @@ export interface DiscoverFilters {
 }
 
 export function useDiscover() {
+  const showPill = usePillStore(s => s.show)
   const [users, setUsers] = useState<DiscoverUser[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -60,7 +62,7 @@ export function useDiscover() {
     const userId = pendingVybe.id
     setPendingVybe(null)
     advance()
-    if (userId) ApiService.sendVibe(userId, message).catch(() => {})
+    if (userId) ApiService.sendVibe(userId, message).catch(() => showPill("Vybe didn't send, try again", 'error'))
   }, [pendingVybe])
 
   // Called when user closes modal without sending

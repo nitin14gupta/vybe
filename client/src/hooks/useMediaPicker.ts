@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
-import { Alert } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
+import { usePillStore } from '@/store/pillStore'
 
 export interface PendingMedia {
   uri: string
@@ -14,12 +14,13 @@ interface Options {
 }
 
 export function useMediaPicker({ onMediaSend }: Options) {
+  const showPill = usePillStore(s => s.show)
   const [pendingMedia, setPendingMedia] = useState<PendingMedia | null>(null)
 
   const handleCamera = useCallback(async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync()
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Camera access is required.')
+      showPill('Allow camera access to take photos', 'error')
       return
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -40,7 +41,7 @@ export function useMediaPicker({ onMediaSend }: Options) {
   const handleLibrary = useCallback(async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Photo library access is required.')
+      showPill('Allow photo access to pick from gallery', 'error')
       return
     }
     const result = await ImagePicker.launchImageLibraryAsync({

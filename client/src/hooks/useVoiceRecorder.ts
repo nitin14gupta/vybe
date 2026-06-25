@@ -31,7 +31,7 @@ export function useVoiceRecorder({ onSend, onVoiceTyping }: Options) {
   const handleMicPress = useCallback(async () => {
     try {
       const perm = await AudioModule.requestRecordingPermissionsAsync()
-      if (!perm.granted) { showPill('Microphone permission denied', 'error'); return }
+      if (!perm.granted) { showPill('Allow microphone access to record voice', 'error'); return }
       await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true })
       await recorder.prepareToRecordAsync()
       recorder.record()
@@ -40,7 +40,7 @@ export function useVoiceRecorder({ onSend, onVoiceTyping }: Options) {
       setRecordState('recording')
       autoStopRef.current = setTimeout(() => handleRecordStop(), 120_000)
     } catch {
-      showPill('Could not start recording', 'error')
+      showPill("Couldn't start recording, try again", 'error')
     }
   }, [recorder, onVoiceTyping, showPill])
 
@@ -56,7 +56,7 @@ export function useVoiceRecorder({ onSend, onVoiceTyping }: Options) {
       setRecordedVoice({ uri, durationMs })
       setRecordState('preview')
     } catch {
-      showPill('Recording failed', 'error')
+      showPill('Recording stopped unexpectedly', 'error')
       setRecordState('idle')
     }
   }, [recorder, onVoiceTyping, showPill])
@@ -77,7 +77,7 @@ export function useVoiceRecorder({ onSend, onVoiceTyping }: Options) {
       const durationSecs = Math.max(1, Math.round(recordedVoice.durationMs / 1000))
       await onSend(recordedVoice.uri, durationSecs)
     } catch {
-      showPill('Failed to send voice message', 'error')
+      showPill("Voice message didn't send", 'error')
     }
     setRecordedVoice(null)
     setRecordState('idle')

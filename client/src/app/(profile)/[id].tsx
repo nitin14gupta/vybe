@@ -71,7 +71,7 @@ export default function UserProfileScreen() {
         setBlockedByMe(!!p.is_blocked_by_me)
         if (p.voice_url) voicePlayer.replace({ uri: p.voice_url })
       })
-      .catch(() => showPill('Could not load profile', 'error'))
+      .catch(() => showPill("Couldn't load this profile", 'error'))
       .finally(() => setLoading(false))
   }, [id])
 
@@ -109,7 +109,7 @@ export default function UserProfileScreen() {
         router.replace(`/(chat)/${result.conversation_id}` as any)
       }
     } catch {
-      showPill('Could not accept vybe', 'error')
+      showPill("Couldn't send that vybe, try again", 'error')
     }
   }
 
@@ -119,7 +119,7 @@ export default function UserProfileScreen() {
       await ApiService.blockUser(profile.id)
       setBlockedByMe(true)
     } catch {
-      showPill('Could not block user', 'error')
+      showPill("Couldn't block this person", 'error')
     }
   }
 
@@ -129,7 +129,7 @@ export default function UserProfileScreen() {
       await ApiService.unblockUser(profile.id)
       setBlockedByMe(false)
     } catch {
-      showPill('Could not unblock user', 'error')
+      showPill("Couldn't unblock, try again", 'error')
     }
   }
 
@@ -139,7 +139,7 @@ export default function UserProfileScreen() {
       await ApiService.reportUser(profile.id, reason)
       showPill('Report submitted', 'success')
     } catch {
-      showPill('Could not submit report', 'error')
+      showPill('Report not sent, try again', 'error')
     }
   }
 
@@ -335,7 +335,7 @@ export default function UserProfileScreen() {
               if (profile.conversation_id) {
                 router.push(`/(chat)/${profile.conversation_id}` as any)
               } else {
-                showPill('Chat not available', 'error')
+                showPill('Send them a vybe first to start chatting', 'error')
               }
             }}
           >

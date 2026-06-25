@@ -148,7 +148,7 @@ export default function TicketScreen() {
     if (!id) return
     ApiService.getMyTicket(id)
       .then(setTicket)
-      .catch(() => showPill('Could not load ticket', 'error'))
+      .catch(() => showPill("Couldn't load your ticket", 'error'))
       .finally(() => setLoading(false))
   }, [id])
 

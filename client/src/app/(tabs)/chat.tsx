@@ -229,7 +229,7 @@ export default function ChatScreen() {
           try {
             await passVybe(vibeId)
           } catch {
-            showPill('Could not pass vybe', 'error')
+            showPill("Couldn't pass right now, try again", 'error')
           }
         }}
         onClose={() => setInboxOpen(false)}
@@ -245,7 +245,7 @@ export default function ChatScreen() {
           try {
             await acceptVybe(vibeId, icebreaker)
           } catch {
-            showPill('Could not accept vybe', 'error')
+            showPill("Couldn't accept that vybe, try again", 'error')
           }
         }}
         onClose={() => setPendingAccept(null)}

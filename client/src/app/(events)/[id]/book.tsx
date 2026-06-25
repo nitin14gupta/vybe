@@ -48,7 +48,7 @@ export default function BookScreen() {
     if (!id) return
     ApiService.getEvent(id)
       .then(setEvent)
-      .catch(() => showPill('Could not load event', 'error'))
+      .catch(() => showPill("Couldn't load this event", 'error'))
       .finally(() => setLoading(false))
   }, [id])
 
@@ -70,7 +70,7 @@ export default function BookScreen() {
         router.back()
       }
     } catch (e: any) {
-      showPill(e.message || 'Booking failed', 'error')
+      showPill("Booking didn't go through, try again", 'error')
       setPaying(false)
     }
   }

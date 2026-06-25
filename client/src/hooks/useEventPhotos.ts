@@ -28,7 +28,7 @@ export function useEventPhotos(
   const pickPhoto = useCallback(async (position: number) => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync()
     if (!perm.granted) {
-      showPill('Allow photo library access to add event photos', 'error')
+      showPill('Allow photo access to add cover photos', 'error')
       return
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -52,7 +52,7 @@ export function useEventPhotos(
       set('coverPhotos', photos)
       setSlotStates(prev => { const n = [...prev]; n[position] = 'idle'; return n })
     } catch (e: any) {
-      showPill(e.message || 'Upload failed', 'error')
+      showPill('Photo upload failed, try again', 'error')
       // Revert local URI on failure so the slot goes back to empty
       setLocalUris(prev => { const n = [...prev]; n[position] = coverPhotos[position] ?? null; return n })
       setSlotStates(prev => { const n = [...prev]; n[position] = 'error'; return n })

@@ -29,7 +29,7 @@ export function useFollowsList(userId: string, type: 'followers' | 'following') 
       setError(false)
     } catch {
       setError(true)
-      if (!append) showPill('Could not load list', 'error')
+      if (!append) showPill("Couldn't load the list, try again", 'error')
     }
   }, [userId, type, showPill])
 
@@ -63,7 +63,7 @@ export function useFollowsList(userId: string, type: 'followers' | 'following') 
       else await ApiService.followUser(targetId)
     } catch {
       setAllUsers(prev => prev.map(u => u.id === targetId ? { ...u, is_following: wasFollowing } : u))
-      showPill('Action failed', 'error')
+      showPill("Couldn't do that, try again", 'error')
     } finally {
       inFlightRef.current.delete(targetId)
     }
@@ -74,7 +74,7 @@ export function useFollowsList(userId: string, type: 'followers' | 'following') 
     try {
       await ApiService.removeFollower(followerId)
     } catch {
-      showPill('Could not remove follower', 'error')
+      showPill("Couldn't remove them, try again", 'error')
       load()
     }
   }, [showPill, load])

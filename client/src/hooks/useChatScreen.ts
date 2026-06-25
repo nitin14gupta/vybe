@@ -176,7 +176,7 @@ export function useChatScreen(convId: string) {
       await sendMessage(text, 'text', replyMeta)
     } catch {
       setInputText(text)
-      showPill('Message failed to send', 'error')
+      showPill("Message didn't send, tap to retry", 'error')
     }
   }, [inputText, sendMessage, sendTyping, replyingTo, myId, partnerName, showPill])
 
@@ -198,23 +198,23 @@ export function useChatScreen(convId: string) {
   const handleBlock = useCallback(async () => {
     if (!partnerId) return
     try { await ApiService.blockUser(partnerId); setBlockStatus('i_blocked') }
-    catch { showPill('Could not block user', 'error') }
+    catch { showPill("Couldn't block this person", 'error') }
   }, [partnerId, showPill])
 
   const handleUnblock = useCallback(async () => {
     if (!partnerId) return
     try { await ApiService.unblockUser(partnerId); setBlockStatus('none') }
-    catch { showPill('Could not unblock user', 'error') }
+    catch { showPill("Couldn't unblock, try again", 'error') }
   }, [partnerId, showPill])
 
   const handleDeleteChat = useCallback(async () => {
     try { await ApiService.deleteConversation(convId); router.back() }
-    catch { showPill('Could not delete chat', 'error') }
+    catch { showPill("Couldn't delete this chat", 'error') }
   }, [convId, showPill])
 
   const handleReport = useCallback(async (reason: string) => {
     try { if (partnerId) await ApiService.reportUser(partnerId, reason) }
-    catch { showPill('Could not submit report', 'error') }
+    catch { showPill('Report not sent, try again', 'error') }
   }, [partnerId, showPill])
 
   const handleDoubleTap = useCallback((msgId: string) => {
@@ -257,7 +257,7 @@ export function useChatScreen(convId: string) {
       if (height) meta.height = height
       await sendMessage('', finalType, meta)
     } catch {
-      showPill('Failed to send media', 'error')
+      showPill("Media didn't send, try again", 'error')
     }
   }, [sendMessage, showPill])
 
