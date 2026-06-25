@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, Image, ActivityIndicator } from 'react-native'
 import { router } from 'expo-router'
+import { hTap, hError } from '@/lib/haptics'
 import { Camera, X, Plus, AlertCircle } from 'lucide-react-native'
 import { BackButton, ProgressBar, PrimaryButton, Screen, ToastBanner } from '@/components/ui'
 import { usePhotos } from '@/hooks/usePhotos'
@@ -26,7 +27,7 @@ export default function PhotosScreen() {
     return (
       <Pressable
         key={index}
-        onPress={() => onSlotPress(index)}
+        onPress={() => { hTap(); onSlotPress(index) }}
         style={isMain ? styles.mainSlot : styles.smallSlot}
       >
         {uri ? (
@@ -52,7 +53,7 @@ export default function PhotosScreen() {
 
             {(state === 'done' || state === 'uploading') && (
               <Pressable
-                onPress={() => removePhoto(index)}
+                onPress={() => { hError(); removePhoto(index) }}
                 style={styles.removeBtn}
                 hitSlop={10}
               >

@@ -4,6 +4,7 @@ import {
   Image, Dimensions, ActivityIndicator,
 } from 'react-native'
 import { router } from 'expo-router'
+import { hTap } from '@/lib/haptics'
 import { MapPin, Play, Pause, Pencil, Settings } from 'lucide-react-native'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
 import { InterestChip, PlaybackWave, AppHeader, HeaderIconBtn } from '@/components/ui'
@@ -35,6 +36,7 @@ export default function ProfileScreen() {
   }, [profile?.voice_url])
 
   const toggleVoice = () => {
+    hTap()
     if (status.playing) { player.pause() } else { player.seekTo(0); player.play() }
   }
 
@@ -52,7 +54,7 @@ export default function ProfileScreen() {
         <Text style={{ color: Colors.inkSecondary, fontFamily: FontFamily.bodyRegular, fontSize: 14, marginBottom: 16 }}>
           {error ?? 'Could not load profile'}
         </Text>
-        <Pressable onPress={refresh} style={{ paddingHorizontal: 24, paddingVertical: 10, borderRadius: 20, borderWidth: 1, borderColor: Colors.brandOrange }}>
+        <Pressable onPress={() => { hTap(); refresh() }} style={{ paddingHorizontal: 24, paddingVertical: 10, borderRadius: 20, borderWidth: 1, borderColor: Colors.brandOrange }}>
           <Text style={{ color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold, fontSize: 14 }}>Retry</Text>
         </Pressable>
       </View>
@@ -123,7 +125,7 @@ export default function ProfileScreen() {
 
           {/* Edit button */}
           <Pressable
-            onPress={() => router.push('/(profile)/edit')}
+            onPress={() => { hTap(); router.push('/(profile)/edit') }}
             style={styles.editBtn}
           >
             <Pencil size={13} color={Colors.brandOrange} strokeWidth={2} />
@@ -137,12 +139,12 @@ export default function ProfileScreen() {
           <View style={styles.statsRow}>
             <StatCol
               value={vibers} label="Vibers" sub="fans vibin'"
-              onPress={() => profile && router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'followers', name: encodeURIComponent(profile.name ?? ''), vibersCount: vibers, vibingCount: vibing } } as any)}
+              onPress={() => { hTap(); profile && router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'followers', name: encodeURIComponent(profile.name ?? ''), vibersCount: vibers, vibingCount: vibing } } as any) }}
             />
             <View style={styles.statDivider} />
             <StatCol
               value={vibing} label="Vibing" sub="folks feelin'"
-              onPress={() => profile && router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'following', name: encodeURIComponent(profile.name ?? ''), vibersCount: vibers, vibingCount: vibing } } as any)}
+              onPress={() => { hTap(); profile && router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'following', name: encodeURIComponent(profile.name ?? ''), vibersCount: vibers, vibingCount: vibing } } as any) }}
             />
             <View style={styles.statDivider} />
             <StatCol value={posts} label="Posts" sub="photos" />

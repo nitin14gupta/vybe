@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, Image, StyleSheet } from 'react-nativ
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { Flame } from 'lucide-react-native'
+import { hMedium, hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import type { DiscoverUser } from '@/api/apiService'
 
@@ -36,11 +37,13 @@ function VybeRequestModalCore({ user, onSend, onClose }: Omit<Props, 'visible'>)
   const handleSend = () => {
     const trimmed = message.trim()
     if (!trimmed) return
+    hMedium()
     onSend(trimmed)
     setMessage('')
   }
 
   const handleClose = () => {
+    hTap()
     setMessage('')
     onClose()
   }

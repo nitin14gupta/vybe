@@ -4,6 +4,7 @@ import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import Svg, { Path, Defs, LinearGradient as SvgGradient, Stop, Rect } from 'react-native-svg'
 import { Search, X, Link2 } from 'lucide-react-native'
+import { hTap, hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import ApiService, { Conversation, EventDetail } from '@/api/apiService'
 
@@ -108,19 +109,19 @@ function ShareEventSheetCore({ event, onClose }: Omit<Props, 'visible'>) {
       <BottomSheetView style={s.content}>
         <View style={s.headerRow}>
           <Text style={s.title}>Share Event</Text>
-          <Pressable onPress={onClose} hitSlop={8}><X size={20} color={Colors.inkSecondary} strokeWidth={1.8} /></Pressable>
+          <Pressable onPress={() => { hTap(); onClose() }} hitSlop={8}><X size={20} color={Colors.inkSecondary} strokeWidth={1.8} /></Pressable>
         </View>
 
         <View style={s.nativeRow}>
-          <Pressable style={s.nativeBtn} onPress={() => handleNativeShare('whatsapp')}>
+          <Pressable style={s.nativeBtn} onPress={() => { hTap(); handleNativeShare('whatsapp') }}>
             <View style={[s.nativeIcon, { backgroundColor: '#25D366' }]}><WhatsAppIcon /></View>
             <Text style={s.nativeLabel}>WhatsApp</Text>
           </Pressable>
-          <Pressable style={s.nativeBtn} onPress={() => handleNativeShare('instagram')}>
+          <Pressable style={s.nativeBtn} onPress={() => { hTap(); handleNativeShare('instagram') }}>
             <View style={[s.nativeIcon, { backgroundColor: '#E1306C' }]}><InstagramIcon /></View>
             <Text style={s.nativeLabel}>Instagram</Text>
           </Pressable>
-          <Pressable style={s.nativeBtn} onPress={() => handleNativeShare()}>
+          <Pressable style={s.nativeBtn} onPress={() => { hSuccess(); handleNativeShare() }}>
             <View style={[s.nativeIcon, { backgroundColor: '#333' }]}><Link2 size={20} color="#fff" strokeWidth={1.8} /></View>
             <Text style={s.nativeLabel}>Copy Link</Text>
           </Pressable>
@@ -158,7 +159,7 @@ function ShareEventSheetCore({ event, onClose }: Omit<Props, 'visible'>) {
                     </View>
                   )}
                   <Text style={s.convName} numberOfLines={1}>{item.partner_name ?? 'User'}</Text>
-                  <Pressable style={[s.sendBtn, sent && s.sendBtnSent]} onPress={() => handleSendToChat(item)} disabled={sent}>
+                  <Pressable style={[s.sendBtn, sent && s.sendBtnSent]} onPress={() => { if (!sent) hSuccess(); handleSendToChat(item) }} disabled={sent}>
                     <Text style={[s.sendBtnText, sent && s.sendBtnTextSent]}>{sent ? 'Sent ✓' : 'Send'}</Text>
                   </Pressable>
                 </View>

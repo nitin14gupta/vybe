@@ -2,6 +2,7 @@ import { useRef, useEffect } from 'react'
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
+import { hSelection } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 
 export interface SortOption<T extends string = string> {
@@ -44,7 +45,7 @@ function SortSheetCore<T extends string>({ title, options, selected, onSelect, o
             key={opt.key}
             style={[s.row, selected === opt.key && s.rowActive]}
             android_ripple={{ color: 'rgba(255,255,255,0.06)' }}
-            onPress={() => { onSelect(opt.key); sheetRef.current?.dismiss() }}
+            onPress={() => { hSelection(); onSelect(opt.key); sheetRef.current?.dismiss() }}
           >
             <Text style={[s.rowText, selected === opt.key && s.rowTextActive]}>{opt.label}</Text>
             {selected === opt.key && <View style={s.dot} />}

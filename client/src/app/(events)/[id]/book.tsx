@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from 'react-native'
+import { hTap, hSuccess } from '@/lib/haptics'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -88,7 +89,7 @@ export default function BookScreen() {
   return (
     <View style={s.root}>
       <View style={[s.header, { paddingTop: insets.top + 8 }]}>
-        <Pressable style={s.backBtn} onPress={() => router.back()}>
+        <Pressable style={s.backBtn} onPress={() => { hTap(); router.back() }}>
           <ArrowLeft size={20} color={Colors.inkPrimary} />
         </Pressable>
         <Text style={s.headerTitle}>Confirm Booking</Text>
@@ -146,7 +147,7 @@ export default function BookScreen() {
 
       {/* Bottom pay button */}
       <View style={[s.footer, { paddingBottom: insets.bottom + 16 }]}>
-        <Pressable style={s.payBtn} onPress={handlePay} disabled={paying}>
+        <Pressable style={s.payBtn} onPress={() => { hSuccess(); handlePay() }} disabled={paying}>
           <LinearGradient
             colors={['#FF6B35', '#FF3864']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}

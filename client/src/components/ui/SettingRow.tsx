@@ -1,6 +1,7 @@
 import { ReactNode } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { ChevronRight } from 'lucide-react-native'
+import { hTap, hError } from '@/lib/haptics'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 
 interface Props {
@@ -15,7 +16,7 @@ interface Props {
 export function SettingRow({ icon, label, value, onPress, destructive, showSeparator = true }: Props) {
   return (
     <>
-      <Pressable onPress={onPress} style={styles.row}>
+      <Pressable onPress={() => { destructive ? hError() : hTap(); onPress() }} style={styles.row}>
         <View style={styles.iconWrap}>{icon}</View>
         <Text style={[styles.label, destructive && styles.destructive]}>{label}</Text>
         {value ? <Text style={styles.value}>{value}</Text> : null}

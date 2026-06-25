@@ -1,4 +1,5 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { hSelection } from '@/lib/haptics'
 import { Colors, FontFamily, Radius } from '@/constants'
 
 const OPTIONS = ['Male', 'Female', 'Non-binary', 'Prefer not to say'] as const
@@ -17,7 +18,7 @@ export function GenderSelector({ value, onChange }: Props) {
         return (
           <Pressable
             key={option}
-            onPress={() => onChange(option)}
+            onPress={() => { hSelection(); onChange(option) }}
             style={[styles.btn, selected ? styles.selected : styles.unselected]}
           >
             <Text style={[styles.label, selected ? styles.selectedText : styles.unselectedText]}>

@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
+import { hTap } from '@/lib/haptics'
 import { ChevronLeft, Clock, Flame } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Colors, FontFamily } from '@/constants'
@@ -18,7 +19,7 @@ export default function PendingChatScreen() {
     <View style={[s.root, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
+        <Pressable onPress={() => { hTap(); router.back() }} style={s.backBtn} hitSlop={8}>
           <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
         </Pressable>
         <Text style={s.headerName} numberOfLines={1}>{name}</Text>
@@ -66,7 +67,7 @@ export default function PendingChatScreen() {
       </Text>
 
       {/* Go back to explore */}
-      <Pressable style={s.discoverBtn} onPress={() => router.navigate('/(tabs)/')}>
+      <Pressable style={s.discoverBtn} onPress={() => { hTap(); router.navigate('/(tabs)/') }}>
         <Text style={s.discoverBtnText}>Explore more people</Text>
       </Pressable>
     </View>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
+import { hTap } from '@/lib/haptics'
 import { PrimaryButton, OutlineButton, Screen } from '@/components/ui'
 import { Colors, FontFamily, Spacing } from '@/constants'
 
@@ -15,7 +16,7 @@ export default function AgeGateScreen() {
         <Text style={styles.lockedBody}>
           VYBE is for adults only. We'll see you on the other side.
         </Text>
-        <Pressable onPress={() => setDeclined(false)}>
+        <Pressable onPress={() => { hTap(); setDeclined(false) }}>
           <Text style={styles.goBack}>← Go back</Text>
         </Pressable>
       </Screen>

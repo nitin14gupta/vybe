@@ -7,6 +7,7 @@ import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
 import { Square, Mic, Send, Trash2, Plus, X, Play, Pause } from 'lucide-react-native'
 import { RecordingWave, PlaybackWave } from '@/components/ui'
+import { hHeavy, hSuccess, hTap, hError } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import type { Message } from '@/api/apiService'
 import type { RecordedVoice } from '@/hooks/useVoiceRecorder'
@@ -55,6 +56,7 @@ function VoicePreviewPlayer({ uri, durationMs }: { uri: string; durationMs: numb
   }, [uri])
 
   const toggle = () => {
+    hTap()
     if (status.playing) { player.pause() }
     else { player.seekTo(0); player.play() }
   }
@@ -129,10 +131,10 @@ export function ChatInputBar({
       <View style={s.blockBar} onLayout={onLayout}>
         <Text style={s.blockBarText}>You blocked this person.</Text>
         <View style={s.blockBtnRow}>
-          <Pressable style={s.unblockBtn} onPress={onUnblock}>
+          <Pressable style={s.unblockBtn} onPress={() => { hSuccess(); onUnblock() }}>
             <Text style={s.unblockBtnText}>Unblock</Text>
           </Pressable>
-          <Pressable style={s.deleteBtn} onPress={onDeleteChat}>
+          <Pressable style={s.deleteBtn} onPress={() => { hError(); onDeleteChat() }}>
             <Text style={s.deleteBtnText}>Delete Chat</Text>
           </Pressable>
         </View>
@@ -145,14 +147,14 @@ export function ChatInputBar({
   if (recordState === 'recording') {
     return (
       <View style={s.recordBar} onLayout={onLayout}>
-        <Pressable style={s.iconBtn} onPress={onRecordCancel} hitSlop={8}>
+        <Pressable style={s.iconBtn} onPress={() => { hTap(); onRecordCancel() }} hitSlop={8}>
           <X size={18} color={Colors.inkSecondary} strokeWidth={2.5} />
         </Pressable>
         <View style={s.recordCenter}>
           <RecordingWave isActive />
           <Text style={s.recordTimer}>{formatTime(recordDurationMs)}</Text>
         </View>
-        <Pressable style={s.recordStopBtn} onPress={onRecordStop}>
+        <Pressable style={s.recordStopBtn} onPress={() => { hTap(); onRecordStop() }}>
           <Square size={15} color="#111" strokeWidth={0} fill="#111" />
         </Pressable>
       </View>
@@ -164,11 +166,11 @@ export function ChatInputBar({
   if (recordState === 'preview' && recordedVoice) {
     return (
       <View style={s.recordBar} onLayout={onLayout}>
-        <Pressable style={s.iconBtn} onPress={onDiscardVoice} hitSlop={8}>
+        <Pressable style={s.iconBtn} onPress={() => { hTap(); onDiscardVoice() }} hitSlop={8}>
           <X size={18} color={Colors.inkSecondary} strokeWidth={2.5} />
         </Pressable>
         <VoicePreviewPlayer uri={recordedVoice.uri} durationMs={recordedVoice.durationMs} />
-        <Pressable style={s.sendBtn} onPress={onSendVoice}>
+        <Pressable style={s.sendBtn} onPress={() => { hSuccess(); onSendVoice() }}>
           <Send size={16} color="#111" strokeWidth={2.5} fill="#111" />
         </Pressable>
       </View>
@@ -197,7 +199,7 @@ export function ChatInputBar({
           <ReplyBar msg={replyingTo} myId={myId} partnerName={partnerName} onCancel={onCancelReply} />
         )}
         <View style={s.inputRow}>
-          <Pressable style={s.addBtn} onPress={openMediaSheet} hitSlop={4}>
+          <Pressable style={s.addBtn} onPress={() => { hTap(); openMediaSheet() }} hitSlop={4}>
             <Plus size={18} color={Colors.inkSecondary} strokeWidth={2.5} />
           </Pressable>
 
@@ -214,7 +216,7 @@ export function ChatInputBar({
               multiline
             />
             {!hasText && (
-              <Pressable onPress={onMicPress} style={s.micBtn} hitSlop={4}>
+              <Pressable onPress={() => { hHeavy(); onMicPress() }} style={s.micBtn} hitSlop={4}>
                 <Mic size={17} color={Colors.inkSecondary} strokeWidth={2} />
               </Pressable>
             )}

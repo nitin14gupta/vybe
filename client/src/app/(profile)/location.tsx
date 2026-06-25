@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, Pressable, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native'
 import { router } from 'expo-router'
+import { hTap, hSuccess, hSelection } from '@/lib/haptics'
 import { Search, MapPin, Check, ArrowLeft } from 'lucide-react-native'
 import { Input, Screen, ToastBanner } from '@/components/ui'
 import { useLocation } from '@/hooks/useLocation'
@@ -30,11 +31,11 @@ export default function ProfileLocationScreen() {
     <Screen>
       {/* Header */}
       <View style={[s.header, { paddingTop: insets.top > 0 ? 0 : 8 }]}>
-        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8} android_ripple={null}>
+        <Pressable onPress={() => { hTap(); router.back() }} style={s.backBtn} hitSlop={8} android_ripple={null}>
           <ArrowLeft size={22} color={Colors.inkPrimary} strokeWidth={1.8} />
         </Pressable>
         <Text style={s.title}>Change City</Text>
-        <Pressable onPress={handleSave} disabled={!selectedCity || saving} hitSlop={8} style={s.saveArea} android_ripple={null}>
+        <Pressable onPress={() => { hSuccess(); handleSave() }} disabled={!selectedCity || saving} hitSlop={8} style={s.saveArea} android_ripple={null}>
           {saving
             ? <ActivityIndicator size="small" color={Colors.brandOrange} />
             : <Text style={[s.saveBtn, !selectedCity && s.saveBtnDisabled]}>Save</Text>
@@ -60,7 +61,7 @@ export default function ProfileLocationScreen() {
           keyExtractor={c => c.name}
           keyboardShouldPersistTaps="handled"
           ListHeaderComponent={
-            <Pressable onPress={detectLocation} style={s.detectRow} android_ripple={null}>
+            <Pressable onPress={() => { hTap(); detectLocation() }} style={s.detectRow} android_ripple={null}>
               <View style={s.detectIcon}>
                 <MapPin size={20} color={Colors.brandOrange} strokeWidth={2} />
               </View>
@@ -71,7 +72,7 @@ export default function ProfileLocationScreen() {
           }
           renderItem={({ item: c }) => (
             <Pressable
-              onPress={() => selectCity(c.name)}
+              onPress={() => { hSelection(); selectCity(c.name) }}
               style={s.cityRow}
               android_ripple={{ color: 'rgba(255,255,255,0.04)' }}
             >

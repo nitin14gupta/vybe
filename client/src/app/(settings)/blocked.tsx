@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import { router } from 'expo-router'
+import { hTap, hError } from '@/lib/haptics'
 import { useFocusEffect } from 'expo-router'
 import { ChevronLeft, ShieldOff } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -42,7 +43,7 @@ export default function BlockedUsersScreen() {
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
       <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
+        <Pressable onPress={() => { hTap(); router.back() }} style={s.backBtn} hitSlop={8}>
           <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
         </Pressable>
         <Text style={s.title}>Blocked Users</Text>
@@ -79,7 +80,7 @@ export default function BlockedUsersScreen() {
                 <Text style={s.name}>{item.name ?? 'Unknown'}</Text>
                 {item.city ? <Text style={s.city}>{item.city}</Text> : null}
               </View>
-              <Pressable style={s.unblockBtn} onPress={() => setConfirmUser(item)}>
+              <Pressable style={s.unblockBtn} onPress={() => { hError(); setConfirmUser(item) }}>
                 <Text style={s.unblockText}>Unblock</Text>
               </Pressable>
             </View>

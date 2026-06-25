@@ -1,4 +1,5 @@
 import { Pressable, Text, StyleSheet } from 'react-native'
+import { hSelection } from '@/lib/haptics'
 import { Colors, FontFamily, Radius } from '@/constants'
 
 interface Props {
@@ -11,7 +12,7 @@ interface Props {
 export function InterestChip({ label, emoji, selected, onPress }: Props) {
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => { hSelection(); onPress() }}
       style={[styles.chip, selected ? styles.selected : styles.unselected]}
     >
       <Text style={styles.emoji}>{emoji}</Text>

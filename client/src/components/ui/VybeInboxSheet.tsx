@@ -4,6 +4,7 @@ import { BottomSheetModal, BottomSheetView, BottomSheetFlatList, BottomSheetBack
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { router } from 'expo-router'
 import { X, Flame, Check } from 'lucide-react-native'
+import { hTap, hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import type { VybeRequest } from '@/api/apiService'
 
@@ -26,7 +27,7 @@ function RequestCard({ req, onBeginAccept, onPass }: { req: VybeRequest; onBegin
 
   return (
     <View style={[s.card, actioned && s.cardActioned]}>
-      <Pressable style={s.cardLeft} onPress={() => router.push(`/(profile)/${req.sender_id}` as any)}>
+      <Pressable style={s.cardLeft} onPress={() => { hTap(); router.push(`/(profile)/${req.sender_id}` as any) }}>
         {avatar ? (
           <Image source={{ uri: avatar }} style={s.cardAvatar} />
         ) : (
@@ -46,10 +47,10 @@ function RequestCard({ req, onBeginAccept, onPass }: { req: VybeRequest; onBegin
         <View style={[s.actionedBadge, s.actionedBadgePassed]}><Text style={s.actionedText}>Passed</Text></View>
       ) : (
         <View style={s.cardActions}>
-          <Pressable style={s.passBtn} onPress={() => { setActioned('passed'); onPass(req.id) }}>
+          <Pressable style={s.passBtn} onPress={() => { hTap(); setActioned('passed'); onPass(req.id) }}>
             <X size={18} color={Colors.inkSecondary} strokeWidth={2} />
           </Pressable>
-          <Pressable style={s.acceptBtn} onPress={() => { setActioned('pending'); onBeginAccept(req.id, req.name) }}>
+          <Pressable style={s.acceptBtn} onPress={() => { hSuccess(); setActioned('pending'); onBeginAccept(req.id, req.name) }}>
             <Flame size={16} color="#111" fill="#111" />
           </Pressable>
         </View>
@@ -72,7 +73,7 @@ function VybeInboxSheetCore({ requests, loading, onBeginAccept, onPass, onClose 
           <View style={s.countBadge}><Text style={s.countBadgeText}>{requests.length}</Text></View>
         )}
       </View>
-      <Pressable onPress={onClose} hitSlop={10}>
+      <Pressable onPress={() => { hTap(); onClose() }} hitSlop={10}>
         <X size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
       </Pressable>
     </View>

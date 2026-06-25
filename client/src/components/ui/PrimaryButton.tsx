@@ -22,7 +22,7 @@ export function PrimaryButton({ label, onPress, disabled, loading, style }: Prop
   const handlePressIn = () => {
     if (!disabled && !loading) {
       scale.value = withSpring(0.97, { duration: 120 })
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+      hTap()
     }
   }
   const handlePressOut = () => {

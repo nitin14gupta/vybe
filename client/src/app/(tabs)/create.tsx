@@ -13,6 +13,7 @@ import * as Location from 'expo-location'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
 import { X } from 'lucide-react-native'
+import { hTap, hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import { DateTimePickerSheet, Screen } from '@/components/ui'
 import { Step1Basics, Step2When, Step3Where, Step4Pricing } from '@/components/event-form'
@@ -23,7 +24,7 @@ import { useEventDateTimePickers } from '@/hooks/useEventDateTimePickers'
 
 function StepButton({ step, loading, onPress }: { step: number; loading: boolean; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={s.nextBtn} disabled={loading}>
+    <Pressable onPress={() => { step === 4 ? hSuccess() : hTap(); onPress() }} style={s.nextBtn} disabled={loading}>
       <LinearGradient
         colors={['#FF6B35', '#FF3864']}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
@@ -130,7 +131,7 @@ export default function CreateScreen() {
     <Screen>
       <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={s.header}>
-          <Pressable style={s.headerClose} onPress={step > 1 ? back : () => router.back()}>
+          <Pressable style={s.headerClose} onPress={() => { hTap(); step > 1 ? back() : router.back() }}>
             {step > 1 ? (
               <Text style={s.headerBackText}>← Back</Text>
             ) : (

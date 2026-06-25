@@ -4,6 +4,7 @@ import {
   TextInput, ActivityIndicator,
 } from 'react-native'
 import { router } from 'expo-router'
+import { hTap } from '@/lib/haptics'
 import { ChevronLeft, Search, UserPlus } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import ApiService, { DiscoverUser } from '@/api/apiService'
@@ -57,7 +58,7 @@ function UserRow({ user }: { user: DiscoverUser }) {
   return (
     <Pressable
       style={s.row}
-      onPress={() => router.push(`/(profile)/${user.id}` as any)}
+      onPress={() => { hTap(); router.push(`/(profile)/${user.id}` as any) }}
     >
       {avatar ? (
         <Image source={{ uri: avatar }} style={s.avatar} />

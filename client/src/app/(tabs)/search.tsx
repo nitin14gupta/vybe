@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 import { router } from 'expo-router'
 import { Search, Users, X } from 'lucide-react-native'
+import { hTap } from '@/lib/haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Colors, FontFamily } from '@/constants'
 import ApiService from '@/api/apiService'
@@ -68,7 +69,7 @@ export default function SearchScreen() {
             returnKeyType="search"
           />
           {query.length > 0 && (
-            <Pressable onPress={() => setQuery('')} hitSlop={8}>
+            <Pressable onPress={() => { hTap(); setQuery('') }} hitSlop={8}>
               <X size={16} color={Colors.inkDisabled} strokeWidth={2} />
             </Pressable>
           )}
@@ -115,7 +116,7 @@ function UserRow({ user }: { user: DiscoverUser }) {
   return (
     <Pressable
       style={s.row}
-      onPress={() => router.push(`/(profile)/${user.id}` as any)}
+      onPress={() => { hTap(); router.push(`/(profile)/${user.id}` as any) }}
     >
       {avatar ? (
         <Image source={{ uri: avatar }} style={s.avatar} />

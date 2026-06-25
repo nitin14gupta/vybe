@@ -4,6 +4,7 @@ import {
   ActivityIndicator, RefreshControl,
 } from 'react-native'
 import { router } from 'expo-router'
+import { hTap } from '@/lib/haptics'
 import { useFocusEffect } from 'expo-router'
 import { ChevronLeft, Ticket } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -30,7 +31,7 @@ function EventCard({ event }: { event: EventSummary }) {
   return (
     <Pressable
       style={[s.card, isPast && s.cardPast]}
-      onPress={() => router.push(`/(events)/${event.id}` as any)}
+      onPress={() => { hTap(); router.push(`/(events)/${event.id}` as any) }}
     >
       <View style={s.imageWrap}>
         {cover ? (
@@ -89,7 +90,7 @@ export default function JoinedEventsScreen() {
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
       <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
+        <Pressable onPress={() => { hTap(); router.back() }} style={s.backBtn} hitSlop={8}>
           <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
         </Pressable>
         <Text style={s.headerTitle}>Joined Events</Text>

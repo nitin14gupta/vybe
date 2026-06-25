@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native'
+import { hTap, hSuccess, hSelection } from '@/lib/haptics'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { ShareEventSheet } from '@/components/ui'
@@ -201,7 +202,7 @@ export default function EventDetailScreen() {
     return (
       <View style={[styles.root, styles.center]}>
         <Text style={styles.errorText}>Event not found</Text>
-        <Pressable onPress={goBack} style={styles.backBtn}>
+        <Pressable onPress={() => { hTap(); goBack() }} style={styles.backBtn}>
           <Text style={styles.backBtnText}>← Go back</Text>
         </Pressable>
       </View>
@@ -251,15 +252,15 @@ export default function EventDetailScreen() {
 
         {/* Overlay buttons */}
         <View style={[styles.heroOverlay, { top: insets.top + 8 }]}>
-          <Pressable style={styles.heroCircleBtn} onPress={goBack}>
+          <Pressable style={styles.heroCircleBtn} onPress={() => { hTap(); goBack() }}>
             <ArrowLeft size={20} color="#fff" />
           </Pressable>
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Pressable style={styles.heroCircleBtn} onPress={handleShare}>
+            <Pressable style={styles.heroCircleBtn} onPress={() => { hTap(); handleShare() }}>
               <Share2 size={20} color="#fff" />
             </Pressable>
             {event?.host_id === myId && (
-              <Pressable style={styles.heroCircleBtn} onPress={() => setOptionsOpen(true)}>
+              <Pressable style={styles.heroCircleBtn} onPress={() => { hTap(); setOptionsOpen(true) }}>
                 <MoreVertical size={20} color="#fff" />
               </Pressable>
             )}
@@ -349,7 +350,7 @@ export default function EventDetailScreen() {
               {event.description}
             </Text>
             {event.description.length > 140 && (
-              <Pressable onPress={() => setShowFullDesc(p => !p)}>
+              <Pressable onPress={() => { hSelection(); setShowFullDesc(p => !p) }}>
                 <Text style={styles.readMore}>{showFullDesc ? 'Show less' : 'Read more'}</Text>
               </Pressable>
             )}
@@ -394,14 +395,14 @@ export default function EventDetailScreen() {
             <View style={styles.hostActions}>
               <Pressable
                 style={styles.hostBtn}
-                onPress={() => router.push(`/(events)/${id}/attendees` as any)}
+                onPress={() => { hTap(); router.push(`/(events)/${id}/attendees` as any) }}
               >
                 <Users size={16} color={Colors.inkPrimary} strokeWidth={1.8} />
                 <Text style={styles.hostBtnText}>Attendees</Text>
               </Pressable>
               <Pressable
                 style={[styles.hostBtn, styles.hostBtnPrimary]}
-                onPress={() => router.push(`/(events)/${id}/scanner` as any)}
+                onPress={() => { hTap(); router.push(`/(events)/${id}/scanner` as any) }}
               >
                 <LinearGradient
                   colors={['#FF6B35', '#FF3864']}
@@ -436,7 +437,7 @@ export default function EventDetailScreen() {
             ) : isPast && (isGoing || hasTicket) ? (
               <Pressable
                 style={styles.bookBtn}
-                onPress={() => router.push(`/(events)/${id}/review` as any)}
+                onPress={() => { hTap(); router.push(`/(events)/${id}/review` as any) }}
               >
                 <LinearGradient
                   colors={['#FF6B35', '#FF3864']}
@@ -454,7 +455,7 @@ export default function EventDetailScreen() {
                 </View>
                 <Pressable
                   style={styles.ticketBtn}
-                  onPress={() => router.push(`/(events)/${id}/ticket` as any)}
+                  onPress={() => { hTap(); router.push(`/(events)/${id}/ticket` as any) }}
                 >
                   <QrCode size={16} color={Colors.brandOrange} />
                   <Text style={styles.ticketBtnText}>Ticket</Text>
@@ -465,7 +466,7 @@ export default function EventDetailScreen() {
                 <Text style={styles.waitlistBtnText}>On Waitlist</Text>
               </View>
             ) : (
-              <Pressable style={styles.bookBtn} onPress={handleRsvp}>
+              <Pressable style={styles.bookBtn} onPress={() => { hSuccess(); handleRsvp() }}>
                 <LinearGradient
                   colors={['#FF6B35', '#FF3864']}
                   start={{ x: 0, y: 0 }}

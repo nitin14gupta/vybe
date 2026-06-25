@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
+import { hTap, hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import { DateTimePickerSheet } from '@/components/ui'
 import { Step1Basics, Step2When, Step3Where, Step4Pricing } from '@/components/event-form'
@@ -111,7 +112,7 @@ export default function EditEventScreen() {
   return (
     <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={[s.header, { paddingTop: insets.top + 8 }]}>
-        <Pressable style={s.backBtn} onPress={() => router.back()}>
+        <Pressable style={s.backBtn} onPress={() => { hTap(); router.back() }}>
           <ArrowLeft size={20} color={Colors.inkPrimary} />
         </Pressable>
         <Text style={s.headerTitle}>Edit Event</Text>
@@ -162,7 +163,7 @@ export default function EditEventScreen() {
 
       {!locked && (
         <View style={[s.footer, { paddingBottom: insets.bottom + 16 }]}>
-          <Pressable style={s.saveBtn} onPress={handleSave} disabled={saving}>
+          <Pressable style={s.saveBtn} onPress={() => { hSuccess(); handleSave() }} disabled={saving}>
             <LinearGradient
               colors={['#FF6B35', '#FF3864']}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}

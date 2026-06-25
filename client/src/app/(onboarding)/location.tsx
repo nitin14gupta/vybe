@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, Pressable, FlatList, KeyboardAvoidingView, Platform } from 'react-native'
 import { router } from 'expo-router'
+import { hTap, hSelection } from '@/lib/haptics'
 import { Search, MapPin, Check } from 'lucide-react-native'
 import { BackButton, ProgressBar, Input, PrimaryButton, Screen, ToastBanner } from '@/components/ui'
 import { useLocation } from '@/hooks/useLocation'
@@ -53,7 +54,7 @@ export default function LocationScreen() {
           data={filtered}
           keyExtractor={c => c.name}
           ListHeaderComponent={
-            <Pressable onPress={detectLocation} style={styles.detectRow}>
+            <Pressable onPress={() => { hTap(); detectLocation() }} style={styles.detectRow}>
               <View style={styles.detectIcon}>
                 <MapPin size={20} color={Colors.brandOrange} strokeWidth={2} />
               </View>
@@ -63,7 +64,7 @@ export default function LocationScreen() {
             </Pressable>
           }
           renderItem={({ item: c }) => (
-            <Pressable onPress={() => selectCity(c.name)} style={styles.cityRow}>
+            <Pressable onPress={() => { hSelection(); selectCity(c.name) }} style={styles.cityRow}>
               <View>
                 <Text style={[styles.cityName, selectedCity === c.name && styles.cityNameSelected]}>
                   {c.name}

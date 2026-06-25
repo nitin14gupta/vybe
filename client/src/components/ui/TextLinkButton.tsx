@@ -1,4 +1,5 @@
 import { Pressable, Text, StyleSheet, ViewStyle } from 'react-native'
+import { hTap } from '@/lib/haptics'
 import { Colors, FontFamily, ComponentSize } from '@/constants'
 
 interface Props {
@@ -11,7 +12,7 @@ interface Props {
 export function TextLinkButton({ label, onPress, disabled, style }: Props) {
   return (
     <Pressable
-      onPress={!disabled ? onPress : undefined}
+      onPress={!disabled ? () => { hTap(); onPress() } : undefined}
       disabled={disabled}
       style={[styles.btn, style]}
     >

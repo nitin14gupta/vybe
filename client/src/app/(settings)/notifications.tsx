@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, SectionList, Pressable,
   ActivityIndicator, Image,
 } from 'react-native'
+import { hTap } from '@/lib/haptics'
 import { router } from 'expo-router'
 import { useFocusEffect } from 'expo-router'
 import { ChevronLeft, Bell } from 'lucide-react-native'
@@ -50,7 +51,7 @@ function groupByDate(notifs: AppNotification[]): { title: string; data: AppNotif
 function NotifRow({ item, onPress }: { item: AppNotification; onPress: () => void }) {
   const unread = !item.read_at
   return (
-    <Pressable style={[s.row, unread && s.rowUnread]} onPress={onPress}>
+    <Pressable style={[s.row, unread && s.rowUnread]} onPress={() => { hTap(); onPress() }}>
       <View style={s.avatarWrap}>
         {item.actor_avatar ? (
           <Image source={{ uri: item.actor_avatar }} style={s.avatar} />
@@ -127,11 +128,11 @@ export default function NotificationsScreen() {
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
       <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
+        <Pressable onPress={() => { hTap(); router.back() }} style={s.backBtn} hitSlop={8}>
           <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
         </Pressable>
         <Text style={s.headerTitle}>Notifications</Text>
-        <Pressable onPress={handleMarkAll} hitSlop={8}>
+        <Pressable onPress={() => { hTap(); handleMarkAll() }} hitSlop={8}>
           <Text style={s.markAllText}>Mark all read</Text>
         </Pressable>
       </View>
@@ -160,7 +161,7 @@ export default function NotificationsScreen() {
           stickySectionHeadersEnabled={false}
           ListFooterComponent={
             hasMore ? (
-              <Pressable style={s.loadMoreBtn} onPress={() => { if (!loadingMore) loadMore() }}>
+              <Pressable style={s.loadMoreBtn} onPress={() => { if (!loadingMore) { hTap(); loadMore() } }}>
                 {loadingMore
                   ? <ActivityIndicator color={Colors.brandOrange} size="small" />
                   : <Text style={s.loadMoreText}>Load more</Text>}

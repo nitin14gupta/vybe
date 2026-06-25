@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet } from 'react-native'
 import { ArrowLeft } from 'lucide-react-native'
+import { hTap } from '@/lib/haptics'
 import { Colors, ComponentSize, Radius, Spacing } from '@/constants'
 
 interface Props {
@@ -8,7 +9,7 @@ interface Props {
 
 export function BackButton({ onPress }: Props) {
   return (
-    <Pressable onPress={onPress} style={styles.btn} hitSlop={8}>
+    <Pressable onPress={() => { hTap(); onPress() }} style={styles.btn} hitSlop={8}>
       <ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} />
     </Pressable>
   )

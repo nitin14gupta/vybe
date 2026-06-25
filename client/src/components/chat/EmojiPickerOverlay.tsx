@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, Pressable, Modal, StyleSheet, Dimensions } from 'react-native'
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated'
 import EmojiKeyboard, { type EmojiType } from 'rn-emoji-keyboard'
+import { hSelection, hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 
 const QUICK_EMOJIS = ['❤️', '😂', '😮', '😢', '😡', '👍']
@@ -56,13 +57,13 @@ export function EmojiPickerOverlay({ msgId, pageY, isMine, currentEmoji, onSelec
             <Pressable
               key={emoji}
               style={[s.emojiBtn, currentEmoji === emoji && s.emojiBtnActive]}
-              onPress={() => handleSelect(emoji)}
+              onPress={() => { hSelection(); handleSelect(emoji) }}
               hitSlop={4}
             >
               <Text style={s.emojiText}>{emoji}</Text>
             </Pressable>
           ))}
-          <Pressable style={s.moreBtnWrap} onPress={() => setShowFullPicker(true)} hitSlop={4}>
+          <Pressable style={s.moreBtnWrap} onPress={() => { hTap(); setShowFullPicker(true) }} hitSlop={4}>
             <Text style={s.moreBtnText}>+</Text>
           </Pressable>
         </Animated.View>

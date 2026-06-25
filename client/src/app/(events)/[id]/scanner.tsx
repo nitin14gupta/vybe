@@ -14,6 +14,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, CheckCircle, QrCode, Search, UserCheck, Users } from 'lucide-react-native'
 import { Image } from 'expo-image'
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated'
+import { hTap, hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import ApiService, { type EventAttendee } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
@@ -107,7 +108,7 @@ export default function ScannerScreen() {
     <View style={[s.root, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={s.header}>
-        <Pressable style={s.headerBtn} onPress={() => router.back()}>
+        <Pressable style={s.headerBtn} onPress={() => { hTap(); router.back() }}>
           <ArrowLeft size={20} color={Colors.inkPrimary} />
         </Pressable>
         <Text style={s.headerTitle}>Check-in Scanner</Text>
@@ -167,7 +168,7 @@ export default function ScannerScreen() {
           <View style={[s.camera, s.noPermission]}>
             <QrCode size={40} color={Colors.inkDisabled} />
             <Text style={s.noPermText}>Camera access needed to scan QR codes</Text>
-            <Pressable style={s.permBtn} onPress={requestPermission}>
+            <Pressable style={s.permBtn} onPress={() => { hTap(); requestPermission() }}>
               <Text style={s.permBtnText}>Grant Permission</Text>
             </Pressable>
           </View>
@@ -234,7 +235,7 @@ export default function ScannerScreen() {
                 ) : (
                   <Pressable
                     style={s.checkinBtn}
-                    onPress={() => handleManualCheckin(item)}
+                    onPress={() => { hSuccess(); handleManualCheckin(item) }}
                     disabled={!!checkingIn}
                   >
                     {checkingIn === item.id ? (

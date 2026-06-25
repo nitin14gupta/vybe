@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, Star } from 'lucide-react-native'
+import { hTap, hSelection, hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
@@ -72,7 +73,7 @@ export default function ReviewScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={[s.header, { paddingTop: insets.top + 8 }]}>
-        <Pressable onPress={() => router.back()} style={s.backBtn}>
+        <Pressable onPress={() => { hTap(); router.back() }} style={s.backBtn}>
           <ArrowLeft size={20} color={Colors.inkPrimary} />
         </Pressable>
         <Text style={s.headerTitle}>Rate the Event</Text>
@@ -88,7 +89,7 @@ export default function ReviewScreen() {
         {/* Star row */}
         <View style={s.stars}>
           {[1, 2, 3, 4, 5].map(n => (
-            <Pressable key={n} onPress={() => setRating(n)} hitSlop={6}>
+            <Pressable key={n} onPress={() => { hSelection(); setRating(n) }} hitSlop={6}>
               <Star
                 size={40}
                 color={n <= rating ? Colors.accentGold : Colors.inkDisabled}
@@ -113,7 +114,7 @@ export default function ReviewScreen() {
 
         <Pressable
           style={[s.submitBtn, rating === 0 && s.submitBtnDisabled]}
-          onPress={handleSubmit}
+          onPress={() => { hSuccess(); handleSubmit() }}
           disabled={rating === 0 || submitting}
         >
           <LinearGradient

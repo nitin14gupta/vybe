@@ -14,6 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { EventsMapView } from "@/components/maps";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Flame, List, Map, Plus } from "lucide-react-native";
+import { hTap, hSelection } from "@/lib/haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { Colors, FontFamily } from "@/constants";
@@ -78,7 +79,7 @@ function PreviewCard({
   return (
     <Pressable
       style={[styles.previewCard, active && styles.previewCardActive]}
-      onPress={onPress}
+      onPress={() => { hTap(); onPress() }}
     >
       <View style={styles.previewImageWrap}>
         {cover ? (
@@ -108,7 +109,7 @@ function PreviewCard({
 // "N more events" tail card in preview strip
 function MoreCard({ count, onPress }: { count: number; onPress: () => void }) {
   return (
-    <Pressable style={styles.moreCard} onPress={onPress}>
+    <Pressable style={styles.moreCard} onPress={() => { hTap(); onPress() }}>
       <Text style={styles.moreCount}>+{count}</Text>
       <Text style={styles.moreLabel}>more{"\n"}events</Text>
     </Pressable>
@@ -121,7 +122,7 @@ function EventCard({ event, onPress }: { event: EventSummary; onPress: () => voi
   const cover = event.cover_photos?.[0]?.url;
   const spotsLow = event.spots_left > 0 && event.spots_left <= 10;
   return (
-    <Pressable style={styles.card} onPress={onPress}>
+    <Pressable style={styles.card} onPress={() => { hTap(); onPress() }}>
       {/* 16:9 cover image */}
       <View style={styles.cardImageWrap}>
         {cover ? (
@@ -252,14 +253,14 @@ export default function EventsScreen() {
   const togglePill = (
     <View style={styles.togglePill}>
       <Pressable
-        onPress={() => setViewMode("map")}
+        onPress={() => { hSelection(); setViewMode("map") }}
         style={[styles.toggleBtn, viewMode === "map" && styles.toggleBtnActive]}
       >
         <Map size={13} color={viewMode === "map" ? "#fff" : Colors.inkSecondary} strokeWidth={2} />
         <Text style={[styles.toggleLabel, viewMode === "map" && styles.toggleLabelActive]}>Map</Text>
       </Pressable>
       <Pressable
-        onPress={() => setViewMode("list")}
+        onPress={() => { hSelection(); setViewMode("list") }}
         style={[styles.toggleBtn, viewMode === "list" && styles.toggleBtnActive]}
       >
         <List size={13} color={viewMode === "list" ? "#fff" : Colors.inkSecondary} strokeWidth={2} />
@@ -298,7 +299,7 @@ export default function EventsScreen() {
             {togglePill}
             <Pressable
               style={styles.addBtn}
-              onPress={() => router.push("/(tabs)/create" as any)}
+              onPress={() => { hTap(); router.push("/(tabs)/create" as any) }}
               hitSlop={8}
             >
               <Plus size={18} color="#fff" strokeWidth={2.5} />
@@ -311,7 +312,7 @@ export default function EventsScreen() {
           <View style={styles.mapEmpty} pointerEvents="box-none">
             <View style={styles.mapEmptyCard}>
               <Text style={styles.mapEmptyTitle}>Couldn't load events</Text>
-              <Pressable onPress={reload} style={styles.mapEmptyCta}>
+              <Pressable onPress={() => { hTap(); reload() }} style={styles.mapEmptyCta}>
                 <Text style={styles.mapEmptyCtaText}>Retry</Text>
               </Pressable>
             </View>
@@ -325,7 +326,7 @@ export default function EventsScreen() {
               <Flame size={28} color={Colors.brandOrange} strokeWidth={1.5} />
               <Text style={styles.mapEmptyTitle}>No events nearby</Text>
               <Pressable
-                onPress={() => router.push("/(tabs)/create" as any)}
+                onPress={() => { hTap(); router.push("/(tabs)/create" as any) }}
                 style={styles.mapEmptyCta}
               >
                 <Text style={styles.mapEmptyCtaText}>Create one</Text>
@@ -397,7 +398,7 @@ export default function EventsScreen() {
         {FILTER_CHIPS.map((chip) => (
           <Pressable
             key={chip.key}
-            onPress={() => handleChip(chip.key)}
+            onPress={() => { hSelection(); handleChip(chip.key) }}
             style={[styles.filterChip, activeChip === chip.key && styles.filterChipActive]}
           >
             <Text
@@ -414,7 +415,7 @@ export default function EventsScreen() {
         <View style={styles.listEmpty}>
           <Text style={styles.listEmptyTitle}>Couldn't load events</Text>
           <Text style={styles.listEmptySub}>Check your connection and try again</Text>
-          <Pressable onPress={reload} style={styles.listEmptyCta}>
+          <Pressable onPress={() => { hTap(); reload() }} style={styles.listEmptyCta}>
             <Text style={styles.listEmptyCtaText}>Retry</Text>
           </Pressable>
         </View>
@@ -444,7 +445,7 @@ export default function EventsScreen() {
             hasMore ? (
               <Pressable
                 style={styles.loadMoreBtn}
-                onPress={() => setListCount((c) => c + LIST_PAGE)}
+                onPress={() => { hTap(); setListCount((c) => c + LIST_PAGE) }}
               >
                 <Text style={styles.loadMoreText}>
                   Load {Math.min(events.length - listCount, LIST_PAGE)} more events

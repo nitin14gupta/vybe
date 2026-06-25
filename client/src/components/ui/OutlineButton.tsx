@@ -1,5 +1,6 @@
 import { ActivityIndicator, Pressable, Text, StyleSheet, ViewStyle } from 'react-native'
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated'
+import { hTap } from '@/lib/haptics'
 import { Colors, FontFamily, ComponentSize, Radius } from '@/constants'
 
 interface Props {
@@ -17,7 +18,7 @@ export function OutlineButton({ label, onPress, disabled, loading, style }: Prop
   return (
     <Pressable
       onPress={!disabled && !loading ? onPress : undefined}
-      onPressIn={() => { if (!disabled) scale.value = withSpring(0.97, { duration: 120 }) }}
+      onPressIn={() => { if (!disabled) { scale.value = withSpring(0.97, { duration: 120 }); hTap() } }}
       onPressOut={() => { scale.value = withSpring(1, { duration: 120 }) }}
       disabled={disabled || loading}
     >

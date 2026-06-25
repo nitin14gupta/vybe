@@ -2,6 +2,7 @@ import { useRef, useEffect } from 'react'
 import { Text, Pressable, StyleSheet } from 'react-native'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
+import { hSuccess, hError, hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 
 interface Props {
@@ -38,11 +39,11 @@ function ConfirmSheetCore({ title, body, confirmLabel, destructive, onConfirm, o
         <Text style={s.body}>{body}</Text>
         <Pressable
           style={[s.btn, destructive ? s.btnDestructive : s.btnConfirm]}
-          onPress={() => { onConfirm(); onClose() }}
+          onPress={() => { destructive ? hError() : hSuccess(); onConfirm(); onClose() }}
         >
           <Text style={[s.btnText, destructive && s.btnTextDestructive]}>{confirmLabel}</Text>
         </Pressable>
-        <Pressable style={s.cancelBtn} onPress={onClose}>
+        <Pressable style={s.cancelBtn} onPress={() => { hTap(); onClose() }}>
           <Text style={s.cancelText}>Cancel</Text>
         </Pressable>
       </BottomSheetView>

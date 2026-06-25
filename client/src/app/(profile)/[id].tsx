@@ -4,6 +4,7 @@ import {
   FlatList, ActivityIndicator, Dimensions,
 } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
+import { hTap, hMedium, hSuccess } from '@/lib/haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   ChevronLeft, MoreVertical, Flame, UserPlus, UserCheck,
@@ -26,7 +27,7 @@ function EventChip({ event }: { event: EventSummary }) {
   return (
     <Pressable
       style={s.eventChip}
-      onPress={() => router.push(`/(events)/${event.id}` as any)}
+      onPress={() => { hTap(); router.push(`/(events)/${event.id}` as any) }}
     >
       {event.cover_photos?.[0]?.url ? (
         <Image source={{ uri: event.cover_photos[0].url }} style={s.eventChipImg} />
@@ -155,7 +156,7 @@ export default function UserProfileScreen() {
     return (
       <View style={[s.root, s.center]}>
         <Text style={s.errorText}>Profile not found</Text>
-        <Pressable onPress={() => router.back()} style={s.backBtn}>
+        <Pressable onPress={() => { hTap(); router.back() }} style={s.backBtn}>
           <Text style={s.backBtnText}>← Go back</Text>
         </Pressable>
       </View>
@@ -174,10 +175,10 @@ export default function UserProfileScreen() {
     <View style={[s.root, { paddingBottom: insets.bottom }]}>
       {/* Header overlay */}
       <View style={[s.headerOverlay, { paddingTop: insets.top + 8 }]}>
-        <Pressable onPress={() => router.back()} style={s.headerCircleBtn} hitSlop={8}>
+        <Pressable onPress={() => { hTap(); router.back() }} style={s.headerCircleBtn} hitSlop={8}>
           <ChevronLeft size={22} color="#fff" strokeWidth={2.5} />
         </Pressable>
-        <Pressable onPress={() => setMenuOpen(true)} style={s.headerCircleBtn} hitSlop={8}>
+        <Pressable onPress={() => { hTap(); setMenuOpen(true) }} style={s.headerCircleBtn} hitSlop={8}>
           <MoreVertical size={20} color="#fff" strokeWidth={1.8} />
         </Pressable>
       </View>
@@ -234,7 +235,7 @@ export default function UserProfileScreen() {
               <Pressable
                 style={s.statItem}
                 android_ripple={null}
-                onPress={() => router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'followers', name: encodeURIComponent(profile.name ?? ''), vibersCount: profile.vibers_count ?? 0, vibingCount: profile.vibing_count ?? 0 } } as any)}
+                onPress={() => { hTap(); router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'followers', name: encodeURIComponent(profile.name ?? ''), vibersCount: profile.vibers_count ?? 0, vibingCount: profile.vibing_count ?? 0 } } as any) }}
               >
                 <Text style={s.statValue}>{profile.vibers_count ?? 0}</Text>
                 <Text style={s.statLabel}>Vibers</Text>
@@ -243,7 +244,7 @@ export default function UserProfileScreen() {
               <Pressable
                 style={s.statItem}
                 android_ripple={null}
-                onPress={() => router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'following', name: encodeURIComponent(profile.name ?? ''), vibersCount: profile.vibers_count ?? 0, vibingCount: profile.vibing_count ?? 0 } } as any)}
+                onPress={() => { hTap(); router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'following', name: encodeURIComponent(profile.name ?? ''), vibersCount: profile.vibers_count ?? 0, vibingCount: profile.vibing_count ?? 0 } } as any) }}
               >
                 <Text style={s.statValue}>{profile.vibing_count ?? 0}</Text>
                 <Text style={s.statLabel}>Vibing</Text>
@@ -271,7 +272,7 @@ export default function UserProfileScreen() {
               </View>
               <Text style={s.blockedTitle}>You've blocked this account</Text>
               <Text style={s.blockedSub}>Unblock to see their profile and content</Text>
-              <Pressable style={s.unblockBtn} onPress={handleUnblock}>
+              <Pressable style={s.unblockBtn} onPress={() => { hSuccess(); handleUnblock() }}>
                 <Text style={s.unblockBtnText}>Unblock</Text>
               </Pressable>
             </View>
@@ -297,7 +298,7 @@ export default function UserProfileScreen() {
           {!blockedByMe && profile.voice_url ? (
             <View style={s.voiceWrap}>
               <Pressable
-                onPress={() => voiceStatus.playing ? voicePlayer.pause() : voicePlayer.play()}
+                onPress={() => { hTap(); voiceStatus.playing ? voicePlayer.pause() : voicePlayer.play() }}
                 style={s.voicePlayBtn}
                 android_ripple={null}
               >
@@ -332,6 +333,7 @@ export default function UserProfileScreen() {
           <Pressable
             style={[s.ctaBtn, s.ctaBtnPrimary, { flex: 1 }]}
             onPress={() => {
+              hTap()
               if (profile.conversation_id) {
                 router.push(`/(chat)/${profile.conversation_id}` as any)
               } else {
@@ -345,7 +347,7 @@ export default function UserProfileScreen() {
         ) : theySentVybe ? (
           <Pressable
             style={[s.ctaBtn, s.ctaBtnPrimary, { flex: 1.6 }]}
-            onPress={() => setAcceptModalOpen(true)}
+            onPress={() => { hSuccess(); setAcceptModalOpen(true) }}
           >
             <Check size={18} color="#111" strokeWidth={2.5} />
             <Text style={s.ctaBtnPrimaryText}>Accept Vybe</Text>
@@ -358,7 +360,7 @@ export default function UserProfileScreen() {
         ) : (
           <Pressable
             style={[s.ctaBtn, s.ctaBtnPrimary]}
-            onPress={() => setVybeModalOpen(true)}
+            onPress={() => { hMedium(); setVybeModalOpen(true) }}
           >
             <Flame size={18} color="#111" fill="#111" strokeWidth={2} />
             <Text style={s.ctaBtnPrimaryText}>Send Vybe</Text>
@@ -367,7 +369,7 @@ export default function UserProfileScreen() {
 
         <Pressable
           style={[s.ctaBtn, s.ctaBtnSecondary, following && s.ctaBtnFollowing]}
-          onPress={handleFollowToggle}
+          onPress={() => { hTap(); handleFollowToggle() }}
         >
           {following
             ? <UserCheck size={18} color={Colors.brandOrange} strokeWidth={1.8} />

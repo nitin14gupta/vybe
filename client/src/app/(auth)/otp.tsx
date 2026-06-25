@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
+import { hTap } from '@/lib/haptics'
 import { Pencil } from 'lucide-react-native'
 import { BackButton, OTPInput, PrimaryButton, Screen, KeyboardAvoidingWrapper } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
@@ -68,7 +69,7 @@ export default function OTPScreen() {
           <Text style={styles.title}>Enter the code</Text>
           <View style={styles.sentRow}>
             <Text style={styles.sentText}>Sent to +91 {phone}</Text>
-            <Pressable onPress={() => router.back()}>
+            <Pressable onPress={() => { hTap(); router.back() }}>
               <Pencil size={14} color={Colors.brandOrange} strokeWidth={2} />
             </Pressable>
           </View>
@@ -93,7 +94,7 @@ export default function OTPScreen() {
                 </Text>
               </Text>
             ) : (
-              <Pressable onPress={handleResend}>
+              <Pressable onPress={() => { hTap(); handleResend() }}>
                 <Text style={styles.resendBtn}>Resend code</Text>
               </Pressable>
             )}

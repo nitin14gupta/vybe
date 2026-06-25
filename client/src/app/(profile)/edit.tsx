@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, TextInput } from 'react-native'
 import { router } from 'expo-router'
+import { hTap, hSuccess, hSelection } from '@/lib/haptics'
 import { Mic, Square, Play, Pause, RotateCcw } from 'lucide-react-native'
 import { BackButton, Input, GenderSelector, InterestChip, PrimaryButton, ToastBanner, Screen, RecordingWave, PlaybackWave } from '@/components/ui'
 import { useEditProfile } from '@/hooks/useEditProfile'
@@ -50,7 +51,7 @@ export default function EditProfileScreen() {
       <View style={styles.header}>
         <BackButton onPress={() => router.back()} />
         <Text style={styles.title}>Edit Profile</Text>
-        <Pressable onPress={onPressSave} disabled={!canSave} hitSlop={8} style={styles.saveArea}>
+        <Pressable onPress={() => { hSuccess(); onPressSave() }} disabled={!canSave} hitSlop={8} style={styles.saveArea}>
           {saving
             ? <ActivityIndicator size="small" color={Colors.brandOrange} />
             : <Text style={[styles.saveBtn, !canSave && styles.saveBtnDisabled]}>Save</Text>
@@ -94,7 +95,7 @@ export default function EditProfileScreen() {
           <Text style={styles.label}>CITY</Text>
           <View style={styles.cityRow}>
             <Text style={styles.cityValue}>{city ?? 'Not set'}</Text>
-            <Pressable onPress={() => router.push('/(profile)/location')} style={styles.changeBtn}>
+            <Pressable onPress={() => { hTap(); router.push('/(profile)/location') }} style={styles.changeBtn}>
               <Text style={styles.changeBtnText}>Change</Text>
             </Pressable>
           </View>
@@ -111,7 +112,7 @@ export default function EditProfileScreen() {
               return (
                 <Pressable
                   key={badge}
-                  onPress={() => toggleBadge(badge)}
+                  onPress={() => { hSelection(); toggleBadge(badge) }}
                   style={[styles.badgeChip, sel && styles.badgeChipSelected]}
                 >
                   <Text style={[styles.badgeChipText, sel && styles.badgeChipTextSelected]}>

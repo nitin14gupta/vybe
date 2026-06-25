@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, ActivityIndicator,
 } from 'react-native'
 import { Pressable } from 'react-native-gesture-handler'
+import { hTap, hSelection, hMedium } from '@/lib/haptics'
 import { Image } from 'expo-image'
 import { VideoView, useVideoPlayer } from 'expo-video'
 import Animated, {
@@ -49,7 +50,7 @@ function ReplyPreview({ metadata, isMine, onPress }: {
   return (
     <Pressable
       style={[rp.wrap, isMine ? rp.wrapMine : rp.wrapTheirs]}
-      onPress={() => rt.message_id && onPress?.(rt.message_id)}
+      onPress={() => { hTap(); rt.message_id && onPress?.(rt.message_id) }}
       hitSlop={4}
     >
       <View style={rp.accent} />
@@ -296,7 +297,7 @@ function EventCard({ metadata, isMine, sentAt }: { metadata: Record<string, any>
         <View style={s.richCardBody}>
           <Text style={s.richCardTitle} numberOfLines={2}>{metadata.title}</Text>
           {metadata.date ? <Text style={s.richCardSub}>{metadata.date}</Text> : null}
-          <Pressable style={s.richCardBtn} onPress={() => metadata.event_id && router.push(`/(events)/${metadata.event_id}` as any)}>
+          <Pressable style={s.richCardBtn} onPress={() => { hTap(); metadata.event_id && router.push(`/(events)/${metadata.event_id}` as any) }}>
             <Text style={s.richCardBtnText}>View Event</Text>
           </Pressable>
         </View>
@@ -333,7 +334,7 @@ function ProfileCard({ metadata, isMine, sentAt }: { metadata: Record<string, an
             ))}
           </View>
         )}
-        <Pressable style={s.richCardBtn} onPress={() => metadata.user_id && router.push(`/(profile)/${metadata.user_id}` as any)}>
+        <Pressable style={s.richCardBtn} onPress={() => { hTap(); metadata.user_id && router.push(`/(profile)/${metadata.user_id}` as any) }}>
           <Text style={s.richCardBtnText}>View Profile</Text>
         </Pressable>
       </View>
@@ -368,8 +369,8 @@ export function MessageBubble({
   const translateX = useSharedValue(0)
   const hasTriggeredReply = useSharedValue(false)
 
-  const handleDoubleTap = useCallback(() => onDoubleTap(msg.id), [msg.id, onDoubleTap])
-  const handleSwipeReply = useCallback(() => onSwipeReply(msg), [msg, onSwipeReply])
+  const handleDoubleTap = useCallback(() => { hSelection(); onDoubleTap(msg.id) }, [msg.id, onDoubleTap])
+  const handleSwipeReply = useCallback(() => { hTap(); onSwipeReply(msg) }, [msg, onSwipeReply])
   const handleSingleTap = useCallback(() => {
     if ((msg.content_type === 'image' || msg.content_type === 'gif') && msg.metadata?.url) {
       onMediaTap?.(msg.metadata.url, msg.content_type as MediaViewType)
@@ -390,7 +391,7 @@ export function MessageBubble({
 
   const longPress = Gesture.LongPress()
     .minDuration(400)
-    .onStart(e => runOnJS(onLongPress)(msg.id, e.absoluteY, isMine))
+    .onStart(e => { runOnJS(hMedium)(); runOnJS(onLongPress)(msg.id, e.absoluteY, isMine) })
 
   const pan = Gesture.Pan()
     .activeOffsetX(isMine ? [-Infinity, -40] : [40, Infinity])

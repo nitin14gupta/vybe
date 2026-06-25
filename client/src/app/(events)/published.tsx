@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from 'react-native'
+import { hTap, hSuccess } from '@/lib/haptics'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import Svg, { Path, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg'
@@ -95,24 +96,29 @@ export default function PublishedScreen() {
   const shareText = `Check out "${eventTitle}" on VYBE! 🔥`
 
   const shareWhatsApp = () => {
+    hTap()
     Share.share({ message: shareText })
   }
 
   const shareInstagram = () => {
+    hTap()
     Share.share({ message: shareText })
   }
 
   const copyLink = () => {
+    hTap()
     Share.share({ message: `vybe://events/${id}` }).then(() => {
       showPill('Link shared!', 'success')
     })
   }
 
   const goToMyEvents = () => {
+    hSuccess()
     router.replace('/(settings)/my-events' as any)
   }
 
   const skipForNow = () => {
+    hTap()
     router.replace(`/(events)/${id}` as any)
   }
 

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
+import { hHeavy, hTap } from '@/lib/haptics'
 import { Mic, Square, Play, Pause } from 'lucide-react-native'
 import Animated, {
   useSharedValue,
@@ -70,7 +71,7 @@ export default function VoiceScreen() {
         <View style={styles.recordWrap}>
           <Animated.View style={[styles.ripple, rippleStyle]} />
           <Pressable
-            onPress={tapRecord}
+            onPress={() => { hHeavy(); tapRecord() }}
             style={[styles.recordBtn, isRecording && styles.recordBtnActive]}
           >
             {isRecording
@@ -91,7 +92,7 @@ export default function VoiceScreen() {
 
         {recorded && !isRecording && (
           <View style={styles.playback}>
-            <Pressable onPress={handlePlayPause} style={styles.playBtn}>
+            <Pressable onPress={() => { hTap(); handlePlayPause() }} style={styles.playBtn}>
               {playing
                 ? <Pause size={18} color={Colors.background} strokeWidth={2} />
                 : <Play size={18} color={Colors.background} strokeWidth={2} />
@@ -107,7 +108,7 @@ export default function VoiceScreen() {
         )}
 
         {recorded && !isRecording && (
-          <Pressable onPress={handleRetake}>
+          <Pressable onPress={() => { hTap(); handleRetake() }}>
             <Text style={styles.retakeBtn}>Retake</Text>
           </Pressable>
         )}

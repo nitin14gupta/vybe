@@ -2,7 +2,7 @@ import { forwardRef, useImperativeHandle, useRef, useCallback, useState } from '
 import {
   BackHandler, View, Text, StyleSheet, Pressable, Image, Dimensions, ActivityIndicator,
 } from 'react-native'
-import * as Haptics from 'expo-haptics'
+import { hTap, hMedium, hSuccess } from '@/lib/haptics'
 import Animated, {
   useSharedValue, useAnimatedStyle,
   withTiming, withSpring, withSequence, runOnJS,
@@ -248,7 +248,7 @@ export default function DiscoverScreen() {
 
   const onSwipe = useCallback(
     (dir: 'left' | 'right') => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+      hTap()
       if (dir === 'right') handleFollow(activeUser?.id ?? '')
       else handlePass(activeUser?.id ?? '')
     },
@@ -257,7 +257,7 @@ export default function DiscoverScreen() {
 
   const onVybePress = useCallback(() => {
     if (!activeUser) return
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    hMedium()
     // Bounce the flame button
     flameScale.value = withSequence(
       withSpring(1.18, { damping: 10, stiffness: 380 }),
@@ -267,7 +267,7 @@ export default function DiscoverScreen() {
   }, [activeUser, handleVybe, flameScale])
 
   const handleSendVybe = useCallback((message: string) => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+    hSuccess()
     sendVybe(message)
     setVybeSentPill(true)
     setTimeout(() => setVybeSentPill(false), 2500)
@@ -355,7 +355,7 @@ export default function DiscoverScreen() {
             {/* Pass (X) */}
             <Pressable
               onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                hTap()
                 handlePass(activeUser?.id ?? '')
                 cardRef.current?.swipeLeft()
               }}
@@ -377,7 +377,7 @@ export default function DiscoverScreen() {
             {/* Star / Follow */}
             <Pressable
               onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                hTap()
                 handleStar(activeUser?.id ?? '')
                 cardRef.current?.swipeStar()
                 setStarPill(true)

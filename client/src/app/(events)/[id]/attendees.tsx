@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, FlatList, Pressable,
   ActivityIndicator, Image,
 } from 'react-native'
+import { hTap } from '@/lib/haptics'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, Users } from 'lucide-react-native'
@@ -14,7 +15,7 @@ function AttendeeRow({ item }: { item: EventAttendee }) {
   return (
     <Pressable
       style={s.row}
-      onPress={() => router.push(`/(profile)/${item.id}` as any)}
+      onPress={() => { hTap(); router.push(`/(profile)/${item.id}` as any) }}
     >
       {item.avatar ? (
         <Image source={{ uri: item.avatar }} style={s.avatar} />
@@ -56,7 +57,7 @@ export default function AttendeesScreen() {
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
       <View style={s.header}>
-        <Pressable onPress={() => router.back()} hitSlop={10} style={s.backBtn}>
+        <Pressable onPress={() => { hTap(); router.back() }} hitSlop={10} style={s.backBtn}>
           <ArrowLeft size={22} color={Colors.inkPrimary} strokeWidth={1.8} />
         </Pressable>
         <View>

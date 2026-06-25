@@ -2,6 +2,7 @@ import { useRef, useEffect } from 'react'
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
+import { hTap, hError } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 
 export interface DotsAction {
@@ -45,7 +46,7 @@ function DotsSheetCore({ title, actions, onAction, onClose }: Omit<Props, 'visib
             <Pressable
               style={s.row}
               android_ripple={{ color: 'rgba(255,255,255,0.06)' }}
-              onPress={() => { sheetRef.current?.dismiss(); onAction(action.key) }}
+              onPress={() => { action.destructive ? hError() : hTap(); sheetRef.current?.dismiss(); onAction(action.key) }}
             >
               <Text style={[s.rowText, action.destructive && s.rowTextDestructive]}>{action.label}</Text>
             </Pressable>

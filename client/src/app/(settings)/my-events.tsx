@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, FlatList, Pressable,
   ActivityIndicator, RefreshControl,
 } from 'react-native'
+import { hTap } from '@/lib/haptics'
 import { router } from 'expo-router'
 import { useFocusEffect } from 'expo-router'
 import { ChevronLeft, Calendar, Plus } from 'lucide-react-native'
@@ -30,7 +31,7 @@ function EventCard({ event }: { event: EventSummary }) {
   return (
     <Pressable
       style={[s.card, isPast && s.cardPast]}
-      onPress={() => router.push(`/(events)/${event.id}` as any)}
+      onPress={() => { hTap(); router.push(`/(events)/${event.id}` as any) }}
     >
       <View style={s.imageWrap}>
         {cover ? (
@@ -93,12 +94,12 @@ export default function MyEventsScreen() {
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
       <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
+        <Pressable onPress={() => { hTap(); router.back() }} style={s.backBtn} hitSlop={8}>
           <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
         </Pressable>
         <Text style={s.headerTitle}>My Events</Text>
         <Pressable
-          onPress={() => router.push('/(tabs)/create' as any)}
+          onPress={() => { hTap(); router.push('/(tabs)/create' as any) }}
           style={s.createBtn}
           hitSlop={8}
         >

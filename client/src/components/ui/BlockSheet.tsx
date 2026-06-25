@@ -4,6 +4,7 @@ import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { LinearGradient } from 'expo-linear-gradient'
 import { MessageSquareOff, BellOff } from 'lucide-react-native'
+import { hError, hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 
 interface Props {
@@ -52,7 +53,7 @@ function BlockSheetCore({ targetName, isBlocked, loading, onBlock, onUnblock, on
         )}
         {isBlocked && <Text style={s.title}>Unblock {name}?</Text>}
 
-        <Pressable style={s.mainBtn} onPress={isBlocked ? onUnblock : onBlock} disabled={loading}>
+        <Pressable style={s.mainBtn} onPress={() => { isBlocked ? hTap() : hError(); (isBlocked ? onUnblock : onBlock)() }} disabled={loading}>
           <LinearGradient
             colors={isBlocked ? ['#444', '#333'] : ['#FF6B35', '#FF3864']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
@@ -62,7 +63,7 @@ function BlockSheetCore({ targetName, isBlocked, loading, onBlock, onUnblock, on
           </LinearGradient>
         </Pressable>
 
-        <Pressable style={s.cancelBtn} onPress={onClose}>
+        <Pressable style={s.cancelBtn} onPress={() => { hTap(); onClose() }}>
           <Text style={s.cancelText}>Cancel</Text>
         </Pressable>
       </BottomSheetView>

@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { MessageCircle } from 'lucide-react-native'
+import { hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 
 const MAX_CHARS = 150
@@ -27,6 +28,7 @@ function VybeIcebreakerCore({ partnerName, onSend, onClose }: Omit<Props, 'visib
   const handleSend = () => {
     const trimmed = message.trim()
     if (!trimmed) return
+    hSuccess()
     onSend(trimmed)
     setMessage('')
   }

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, PanResponder, Dimensions } from 'rea
 import { BottomSheetModal, BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { LinearGradient } from 'expo-linear-gradient'
+import { hSelection, hSuccess, hTap } from '@/lib/haptics'
 import { Colors, FontFamily, Radius, Spacing } from '@/constants'
 import type { DiscoverFilters } from '@/hooks/useDiscover'
 
@@ -32,9 +33,10 @@ function FilterSheetCore({ filters, onApply, onClose }: Omit<Props, 'visible'>) 
 
   useEffect(() => { sheetRef.current?.present() }, [])
 
-  const reset = () => { setGender('Everyone'); setMinAge(18); setMaxAge(45); setMaxDist(50) }
+  const reset = () => { hTap(); setGender('Everyone'); setMinAge(18); setMaxAge(45); setMaxDist(50) }
 
   const apply = () => {
+    hSuccess()
     onApply({
       gender: genderToFilter[gender],
       minAge: minAge === 18 ? undefined : minAge,
@@ -64,7 +66,7 @@ function FilterSheetCore({ filters, onApply, onClose }: Omit<Props, 'visible'>) 
           <Text style={s.sectionLabel}>Show me</Text>
           <View style={s.segRow}>
             {GENDER_OPTIONS.map(opt => (
-              <Pressable key={opt} onPress={() => setGender(opt)} style={[s.segBtn, gender === opt && s.segBtnActive]}>
+              <Pressable key={opt} onPress={() => { hSelection(); setGender(opt) }} style={[s.segBtn, gender === opt && s.segBtnActive]}>
                 <Text style={[s.segText, gender === opt && s.segTextActive]}>{opt}</Text>
               </Pressable>
             ))}

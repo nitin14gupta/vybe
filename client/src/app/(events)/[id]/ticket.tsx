@@ -14,6 +14,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, Calendar, Download, MapPin, Share2 } from 'lucide-react-native'
 import QRCode from 'react-native-qrcode-svg'
+import { hTap, hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import ApiService, { type TicketInfo } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
@@ -190,11 +191,11 @@ export default function TicketScreen() {
 
       {/* Top nav bar */}
       <View style={s.nav}>
-        <Pressable style={s.navBtn} onPress={goBack} hitSlop={8}>
+        <Pressable style={s.navBtn} onPress={() => { hTap(); goBack() }} hitSlop={8}>
           <ArrowLeft size={20} color={Colors.inkPrimary} />
         </Pressable>
         <Text style={s.navTitle}>Your Ticket</Text>
-        <Pressable style={s.navBtn} onPress={handleShare} hitSlop={8}>
+        <Pressable style={s.navBtn} onPress={() => { hTap(); handleShare() }} hitSlop={8}>
           <Share2 size={20} color={Colors.inkPrimary} />
         </Pressable>
       </View>
@@ -217,7 +218,7 @@ export default function TicketScreen() {
 
         {/* Action buttons */}
         <View style={s.actions}>
-          <Pressable style={s.saveBtn} onPress={handleSave}>
+          <Pressable style={s.saveBtn} onPress={() => { hSuccess(); handleSave() }}>
             <LinearGradient
               colors={['#FF6B35', '#FF8C5A']}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
@@ -228,7 +229,7 @@ export default function TicketScreen() {
             </LinearGradient>
           </Pressable>
 
-          <Pressable style={s.shareBtn} onPress={handleShare}>
+          <Pressable style={s.shareBtn} onPress={() => { hTap(); handleShare() }}>
             <Share2 size={18} color={Colors.inkPrimary} strokeWidth={1.8} />
             <Text style={s.shareBtnText}>Share Event</Text>
           </Pressable>
@@ -237,7 +238,7 @@ export default function TicketScreen() {
         {/* Footer link */}
         <Pressable
           style={s.allTicketsLink}
-          onPress={() => router.replace('/(settings)/joined-events' as any)}
+          onPress={() => { hTap(); router.replace('/(settings)/joined-events' as any) }}
         >
           <Text style={s.allTicketsText}>View all tickets</Text>
         </Pressable>

@@ -1,4 +1,5 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { hSelection } from '@/lib/haptics'
 import { FontFamily } from '@/constants'
 
 interface Props {
@@ -24,7 +25,7 @@ export function ReactionPills({ reactions, myId, onPillPress }: Props) {
         <Pressable
           key={emoji}
           style={[s.pill, iMine && s.pillMine]}
-          onPress={() => onPillPress(emoji)}
+          onPress={() => { hSelection(); onPillPress(emoji) }}
           hitSlop={4}
         >
           <Text style={s.emoji}>{emoji}</Text>

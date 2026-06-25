@@ -4,6 +4,7 @@ import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import * as Clipboard from 'expo-clipboard'
 import { Ban, Flag, Link2, Share2 } from 'lucide-react-native'
+import { hError, hSuccess, hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import { BlockSheet } from './BlockSheet'
 import { ReportSheet } from './ReportSheet'
@@ -34,12 +35,14 @@ function ProfileMenuSheetCore({ username, targetName, isBlocked, onBlock, onUnbl
   useEffect(() => { sheetRef.current?.present() }, [])
 
   const openBlock = () => {
+    isBlocked ? hTap() : hError()
     transitioning.current = true
     setBlockOpen(true)
     sheetRef.current?.dismiss()
   }
 
   const openReport = () => {
+    hTap()
     transitioning.current = true
     setReportOpen(true)
     sheetRef.current?.dismiss()
@@ -63,6 +66,7 @@ function ProfileMenuSheetCore({ username, targetName, isBlocked, onBlock, onUnbl
   }
 
   const handleCopyUrl = async () => {
+    hSuccess()
     const url = username ? `vybe://profile/${username}` : `vybe://profile`
     await Clipboard.setStringAsync(url)
     setCopied(true)
@@ -70,6 +74,7 @@ function ProfileMenuSheetCore({ username, targetName, isBlocked, onBlock, onUnbl
   }
 
   const handleShare = async () => {
+    hTap()
     const handle = username ? `@${username}` : targetName ?? 'this person'
     const url = username ? `vybe://profile/${username}` : ''
     await Share.share({ message: `Check out ${handle} on Vybe${url ? `: ${url}` : ''}` })
@@ -105,7 +110,7 @@ function ProfileMenuSheetCore({ username, targetName, isBlocked, onBlock, onUnbl
             <Text style={s.rowText}>Share Profile</Text>
           </Pressable>
           <View style={s.divider} />
-          <Pressable style={s.cancelRow} onPress={onClose}>
+          <Pressable style={s.cancelRow} onPress={() => { hTap(); onClose() }}>
             <Text style={s.cancelText}>Cancel</Text>
           </Pressable>
         </BottomSheetView>

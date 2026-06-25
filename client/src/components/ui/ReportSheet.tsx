@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-nati
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { X } from 'lucide-react-native'
+import { hSelection, hSuccess, hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 
 const REASONS = ['Fake profile', 'Inappropriate photos', 'Harassment', 'Spam', 'Underage', 'Other']
@@ -28,6 +29,7 @@ function ReportSheetCore({ targetName, onSubmit, onClose }: Omit<Props, 'visible
 
   const handleSubmit = async () => {
     if (!selected || loading) return
+    hSuccess()
     setLoading(true)
     try {
       await onSubmit(selected)
@@ -53,7 +55,7 @@ function ReportSheetCore({ targetName, onSubmit, onClose }: Omit<Props, 'visible
             <Text style={s.title}>Report {targetName ?? 'User'}</Text>
             <Text style={s.subtitle}>We won't let them know you reported them.</Text>
           </View>
-          <Pressable onPress={onClose} hitSlop={10}>
+          <Pressable onPress={() => { hTap(); onClose() }} hitSlop={10}>
             <X size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
           </Pressable>
         </View>
@@ -70,7 +72,7 @@ function ReportSheetCore({ targetName, onSubmit, onClose }: Omit<Props, 'visible
                 <Pressable
                   key={reason}
                   style={[s.option, i < REASONS.length - 1 && s.optionBorder]}
-                  onPress={() => setSelected(reason)}
+                  onPress={() => { hSelection(); setSelected(reason) }}
                 >
                   <Text style={s.optionText}>{reason}</Text>
                   <View style={[s.radio, selected === reason && s.radioSelected]}>

@@ -3,6 +3,7 @@ import {
   Modal, View, Text, Image, Pressable, StyleSheet, ScrollView,
 } from 'react-native'
 import { X, Heart } from 'lucide-react-native'
+import { hSuccess, hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import { VybeIcebreakerModal } from './VybeIcebreakerModal'
 import type { VybeRequest } from '@/api/apiService'
@@ -23,7 +24,7 @@ export function VybeReviewModal({ visible, request, onAccept, onPass, onClose }:
   const avatar = request.photos[0]?.url
   const chips = (request as any).interests?.slice(0, 4) ?? []
 
-  const handleAcceptPress = () => setShowIcebreaker(true)
+  const handleAcceptPress = () => { hSuccess(); setShowIcebreaker(true) }
 
   const handleIcebreakerSend = (icebreaker: string) => {
     setShowIcebreaker(false)
@@ -32,6 +33,7 @@ export function VybeReviewModal({ visible, request, onAccept, onPass, onClose }:
   }
 
   const handlePass = () => {
+    hTap()
     onPass(request.id)
     onClose()
   }

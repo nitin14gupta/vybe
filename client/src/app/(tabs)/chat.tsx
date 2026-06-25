@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 import { router } from 'expo-router'
 import { Search, MessageCircle, Flame, RefreshCw } from 'lucide-react-native'
+import { hTap } from '@/lib/haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { VybeInboxSheet, VybeIcebreakerModal } from '@/components/ui'
 import { usePillStore } from '@/store/pillStore'
@@ -40,7 +41,7 @@ function formatLastMessage(conv: Conversation): string {
 function ConvRow({ conv, onPress }: { conv: Conversation; onPress: () => void }) {
   const isLocked = conv.status === 'pending'
   return (
-    <Pressable onPress={onPress} style={[s.convRow, isLocked && s.convRowLocked]}>
+    <Pressable onPress={() => { hTap(); onPress() }} style={[s.convRow, isLocked && s.convRowLocked]}>
       <View style={s.convAvatarWrap}>
         {conv.partner_avatar ? (
           <Image source={{ uri: conv.partner_avatar }} style={s.convAvatar} />
@@ -137,7 +138,7 @@ export default function ChatScreen() {
         <View style={s.headerTop}>
           <Text style={s.title}>Messages</Text>
           {/* Vybe inbox badge button */}
-          <Pressable style={s.inboxBtn} onPress={() => setInboxOpen(true)}>
+          <Pressable style={s.inboxBtn} onPress={() => { hTap(); setInboxOpen(true) }}>
             <Flame size={22} color={Colors.brandOrange} fill={Colors.brandOrange} />
             {pendingVibes.length > 0 && (
               <View style={s.inboxBadge}>
@@ -168,7 +169,7 @@ export default function ChatScreen() {
         <View style={s.center}>
           <Text style={s.emptyTitle}>Couldn't load messages</Text>
           <Text style={s.emptySub}>Check your connection and try again</Text>
-          <Pressable onPress={refresh} style={s.retryBtn} android_ripple={null}>
+          <Pressable onPress={() => { hTap(); refresh() }} style={s.retryBtn} android_ripple={null}>
             <RefreshCw size={16} color={Colors.brandOrange} strokeWidth={1.8} />
             <Text style={s.retryBtnText}>Retry</Text>
           </Pressable>
@@ -178,7 +179,7 @@ export default function ChatScreen() {
           <MessageCircle size={52} color={Colors.inkDisabled} strokeWidth={1.2} />
           <Text style={s.emptyTitle}>No chats yet</Text>
           <Text style={s.emptySub}>Send a Vybe to spark a conversation</Text>
-          <Pressable onPress={() => router.navigate('/(tabs)/')} style={s.exploreBtn}>
+          <Pressable onPress={() => { hTap(); router.navigate('/(tabs)/') }} style={s.exploreBtn}>
             <Text style={s.exploreBtnText}>Explore</Text>
           </Pressable>
         </View>

@@ -7,6 +7,7 @@ import {
   TextInput,
   View,
 } from 'react-native'
+import { hTap } from '@/lib/haptics'
 import { FlashList } from '@shopify/flash-list'
 import { useLocalSearchParams } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -131,7 +132,7 @@ export default function FollowsScreen() {
 
       {/* ── Header ── */}
       <View style={s.header}>
-        <Pressable onPress={goBack} style={s.backBtn} hitSlop={8} android_ripple={null}>
+        <Pressable onPress={() => { hTap(); goBack() }} style={s.backBtn} hitSlop={8} android_ripple={null}>
           <Text style={s.backArrow}>←</Text>
         </Pressable>
         <Text style={s.headerName} numberOfLines={1}>{displayName || 'Profile'}</Text>
