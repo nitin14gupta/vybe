@@ -1,7 +1,8 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import {
-  View, Text, Pressable, StyleSheet, ActivityIndicator,
+  View, Text, StyleSheet, ActivityIndicator,
 } from 'react-native'
+import { Pressable } from 'react-native-gesture-handler'
 import { Image } from 'expo-image'
 import { VideoView, useVideoPlayer } from 'expo-video'
 import Animated, {
@@ -11,7 +12,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
 import * as FileSystem from 'expo-file-system/legacy'
 import { router } from 'expo-router'
-import { Play, Pause, Download, Film } from 'lucide-react-native'
+import { Play, Pause, Download, Film, Mic, Image as ImageIcon, Calendar, User } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 import type { Message } from '@/api/apiService'
 import type { MediaViewType } from '@/components/chat/MediaViewerModal'
@@ -19,6 +20,20 @@ import { ReactionPills } from './ReactionPills'
 import { PlaybackWave } from '@/components/ui'
 
 // ── Reply preview ─────────────────────────────────────────────────────────────
+
+type ReplyIcon = { Icon: any; label: string }
+
+function getReplyIcon(contentType?: string): ReplyIcon | null {
+  switch (contentType) {
+    case 'voice':   return { Icon: Mic,      label: 'Voice message' }
+    case 'image':   return { Icon: ImageIcon, label: 'Photo' }
+    case 'gif':     return { Icon: Film,     label: 'GIF' }
+    case 'video':   return { Icon: Film,     label: 'Video' }
+    case 'event':   return { Icon: Calendar, label: 'Event' }
+    case 'profile': return { Icon: User,     label: 'Profile' }
+    default:        return null
+  }
+}
 
 function ReplyPreview({ metadata, isMine, onPress }: {
   metadata: Record<string, any> | null
@@ -29,14 +44,7 @@ function ReplyPreview({ metadata, isMine, onPress }: {
   const rt = metadata.reply_to as {
     message_id?: string; content?: string; content_type?: string; sender_label?: string
   }
-  const preview =
-    rt.content_type === 'voice' ? '🎤 Voice message' :
-    rt.content_type === 'image' ? '🖼 Photo' :
-    rt.content_type === 'video' ? '🎬 Video' :
-    rt.content_type === 'gif' ? '🎞 GIF' :
-    rt.content_type === 'event' ? '📅 Event' :
-    rt.content_type === 'profile' ? '👤 Profile' :
-    (rt.content ?? '')
+  const mediaIcon = getReplyIcon(rt.content_type)
 
   return (
     <Pressable
@@ -49,7 +57,14 @@ function ReplyPreview({ metadata, isMine, onPress }: {
         {rt.sender_label ? (
           <Text style={rp.sender} numberOfLines={1}>{rt.sender_label}</Text>
         ) : null}
-        <Text style={rp.text} numberOfLines={1}>{preview}</Text>
+        {mediaIcon ? (
+          <View style={rp.iconRow}>
+            <mediaIcon.Icon size={11} color="rgba(255,255,255,0.4)" strokeWidth={2} />
+            <Text style={rp.text} numberOfLines={1}>{mediaIcon.label}</Text>
+          </View>
+        ) : (
+          <Text style={rp.text} numberOfLines={1}>{rt.content ?? ''}</Text>
+        )}
       </View>
     </Pressable>
   )
@@ -68,6 +83,7 @@ const rp = StyleSheet.create({
   accent: { width: 3, backgroundColor: Colors.brandOrange },
   body: { flex: 1, paddingHorizontal: 7, paddingVertical: 4, gap: 1 },
   sender: { fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: Colors.brandOrange },
+  iconRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   text: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: 'rgba(255,255,255,0.5)' },
 })
 
@@ -79,24 +95,41 @@ function VoiceBubble({ url, duration, isMine, isPending }: {
   const player = useAudioPlayer(null)
   const status = useAudioPlayerStatus(player)
 
+  // Pre-load audio on mount — matches the working useVoiceEdit pattern.
+  // Calling replace() + play() in the same tap handler is unreliable because
+  // the audio system hasn't finished loading when play() fires.
+  useEffect(() => {
+    player.replace({ uri: url })
+  }, [url])
+
+  // Use RNGH Tap instead of Pressable — Pressable is blocked by parent GestureDetector
+  // on New Architecture (RNGH v2 intercepts all touches before RN's touch system)
   const handleToggle = () => {
-    if (status.playing) { player.pause() }
-    else { player.replace({ uri: url }); player.seekTo(0); player.play() }
+    if (isPending) return
+    if (status.playing) {
+      player.pause()
+    } else {
+      player.seekTo(0)
+      player.play()
+    }
   }
 
   const dur = duration ?? 0
-  const durationStr = `${Math.floor(dur / 60)}:${String(dur % 60).padStart(2, '0')}`
+  const mins = Math.floor(dur / 60)
+  const secs = String(dur % 60).padStart(2, '0')
+  const durationStr = `${mins}:${secs}`
 
   return (
     <View style={[vb.bubble, isMine ? vb.bubbleMine : vb.bubbleTheirs]}>
-      <Pressable onPress={handleToggle} style={vb.playBtn} disabled={isPending}>
+      {/* RNGH Pressable works inside GestureDetector on New Architecture (RN Pressable doesn't) */}
+      <Pressable onPress={handleToggle} style={[vb.playBtn, isPending && { opacity: 0.4 }]} hitSlop={6}>
         {status.playing
-          ? <Pause size={15} color="#111" strokeWidth={2.5} />
-          : <Play size={15} color="#111" strokeWidth={2.5} />
+          ? <Pause size={16} color="#111" strokeWidth={2.5} />
+          : <Play  size={16} color="#111" strokeWidth={2.5} />
         }
       </Pressable>
       <View style={vb.waveWrap}>
-        <PlaybackWave isActive={status.playing} compact color={isMine ? Colors.brandOrange : '#888'} />
+        <PlaybackWave isActive={status.playing} color={isMine ? Colors.brandOrange : '#888'} />
       </View>
       {isPending
         ? <ActivityIndicator size="small" color={Colors.brandOrange} />
@@ -109,7 +142,7 @@ function VoiceBubble({ url, duration, isMine, isPending }: {
 }
 
 const vb = StyleSheet.create({
-  bubble: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 10 },
+  bubble: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 12, minWidth: 200 },
   bubbleMine: { backgroundColor: 'rgba(255,107,53,0.18)', borderWidth: 1, borderColor: 'rgba(255,107,53,0.35)', borderBottomRightRadius: 4 },
   bubbleTheirs: { backgroundColor: '#222', borderWidth: 1, borderColor: '#2a2a2a', borderBottomLeftRadius: 4 },
   playBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.brandOrange, alignItems: 'center', justifyContent: 'center' },
@@ -121,16 +154,17 @@ const vb = StyleSheet.create({
 
 const MEDIA_WIDTH = 220
 
-function ImageChatBubble({ url, isMine, width: srcW, height: srcH, isPending, onPress }: {
+function ImageChatBubble({ url, isMine, width: srcW, height: srcH, isPending }: {
   url: string; isMine: boolean; width?: number; height?: number; isPending: boolean
-  onPress: () => void
 }) {
   const aspectRatio = srcW && srcH ? srcW / srcH : 4 / 3
   const displayH = Math.round(MEDIA_WIDTH / aspectRatio)
   const h = Math.min(Math.max(displayH, 120), 320)
 
+  // Tap is handled by the parent GestureDetector's singleTap gesture —
+  // Pressable inside a GestureDetector doesn't fire on New Architecture (RNGH v2)
   return (
-    <Pressable onPress={onPress} style={{ width: MEDIA_WIDTH, height: h }}>
+    <View style={{ width: MEDIA_WIDTH, height: h }}>
       <Image
         source={{ uri: url }}
         style={[mc.img, { width: MEDIA_WIDTH, height: h }]}
@@ -141,7 +175,7 @@ function ImageChatBubble({ url, isMine, width: srcW, height: srcH, isPending, on
           <ActivityIndicator size="small" color="#fff" />
         </View>
       )}
-    </Pressable>
+    </View>
   )
 }
 
@@ -153,6 +187,8 @@ function VideoChatBubble({ url, isMine, isPending, onPress }: {
 }) {
   const [localUri, setLocalUri] = useState<string | null>(null)
   const [downloading, setDownloading] = useState(false)
+  // Always call hook unconditionally (Rules of Hooks) — only rendered for isMine path
+  const videoPlayer = useVideoPlayer(url, p => { p.loop = false })
 
   const handleDownload = async () => {
     if (downloading) return
@@ -174,55 +210,49 @@ function VideoChatBubble({ url, isMine, isPending, onPress }: {
     handleDownload()
   }
 
-  // Sender: show thumbnail player inline
+  const tapGesture = Gesture.Tap().onEnd(() => runOnJS(handleTap)())
+
+  // Sender: thumbnail + play overlay, tap → open modal
   if (isMine) {
     return (
-      <Pressable onPress={handleTap} style={mc.videoWrap}>
-        <VideoView
-          player={useVideoPlayer(url, p => { p.loop = false })}
-          style={mc.video}
-          contentFit="cover"
-          nativeControls={false}
-        />
-        {!isPending && (
-          <View style={mc.playOverlay}>
-            <Play size={28} color="#fff" fill="#fff" strokeWidth={0} />
-          </View>
-        )}
-        {isPending && (
-          <View style={mc.playOverlay}>
-            <ActivityIndicator size="small" color="#fff" />
-          </View>
-        )}
-      </Pressable>
+      <GestureDetector gesture={tapGesture}>
+        <View style={mc.videoWrap}>
+          <VideoView
+            player={videoPlayer}
+            style={mc.video}
+            contentFit="cover"
+            nativeControls={false}
+          />
+          {isPending
+            ? <View style={mc.playOverlay}><ActivityIndicator size="small" color="#fff" /></View>
+            : <View style={mc.playOverlay}><Play size={28} color="#fff" fill="#fff" strokeWidth={0} /></View>
+          }
+        </View>
+      </GestureDetector>
     )
   }
 
-  // Recipient: download-first
+  // Recipient: download-first placeholder, tap → download → open modal
   return (
-    <Pressable onPress={handleTap} style={mc.videoWrap}>
-      {localUri
-        ? (
-          <View style={mc.videoWrap}>
-            <View style={mc.playOverlay}>
-              <Play size={28} color="#fff" fill="#fff" strokeWidth={0} />
+    <GestureDetector gesture={tapGesture}>
+      <View style={mc.videoWrap}>
+        {localUri
+          ? <View style={mc.playOverlay}><Play size={28} color="#fff" fill="#fff" strokeWidth={0} /></View>
+          : (
+            <View style={mc.downloadPlaceholder}>
+              <Film size={32} color="rgba(255,255,255,0.5)" strokeWidth={1.5} />
+              {downloading
+                ? <ActivityIndicator size="small" color={Colors.brandOrange} style={{ marginTop: 8 }} />
+                : <>
+                    <Download size={18} color={Colors.brandOrange} strokeWidth={2} style={{ marginTop: 10 }} />
+                    <Text style={mc.downloadText}>Tap to download</Text>
+                  </>
+              }
             </View>
-          </View>
-        )
-        : (
-          <View style={mc.downloadPlaceholder}>
-            <Film size={32} color="rgba(255,255,255,0.5)" strokeWidth={1.5} />
-            {downloading
-              ? <ActivityIndicator size="small" color={Colors.brandOrange} style={{ marginTop: 8 }} />
-              : <>
-                  <Download size={18} color={Colors.brandOrange} strokeWidth={2} style={{ marginTop: 10 }} />
-                  <Text style={mc.downloadText}>Tap to download</Text>
-                </>
-            }
-          </View>
-        )
-      }
-    </Pressable>
+          )
+        }
+      </View>
+    </GestureDetector>
   )
 }
 
@@ -340,11 +370,23 @@ export function MessageBubble({
 
   const handleDoubleTap = useCallback(() => onDoubleTap(msg.id), [msg.id, onDoubleTap])
   const handleSwipeReply = useCallback(() => onSwipeReply(msg), [msg, onSwipeReply])
+  const handleSingleTap = useCallback(() => {
+    if ((msg.content_type === 'image' || msg.content_type === 'gif') && msg.metadata?.url) {
+      onMediaTap?.(msg.metadata.url, msg.content_type as MediaViewType)
+    }
+  }, [msg.content_type, msg.metadata, onMediaTap])
 
   const doubleTap = Gesture.Tap()
     .numberOfTaps(2)
     .maxDelay(250)
     .onEnd(() => runOnJS(handleDoubleTap)())
+
+  // Single tap for image/gif → open modal. requireExternalGestureToFail ensures
+  // double-tap-to-react still works (single tap waits ~250ms to confirm it's not a double tap)
+  const singleTap = Gesture.Tap()
+    .numberOfTaps(1)
+    .requireExternalGestureToFail(doubleTap)
+    .onEnd(() => runOnJS(handleSingleTap)())
 
   const longPress = Gesture.LongPress()
     .minDuration(400)
@@ -366,7 +408,7 @@ export function MessageBubble({
       hasTriggeredReply.value = false
     })
 
-  const gesture = Gesture.Simultaneous(pan, Gesture.Exclusive(doubleTap, longPress))
+  const gesture = Gesture.Simultaneous(pan, singleTap, Gesture.Exclusive(doubleTap, longPress))
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: isMine ? -translateX.value : translateX.value }],
@@ -392,7 +434,6 @@ export function MessageBubble({
                 width={msg.metadata.width}
                 height={msg.metadata.height}
                 isPending={isPending}
-                onPress={() => onMediaTap?.(msg.metadata!.url, msg.content_type as MediaViewType)}
               />
             </Animated.View>
           </GestureDetector>

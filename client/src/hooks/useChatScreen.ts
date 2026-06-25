@@ -1,10 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { type LayoutChangeEvent } from 'react-native'
 import { useSharedValue, withTiming } from 'react-native-reanimated'
-import {
-  useAudioRecorder, useAudioRecorderState,
-  setAudioModeAsync, RecordingPresets, AudioModule,
-} from 'expo-audio'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import ApiService, { type Message } from '@/api/apiService'
@@ -12,14 +8,18 @@ import { useAuthStore } from '@/store/auth'
 import { usePillStore } from '@/store/pillStore'
 import { useChat } from './useChat'
 import { useImageViewer } from './useImageViewer'
+import { useVoiceRecorder } from './useVoiceRecorder'
 import type { MediaViewType } from '@/components/chat/MediaViewerModal'
 
 const MARGIN = 8
 const MIN_INPUT_HEIGHT = 44
 
-export type RecordState = 'idle' | 'recording' | 'sending'
+export type RecordState = 'idle' | 'recording' | 'preview' | 'sending'
 
-export type ListItem = Message | { type: 'date_sep'; label: string; id: string }
+export type ListItem =
+  | Message
+  | { type: 'date_sep'; label: string; id: string }
+  | { type: 'seen_label'; label: string; id: string }
 
 export interface EmojiTarget {
   msgId: string
@@ -47,9 +47,17 @@ function getDateLabel(dateStr: string): string {
   })
 }
 
-function buildListData(messages: Message[]): ListItem[] {
+function buildListData(
+  messages: Message[],
+  seenInfo?: { msgId: string; label: string } | null,
+): ListItem[] {
   const result: ListItem[] = []
   for (let i = 0; i < messages.length; i++) {
+    // Inject seen label BEFORE the seen message so it appears visually below it
+    // (in an inverted FlatList, lower array index = lower screen position)
+    if (seenInfo && messages[i].id === seenInfo.msgId) {
+      result.push({ type: 'seen_label', id: 'seen', label: seenInfo.label })
+    }
     result.push(messages[i])
     const curr = new Date(messages[i].sent_at).toDateString()
     const next = i + 1 < messages.length ? new Date(messages[i + 1].sent_at).toDateString() : null
@@ -82,8 +90,6 @@ export function useChatScreen(convId: string) {
   const showPill = usePillStore(st => st.show)
 
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const recordAutoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const recordStartRef = useRef(0)
 
   // Partner info
   const [partnerName, setPartnerName] = useState<string | null>(null)
@@ -99,12 +105,8 @@ export function useChatScreen(convId: string) {
   const [reportOpen, setReportOpen] = useState(false)
   const [replyingTo, setReplyingTo] = useState<Message | null>(null)
   const [emojiTarget, setEmojiTarget] = useState<EmojiTarget | null>(null)
-  const [recordState, setRecordState] = useState<RecordState>('idle')
 
   const extraContentPadding = useSharedValue(0)
-
-  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY)
-  const recorderState = useAudioRecorderState(recorder, 250)
 
   const {
     messages, isPartnerTyping, isPartnerRecording, isPartnerOnline,
@@ -113,6 +115,19 @@ export function useChatScreen(convId: string) {
   } = useChat(convId)
 
   const { viewingMedia, openMedia, closeMedia } = useImageViewer()
+
+  // ── Voice recorder ──────────────────────────────────────────────────────────
+
+  const sendVoice = useCallback(async (uri: string, durationSecs: number) => {
+    const url = await ApiService.uploadChatVoice(uri)
+    await sendMessage('', 'voice', { url, duration: durationSecs })
+  }, [sendMessage])
+
+  const {
+    recordState, recordedVoice, recordDurationMs,
+    handleMicPress, handleRecordStop, handleRecordCancel,
+    handleSendVoice, handleDiscardVoice,
+  } = useVoiceRecorder({ onSend: sendVoice, onVoiceTyping: sendVoiceTyping })
 
   // ── Partner info ────────────────────────────────────────────────────────────
 
@@ -135,7 +150,6 @@ export function useChatScreen(convId: string) {
 
   useEffect(() => {
     return () => {
-      if (recordAutoStopRef.current) clearTimeout(recordAutoStopRef.current)
       if (typingTimerRef.current) clearTimeout(typingTimerRef.current)
     }
   }, [])
@@ -180,47 +194,6 @@ export function useChatScreen(convId: string) {
     setInputBarHeight(h)
     extraContentPadding.value = withTiming(Math.max(h - MIN_INPUT_HEIGHT, 0), { duration: 200 })
   }, [extraContentPadding])
-
-  const handleRecordStop = useCallback(async () => {
-    if (recordAutoStopRef.current) clearTimeout(recordAutoStopRef.current)
-    sendVoiceTyping(false)
-    setRecordState('sending')
-    try {
-      await recorder.stop()
-      const uri = recorder.uri
-      if (!uri) throw new Error('No URI')
-      const url = await ApiService.uploadChatVoice(uri)
-      const duration = Math.round((Date.now() - recordStartRef.current) / 1000)
-      await sendMessage('', 'voice', { url, duration })
-    } catch {
-      showPill('Failed to send voice message', 'error')
-    }
-    try { await setAudioModeAsync({ allowsRecording: false }) } catch {}
-    setRecordState('idle')
-  }, [recorder, sendMessage, sendVoiceTyping, showPill])
-
-  const handleMicPress = useCallback(async () => {
-    try {
-      const perm = await AudioModule.requestRecordingPermissionsAsync()
-      if (!perm.granted) { showPill('Microphone permission denied', 'error'); return }
-      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true })
-      await recorder.prepareToRecordAsync()
-      recorder.record()
-      recordStartRef.current = Date.now()
-      sendVoiceTyping(true)
-      setRecordState('recording')
-      recordAutoStopRef.current = setTimeout(() => handleRecordStop(), 120_000)
-    } catch {
-      showPill('Could not start recording', 'error')
-    }
-  }, [recorder, sendVoiceTyping, handleRecordStop, showPill])
-
-  const handleRecordCancel = useCallback(async () => {
-    if (recordAutoStopRef.current) clearTimeout(recordAutoStopRef.current)
-    sendVoiceTyping(false)
-    try { await recorder.stop(); await setAudioModeAsync({ allowsRecording: false }) } catch {}
-    setRecordState('idle')
-  }, [recorder, sendVoiceTyping])
 
   const handleBlock = useCallback(async () => {
     if (!partnerId) return
@@ -298,28 +271,30 @@ export function useChatScreen(convId: string) {
 
   // ── Derived data ────────────────────────────────────────────────────────────
 
-  const listData = useMemo(() => buildListData(messages), [messages])
+  // Seen indicator: find the last message I sent that the partner has actually read
+  const seenInfo = useMemo(() => {
+    if (!partnerSeenAt) return null
+    const seenTime = new Date(partnerSeenAt).getTime()
+    const lastSeenMsg = messages.find(
+      m => !m.id.startsWith('_temp_') && m.sender_id === myId && new Date(m.sent_at).getTime() <= seenTime,
+    )
+    if (!lastSeenMsg) return null
+    return { msgId: lastSeenMsg.id, label: formatSeen(partnerSeenAt) }
+  }, [partnerSeenAt, messages, myId])
+
+  const listData = useMemo(() => buildListData(messages, seenInfo), [messages, seenInfo])
 
   const stickyOffset = useMemo(() => ({ opened: insets.bottom - MARGIN }), [insets.bottom])
-
-  // Seen status: only show if the newest non-temp message is mine
-  const seenLabel = useMemo(() => {
-    if (!partnerSeenAt) return null
-    const newestReal = messages.find(m => !m.id.startsWith('_temp_'))
-    if (!newestReal || newestReal.sender_id !== myId) return null
-    return formatSeen(partnerSeenAt)
-  }, [partnerSeenAt, messages, myId])
 
   return {
     // partner
     partnerName, partnerUsername, partnerAvatar, partnerId, blockStatus,
     // chat
     messages, listData, isPartnerTyping, isPartnerRecording, isPartnerOnline,
-    isWsConnected, loading, seenLabel,
+    isWsConnected, loading,
     // input
-    inputText, inputBarHeight, recordState,
-    recordDurationMs: recorderState.durationMillis ?? 0,
-    replyingTo, emojiTarget,
+    inputText, inputBarHeight, recordState, recordDurationMs,
+    recordedVoice, replyingTo, emojiTarget,
     // menu
     menuOpen, setMenuOpen, reportOpen, setReportOpen,
     // scroll
@@ -330,7 +305,7 @@ export function useChatScreen(convId: string) {
     viewingMedia, closeMedia,
     // handlers
     handleSend, handleTextChange, handleInputLayout,
-    handleMicPress, handleRecordStop, handleRecordCancel,
+    handleMicPress, handleRecordStop, handleRecordCancel, handleSendVoice, handleDiscardVoice,
     handleBlock, handleUnblock, handleDeleteChat, handleReport,
     handleDoubleTap, handleLongPress, handleSwipeReply,
     handleEmojiSelect, handleReactionPillPress, handleMediaSend,

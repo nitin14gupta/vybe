@@ -140,7 +140,10 @@ export function useChat(conversationId: string) {
       }
     }
 
-    ws.onerror = () => {}
+    ws.onerror = () => {
+      setIsWsConnected(false)
+      // onclose fires immediately after onerror and handles reconnect
+    }
 
     wsRef.current = ws
   }, [conversationId, myId, applyReactionUpdate, markTempFailed])
@@ -212,7 +215,6 @@ export function useChat(conversationId: string) {
     } catch {
       pendingTempIds.current.delete(tempId)
       setFailedIds(prev => new Set([...prev, tempId]))
-      throw
     }
   }, [conversationId, myId])
 

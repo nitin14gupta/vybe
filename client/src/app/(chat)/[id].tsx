@@ -17,7 +17,10 @@ import { TypingIndicator } from '@/components/chat/TypingIndicator'
 import { EmojiPickerOverlay } from '@/components/chat/EmojiPickerOverlay'
 import { ChatScrollView } from '@/components/chat/ChatScrollView'
 
-type ListItem = Message | { type: 'date_sep'; label: string; id: string }
+type ListItem =
+  | Message
+  | { type: 'date_sep'; label: string; id: string }
+  | { type: 'seen_label'; label: string; id: string }
 
 // VoiceIndicator lives here as a micro-component — too small for its own file
 function VoiceIndicator() {
@@ -55,7 +58,7 @@ export default function ChatDetailScreen() {
 
   const handleReplyTap = useCallback((originalMsgId: string) => {
     const targetItem = (screen.listData as ListItem[]).find(
-      item => !('type' in item && item.type === 'date_sep') && (item as Message).id === originalMsgId
+      item => !('type' in item) && (item as Message).id === originalMsgId
     )
     if (targetItem) {
       flatListRef.current?.scrollToItem({
@@ -76,6 +79,9 @@ export default function ChatDetailScreen() {
   const renderItem = useCallback(({ item }: { item: ListItem }) => {
     if ('type' in item && item.type === 'date_sep') {
       return <DateSeparator label={item.label} />
+    }
+    if ('type' in item && item.type === 'seen_label') {
+      return <Text style={s.seenLabel}>{item.label}</Text>
     }
     const msg = item as Message
     return (
@@ -144,14 +150,7 @@ export default function ChatDetailScreen() {
                   animated: true,
                 })
               }}
-              ListHeaderComponent={
-                <>
-                  {listHeader}
-                  {screen.seenLabel && (
-                    <Text style={s.seenLabel}>{screen.seenLabel}</Text>
-                  )}
-                </>
-              }
+              ListHeaderComponent={listHeader}
               keyboardShouldPersistTaps="handled"
               renderScrollComponent={renderScrollComponent}
             />
@@ -162,6 +161,7 @@ export default function ChatDetailScreen() {
                 inputText={screen.inputText}
                 recordState={screen.recordState}
                 recordDurationMs={screen.recordDurationMs}
+                recordedVoice={screen.recordedVoice}
                 replyingTo={screen.replyingTo}
                 myId={screen.myId ?? ''}
                 partnerName={screen.partnerName}
@@ -170,6 +170,8 @@ export default function ChatDetailScreen() {
                 onMicPress={screen.handleMicPress}
                 onRecordStop={screen.handleRecordStop}
                 onRecordCancel={screen.handleRecordCancel}
+                onSendVoice={screen.handleSendVoice}
+                onDiscardVoice={screen.handleDiscardVoice}
                 onUnblock={screen.handleUnblock}
                 onDeleteChat={screen.handleDeleteChat}
                 onCancelReply={screen.handleCancelReply}

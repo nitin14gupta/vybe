@@ -243,6 +243,9 @@ export interface AppNotification {
 
 // ── ApiService ───────────────────────────────────────────────────────────────
 
+// Mutex: only one token refresh in-flight at a time — concurrent 401s share the same promise
+let _refreshPromise: Promise<void> | null = null
+
 class ApiService {
   // ── Private helpers ────────────────────────────────────────────────────────
 
@@ -265,34 +268,38 @@ class ApiService {
     retryFn?: () => Promise<T>,
   ): Promise<T> {
     if (response.status === 401 && retryFn) {
-      const { refreshToken: storedRefresh, setAuth, clearAuth, phone, profileComplete } =
-        useAuthStore.getState()
+      const store = useAuthStore.getState()
+      if (!store.refreshToken) {
+        store.clearAuth()
+        throw new Error('Session expired. Please sign in again.')
+      }
 
-      if (storedRefresh) {
-        try {
+      if (!_refreshPromise) {
+        _refreshPromise = (async () => {
           const refreshRes = await fetch(`${API_BASE_URL}${ENDPOINTS.REFRESH_TOKEN}`, {
             method: 'POST',
             headers: DEFAULT_HEADERS,
-            body: JSON.stringify({ refresh_token: storedRefresh }),
+            body: JSON.stringify({ refresh_token: store.refreshToken }),
           })
           if (!refreshRes.ok) throw new Error('refresh failed')
           const tokens: TokenResponse = await refreshRes.json()
-          setAuth({
+          useAuthStore.getState().setAuth({
             userId: tokens.user_id,
             accessToken: tokens.access_token,
             refreshToken: tokens.refresh_token,
-            phone: phone ?? '',
+            phone: store.phone ?? '',
             profileComplete: tokens.profile_complete,
           })
-          return retryFn()
-        } catch {
-          clearAuth()
-          throw new Error('Session expired. Please sign in again.')
-        }
+        })().finally(() => { _refreshPromise = null })
       }
 
-      clearAuth()
-      throw new Error('Session expired. Please sign in again.')
+      try {
+        await _refreshPromise
+        return retryFn()
+      } catch {
+        useAuthStore.getState().clearAuth()
+        throw new Error('Session expired. Please sign in again.')
+      }
     }
 
     if (!response.ok) {
