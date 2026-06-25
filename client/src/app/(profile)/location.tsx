@@ -31,7 +31,7 @@ export default function ProfileLocationScreen() {
     <Screen>
       {/* Header */}
       <View style={[s.header, { paddingTop: insets.top > 0 ? 0 : 8 }]}>
-        <Pressable onPress={() => { hTap(); router.back() }} style={s.backBtn} hitSlop={8} android_ripple={null}>
+        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8} android_ripple={null}>
           <ArrowLeft size={22} color={Colors.inkPrimary} strokeWidth={1.8} />
         </Pressable>
         <Text style={s.title}>Change City</Text>

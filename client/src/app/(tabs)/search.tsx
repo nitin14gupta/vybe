@@ -116,7 +116,7 @@ function UserRow({ user }: { user: DiscoverUser }) {
   return (
     <Pressable
       style={s.row}
-      onPress={() => { hTap(); router.push(`/(profile)/${user.id}` as any) }}
+      onPress={() => router.push(`/(profile)/${user.id}` as any)}
     >
       {avatar ? (
         <Image source={{ uri: avatar }} style={s.avatar} />

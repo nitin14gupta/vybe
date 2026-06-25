@@ -125,7 +125,7 @@ export default function ProfileScreen() {
 
           {/* Edit button */}
           <Pressable
-            onPress={() => { hTap(); router.push('/(profile)/edit') }}
+            onPress={() => router.push('/(profile)/edit')}
             style={styles.editBtn}
           >
             <Pencil size={13} color={Colors.brandOrange} strokeWidth={2} />
@@ -139,12 +139,12 @@ export default function ProfileScreen() {
           <View style={styles.statsRow}>
             <StatCol
               value={vibers} label="Vibers" sub="fans vibin'"
-              onPress={() => { hTap(); profile && router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'followers', name: encodeURIComponent(profile.name ?? ''), vibersCount: vibers, vibingCount: vibing } } as any) }}
+              onPress={() => profile && router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'followers', name: encodeURIComponent(profile.name ?? ''), vibersCount: vibers, vibingCount: vibing } } as any)}
             />
             <View style={styles.statDivider} />
             <StatCol
               value={vibing} label="Vibing" sub="folks feelin'"
-              onPress={() => { hTap(); profile && router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'following', name: encodeURIComponent(profile.name ?? ''), vibersCount: vibers, vibingCount: vibing } } as any) }}
+              onPress={() => profile && router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'following', name: encodeURIComponent(profile.name ?? ''), vibersCount: vibers, vibingCount: vibing } } as any)}
             />
             <View style={styles.statDivider} />
             <StatCol value={posts} label="Posts" sub="photos" />

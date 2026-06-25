@@ -79,7 +79,7 @@ function PreviewCard({
   return (
     <Pressable
       style={[styles.previewCard, active && styles.previewCardActive]}
-      onPress={() => { hTap(); onPress() }}
+      onPress={onPress}
     >
       <View style={styles.previewImageWrap}>
         {cover ? (
@@ -109,7 +109,7 @@ function PreviewCard({
 // "N more events" tail card in preview strip
 function MoreCard({ count, onPress }: { count: number; onPress: () => void }) {
   return (
-    <Pressable style={styles.moreCard} onPress={() => { hTap(); onPress() }}>
+    <Pressable style={styles.moreCard} onPress={onPress}>
       <Text style={styles.moreCount}>+{count}</Text>
       <Text style={styles.moreLabel}>more{"\n"}events</Text>
     </Pressable>
@@ -122,7 +122,7 @@ function EventCard({ event, onPress }: { event: EventSummary; onPress: () => voi
   const cover = event.cover_photos?.[0]?.url;
   const spotsLow = event.spots_left > 0 && event.spots_left <= 10;
   return (
-    <Pressable style={styles.card} onPress={() => { hTap(); onPress() }}>
+    <Pressable style={styles.card} onPress={onPress}>
       {/* 16:9 cover image */}
       <View style={styles.cardImageWrap}>
         {cover ? (
@@ -299,7 +299,7 @@ export default function EventsScreen() {
             {togglePill}
             <Pressable
               style={styles.addBtn}
-              onPress={() => { hTap(); router.push("/(tabs)/create" as any) }}
+              onPress={() => router.push("/(tabs)/create" as any)}
               hitSlop={8}
             >
               <Plus size={18} color="#fff" strokeWidth={2.5} />
@@ -326,7 +326,7 @@ export default function EventsScreen() {
               <Flame size={28} color={Colors.brandOrange} strokeWidth={1.5} />
               <Text style={styles.mapEmptyTitle}>No events nearby</Text>
               <Pressable
-                onPress={() => { hTap(); router.push("/(tabs)/create" as any) }}
+                onPress={() => router.push("/(tabs)/create" as any)}
                 style={styles.mapEmptyCta}
               >
                 <Text style={styles.mapEmptyCtaText}>Create one</Text>
@@ -445,7 +445,7 @@ export default function EventsScreen() {
             hasMore ? (
               <Pressable
                 style={styles.loadMoreBtn}
-                onPress={() => { hTap(); setListCount((c) => c + LIST_PAGE) }}
+                onPress={() => setListCount((c) => c + LIST_PAGE)}
               >
                 <Text style={styles.loadMoreText}>
                   Load {Math.min(events.length - listCount, LIST_PAGE)} more events

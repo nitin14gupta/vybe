@@ -50,7 +50,7 @@ function ReplyPreview({ metadata, isMine, onPress }: {
   return (
     <Pressable
       style={[rp.wrap, isMine ? rp.wrapMine : rp.wrapTheirs]}
-      onPress={() => { hTap(); rt.message_id && onPress?.(rt.message_id) }}
+      onPress={() => rt.message_id && onPress?.(rt.message_id)}
       hitSlop={4}
     >
       <View style={rp.accent} />
@@ -297,7 +297,7 @@ function EventCard({ metadata, isMine, sentAt }: { metadata: Record<string, any>
         <View style={s.richCardBody}>
           <Text style={s.richCardTitle} numberOfLines={2}>{metadata.title}</Text>
           {metadata.date ? <Text style={s.richCardSub}>{metadata.date}</Text> : null}
-          <Pressable style={s.richCardBtn} onPress={() => { hTap(); metadata.event_id && router.push(`/(events)/${metadata.event_id}` as any) }}>
+          <Pressable style={s.richCardBtn} onPress={() => metadata.event_id && router.push(`/(events)/${metadata.event_id}` as any)}>
             <Text style={s.richCardBtnText}>View Event</Text>
           </Pressable>
         </View>
@@ -334,7 +334,7 @@ function ProfileCard({ metadata, isMine, sentAt }: { metadata: Record<string, an
             ))}
           </View>
         )}
-        <Pressable style={s.richCardBtn} onPress={() => { hTap(); metadata.user_id && router.push(`/(profile)/${metadata.user_id}` as any) }}>
+        <Pressable style={s.richCardBtn} onPress={() => metadata.user_id && router.push(`/(profile)/${metadata.user_id}` as any)}>
           <Text style={s.richCardBtnText}>View Profile</Text>
         </Pressable>
       </View>

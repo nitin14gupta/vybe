@@ -69,7 +69,7 @@ export default function OTPScreen() {
           <Text style={styles.title}>Enter the code</Text>
           <View style={styles.sentRow}>
             <Text style={styles.sentText}>Sent to +91 {phone}</Text>
-            <Pressable onPress={() => { hTap(); router.back() }}>
+            <Pressable onPress={() => router.back()}>
               <Pencil size={14} color={Colors.brandOrange} strokeWidth={2} />
             </Pressable>
           </View>

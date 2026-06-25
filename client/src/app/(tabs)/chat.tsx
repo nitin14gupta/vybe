@@ -41,7 +41,7 @@ function formatLastMessage(conv: Conversation): string {
 function ConvRow({ conv, onPress }: { conv: Conversation; onPress: () => void }) {
   const isLocked = conv.status === 'pending'
   return (
-    <Pressable onPress={() => { hTap(); onPress() }} style={[s.convRow, isLocked && s.convRowLocked]}>
+    <Pressable onPress={onPress} style={[s.convRow, isLocked && s.convRowLocked]}>
       <View style={s.convAvatarWrap}>
         {conv.partner_avatar ? (
           <Image source={{ uri: conv.partner_avatar }} style={s.convAvatar} />
@@ -179,7 +179,7 @@ export default function ChatScreen() {
           <MessageCircle size={52} color={Colors.inkDisabled} strokeWidth={1.2} />
           <Text style={s.emptyTitle}>No chats yet</Text>
           <Text style={s.emptySub}>Send a Vybe to spark a conversation</Text>
-          <Pressable onPress={() => { hTap(); router.navigate('/(tabs)/') }} style={s.exploreBtn}>
+          <Pressable onPress={() => router.navigate('/(tabs)/')} style={s.exploreBtn}>
             <Text style={s.exploreBtnText}>Explore</Text>
           </Pressable>
         </View>

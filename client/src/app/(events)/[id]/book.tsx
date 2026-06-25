@@ -7,7 +7,7 @@ import {
   Text,
   View,
 } from 'react-native'
-import { hTap, hSuccess } from '@/lib/haptics'
+import { hSuccess } from '@/lib/haptics'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -89,7 +89,7 @@ export default function BookScreen() {
   return (
     <View style={s.root}>
       <View style={[s.header, { paddingTop: insets.top + 8 }]}>
-        <Pressable style={s.backBtn} onPress={() => { hTap(); router.back() }}>
+        <Pressable style={s.backBtn} onPress={() => router.back()}>
           <ArrowLeft size={20} color={Colors.inkPrimary} />
         </Pressable>
         <Text style={s.headerTitle}>Confirm Booking</Text>

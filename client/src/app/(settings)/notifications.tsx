@@ -128,7 +128,7 @@ export default function NotificationsScreen() {
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
       <View style={s.header}>
-        <Pressable onPress={() => { hTap(); router.back() }} style={s.backBtn} hitSlop={8}>
+        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
           <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
         </Pressable>
         <Text style={s.headerTitle}>Notifications</Text>
@@ -161,7 +161,7 @@ export default function NotificationsScreen() {
           stickySectionHeadersEnabled={false}
           ListFooterComponent={
             hasMore ? (
-              <Pressable style={s.loadMoreBtn} onPress={() => { if (!loadingMore) { hTap(); loadMore() } }}>
+              <Pressable style={s.loadMoreBtn} onPress={() => { if (!loadingMore) loadMore() }}>
                 {loadingMore
                   ? <ActivityIndicator color={Colors.brandOrange} size="small" />
                   : <Text style={s.loadMoreText}>Load more</Text>}

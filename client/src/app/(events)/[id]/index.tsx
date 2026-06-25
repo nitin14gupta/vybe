@@ -202,7 +202,7 @@ export default function EventDetailScreen() {
     return (
       <View style={[styles.root, styles.center]}>
         <Text style={styles.errorText}>Event not found</Text>
-        <Pressable onPress={() => { hTap(); goBack() }} style={styles.backBtn}>
+        <Pressable onPress={goBack} style={styles.backBtn}>
           <Text style={styles.backBtnText}>← Go back</Text>
         </Pressable>
       </View>
@@ -252,7 +252,7 @@ export default function EventDetailScreen() {
 
         {/* Overlay buttons */}
         <View style={[styles.heroOverlay, { top: insets.top + 8 }]}>
-          <Pressable style={styles.heroCircleBtn} onPress={() => { hTap(); goBack() }}>
+          <Pressable style={styles.heroCircleBtn} onPress={goBack}>
             <ArrowLeft size={20} color="#fff" />
           </Pressable>
           <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -395,14 +395,14 @@ export default function EventDetailScreen() {
             <View style={styles.hostActions}>
               <Pressable
                 style={styles.hostBtn}
-                onPress={() => { hTap(); router.push(`/(events)/${id}/attendees` as any) }}
+                onPress={() => router.push(`/(events)/${id}/attendees` as any)}
               >
                 <Users size={16} color={Colors.inkPrimary} strokeWidth={1.8} />
                 <Text style={styles.hostBtnText}>Attendees</Text>
               </Pressable>
               <Pressable
                 style={[styles.hostBtn, styles.hostBtnPrimary]}
-                onPress={() => { hTap(); router.push(`/(events)/${id}/scanner` as any) }}
+                onPress={() => router.push(`/(events)/${id}/scanner` as any)}
               >
                 <LinearGradient
                   colors={['#FF6B35', '#FF3864']}
@@ -437,7 +437,7 @@ export default function EventDetailScreen() {
             ) : isPast && (isGoing || hasTicket) ? (
               <Pressable
                 style={styles.bookBtn}
-                onPress={() => { hTap(); router.push(`/(events)/${id}/review` as any) }}
+                onPress={() => router.push(`/(events)/${id}/review` as any)}
               >
                 <LinearGradient
                   colors={['#FF6B35', '#FF3864']}
@@ -455,7 +455,7 @@ export default function EventDetailScreen() {
                 </View>
                 <Pressable
                   style={styles.ticketBtn}
-                  onPress={() => { hTap(); router.push(`/(events)/${id}/ticket` as any) }}
+                  onPress={() => router.push(`/(events)/${id}/ticket` as any)}
                 >
                   <QrCode size={16} color={Colors.brandOrange} />
                   <Text style={styles.ticketBtnText}>Ticket</Text>

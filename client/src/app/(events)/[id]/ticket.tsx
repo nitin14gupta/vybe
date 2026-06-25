@@ -191,7 +191,7 @@ export default function TicketScreen() {
 
       {/* Top nav bar */}
       <View style={s.nav}>
-        <Pressable style={s.navBtn} onPress={() => { hTap(); goBack() }} hitSlop={8}>
+        <Pressable style={s.navBtn} onPress={goBack} hitSlop={8}>
           <ArrowLeft size={20} color={Colors.inkPrimary} />
         </Pressable>
         <Text style={s.navTitle}>Your Ticket</Text>
@@ -238,7 +238,7 @@ export default function TicketScreen() {
         {/* Footer link */}
         <Pressable
           style={s.allTicketsLink}
-          onPress={() => { hTap(); router.replace('/(settings)/joined-events' as any) }}
+          onPress={() => router.replace('/(settings)/joined-events' as any)}
         >
           <Text style={s.allTicketsText}>View all tickets</Text>
         </Pressable>

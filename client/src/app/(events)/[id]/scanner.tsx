@@ -108,7 +108,7 @@ export default function ScannerScreen() {
     <View style={[s.root, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={s.header}>
-        <Pressable style={s.headerBtn} onPress={() => { hTap(); router.back() }}>
+        <Pressable style={s.headerBtn} onPress={() => router.back()}>
           <ArrowLeft size={20} color={Colors.inkPrimary} />
         </Pressable>
         <Text style={s.headerTitle}>Check-in Scanner</Text>

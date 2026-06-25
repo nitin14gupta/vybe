@@ -27,7 +27,7 @@ function EventChip({ event }: { event: EventSummary }) {
   return (
     <Pressable
       style={s.eventChip}
-      onPress={() => { hTap(); router.push(`/(events)/${event.id}` as any) }}
+      onPress={() => router.push(`/(events)/${event.id}` as any)}
     >
       {event.cover_photos?.[0]?.url ? (
         <Image source={{ uri: event.cover_photos[0].url }} style={s.eventChipImg} />
@@ -156,7 +156,7 @@ export default function UserProfileScreen() {
     return (
       <View style={[s.root, s.center]}>
         <Text style={s.errorText}>Profile not found</Text>
-        <Pressable onPress={() => { hTap(); router.back() }} style={s.backBtn}>
+        <Pressable onPress={() => router.back()} style={s.backBtn}>
           <Text style={s.backBtnText}>← Go back</Text>
         </Pressable>
       </View>
@@ -175,7 +175,7 @@ export default function UserProfileScreen() {
     <View style={[s.root, { paddingBottom: insets.bottom }]}>
       {/* Header overlay */}
       <View style={[s.headerOverlay, { paddingTop: insets.top + 8 }]}>
-        <Pressable onPress={() => { hTap(); router.back() }} style={s.headerCircleBtn} hitSlop={8}>
+        <Pressable onPress={() => router.back()} style={s.headerCircleBtn} hitSlop={8}>
           <ChevronLeft size={22} color="#fff" strokeWidth={2.5} />
         </Pressable>
         <Pressable onPress={() => { hTap(); setMenuOpen(true) }} style={s.headerCircleBtn} hitSlop={8}>
@@ -235,7 +235,7 @@ export default function UserProfileScreen() {
               <Pressable
                 style={s.statItem}
                 android_ripple={null}
-                onPress={() => { hTap(); router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'followers', name: encodeURIComponent(profile.name ?? ''), vibersCount: profile.vibers_count ?? 0, vibingCount: profile.vibing_count ?? 0 } } as any) }}
+                onPress={() => router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'followers', name: encodeURIComponent(profile.name ?? ''), vibersCount: profile.vibers_count ?? 0, vibingCount: profile.vibing_count ?? 0 } } as any)}
               >
                 <Text style={s.statValue}>{profile.vibers_count ?? 0}</Text>
                 <Text style={s.statLabel}>Vibers</Text>
@@ -244,7 +244,7 @@ export default function UserProfileScreen() {
               <Pressable
                 style={s.statItem}
                 android_ripple={null}
-                onPress={() => { hTap(); router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'following', name: encodeURIComponent(profile.name ?? ''), vibersCount: profile.vibers_count ?? 0, vibingCount: profile.vibing_count ?? 0 } } as any) }}
+                onPress={() => router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'following', name: encodeURIComponent(profile.name ?? ''), vibersCount: profile.vibers_count ?? 0, vibingCount: profile.vibing_count ?? 0 } } as any)}
               >
                 <Text style={s.statValue}>{profile.vibing_count ?? 0}</Text>
                 <Text style={s.statLabel}>Vibing</Text>
@@ -333,7 +333,6 @@ export default function UserProfileScreen() {
           <Pressable
             style={[s.ctaBtn, s.ctaBtnPrimary, { flex: 1 }]}
             onPress={() => {
-              hTap()
               if (profile.conversation_id) {
                 router.push(`/(chat)/${profile.conversation_id}` as any)
               } else {

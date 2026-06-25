@@ -131,7 +131,7 @@ export default function CreateScreen() {
     <Screen>
       <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={s.header}>
-          <Pressable style={s.headerClose} onPress={() => { hTap(); step > 1 ? back() : router.back() }}>
+          <Pressable style={s.headerClose} onPress={() => { step > 1 ? back() : router.back() }}>
             {step > 1 ? (
               <Text style={s.headerBackText}>← Back</Text>
             ) : (

@@ -27,7 +27,7 @@ function RequestCard({ req, onBeginAccept, onPass }: { req: VybeRequest; onBegin
 
   return (
     <View style={[s.card, actioned && s.cardActioned]}>
-      <Pressable style={s.cardLeft} onPress={() => { hTap(); router.push(`/(profile)/${req.sender_id}` as any) }}>
+      <Pressable style={s.cardLeft} onPress={() => router.push(`/(profile)/${req.sender_id}` as any)}>
         {avatar ? (
           <Image source={{ uri: avatar }} style={s.cardAvatar} />
         ) : (
@@ -73,7 +73,7 @@ function VybeInboxSheetCore({ requests, loading, onBeginAccept, onPass, onClose 
           <View style={s.countBadge}><Text style={s.countBadgeText}>{requests.length}</Text></View>
         )}
       </View>
-      <Pressable onPress={() => { hTap(); onClose() }} hitSlop={10}>
+      <Pressable onPress={onClose} hitSlop={10}>
         <X size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
       </Pressable>
     </View>

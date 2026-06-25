@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, TextInput } from 'react-native'
 import { router } from 'expo-router'
-import { hTap, hSuccess, hSelection } from '@/lib/haptics'
+import { hSuccess, hSelection } from '@/lib/haptics'
 import { Mic, Square, Play, Pause, RotateCcw } from 'lucide-react-native'
 import { BackButton, Input, GenderSelector, InterestChip, PrimaryButton, ToastBanner, Screen, RecordingWave, PlaybackWave } from '@/components/ui'
 import { useEditProfile } from '@/hooks/useEditProfile'
@@ -95,7 +95,7 @@ export default function EditProfileScreen() {
           <Text style={styles.label}>CITY</Text>
           <View style={styles.cityRow}>
             <Text style={styles.cityValue}>{city ?? 'Not set'}</Text>
-            <Pressable onPress={() => { hTap(); router.push('/(profile)/location') }} style={styles.changeBtn}>
+            <Pressable onPress={() => router.push('/(profile)/location')} style={styles.changeBtn}>
               <Text style={styles.changeBtnText}>Change</Text>
             </Pressable>
           </View>

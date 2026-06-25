@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, Star } from 'lucide-react-native'
-import { hTap, hSelection, hSuccess } from '@/lib/haptics'
+import { hSelection, hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
@@ -73,7 +73,7 @@ export default function ReviewScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={[s.header, { paddingTop: insets.top + 8 }]}>
-        <Pressable onPress={() => { hTap(); router.back() }} style={s.backBtn}>
+        <Pressable onPress={() => router.back()} style={s.backBtn}>
           <ArrowLeft size={20} color={Colors.inkPrimary} />
         </Pressable>
         <Text style={s.headerTitle}>Rate the Event</Text>

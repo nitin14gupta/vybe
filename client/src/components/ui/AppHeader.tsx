@@ -1,7 +1,6 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ReactNode } from 'react'
-import { hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 
 interface Props {
@@ -42,7 +41,7 @@ export function HeaderIconBtn({
 }) {
   return (
     <Pressable
-      onPress={() => { hTap(); onPress?.() }}
+      onPress={onPress}
       hitSlop={10}
       style={styles.iconBtn}
     >
