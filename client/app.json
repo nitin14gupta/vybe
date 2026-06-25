@@ -57,7 +57,11 @@
       [
         "expo-notifications",
         {
-          "color": "#FF6B35"
+          "icon": "./assets/images/expo-logo.png",
+          "color": "#FF6B35",
+          "defaultChannel": "default",
+          "enableBackgroundRemoteNotifications": true,
+          "mode": "production"
         }
       ],
       [

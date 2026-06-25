@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional
 from middleware.auth import get_current_user
 from db.config import get_db
 from routes.notifications import notify_vybe_accepted
+from utils.push import send_push
 
 router = APIRouter(prefix="/vibes", tags=["vibes"])
 
@@ -20,7 +21,7 @@ class RespondVibeRequest(BaseModel):
 
 
 @router.post("", status_code=201)
-def send_vibe(body: SendVibeRequest, current_user: dict = Depends(get_current_user)):
+def send_vibe(body: SendVibeRequest, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
     sender_id = current_user["id"]
     receiver_id = body.target_id
 
@@ -95,8 +96,23 @@ def send_vibe(body: SendVibeRequest, current_user: dict = Depends(get_current_us
                 (conv_id,),
             )
 
+        cur.execute("SELECT name FROM users WHERE id = %s::uuid", (sender_id,))
+        sender_row = cur.fetchone()
+        sender_name = sender_row["name"] if sender_row else "Someone"
+        cur.execute(
+            "SELECT url FROM user_photos WHERE user_id = %s::uuid ORDER BY position LIMIT 1",
+            (sender_id,),
+        )
+        photo_row = cur.fetchone()
+        sender_avatar = photo_row["url"] if photo_row else None
         conn.commit()
 
+    background_tasks.add_task(
+        send_push, receiver_id, "New Vybe",
+        f"{sender_name} sent you a vybe",
+        {"type": "vybe"},
+        sender_avatar,
+    )
     return {"ok": True, "conversation_id": str(conv_id) if conv_id else None}
 
 
@@ -164,6 +180,7 @@ def get_sent_vibes(current_user: dict = Depends(get_current_user)):
 def respond_to_vibe(
     vibe_id: str,
     body: RespondVibeRequest,
+    background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
 ):
     if body.action not in ("accept", "pass"):
@@ -225,10 +242,24 @@ def respond_to_vibe(
             # Notify the vybe sender that their request was accepted
             cur.execute("SELECT name FROM users WHERE id = %s::uuid", (receiver_id,))
             accepter = cur.fetchone()
+            accepter_name = accepter["name"] if accepter else "Someone"
             if accepter:
-                notify_vybe_accepted(cur, sender_id, receiver_id, accepter["name"] or "Someone")
+                notify_vybe_accepted(cur, sender_id, receiver_id, accepter_name)
+            cur.execute(
+                "SELECT url FROM user_photos WHERE user_id = %s::uuid ORDER BY position LIMIT 1",
+                (receiver_id,),
+            )
+            accepter_photo = cur.fetchone()
+            accepter_avatar = accepter_photo["url"] if accepter_photo else None
 
             conn.commit()
+
+            background_tasks.add_task(
+                send_push, sender_id, "Vybe Accepted",
+                f"{accepter_name} accepted your vybe",
+                {"type": "conversation", "conv_id": str(conv_id) if conv_id else ""},
+                accepter_avatar,
+            )
             return {"ok": True, "status": "accepted", "conversation_id": str(conv_id) if conv_id else None}
 
         else:  # pass / reject

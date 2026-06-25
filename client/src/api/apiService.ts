@@ -877,6 +877,19 @@ class ApiService {
       throw new Error('Invalid server response')
     }
   }
+  static async registerDeviceToken(token: string, platform: string): Promise<void> {
+    await this.post(ENDPOINTS.DEVICE_TOKEN, { expo_token: token, platform })
+  }
+
+  static async removeDeviceToken(token: string): Promise<void> {
+    const { accessToken } = useAuthStore.getState()
+    const res = await fetch(`${API_BASE_URL}${ENDPOINTS.DEVICE_TOKEN}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
+      body: JSON.stringify({ expo_token: token }),
+    })
+    if (!res.ok) throw new Error('remove token failed')
+  }
 }
 
 export default ApiService

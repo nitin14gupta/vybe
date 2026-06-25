@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, BackgroundTasks, HTTPException, status, Depends
 from pydantic import BaseModel
 from datetime import date
 from schemas.user import (
@@ -7,6 +7,7 @@ from schemas.user import (
 )
 from middleware.auth import get_current_user
 from db.config import get_db
+from utils.push import send_push
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -461,7 +462,7 @@ def remove_follower(follower_id: str, current_user: dict = Depends(get_current_u
 # ── Follow / Unfollow ─────────────────────────────────────────────────────────
 
 @router.post("/{user_id}/follow", status_code=status.HTTP_200_OK)
-def follow_user(user_id: str, current_user: dict = Depends(get_current_user)):
+def follow_user(user_id: str, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
     if user_id == current_user["id"]:
         raise HTTPException(status_code=400, detail="You cannot follow yourself")
     with get_db() as (cur, _):
@@ -476,6 +477,22 @@ def follow_user(user_id: str, current_user: dict = Depends(get_current_user)):
             """,
             (current_user["id"], user_id),
         )
+        cur.execute("SELECT name FROM users WHERE id = %s", (current_user["id"],))
+        follower_row = cur.fetchone()
+        follower_name = follower_row["name"] if follower_row else "Someone"
+        cur.execute(
+            "SELECT url FROM user_photos WHERE user_id = %s::uuid ORDER BY position LIMIT 1",
+            (current_user["id"],),
+        )
+        follower_photo = cur.fetchone()
+        follower_avatar = follower_photo["url"] if follower_photo else None
+
+    background_tasks.add_task(
+        send_push, user_id, "New Follower",
+        f"{follower_name} started following you",
+        {"type": "profile", "user_id": current_user["id"]},
+        follower_avatar,
+    )
     return {"ok": True}
 
 

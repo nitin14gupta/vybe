@@ -1,11 +1,12 @@
 import asyncio
 import json
-from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from typing import Optional
 from middleware.auth import get_current_user
 from db.config import get_db
 from utils.jwt import decode_token
+from utils.push import send_push
 
 router = APIRouter(tags=["chat"])
 
@@ -282,13 +283,17 @@ def delete_conversation(conv_id: str, current_user: dict = Depends(get_current_u
 async def send_message_rest(
     conv_id: str,
     body: SendMessageRequest,
+    background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
 ):
     uid = current_user["id"]
+    partner_id = None
     with get_db() as (cur, conn):
         conv = _get_conversation(cur, conv_id, uid)
         if conv["status"] != "active":
             raise HTTPException(status_code=403, detail="Conversation not yet active")
+
+        partner_id = conv["user2_id"] if conv["user1_id"] == uid else conv["user1_id"]
 
         cur.execute(
             """
@@ -303,6 +308,9 @@ async def send_message_rest(
             "UPDATE conversations SET last_message_at = NOW() WHERE id = %s::uuid",
             (conv_id,),
         )
+        cur.execute("SELECT name FROM users WHERE id = %s::uuid", (uid,))
+        sender_row = cur.fetchone()
+        sender_name = sender_row["name"] if sender_row else "Someone"
         conn.commit()
 
     out = {**msg, "sent_at": msg["sent_at"].isoformat()}
@@ -313,6 +321,14 @@ async def send_message_rest(
         except Exception:
             pass
     asyncio.create_task(_publish(f"conv:{conv_id}", {"type": "message", **out}))
+
+    if partner_id:
+        preview = (body.content or "")[:80] if body.content_type == "text" else "Sent you a message"
+        background_tasks.add_task(
+            send_push, partner_id, sender_name, preview,
+            {"type": "conversation", "conv_id": conv_id},
+        )
+
     return out
 
 
@@ -432,6 +448,24 @@ async def chat_websocket(
             elif msg_type == "reaction":
                 msg_id = data.get("message_id")
                 emoji = data.get("emoji")
+                if msg_id and emoji:
+                    # Get message author for push notification
+                    with get_db() as (cur, _):
+                        cur.execute(
+                            "SELECT sender_id::text FROM messages WHERE id = %s::uuid AND conversation_id = %s::uuid",
+                            (msg_id, conv_id),
+                        )
+                        msg_row = cur.fetchone()
+                        msg_author_id = msg_row["sender_id"] if msg_row else None
+                        if msg_author_id and msg_author_id != uid:
+                            cur.execute("SELECT name FROM users WHERE id = %s::uuid", (uid,))
+                            reactor_row = cur.fetchone()
+                            reactor_name = reactor_row["name"] if reactor_row else "Someone"
+                            asyncio.create_task(asyncio.to_thread(
+                                send_push, msg_author_id, f"{reactor_name} reacted",
+                                f"{reactor_name} reacted to your message",
+                                {"type": "conversation", "conv_id": conv_id},
+                            ))
                 if msg_id:
                     with get_db() as (cur, conn):
                         if emoji:
@@ -511,6 +545,18 @@ async def chat_websocket(
                 # Broadcast to partner — in-memory first (always works), Redis as fallback for multi-server
                 await _broadcast_local(conv_id, out, exclude=websocket)
                 await _publish(f"conv:{conv_id}", out)
+
+                # Push notification to partner
+                if partner_id:
+                    with get_db() as (cur, _):
+                        cur.execute("SELECT name FROM users WHERE id = %s::uuid", (uid,))
+                        ws_sender_row = cur.fetchone()
+                        ws_sender_name = ws_sender_row["name"] if ws_sender_row else "Someone"
+                    ws_preview = (content or "")[:80] if content_type == "text" else "Sent you a message"
+                    asyncio.create_task(asyncio.to_thread(
+                        send_push, partner_id, ws_sender_name, ws_preview,
+                        {"type": "conversation", "conv_id": conv_id},
+                    ))
 
     except WebSocketDisconnect:
         pass

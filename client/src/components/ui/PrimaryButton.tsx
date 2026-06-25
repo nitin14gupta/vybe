@@ -1,6 +1,7 @@
 import { ActivityIndicator, Pressable, Text, StyleSheet, ViewStyle } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated'
+import { hTap } from '@/lib/haptics'
 import { Colors, FontFamily, ComponentSize, Radius } from '@/constants'
 
 interface Props {
@@ -19,7 +20,10 @@ export function PrimaryButton({ label, onPress, disabled, loading, style }: Prop
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }))
 
   const handlePressIn = () => {
-    if (!disabled && !loading) scale.value = withSpring(0.97, { duration: 120 })
+    if (!disabled && !loading) {
+      scale.value = withSpring(0.97, { duration: 120 })
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    }
   }
   const handlePressOut = () => {
     scale.value = withSpring(1, { duration: 120 })

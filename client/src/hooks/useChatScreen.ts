@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { type LayoutChangeEvent } from 'react-native'
+import * as Haptics from 'expo-haptics'
 import { useSharedValue, withTiming } from 'react-native-reanimated'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -159,6 +160,7 @@ export function useChatScreen(convId: string) {
   const handleSend = useCallback(async () => {
     const text = inputText.trim()
     if (!text) return
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     setInputText('')
     sendTyping(false)
     const replyMeta = replyingTo
@@ -236,6 +238,7 @@ export function useChatScreen(convId: string) {
   }, [])
 
   const handleEmojiSelect = useCallback((msgId: string, emoji: string | null) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     reactToMessage(msgId, emoji)
     setEmojiTarget(null)
   }, [reactToMessage])

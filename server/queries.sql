@@ -25,6 +25,16 @@ CREATE TABLE IF NOT EXISTS public.conversations (
   CONSTRAINT conversations_user1_id_user2_id_key UNIQUE (user1_id, user2_id)
 );
 
+CREATE TABLE IF NOT EXISTS public.device_tokens (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  user_id uuid NOT NULL,
+  expo_token text NOT NULL,
+  platform text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT device_tokens_pkey PRIMARY KEY (id),
+  CONSTRAINT device_tokens_user_id_expo_token_key UNIQUE (user_id, expo_token)
+);
+
 CREATE TABLE IF NOT EXISTS public.event_attendees (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
   event_id uuid NOT NULL,
@@ -92,9 +102,9 @@ CREATE TABLE IF NOT EXISTS public.messages (
   content text,
   content_type text DEFAULT 'text'::text,
   metadata jsonb,
-  reactions jsonb,
   sent_at timestamp with time zone DEFAULT now(),
   read_at timestamp with time zone,
+  reactions jsonb DEFAULT '{}'::jsonb,
   CONSTRAINT messages_content_type_check CHECK (content_type = ANY (ARRAY['text'::text, 'event'::text, 'profile'::text, 'image'::text, 'voice'::text, 'video'::text, 'gif'::text])),
   CONSTRAINT messages_pkey PRIMARY KEY (id)
 );
@@ -196,6 +206,7 @@ CREATE TABLE IF NOT EXISTS public.vibe_requests (
 -- ── Foreign Keys ────────────────────────────────────────────────────────────
 ALTER TABLE public.conversations ADD CONSTRAINT conversations_user1_id_fkey FOREIGN KEY (user1_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.conversations ADD CONSTRAINT conversations_user2_id_fkey FOREIGN KEY (user2_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE public.device_tokens ADD CONSTRAINT device_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.event_attendees ADD CONSTRAINT event_attendees_event_id_fkey FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE;
 ALTER TABLE public.event_attendees ADD CONSTRAINT event_attendees_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.event_reviews ADD CONSTRAINT event_reviews_event_id_fkey FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE;
@@ -217,6 +228,7 @@ ALTER TABLE public.vibe_requests ADD CONSTRAINT vibe_requests_receiver_id_fkey F
 ALTER TABLE public.vibe_requests ADD CONSTRAINT vibe_requests_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE;
 
 -- ── Indexes ─────────────────────────────────────────────────────────────────
+CREATE INDEX idx_device_tokens_user ON public.device_tokens USING btree (user_id);
 CREATE INDEX events_location_idx ON public.events USING btree (location_lat, location_lng) WHERE (location_lat IS NOT NULL);
 CREATE INDEX idx_follows_follower ON public.follows USING btree (follower_id);
 CREATE INDEX idx_follows_following ON public.follows USING btree (following_id);

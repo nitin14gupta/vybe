@@ -15,6 +15,7 @@ import { useAuthStore } from '@/store/auth'
 import { tokenStorage } from '@/lib/tokenStorage'
 import ApiService from '@/api/apiService'
 import { PillOverlay } from '@/components/ui'
+import { useNotificationSetup } from '@/hooks/useNotificationSetup'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -58,6 +59,7 @@ export default function RootLayout() {
   const [fontsLoaded, fontError] = useVybeFonts()
   const [authReady, setAuthReady] = useState(false)
   const { setAuth } = useAuthStore()
+  useNotificationSetup()
 
   useEffect(() => {
     async function bootstrap() {

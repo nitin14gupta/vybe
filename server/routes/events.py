@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, HTTPException
 from typing import List, Optional
 from datetime import datetime, timezone, timedelta, date
 from pydantic import BaseModel
 from middleware.auth import get_current_user
 from db.config import get_db
+from utils.push import send_push
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -303,7 +304,7 @@ def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
 # ── POST /events ──────────────────────────────────────────────────────────────
 
 @router.post("", response_model=EventDetail, status_code=201)
-def create_event(body: CreateEventBody, current_user: dict = Depends(get_current_user)):
+def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
     # Parse and validate date_time
     try:
         dt = datetime.fromisoformat(body.date_time.replace("Z", "+00:00"))
@@ -357,7 +358,20 @@ def create_event(body: CreateEventBody, current_user: dict = Depends(get_current
         host_name = host_row["name"] if host_row else "Someone"
         notify_followers_event_created(cur, current_user["id"], new_id, body.title, host_name)
 
+        # Collect follower IDs for push delivery after commit
+        cur.execute(
+            "SELECT follower_id::text FROM follows WHERE following_id = %s::uuid",
+            (current_user["id"],),
+        )
+        follower_ids = [r["follower_id"] for r in cur.fetchall()]
         conn.commit()
+
+    for fid in follower_ids:
+        background_tasks.add_task(
+            send_push, fid, f"{host_name} posted an event",
+            body.title,
+            {"type": "event", "event_id": new_id},
+        )
 
     return get_event(new_id, current_user)
 
@@ -405,7 +419,7 @@ def update_event(event_id: str, body: CreateEventBody, current_user: dict = Depe
 # ── POST /events/{id}/rsvp ────────────────────────────────────────────────────
 
 @router.post("/{event_id}/rsvp")
-def rsvp_event(event_id: str, body: RsvpBody, current_user: dict = Depends(get_current_user)):
+def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
     if body.action not in ("going", "cancel"):
         raise HTTPException(status_code=400, detail="action must be 'going' or 'cancel'")
 
@@ -469,6 +483,11 @@ def rsvp_event(event_id: str, body: RsvpBody, current_user: dict = Depends(get_c
                     if not cur.fetchone():
                         from routes.notifications import notify_event_rsvp
                         notify_event_rsvp(cur, host_id, uid, attendee_name, event_id, ev_row["title"])
+                        background_tasks.add_task(
+                            send_push, host_id, "New RSVP",
+                            f"{attendee_name} is going to {ev_row['title']}",
+                            {"type": "event", "event_id": event_id},
+                        )
 
             conn.commit()
             return {"ok": True, "status": status}
@@ -491,7 +510,24 @@ def rsvp_event(event_id: str, body: RsvpBody, current_user: dict = Depends(get_c
                     "UPDATE events SET spots_left = LEAST(capacity, spots_left + 1) WHERE id = %s",
                     (event_id,),
                 )
+
+            # Notify host about the cancellation
+            cur.execute("SELECT host_id::text, title FROM events WHERE id = %s", (event_id,))
+            ev_cancel = cur.fetchone()
+            cur.execute("SELECT name FROM users WHERE id = %s::uuid", (current_user["id"],))
+            attendee_cancel = cur.fetchone()
+            host_id_cancel = ev_cancel["host_id"] if ev_cancel else None
+            attendee_name_cancel = attendee_cancel["name"] if attendee_cancel else "Someone"
+            event_title_cancel = ev_cancel["title"] if ev_cancel else ""
+
             conn.commit()
+
+            if host_id_cancel and host_id_cancel != current_user["id"]:
+                background_tasks.add_task(
+                    send_push, host_id_cancel, "RSVP Cancelled",
+                    f"{attendee_name_cancel} can't make it to {event_title_cancel}",
+                    {"type": "event", "event_id": event_id},
+                )
             return {"ok": True, "status": "cancelled"}
 
 
@@ -628,7 +664,7 @@ def checkin_attendee(event_id: str, body: CheckinBody, current_user: dict = Depe
 # ── POST /events/{id}/reviews ─────────────────────────────────────────────────
 
 @router.post("/{event_id}/reviews")
-def submit_review(event_id: str, body: ReviewBody, current_user: dict = Depends(get_current_user)):
+def submit_review(event_id: str, body: ReviewBody, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
     if not (1 <= body.rating <= 5):
         raise HTTPException(status_code=422, detail="Rating must be between 1 and 5")
 
@@ -656,7 +692,21 @@ def submit_review(event_id: str, body: ReviewBody, current_user: dict = Depends(
             """,
             (event_id, uid, body.rating, body.body),
         )
+        cur.execute("SELECT host_id::text, title FROM events WHERE id = %s", (event_id,))
+        ev_review = cur.fetchone()
+        cur.execute("SELECT name FROM users WHERE id = %s::uuid", (uid,))
+        reviewer_row = cur.fetchone()
+        host_id_review = ev_review["host_id"] if ev_review else None
+        reviewer_name = reviewer_row["name"] if reviewer_row else "Someone"
+        event_title_review = ev_review["title"] if ev_review else ""
         conn.commit()
+
+    if host_id_review and host_id_review != uid:
+        background_tasks.add_task(
+            send_push, host_id_review, "New Review",
+            f"{reviewer_name} left a {body.rating}-star review on {event_title_review}",
+            {"type": "event", "event_id": event_id},
+        )
     return {"ok": True}
 
 

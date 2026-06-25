@@ -73,6 +73,9 @@ export const ENDPOINTS = {
   NOTIFICATIONS_READ_ALL: '/notifications/read-all',
   NOTIFICATION_READ: '/notifications/:id/read',
 
+  // Device tokens
+  DEVICE_TOKEN: '/devices/token',
+
   // Conversation delete
   CONV_DELETE: '/chat/conversations/:id',
 
