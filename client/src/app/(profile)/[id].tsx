@@ -15,6 +15,8 @@ import ApiService, { ExtendedProfile, EventSummary } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
 import { usePillStore } from '@/store/pillStore'
 import { useVybeStore } from '@/store/vybeStore'
+import { useImageViewer } from '@/hooks/useImageViewer'
+import { MediaViewerModal } from '@/components/chat/MediaViewerModal'
 
 const { width: W } = Dimensions.get('window')
 
@@ -57,6 +59,7 @@ export default function UserProfileScreen() {
 
   const voicePlayer = useAudioPlayer(null)
   const voiceStatus = useAudioPlayerStatus(voicePlayer)
+  const { viewingMedia, openMedia, closeMedia } = useImageViewer()
 
   useEffect(() => {
     if (!id) return
@@ -191,7 +194,9 @@ export default function UserProfileScreen() {
               keyExtractor={p => p.id}
               onMomentumScrollEnd={e => setPhotoIdx(Math.round(e.nativeEvent.contentOffset.x / W))}
               renderItem={({ item }) => (
-                <Image source={{ uri: item.url }} style={{ width: W, height: W * 1.2 }} resizeMode="cover" />
+                <Pressable onLongPress={() => openMedia(item.url, 'image')} delayLongPress={400}>
+                  <Image source={{ uri: item.url }} style={{ width: W, height: W * 1.2 }} resizeMode="cover" />
+                </Pressable>
               )}
             />
             {photos.length > 1 && (
@@ -410,6 +415,15 @@ export default function UserProfileScreen() {
         onReport={handleReport}
         onClose={() => setMenuOpen(false)}
       />
+
+      {viewingMedia && (
+        <MediaViewerModal
+          visible={!!viewingMedia}
+          url={viewingMedia.url}
+          type={viewingMedia.type}
+          onClose={closeMedia}
+        />
+      )}
     </View>
   )
 }

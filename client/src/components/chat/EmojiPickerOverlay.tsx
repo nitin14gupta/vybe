@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { View, Text, Pressable, Modal, StyleSheet, Dimensions } from 'react-native'
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated'
+import EmojiKeyboard, { type EmojiType } from 'rn-emoji-keyboard'
 import { Colors, FontFamily } from '@/constants'
 
 const QUICK_EMOJIS = ['❤️', '😂', '😮', '😢', '😡', '👍']
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function EmojiPickerOverlay({ msgId, pageY, isMine, currentEmoji, onSelect, onClose }: Props) {
+  const [showFullPicker, setShowFullPicker] = useState(false)
   const scale = useSharedValue(0.7)
   const opacity = useSharedValue(0)
 
@@ -30,7 +32,6 @@ export function EmojiPickerOverlay({ msgId, pageY, isMine, currentEmoji, onSelec
     opacity: opacity.value,
   }))
 
-  // Position: show above the bubble if near bottom, else below
   const showAbove = pageY > SCREEN_HEIGHT * 0.6
   const top = showAbove ? pageY - PICKER_HEIGHT - 12 : pageY + 48
 
@@ -40,25 +41,62 @@ export function EmojiPickerOverlay({ msgId, pageY, isMine, currentEmoji, onSelec
     onClose()
   }
 
+  const handleFullPickerSelect = ({ emoji }: EmojiType) => {
+    onSelect(msgId, emoji)
+    setShowFullPicker(false)
+    onClose()
+  }
+
   return (
-    <Modal transparent animationType="none" onRequestClose={onClose}>
-      <Pressable style={s.backdrop} onPress={onClose} />
-      <Animated.View style={[s.picker, { top, alignSelf: isMine ? 'flex-end' : 'flex-start' }, animStyle]}>
-        {QUICK_EMOJIS.map(emoji => (
-          <Pressable
-            key={emoji}
-            style={[s.emojiBtn, currentEmoji === emoji && s.emojiBtnActive]}
-            onPress={() => handleSelect(emoji)}
-            hitSlop={4}
-          >
-            <Text style={s.emojiText}>{emoji}</Text>
+    <>
+      <Modal transparent animationType="none" onRequestClose={onClose} visible={!showFullPicker}>
+        <Pressable style={s.backdrop} onPress={onClose} />
+        <Animated.View style={[s.picker, { top, alignSelf: isMine ? 'flex-end' : 'flex-start' }, animStyle]}>
+          {QUICK_EMOJIS.map(emoji => (
+            <Pressable
+              key={emoji}
+              style={[s.emojiBtn, currentEmoji === emoji && s.emojiBtnActive]}
+              onPress={() => handleSelect(emoji)}
+              hitSlop={4}
+            >
+              <Text style={s.emojiText}>{emoji}</Text>
+            </Pressable>
+          ))}
+          <Pressable style={s.moreBtnWrap} onPress={() => setShowFullPicker(true)} hitSlop={4}>
+            <Text style={s.moreBtnText}>+</Text>
           </Pressable>
-        ))}
-        <Pressable style={s.moreBtnWrap} onPress={onClose} hitSlop={4}>
-          <Text style={s.moreBtnText}>+</Text>
-        </Pressable>
-      </Animated.View>
-    </Modal>
+        </Animated.View>
+      </Modal>
+
+      <EmojiKeyboard
+        open={showFullPicker}
+        onClose={() => { setShowFullPicker(false); onClose() }}
+        onEmojiSelected={handleFullPickerSelect}
+        enableSearchBar
+        theme={{
+          backdrop: 'rgba(0,0,0,0.7)',
+          knob: Colors.brandOrange,
+          container: '#1a1a1a',
+          header: '#222',
+          skinTonesContainer: '#1a1a1a',
+          category: {
+            icon: Colors.inkSecondary,
+            iconActive: Colors.brandOrange,
+            container: '#222',
+            containerActive: 'rgba(255,107,53,0.15)',
+          },
+          search: {
+            background: '#222',
+            text: Colors.inkPrimary,
+            placeholder: Colors.inkDisabled,
+            icon: Colors.inkSecondary,
+          },
+          emoji: {
+            selected: 'rgba(255,107,53,0.2)',
+          },
+        }}
+      />
+    </>
   )
 }
 

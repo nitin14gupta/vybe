@@ -1,15 +1,20 @@
 import { useCallback, useState } from 'react'
-import { View, Text, Image, Pressable, StyleSheet } from 'react-native'
+import {
+  View, Text, Pressable, StyleSheet, ActivityIndicator,
+} from 'react-native'
+import { Image } from 'expo-image'
 import { VideoView, useVideoPlayer } from 'expo-video'
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, runOnJS,
 } from 'react-native-reanimated'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
+import * as FileSystem from 'expo-file-system/legacy'
 import { router } from 'expo-router'
-import { Play, Pause } from 'lucide-react-native'
+import { Play, Pause, Download, Film } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 import type { Message } from '@/api/apiService'
+import type { MediaViewType } from '@/components/chat/MediaViewerModal'
 import { ReactionPills } from './ReactionPills'
 import { PlaybackWave } from '@/components/ui'
 
@@ -26,6 +31,9 @@ function ReplyPreview({ metadata, isMine, onPress }: {
   }
   const preview =
     rt.content_type === 'voice' ? '🎤 Voice message' :
+    rt.content_type === 'image' ? '🖼 Photo' :
+    rt.content_type === 'video' ? '🎬 Video' :
+    rt.content_type === 'gif' ? '🎞 GIF' :
     rt.content_type === 'event' ? '📅 Event' :
     rt.content_type === 'profile' ? '👤 Profile' :
     (rt.content ?? '')
@@ -65,8 +73,8 @@ const rp = StyleSheet.create({
 
 // ── Voice bubble ──────────────────────────────────────────────────────────────
 
-function VoiceBubble({ url, duration, isMine }: {
-  url: string; duration?: number; isMine: boolean
+function VoiceBubble({ url, duration, isMine, isPending }: {
+  url: string; duration?: number; isMine: boolean; isPending: boolean
 }) {
   const player = useAudioPlayer(null)
   const status = useAudioPlayerStatus(player)
@@ -81,7 +89,7 @@ function VoiceBubble({ url, duration, isMine }: {
 
   return (
     <View style={[vb.bubble, isMine ? vb.bubbleMine : vb.bubbleTheirs]}>
-      <Pressable onPress={handleToggle} style={vb.playBtn}>
+      <Pressable onPress={handleToggle} style={vb.playBtn} disabled={isPending}>
         {status.playing
           ? <Pause size={15} color="#111" strokeWidth={2.5} />
           : <Play size={15} color="#111" strokeWidth={2.5} />
@@ -90,9 +98,12 @@ function VoiceBubble({ url, duration, isMine }: {
       <View style={vb.waveWrap}>
         <PlaybackWave isActive={status.playing} compact color={isMine ? Colors.brandOrange : '#888'} />
       </View>
-      <Text style={[vb.duration, { color: isMine ? Colors.inkPrimary : Colors.inkSecondary }]}>
-        {durationStr}
-      </Text>
+      {isPending
+        ? <ActivityIndicator size="small" color={Colors.brandOrange} />
+        : <Text style={[vb.duration, { color: isMine ? Colors.inkPrimary : Colors.inkSecondary }]}>
+            {durationStr}
+          </Text>
+      }
     </View>
   )
 }
@@ -106,53 +117,139 @@ const vb = StyleSheet.create({
   duration: { fontFamily: FontFamily.bodyRegular, fontSize: 11, minWidth: 30, textAlign: 'right' },
 })
 
-// ── Media bubble (image / gif / video) ────────────────────────────────────────
+// ── Media bubble (image / gif) ────────────────────────────────────────────────
 
 const MEDIA_WIDTH = 220
 
-function ImageChatBubble({ url, isMine, width: srcW, height: srcH }: {
-  url: string; isMine: boolean; width?: number; height?: number
+function ImageChatBubble({ url, isMine, width: srcW, height: srcH, isPending, onPress }: {
+  url: string; isMine: boolean; width?: number; height?: number; isPending: boolean
+  onPress: () => void
 }) {
   const aspectRatio = srcW && srcH ? srcW / srcH : 4 / 3
   const displayH = Math.round(MEDIA_WIDTH / aspectRatio)
-  return (
-    <Image
-      source={{ uri: url }}
-      style={[mc.img, { width: MEDIA_WIDTH, height: Math.min(Math.max(displayH, 120), 320) }]}
-      resizeMode="cover"
-    />
-  )
-}
-
-function VideoChatBubble({ url, isMine }: { url: string; isMine: boolean }) {
-  const [playing, setPlaying] = useState(false)
-  const player = useVideoPlayer(url, p => { p.loop = false })
-
-  const toggle = () => {
-    if (playing) { player.pause(); setPlaying(false) }
-    else { player.play(); setPlaying(true) }
-  }
+  const h = Math.min(Math.max(displayH, 120), 320)
 
   return (
-    <Pressable onPress={toggle} style={mc.videoWrap}>
-      <VideoView player={player} style={mc.video} contentFit="cover" nativeControls={false} />
-      {!playing && (
-        <View style={mc.playOverlay}>
-          <Play size={28} color="#fff" fill="#fff" strokeWidth={0} />
+    <Pressable onPress={onPress} style={{ width: MEDIA_WIDTH, height: h }}>
+      <Image
+        source={{ uri: url }}
+        style={[mc.img, { width: MEDIA_WIDTH, height: h }]}
+        contentFit="cover"
+      />
+      {isPending && (
+        <View style={mc.pendingOverlay}>
+          <ActivityIndicator size="small" color="#fff" />
         </View>
       )}
     </Pressable>
   )
 }
 
+// ── Video bubble ──────────────────────────────────────────────────────────────
+
+function VideoChatBubble({ url, isMine, isPending, onPress }: {
+  url: string; isMine: boolean; isPending: boolean
+  onPress: (playUrl: string) => void
+}) {
+  const [localUri, setLocalUri] = useState<string | null>(null)
+  const [downloading, setDownloading] = useState(false)
+
+  const handleDownload = async () => {
+    if (downloading) return
+    setDownloading(true)
+    try {
+      const filename = url.split('/').pop() ?? 'video.mp4'
+      const dest = `${FileSystem.cacheDirectory}${filename}`
+      const result = await FileSystem.downloadAsync(url, dest)
+      setLocalUri(result.uri)
+      onPress(result.uri)
+    } catch {
+      setDownloading(false)
+    }
+  }
+
+  const handleTap = () => {
+    if (localUri) { onPress(localUri); return }
+    if (isMine) { onPress(url); return }
+    handleDownload()
+  }
+
+  // Sender: show thumbnail player inline
+  if (isMine) {
+    return (
+      <Pressable onPress={handleTap} style={mc.videoWrap}>
+        <VideoView
+          player={useVideoPlayer(url, p => { p.loop = false })}
+          style={mc.video}
+          contentFit="cover"
+          nativeControls={false}
+        />
+        {!isPending && (
+          <View style={mc.playOverlay}>
+            <Play size={28} color="#fff" fill="#fff" strokeWidth={0} />
+          </View>
+        )}
+        {isPending && (
+          <View style={mc.playOverlay}>
+            <ActivityIndicator size="small" color="#fff" />
+          </View>
+        )}
+      </Pressable>
+    )
+  }
+
+  // Recipient: download-first
+  return (
+    <Pressable onPress={handleTap} style={mc.videoWrap}>
+      {localUri
+        ? (
+          <View style={mc.videoWrap}>
+            <View style={mc.playOverlay}>
+              <Play size={28} color="#fff" fill="#fff" strokeWidth={0} />
+            </View>
+          </View>
+        )
+        : (
+          <View style={mc.downloadPlaceholder}>
+            <Film size={32} color="rgba(255,255,255,0.5)" strokeWidth={1.5} />
+            {downloading
+              ? <ActivityIndicator size="small" color={Colors.brandOrange} style={{ marginTop: 8 }} />
+              : <>
+                  <Download size={18} color={Colors.brandOrange} strokeWidth={2} style={{ marginTop: 10 }} />
+                  <Text style={mc.downloadText}>Tap to download</Text>
+                </>
+            }
+          </View>
+        )
+      }
+    </Pressable>
+  )
+}
+
 const mc = StyleSheet.create({
   img: { borderRadius: 14 },
+  pendingOverlay: {
+    position: 'absolute', bottom: 8, right: 8,
+    width: 28, height: 28, borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center', justifyContent: 'center',
+  },
   videoWrap: { width: MEDIA_WIDTH, height: 160, borderRadius: 14, overflow: 'hidden', backgroundColor: '#111' },
   video: { width: MEDIA_WIDTH, height: 160 },
   playOverlay: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     alignItems: 'center', justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  downloadPlaceholder: {
+    width: MEDIA_WIDTH, height: 160, borderRadius: 14,
+    backgroundColor: '#1a1a1a',
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: '#2a2a2a',
+  },
+  downloadText: {
+    fontFamily: FontFamily.bodyRegular, fontSize: 12,
+    color: Colors.inkSecondary, marginTop: 4,
   },
 })
 
@@ -163,7 +260,7 @@ function EventCard({ metadata, isMine, sentAt }: { metadata: Record<string, any>
     <View style={[s.bubbleWrap, isMine ? s.wrapMine : s.wrapTheirs]}>
       <View style={s.richCard}>
         {metadata.cover_url
-          ? <Image source={{ uri: metadata.cover_url }} style={s.richCardImg} />
+          ? <Image source={{ uri: metadata.cover_url }} style={s.richCardImg} contentFit="cover" />
           : <View style={[s.richCardImg, s.richCardImgFallback]} />
         }
         <View style={s.richCardBody}>
@@ -187,7 +284,7 @@ function ProfileCard({ metadata, isMine, sentAt }: { metadata: Record<string, an
       <View style={s.richCard}>
         <View style={s.profileRow}>
           {metadata.avatar_url
-            ? <Image source={{ uri: metadata.avatar_url }} style={s.profileAvatar} />
+            ? <Image source={{ uri: metadata.avatar_url }} style={s.profileAvatar} contentFit="cover" />
             : (
               <View style={[s.profileAvatar, s.profileAvatarFallback]}>
                 <Text style={s.profileAvatarInitial}>{(metadata.name ?? '?').charAt(0)}</Text>
@@ -223,14 +320,21 @@ interface Props {
   msg: Message
   isMine: boolean
   myId: string
+  isFailed?: boolean
   onDoubleTap: (msgId: string) => void
   onLongPress: (msgId: string, pageY: number, isMine: boolean) => void
   onSwipeReply: (msg: Message) => void
   onReactionPillPress: (msgId: string, emoji: string) => void
   onReplyTap: (originalMsgId: string) => void
+  onMediaTap?: (url: string, type: MediaViewType) => void
+  onRetry?: (tempId: string) => void
 }
 
-export function MessageBubble({ msg, isMine, myId, onDoubleTap, onLongPress, onSwipeReply, onReactionPillPress, onReplyTap }: Props) {
+export function MessageBubble({
+  msg, isMine, myId, isFailed,
+  onDoubleTap, onLongPress, onSwipeReply,
+  onReactionPillPress, onReplyTap, onMediaTap, onRetry,
+}: Props) {
   const translateX = useSharedValue(0)
   const hasTriggeredReply = useSharedValue(false)
 
@@ -268,7 +372,6 @@ export function MessageBubble({ msg, isMine, myId, onDoubleTap, onLongPress, onS
     transform: [{ translateX: isMine ? -translateX.value : translateX.value }],
   }))
 
-  // Timestamp fades in as you swipe, hidden at rest
   const timeRevealStyle = useAnimatedStyle(() => ({
     opacity: Math.min(translateX.value / 40, 1),
   }))
@@ -288,79 +391,108 @@ export function MessageBubble({ msg, isMine, myId, onDoubleTap, onLongPress, onS
                 isMine={isMine}
                 width={msg.metadata.width}
                 height={msg.metadata.height}
+                isPending={isPending}
+                onPress={() => onMediaTap?.(msg.metadata!.url, msg.content_type as MediaViewType)}
               />
             </Animated.View>
           </GestureDetector>
           <Animated.Text style={[s.timeBelow, isMine ? s.timeBelowMine : s.timeBelowTheirs, timeRevealStyle]}>
             {timeStr}
           </Animated.Text>
+          {isFailed && (
+            <Pressable onPress={() => onRetry?.(msg.id)} hitSlop={4}>
+              <Text style={s.failedText}>⚠ Failed · Tap to retry</Text>
+            </Pressable>
+          )}
           {msg.reactions && (
             <ReactionPills reactions={msg.reactions} myId={myId} onPillPress={emoji => onReactionPillPress(msg.id, emoji)} />
           )}
         </View>
       )
     }
+
     if (msg.content_type === 'video' && msg.metadata?.url) {
       return (
         <View style={[s.bubbleWrap, isMine ? s.wrapMine : s.wrapTheirs]}>
           <GestureDetector gesture={gesture}>
             <Animated.View style={animStyle}>
-              <VideoChatBubble url={msg.metadata.url} isMine={isMine} />
+              <VideoChatBubble
+                url={msg.metadata.url}
+                isMine={isMine}
+                isPending={isPending}
+                onPress={playUrl => onMediaTap?.(playUrl, 'video')}
+              />
             </Animated.View>
           </GestureDetector>
           <Animated.Text style={[s.timeBelow, isMine ? s.timeBelowMine : s.timeBelowTheirs, timeRevealStyle]}>
             {timeStr}
           </Animated.Text>
+          {isFailed && (
+            <Pressable onPress={() => onRetry?.(msg.id)} hitSlop={4}>
+              <Text style={s.failedText}>⚠ Failed · Tap to retry</Text>
+            </Pressable>
+          )}
           {msg.reactions && (
             <ReactionPills reactions={msg.reactions} myId={myId} onPillPress={emoji => onReactionPillPress(msg.id, emoji)} />
           )}
         </View>
       )
     }
+
     if (msg.content_type === 'voice' && msg.metadata?.url) {
       return (
-        // Voice: gesture wraps only the voice bubble row
         <View style={[s.bubbleWrap, isMine ? s.wrapMine : s.wrapTheirs]}>
           <GestureDetector gesture={gesture}>
             <Animated.View style={animStyle}>
-              <VoiceBubble url={msg.metadata.url} duration={msg.metadata.duration} isMine={isMine} />
+              <VoiceBubble url={msg.metadata.url} duration={msg.metadata.duration} isMine={isMine} isPending={isPending} />
             </Animated.View>
           </GestureDetector>
           <Animated.Text style={[s.timeBelow, isMine ? s.timeBelowMine : s.timeBelowTheirs, timeRevealStyle]}>
             {timeStr}
           </Animated.Text>
+          {isFailed && (
+            <Pressable onPress={() => onRetry?.(msg.id)} hitSlop={4}>
+              <Text style={s.failedText}>⚠ Failed · Tap to retry</Text>
+            </Pressable>
+          )}
           {msg.reactions && (
             <ReactionPills reactions={msg.reactions} myId={myId} onPillPress={emoji => onReactionPillPress(msg.id, emoji)} />
           )}
         </View>
       )
     }
+
     if (msg.content_type === 'event' && msg.metadata) {
       return <EventCard metadata={msg.metadata} isMine={isMine} sentAt={msg.sent_at} />
     }
     if (msg.content_type === 'profile' && msg.metadata) {
       return <ProfileCard metadata={msg.metadata} isMine={isMine} sentAt={msg.sent_at} />
     }
-    // Text bubble: gesture detector wraps ONLY the bubble (not full row width)
+
+    // Text bubble
     return (
       <View style={[s.bubbleWrap, isMine ? s.wrapMine : s.wrapTheirs]}>
         <GestureDetector gesture={gesture}>
-          {/* Animated.View IS the bubble — sized to content, gesture area = bubble area */}
           <Animated.View style={[
             s.bubble,
             isMine ? s.bubbleMine : s.bubbleTheirs,
             isPending && s.bubblePending,
+            isFailed && s.bubbleFailed,
             hasReply && s.bubbleWithReply,
             animStyle,
           ]}>
             <ReplyPreview metadata={msg.metadata} isMine={isMine} onPress={onReplyTap} />
             <Text style={[s.text, isMine && s.textMine]}>{msg.content}</Text>
-            {/* Timestamp inside bubble — takes no layout space, revealed on swipe */}
             <Animated.Text style={[s.timeInner, timeRevealStyle]}>
               {timeStr}
             </Animated.Text>
           </Animated.View>
         </GestureDetector>
+        {isFailed && (
+          <Pressable onPress={() => onRetry?.(msg.id)} hitSlop={4}>
+            <Text style={s.failedText}>⚠ Failed · Tap to retry</Text>
+          </Pressable>
+        )}
         {msg.reactions && (
           <ReactionPills
             reactions={msg.reactions}
@@ -376,19 +508,15 @@ export function MessageBubble({ msg, isMine, myId, onDoubleTap, onLongPress, onS
 }
 
 const s = StyleSheet.create({
-  // bubbleWrap: outer container for a single message row
-  // wrapMine/wrapTheirs: aligns children (gesture detector, reactions) left or right
-  // alignItems: 'flex-end/start' is critical — it makes GestureDetector shrink to content width
-  bubbleWrap: { marginBottom: 4, maxWidth: '82%' },
+  bubbleWrap: { marginBottom: 4, maxWidth: '82%', overflow: 'visible' },
   wrapMine: { alignSelf: 'flex-end', alignItems: 'flex-end' },
   wrapTheirs: { alignSelf: 'flex-start', alignItems: 'flex-start' },
 
-  // Text bubble — Animated.View uses these styles directly
   bubble: {
     borderRadius: 18,
     paddingHorizontal: 10,
     paddingTop: 7,
-    paddingBottom: 16,  // room for absolute timestamp at bottom
+    paddingBottom: 16,
   },
   bubbleWithReply: { minWidth: 160 },
   bubbleTheirs: { backgroundColor: '#222', borderBottomLeftRadius: 4 },
@@ -397,10 +525,14 @@ const s = StyleSheet.create({
     borderBottomRightRadius: 4,
   },
   bubblePending: { opacity: 0.6 },
+  bubbleFailed: {
+    borderWidth: 1,
+    borderColor: Colors.brandCoral,
+    opacity: 0.85,
+  },
   text: { fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkPrimary, lineHeight: 21 },
   textMine: { color: Colors.inkPrimary },
 
-  // Timestamp inside text bubble — absolutely positioned, no layout impact
   timeInner: {
     position: 'absolute',
     bottom: 3,
@@ -410,10 +542,16 @@ const s = StyleSheet.create({
     color: 'rgba(255,255,255,0.4)',
   },
 
-  // Timestamp below voice/event/profile bubbles — revealed on swipe
   timeBelow: { fontFamily: FontFamily.bodyRegular, fontSize: 10, color: Colors.inkDisabled, marginTop: 3 },
   timeBelowMine: { marginRight: 2 },
   timeBelowTheirs: { marginLeft: 2 },
+
+  failedText: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 11,
+    color: Colors.brandCoral,
+    marginTop: 3,
+  },
 
   richCard: {
     backgroundColor: '#1e1e1e', borderWidth: 1, borderColor: '#2a2a2a',

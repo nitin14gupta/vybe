@@ -12,6 +12,7 @@ export function useChat(conversationId: string) {
   const [isWsConnected, setIsWsConnected] = useState(false)
   const [wsError, setWsError] = useState<string | null>(null)
   const [partnerSeenAt, setPartnerSeenAt] = useState<string | null>(null)
+  const [failedIds, setFailedIds] = useState<Set<string>>(new Set())
   const wsRef = useRef<WebSocket | null>(null)
   const retryCountRef = useRef(0)
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -29,7 +30,6 @@ export function useChat(conversationId: string) {
         setMessages(msgs)
         setLoading(false)
         ApiService.markRead(conversationId).catch(() => {})
-        // Initialise partnerSeenAt from the first message I sent that has been read
         const firstRead = msgs.find(msg => msg.sender_id === myId && msg.read_at != null)
         if (firstRead) {
           setPartnerSeenAt(firstRead.read_at)
@@ -48,9 +48,16 @@ export function useChat(conversationId: string) {
     }))
   }, [])
 
+  const markTempFailed = useCallback((messages: Message[]) => {
+    const tempMsg = messages.find(m => m.id.startsWith('_temp_') && m.sender_id === myId && pendingTempIds.current.has(m.id))
+    if (tempMsg) {
+      pendingTempIds.current.delete(tempMsg.id)
+      setFailedIds(prev => new Set([...prev, tempMsg.id]))
+    }
+  }, [myId])
+
   const connect = useCallback(() => {
     if (isBackgrounded.current) return
-    // Guard: don't create a second connection if one is already live
     const existing = wsRef.current
     if (existing && (existing.readyState === WebSocket.OPEN || existing.readyState === WebSocket.CONNECTING)) {
       return
@@ -72,7 +79,6 @@ export function useChat(conversationId: string) {
         const data = JSON.parse(evt.data as string)
         if (data.type === 'message') {
           setMessages(prev => {
-            // If I sent this and there's a pending optimistic message, swap it out
             if (data.sender_id === myId && pendingTempIds.current.size > 0) {
               const tempIdx = prev.findIndex(m => m.id.startsWith('_temp_') && m.sender_id === myId)
               if (tempIdx !== -1) {
@@ -83,7 +89,6 @@ export function useChat(conversationId: string) {
               }
             }
             if (prev.some(m => m.id === data.id)) return prev
-            // Incoming message from partner — mark read immediately via WS
             if (data.sender_id !== myId) {
               const liveWs = wsRef.current
               if (liveWs && liveWs.readyState === WebSocket.OPEN) {
@@ -93,7 +98,14 @@ export function useChat(conversationId: string) {
             return [data as Message, ...prev]
           })
         } else if (data.type === 'error') {
-          if (data.code === 'blocked') setWsError('blocked')
+          if (data.code === 'blocked') {
+            setWsError('blocked')
+          } else if (data.code === 'send_failed') {
+            setMessages(prev => {
+              markTempFailed(prev)
+              return prev
+            })
+          }
         } else if (data.type === 'typing') {
           if (data.user_id !== myId) {
             const mode: string = data.mode ?? 'text'
@@ -131,9 +143,8 @@ export function useChat(conversationId: string) {
     ws.onerror = () => {}
 
     wsRef.current = ws
-  }, [conversationId, myId, applyReactionUpdate])
+  }, [conversationId, myId, applyReactionUpdate, markTempFailed])
 
-  // Pause reconnection when app goes to background; resume + reconnect on foreground
   useEffect(() => {
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'background' || state === 'inactive') {
@@ -161,30 +172,59 @@ export function useChat(conversationId: string) {
   }, [connect])
 
   const sendMessage = useCallback(async (content: string, contentType = 'text', metadata?: object): Promise<void> => {
+    const tempId = `_temp_${Date.now()}`
+    const optimistic: Message = {
+      id: tempId,
+      conversation_id: conversationId,
+      sender_id: myId ?? '',
+      content,
+      content_type: contentType as Message['content_type'],
+      metadata: metadata ?? null,
+      sent_at: new Date().toISOString(),
+      read_at: null,
+      reactions: null,
+    }
+    pendingTempIds.current.add(tempId)
+    setMessages(prev => [optimistic, ...prev])
+
     const ws = wsRef.current
     if (ws && ws.readyState === WebSocket.OPEN) {
-      // Optimistic: add temp message immediately so UI is instant
-      const tempId = `_temp_${Date.now()}`
-      const optimistic: Message = {
-        id: tempId,
-        conversation_id: conversationId,
-        sender_id: myId ?? '',
-        content,
-        content_type: contentType as Message['content_type'],
-        metadata: metadata ?? null,
-        sent_at: new Date().toISOString(),
-        read_at: null,
-        reactions: null,
+      try {
+        ws.send(JSON.stringify({ type: 'message', content, content_type: contentType, metadata }))
+      } catch {
+        pendingTempIds.current.delete(tempId)
+        setFailedIds(prev => new Set([...prev, tempId]))
       }
-      pendingTempIds.current.add(tempId)
-      setMessages(prev => [optimistic, ...prev])
-      ws.send(JSON.stringify({ type: 'message', content, content_type: contentType, metadata }))
       return
     }
-    // Fallback: REST — throws on failure so caller can surface error
-    const msg = await ApiService.sendMessage(conversationId, content, contentType, metadata)
-    setMessages(prev => (prev.some(m => m.id === msg.id) ? prev : [msg, ...prev]))
+
+    // REST fallback
+    try {
+      const msg = await ApiService.sendMessage(conversationId, content, contentType, metadata)
+      pendingTempIds.current.delete(tempId)
+      setMessages(prev => {
+        const idx = prev.findIndex(m => m.id === tempId)
+        if (idx === -1) return prev.some(m => m.id === msg.id) ? prev : [msg, ...prev]
+        const next = [...prev]
+        next[idx] = msg
+        return next
+      })
+    } catch {
+      pendingTempIds.current.delete(tempId)
+      setFailedIds(prev => new Set([...prev, tempId]))
+      throw
+    }
   }, [conversationId, myId])
+
+  const retryMessage = useCallback(async (tempId: string) => {
+    const msg = messages.find(m => m.id === tempId)
+    if (!msg) return
+    setFailedIds(prev => { const n = new Set(prev); n.delete(tempId); return n })
+    setMessages(prev => prev.filter(m => m.id !== tempId))
+    try {
+      await sendMessage(msg.content, msg.content_type, msg.metadata ?? undefined)
+    } catch {}
+  }, [messages, sendMessage])
 
   const sendTyping = useCallback((isTyping: boolean) => {
     const ws = wsRef.current
@@ -220,7 +260,6 @@ export function useChat(conversationId: string) {
     const ws = wsRef.current
     if (!ws || ws.readyState !== WebSocket.OPEN) return
     ws.send(JSON.stringify({ type: 'reaction', message_id: msgId, emoji }))
-    // Optimistic update using myId as the key
     applyReactionUpdate(msgId, myId ?? '', emoji)
   }, [myId, applyReactionUpdate])
 
@@ -233,7 +272,9 @@ export function useChat(conversationId: string) {
     wsError,
     loading,
     partnerSeenAt,
+    failedIds,
     sendMessage,
+    retryMessage,
     sendTyping,
     sendVoiceTyping,
     loadMore,

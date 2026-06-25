@@ -11,6 +11,7 @@ import type { Message } from '@/api/apiService'
 import { ChatHeader } from '@/components/chat/ChatHeader'
 import { ChatInputBar } from '@/components/chat/ChatInputBar'
 import { MessageBubble } from '@/components/chat/MessageBubble'
+import { MediaViewerModal } from '@/components/chat/MediaViewerModal'
 import { DateSeparator } from '@/components/chat/DateSeparator'
 import { TypingIndicator } from '@/components/chat/TypingIndicator'
 import { EmojiPickerOverlay } from '@/components/chat/EmojiPickerOverlay'
@@ -82,14 +83,17 @@ export default function ChatDetailScreen() {
         msg={msg}
         isMine={msg.sender_id === screen.myId}
         myId={screen.myId ?? ''}
+        isFailed={screen.failedIds?.has(msg.id)}
         onDoubleTap={screen.handleDoubleTap}
         onLongPress={screen.handleLongPress}
         onSwipeReply={screen.handleSwipeReply}
         onReactionPillPress={screen.handleReactionPillPress}
         onReplyTap={handleReplyTap}
+        onMediaTap={screen.handleMediaTap}
+        onRetry={screen.handleRetry}
       />
     )
-  }, [screen.myId, screen.handleDoubleTap, screen.handleLongPress, screen.handleSwipeReply, screen.handleReactionPillPress, screen.handleMediaSend, handleReplyTap])
+  }, [screen.myId, screen.failedIds, screen.handleDoubleTap, screen.handleLongPress, screen.handleSwipeReply, screen.handleReactionPillPress, screen.handleMediaTap, screen.handleRetry, handleReplyTap])
 
   const listHeader = screen.isPartnerRecording
     ? <VoiceIndicator />
@@ -202,6 +206,15 @@ export default function ChatDetailScreen() {
         onSubmit={screen.handleReport}
         onClose={() => screen.setReportOpen(false)}
       />
+
+      {screen.viewingMedia && (
+        <MediaViewerModal
+          visible={!!screen.viewingMedia}
+          url={screen.viewingMedia.url}
+          type={screen.viewingMedia.type}
+          onClose={screen.closeMedia}
+        />
+      )}
     </View>
   )
 }

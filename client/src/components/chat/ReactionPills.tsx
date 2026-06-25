@@ -36,8 +36,12 @@ export function ReactionPills({ reactions, myId, onPillPress }: Props) {
 }
 
 const s = StyleSheet.create({
-  // Negative marginTop pulls the pill up so it overlaps ~50% into the bubble bottom
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: -11 },
+  row: {
+    flexDirection: 'row', flexWrap: 'wrap', gap: 4,
+    marginTop: -11,
+    zIndex: 2,
+    elevation: 2,
+  },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -47,7 +51,12 @@ const s = StyleSheet.create({
     paddingVertical: 3,
     gap: 3,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(255,255,255,0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.35,
+    shadowRadius: 2,
+    elevation: 2,
   },
   pillMine: {
     backgroundColor: 'rgba(255,107,53,0.15)',

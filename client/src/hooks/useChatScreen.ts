@@ -11,6 +11,8 @@ import ApiService, { type Message } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
 import { usePillStore } from '@/store/pillStore'
 import { useChat } from './useChat'
+import { useImageViewer } from './useImageViewer'
+import type { MediaViewType } from '@/components/chat/MediaViewerModal'
 
 const MARGIN = 8
 const MIN_INPUT_HEIGHT = 44
@@ -107,8 +109,10 @@ export function useChatScreen(convId: string) {
   const {
     messages, isPartnerTyping, isPartnerRecording, isPartnerOnline,
     isWsConnected, wsError, loading, partnerSeenAt,
-    sendMessage, sendTyping, sendVoiceTyping, loadMore, reactToMessage,
+    failedIds, sendMessage, retryMessage, sendTyping, sendVoiceTyping, loadMore, reactToMessage,
   } = useChat(convId)
+
+  const { viewingMedia, openMedia, closeMedia } = useImageViewer()
 
   // ── Partner info ────────────────────────────────────────────────────────────
 
@@ -284,6 +288,14 @@ export function useChatScreen(convId: string) {
     }
   }, [sendMessage, showPill])
 
+  const handleRetry = useCallback((tempId: string) => {
+    retryMessage(tempId)
+  }, [retryMessage])
+
+  const handleMediaTap = useCallback((url: string, type: MediaViewType) => {
+    openMedia(url, type)
+  }, [openMedia])
+
   // ── Derived data ────────────────────────────────────────────────────────────
 
   const listData = useMemo(() => buildListData(messages), [messages])
@@ -312,12 +324,17 @@ export function useChatScreen(convId: string) {
     menuOpen, setMenuOpen, reportOpen, setReportOpen,
     // scroll
     extraContentPadding, stickyOffset,
+    // failed + retry
+    failedIds,
+    // media viewer
+    viewingMedia, closeMedia,
     // handlers
     handleSend, handleTextChange, handleInputLayout,
     handleMicPress, handleRecordStop, handleRecordCancel,
     handleBlock, handleUnblock, handleDeleteChat, handleReport,
     handleDoubleTap, handleLongPress, handleSwipeReply,
     handleEmojiSelect, handleReactionPillPress, handleMediaSend,
+    handleRetry, handleMediaTap,
     handleCancelReply: () => setReplyingTo(null),
     handleCloseEmojiPicker: () => setEmojiTarget(null),
     loadMore,

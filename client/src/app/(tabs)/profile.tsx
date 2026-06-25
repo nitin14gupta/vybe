@@ -9,6 +9,8 @@ import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
 import { InterestChip, PlaybackWave, AppHeader, HeaderIconBtn } from '@/components/ui'
 import { useProfile } from '@/hooks/useProfile'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { useImageViewer } from '@/hooks/useImageViewer'
+import { MediaViewerModal } from '@/components/chat/MediaViewerModal'
 
 const { width } = Dimensions.get('window')
 const GRID_GAP = 2
@@ -23,6 +25,7 @@ const GENDER_DISPLAY: Record<string, string> = {
 
 export default function ProfileScreen() {
   const { profile, loading, error, refresh } = useProfile()
+  const { viewingMedia, openMedia, closeMedia } = useImageViewer()
 
   const player = useAudioPlayer(null)
   const status = useAudioPlayerStatus(player)
@@ -85,7 +88,9 @@ export default function ProfileScreen() {
           <View style={styles.avatarRow}>
             <View style={styles.avatarRing}>
               {profile?.photos?.[0]?.url ? (
-                <Image source={{ uri: profile.photos[0].url }} style={styles.avatar} />
+                <Pressable onLongPress={() => openMedia(profile!.photos[0].url, 'image')} delayLongPress={400}>
+                  <Image source={{ uri: profile.photos[0].url }} style={styles.avatar} />
+                </Pressable>
               ) : (
                 <View style={[styles.avatar, styles.avatarFallback]}>
                   <Text style={styles.avatarInitial}>{name.charAt(0).toUpperCase()}</Text>
@@ -203,18 +208,28 @@ export default function ProfileScreen() {
         {(profile?.photos?.length ?? 0) > 0 && (
           <View style={styles.grid}>
             {profile!.photos.map(photo => (
-              <Image
-                key={photo.id}
-                source={{ uri: photo.url }}
-                style={styles.gridPhoto}
-                resizeMode="cover"
-              />
+              <Pressable key={photo.id} onLongPress={() => openMedia(photo.url, 'image')} delayLongPress={400}>
+                <Image
+                  source={{ uri: photo.url }}
+                  style={styles.gridPhoto}
+                  resizeMode="cover"
+                />
+              </Pressable>
             ))}
           </View>
         )}
 
         <View style={{ height: 36 }} />
       </ScrollView>
+
+      {viewingMedia && (
+        <MediaViewerModal
+          visible={!!viewingMedia}
+          url={viewingMedia.url}
+          type={viewingMedia.type}
+          onClose={closeMedia}
+        />
+      )}
     </View>
   )
 }
