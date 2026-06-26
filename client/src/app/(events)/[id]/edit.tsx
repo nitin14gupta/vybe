@@ -34,7 +34,10 @@ export default function EditEventScreen() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [locked, setLocked] = useState(false)
+  const [capacityLocked, setCapacityLocked] = useState(false)
   const [hasAttendees, setHasAttendees] = useState(false)
+  const [bookedCount, setBookedCount] = useState(0)
+  const [largeDateShiftPending, setLargeDateShiftPending] = useState(false)
   const showPill = usePillStore(s => s.show)
 
   type Snapshot = {
@@ -71,7 +74,10 @@ export default function EditEventScreen() {
 
         const editDeadline = parseTs(ev.edit_deadline)
         if (new Date() > editDeadline) setLocked(true)
+        const capDeadline = new Date(parseTs(ev.date_time).getTime() - 2 * 60 * 60 * 1000)
+        if (new Date() > capDeadline) setCapacityLocked(true)
         if (ev.attendee_count > 0)     setHasAttendees(true)
+        setBookedCount(ev.attendee_count)
 
         originalRef.current = {
           title:          ev.title,
@@ -94,15 +100,49 @@ export default function EditEventScreen() {
       .finally(() => setLoading(false))
   }, [id])
 
-  const handleSave = async () => {
-    if (saving || locked) return
+  const handleSave = async (skipLargeDateCheck = false) => {
+    if (saving || (locked && capacityLocked)) return
+
     if (!form.title.trim()) { showPill('Title is required', 'error'); return }
     if (!form.isFree && form.priceInr < 50) { showPill('Minimum ticket price is ₹50', 'error'); return }
 
+    if (form.capacity < bookedCount) {
+      showPill(`${bookedCount} spots already booked — can't reduce below this`, 'error')
+      return
+    }
+
     const start = form.dateTime ? new Date(form.dateTime) : new Date()
     const end   = form.endTime  ? new Date(form.endTime)  : null
-    if (end && end <= start) { showPill('End time must be after start time', 'error'); return }
+    const o     = originalRef.current
 
+    const startChanged = o ? start.getTime() !== o.dateTime : false
+    const endChanged   = o ? (end?.getTime() ?? null) !== o.endTime : false
+
+    if (startChanged) {
+      const twoHoursFromNow = new Date(Date.now() + 2 * 60 * 60 * 1000)
+      if (start < twoHoursFromNow) {
+        showPill('Start time must be at least 2 hours from now', 'error')
+        return
+      }
+    }
+
+    if (end && (startChanged || endChanged)) {
+      if (end <= start) { showPill('End time must be after start time', 'error'); return }
+      if (end.getTime() - start.getTime() < 60 * 60 * 1000) {
+        showPill('Event must be at least 1 hour long', 'error')
+        return
+      }
+    }
+
+    if (!skipLargeDateCheck && startChanged && o?.dateTime) {
+      const daysDiff = Math.abs(start.getTime() - o.dateTime) / (1000 * 60 * 60 * 24)
+      if (daysDiff > 7) {
+        setLargeDateShiftPending(true)
+        return
+      }
+    }
+
+    setLargeDateShiftPending(false)
     setSaving(true)
     try {
       await ApiService.updateEvent(id!, {
@@ -169,7 +209,28 @@ export default function EditEventScreen() {
 
       {locked && (
         <View style={s.lockedBanner}>
-          <Text style={s.lockedText}>Editing locked — event starts soon</Text>
+          <Text style={s.lockedText}>
+            {capacityLocked
+              ? 'Editing closed — event starts in under 2 hours'
+              : 'Event is locked for editing. You can still increase capacity to let in waitlisted guests.'}
+          </Text>
+        </View>
+      )}
+
+      {largeDateShiftPending && (
+        <View style={s.dateShiftBanner}>
+          <Text style={s.dateShiftTitle}>Large date change</Text>
+          <Text style={s.dateShiftBody}>
+            You moved this event by more than 7 days. All attendees will be notified and given 48 hours to cancel for a full refund.
+          </Text>
+          <View style={s.dateShiftBtns}>
+            <Pressable style={s.dateShiftCancel} onPress={() => setLargeDateShiftPending(false)}>
+              <Text style={s.dateShiftCancelText}>Go back</Text>
+            </Pressable>
+            <Pressable style={s.dateShiftConfirm} onPress={() => handleSave(true)}>
+              <Text style={s.dateShiftConfirmText}>Yes, update</Text>
+            </Pressable>
+          </View>
         </View>
       )}
 
@@ -190,8 +251,11 @@ export default function EditEventScreen() {
           form={form} set={set} errors={errors} setErrors={setErrors}
           openDate={openDate} openStartTime={openStartTime} openEndDate={openEndDate} openEndTime={openEndTime}
           scrollable={false} disabled={locked}
+          capacityUnlocked={locked && !capacityLocked}
           ageLocked={hasAttendees}
           ageLockNote="Locked — attendees already joined"
+          minCapacity={Math.max(5, bookedCount)}
+          capacityNote={bookedCount > 0 ? `${bookedCount} spot${bookedCount === 1 ? '' : 's'} already booked — can't reduce below this` : undefined}
         />
 
         {/* Step 3 — Where (inline map) */}
@@ -209,7 +273,7 @@ export default function EditEventScreen() {
         />
       </ScrollView>
 
-      {!locked && (
+      {(!locked || (locked && !capacityLocked)) && (
         <View style={[s.footer, { paddingBottom: insets.bottom + 16 }]}>
           <Pressable
             style={[s.saveBtn, !isDirty && s.saveBtnDisabled]}
@@ -258,6 +322,28 @@ const s = StyleSheet.create({
     paddingVertical: 10, paddingHorizontal: 20,
   },
   lockedText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.brandCoral, textAlign: 'center' },
+
+  dateShiftBanner: {
+    backgroundColor: 'rgba(255,184,48,0.08)',
+    borderBottomWidth: 1, borderBottomColor: 'rgba(255,184,48,0.3)',
+    paddingVertical: 14, paddingHorizontal: 20, gap: 8,
+  },
+  dateShiftTitle: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.accentGold },
+  dateShiftBody: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, lineHeight: 18 },
+  dateShiftBtns: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  dateShiftCancel: {
+    flex: 1, height: 38, borderRadius: 20,
+    borderWidth: 1, borderColor: Colors.divider,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  dateShiftCancelText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.inkSecondary },
+  dateShiftConfirm: {
+    flex: 1, height: 38, borderRadius: 20,
+    backgroundColor: Colors.accentGold,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  dateShiftConfirmText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: '#111' },
+
   scroll: { flex: 1 },
   content: { padding: 20, gap: 4 },
   footer: {

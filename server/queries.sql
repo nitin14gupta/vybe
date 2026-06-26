@@ -235,16 +235,11 @@ CREATE INDEX idx_follows_following ON public.follows USING btree (following_id);
 CREATE INDEX messages_conv_sent_idx ON public.messages USING btree (conversation_id, sent_at DESC);
 CREATE INDEX idx_notif_user_created ON public.notifications USING btree (user_id, created_at DESC);
 CREATE INDEX idx_refresh_tokens_user_id ON public.refresh_tokens USING btree (user_id);
+CREATE INDEX idx_users_name_trgm ON public.users USING gin (name gin_trgm_ops);
 CREATE INDEX idx_users_phone ON public.users USING btree (phone);
 CREATE INDEX idx_users_username ON public.users USING btree (username);
-
--- ── Search optimization (run once) ─────────────────────────────────────────
--- Enables fast ILIKE substring search on name and username at scale (100k+ users)
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
-CREATE INDEX IF NOT EXISTS idx_users_name_trgm     ON public.users USING GIN (name     gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS idx_users_username_trgm ON public.users USING GIN (username gin_trgm_ops);
--- text_pattern_ops lets the existing btree handle ILIKE 'q%' prefix scans
-CREATE INDEX IF NOT EXISTS idx_users_username_text ON public.users (username text_pattern_ops);
+CREATE INDEX idx_users_username_text ON public.users USING btree (username text_pattern_ops);
+CREATE INDEX idx_users_username_trgm ON public.users USING gin (username gin_trgm_ops);
 
 -- ── Triggers ────────────────────────────────────────────────────────────────
 -- TRIGGER users_updated_at BEFORE UPDATE ON public.users: EXECUTE FUNCTION update_updated_at()

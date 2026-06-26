@@ -55,6 +55,36 @@ def notify_event_rsvp(cur, host_id: str, attendee_id: str, attendee_name: str, e
     )
 
 
+def notify_waitlist_promoted(cur, user_id: str, event_id: str, event_title: str):
+    _insert_notification(
+        cur, user_id, "waitlist_promoted",
+        title="A spot opened up!",
+        body=f"You have 24 hours to confirm your spot at {event_title}.",
+        entity_id=event_id,
+        entity_type="event",
+    )
+
+
+def notify_waitlist_expired(cur, user_id: str, event_id: str, event_title: str):
+    _insert_notification(
+        cur, user_id, "waitlist_expired",
+        title="Spot offer expired",
+        body=f"Your reserved spot at {event_title} was given to the next person.",
+        entity_id=event_id,
+        entity_type="event",
+    )
+
+
+def notify_waitlist_event_cancelled(cur, user_id: str, event_id: str, event_title: str):
+    _insert_notification(
+        cur, user_id, "waitlist_event_cancelled",
+        title="Event cancelled",
+        body=f"{event_title} was cancelled. You've been removed from the waitlist.",
+        entity_id=event_id,
+        entity_type="event",
+    )
+
+
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.get("")

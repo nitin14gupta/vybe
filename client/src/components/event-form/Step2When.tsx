@@ -17,7 +17,12 @@ interface Props {
   /** Lock age restriction (e.g. attendees already joined) */
   ageLocked?: boolean
   ageLockNote?: string
+  /** Hard floor for capacity stepper (confirmed bookings count) */
+  minCapacity?: number
+  capacityNote?: string
   disabled?: boolean
+  /** Allow capacity increases even when disabled=true (split lock window) */
+  capacityUnlocked?: boolean
   scrollable?: boolean
 }
 
@@ -44,7 +49,7 @@ function PickerRow({
   )
 }
 
-function Inner({ form, set, errors, setErrors, openDate, openStartTime, openEndDate, openEndTime, ageLocked, ageLockNote, disabled }: Omit<Props, 'scrollable'>) {
+function Inner({ form, set, errors, setErrors, openDate, openStartTime, openEndDate, openEndTime, ageLocked, ageLockNote, minCapacity = 5, capacityNote, disabled, capacityUnlocked }: Omit<Props, 'scrollable'>) {
   return (
     <>
       <Text style={ef.fieldLabel}>Starts</Text>
@@ -83,14 +88,18 @@ function Inner({ form, set, errors, setErrors, openDate, openStartTime, openEndD
 
       <Text style={[ef.fieldLabel, { marginTop: 20 }]}>Max Guests</Text>
       <View style={ef.stepperRow}>
-        <Pressable style={ef.stepperBtn} onPress={() => !disabled && set('capacity', Math.max(5, form.capacity - 5))}>
+        <Pressable
+          style={[ef.stepperBtn, form.capacity <= minCapacity && { opacity: 0.35 }]}
+          onPress={() => !disabled && set('capacity', Math.max(minCapacity, form.capacity - 5))}
+        >
           <Minus size={18} color={Colors.inkPrimary} />
         </Pressable>
         <Text style={ef.stepperValue}>{form.capacity}</Text>
-        <Pressable style={ef.stepperBtn} onPress={() => !disabled && set('capacity', Math.min(200, form.capacity + 5))}>
+        <Pressable style={ef.stepperBtn} onPress={() => (!disabled || capacityUnlocked) && set('capacity', Math.min(200, form.capacity + 5))}>
           <Plus size={18} color={Colors.inkPrimary} />
         </Pressable>
       </View>
+      {capacityNote ? <Text style={ef.fieldLockNote}>{capacityNote}</Text> : null}
       {errors.capacity ? <Text style={ef.errorText}>{errors.capacity}</Text> : null}
 
       <View style={[ef.fieldLabelRow, { marginTop: 20 }]}>

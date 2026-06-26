@@ -119,11 +119,14 @@ export default function NotificationsScreen() {
     markAllRead()
   }
 
+  const NON_NAVIGABLE_TYPES = ['waitlist_expired', 'waitlist_event_cancelled']
+
   const handleTap = async (item: AppNotification) => {
     if (!item.read_at) {
       await ApiService.markNotificationRead(item.id).catch(() => {})
       setNotifs(prev => prev.map(n => n.id === item.id ? { ...n, read_at: new Date().toISOString() } : n))
     }
+    if (NON_NAVIGABLE_TYPES.includes(item.type)) return
     if (item.entity_type === 'event' && item.entity_id) {
       router.push(`/(events)/${item.entity_id}` as any)
     } else if (item.entity_type === 'user' && item.entity_id) {

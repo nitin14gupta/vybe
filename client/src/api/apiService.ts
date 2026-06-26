@@ -106,6 +106,8 @@ export interface EventSummary {
   age_restriction: number
   attendee_count: number
   is_cancelled?: boolean
+  waitlist_count: number
+  is_waitlist_full: boolean
 }
 
 export interface EventDetail extends EventSummary {
@@ -118,6 +120,19 @@ export interface EventDetail extends EventSummary {
   my_ticket_token: string | null
   my_checked_in_at: string | null
   avg_rating: number | null
+  my_rsvp_status: 'going' | 'waitlist' | 'cancelled' | null
+  my_waitlist_position: number | null
+  my_offer_expires_at: string | null
+}
+
+export interface WaitlistEntry {
+  id: string
+  name: string | null
+  username: string | null
+  avatar: string | null
+  joined_at: string
+  offer_expires_at: string | null
+  position: number
 }
 
 export interface TicketInfo {
@@ -648,12 +663,20 @@ class ApiService {
     return this.patch<EventDetail>(ENDPOINTS.EVENT_UPDATE.replace(':id', id), data)
   }
 
-  static async rsvpEvent(id: string, action: 'going' | 'cancel'): Promise<{ status: string }> {
-    return this.post<{ status: string }>(ENDPOINTS.EVENT_RSVP.replace(':id', id), { action })
+  static async rsvpEvent(id: string, action: 'going' | 'cancel'): Promise<{ status: string; position?: number }> {
+    return this.post<{ status: string; position?: number }>(ENDPOINTS.EVENT_RSVP.replace(':id', id), { action })
   }
 
   static async cancelEvent(id: string): Promise<void> {
     await this.delete<{ ok: boolean }>(ENDPOINTS.EVENT_DETAIL.replace(':id', id))
+  }
+
+  static async getEventWaitlist(id: string): Promise<{ waitlist: WaitlistEntry[]; total: number }> {
+    return this.get<{ waitlist: WaitlistEntry[]; total: number }>(ENDPOINTS.EVENT_WAITLIST.replace(':id', id))
+  }
+
+  static async admitFromWaitlist(id: string): Promise<{ ok: boolean; admitted: { user_id: string; name: string } | null; waitlist_remaining: number }> {
+    return this.post(ENDPOINTS.EVENT_WAITLIST_ADMIT.replace(':id', id), {})
   }
 
   static async getEventAttendees(id: string): Promise<{ attendees: EventAttendee[]; total: number }> {

@@ -13,6 +13,67 @@ def _calc_age(dob: date) -> int:
     return today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
 
 
+def _promote_next_waitlist(cur, event_id: str) -> dict | None:
+    """Promote the next user in the waitlist queue. Holds the spot by decrementing spots_left."""
+    cur.execute(
+        """
+        SELECT ea.id, ea.user_id::text, u.name
+        FROM event_attendees ea
+        JOIN users u ON u.id = ea.user_id
+        WHERE ea.event_id = %s AND ea.status = 'waitlist' AND ea.offer_expires_at IS NULL
+        ORDER BY ea.joined_at ASC
+        LIMIT 1
+        """,
+        (event_id,),
+    )
+    next_row = cur.fetchone()
+    if not next_row:
+        return None
+    cur.execute(
+        "UPDATE event_attendees SET offer_expires_at = NOW() + INTERVAL '24 hours' WHERE id = %s",
+        (next_row["id"],),
+    )
+    cur.execute(
+        "UPDATE events SET spots_left = GREATEST(0, spots_left - 1) WHERE id = %s",
+        (event_id,),
+    )
+    return dict(next_row)
+
+
+def _expire_stale_offers(cur, event_id: str) -> list:
+    """Expire promoted users who didn't confirm in time. Returns list of expired user_ids."""
+    cur.execute(
+        """
+        UPDATE event_attendees
+        SET status = 'cancelled', blocked_from_rejoin = TRUE, offer_expires_at = NULL
+        WHERE event_id = %s AND status = 'waitlist'
+          AND offer_expires_at IS NOT NULL AND offer_expires_at < NOW()
+        RETURNING user_id::text
+        """,
+        (event_id,),
+    )
+    expired = [r["user_id"] for r in cur.fetchall()]
+    if not expired:
+        return expired
+
+    # Only re-promote if event starts more than 2h from now — under 2h the spot becomes an empty seat
+    cur.execute("SELECT date_time FROM events WHERE id = %s", (event_id,))
+    ev_row = cur.fetchone()
+    ev_dt = ev_row["date_time"] if ev_row else None
+    if ev_dt and ev_dt.tzinfo is None:
+        ev_dt = ev_dt.replace(tzinfo=timezone.utc)
+    waitlist_still_open = ev_dt and ev_dt > datetime.now(timezone.utc) + timedelta(hours=2)
+
+    for _ in expired:
+        cur.execute(
+            "UPDATE events SET spots_left = LEAST(capacity, spots_left + 1) WHERE id = %s",
+            (event_id,),
+        )
+        if waitlist_still_open:
+            _promote_next_waitlist(cur, event_id)
+    return expired
+
+
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class EventPhotoItem(BaseModel):
@@ -28,6 +89,8 @@ class EventSummary(BaseModel):
     end_time: Optional[str] = None
     location_name: Optional[str] = None
     location_lat: Optional[float] = None
+    waitlist_count: int = 0
+    is_waitlist_full: bool = False
     location_lng: Optional[float] = None
     price_inr: int
     is_free: bool
@@ -52,6 +115,9 @@ class EventDetail(EventSummary):
     my_ticket_token: Optional[str] = None
     my_checked_in_at: Optional[str] = None
     avg_rating: Optional[float] = None
+    my_rsvp_status: Optional[str] = None        # 'going' | 'waitlist' | 'cancelled' | None
+    my_waitlist_position: Optional[int] = None  # position in queue (1-indexed), None if not on waitlist
+    my_offer_expires_at: Optional[str] = None   # ISO string when promoted, else None
 
 
 class CheckinBody(BaseModel):
@@ -280,15 +346,38 @@ def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
                 (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
                 (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id = e.id AND ea.status = 'going')::int AS attendee_count,
                 NULL::int AS distance_km,
-                my_ea.ticket_token AS my_ticket_token,
-                my_ea.checked_in_at::text AS my_checked_in_at,
-                (SELECT ROUND(AVG(rating)::numeric, 1) FROM event_reviews WHERE event_id = e.id) AS avg_rating
+                going_ea.ticket_token AS my_ticket_token,
+                going_ea.checked_in_at::text AS my_checked_in_at,
+                (SELECT ROUND(AVG(rating)::numeric, 1) FROM event_reviews WHERE event_id = e.id) AS avg_rating,
+                -- Waitlist fields
+                (SELECT COUNT(*) FROM event_attendees wl
+                 WHERE wl.event_id = e.id AND wl.status = 'waitlist' AND wl.offer_expires_at IS NULL)::int AS waitlist_count,
+                (SELECT COUNT(*) FROM event_attendees wl
+                 WHERE wl.event_id = e.id AND wl.status = 'waitlist' AND wl.offer_expires_at IS NULL
+                )::int >= FLOOR(e.capacity * 0.5) AS is_waitlist_full,
+                -- Viewer's RSVP status
+                (SELECT ea2.status FROM event_attendees ea2
+                 WHERE ea2.event_id = e.id AND ea2.user_id = %s::uuid
+                 LIMIT 1) AS my_rsvp_status,
+                -- Viewer's waitlist position (NULL if not in regular queue)
+                (SELECT COUNT(*) FROM event_attendees pos
+                 WHERE pos.event_id = e.id AND pos.status = 'waitlist' AND pos.offer_expires_at IS NULL
+                   AND pos.joined_at <= (
+                     SELECT joined_at FROM event_attendees
+                     WHERE event_id = e.id AND user_id = %s::uuid AND status = 'waitlist' AND offer_expires_at IS NULL
+                   )
+                )::int AS my_waitlist_position,
+                -- Viewer's promotion offer expiry
+                (SELECT ea3.offer_expires_at::text FROM event_attendees ea3
+                 WHERE ea3.event_id = e.id AND ea3.user_id = %s::uuid
+                   AND ea3.status = 'waitlist' AND ea3.offer_expires_at IS NOT NULL
+                 LIMIT 1) AS my_offer_expires_at
             FROM events e
             JOIN users u ON u.id = e.host_id
-            LEFT JOIN event_attendees my_ea ON my_ea.event_id = e.id AND my_ea.user_id = %s::uuid AND my_ea.status = 'going'
+            LEFT JOIN event_attendees going_ea ON going_ea.event_id = e.id AND going_ea.user_id = %s::uuid AND going_ea.status = 'going'
             WHERE e.id = %s
             """,
-            (uid, event_id),
+            (uid, uid, uid, uid, uid, event_id),
         )
         row = cur.fetchone()
 
@@ -298,6 +387,9 @@ def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
     d = dict(row)
     photos_raw = d.get("cover_photos") or []
     d["cover_photos"] = [{"url": p, "position": i} for i, p in enumerate(photos_raw)] if isinstance(photos_raw, list) and photos_raw and isinstance(photos_raw[0], str) else photos_raw
+    # 0 position means not in regular queue (promoted or not on waitlist)
+    if not d.get("my_waitlist_position"):
+        d["my_waitlist_position"] = None
     return d
 
 
@@ -379,11 +471,17 @@ def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, curre
 # ── PATCH /events/{id} ────────────────────────────────────────────────────────
 
 @router.patch("/{event_id}", response_model=EventDetail)
-def update_event(event_id: str, body: CreateEventBody, current_user: dict = Depends(get_current_user)):
+def update_event(event_id: str, body: CreateEventBody, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
     with get_db() as (cur, conn):
         cur.execute(
-            "SELECT host_id::text, date_time FROM events WHERE id = %s",
-            (event_id,),
+            """
+            SELECT host_id::text, date_time, capacity, title, description, rules,
+                event_type, end_time, age_restriction, location_name, location_lat,
+                location_lng, price_inr,
+                (SELECT COUNT(*) FROM event_attendees WHERE event_id = %s AND status = 'going')::int AS attendee_count
+            FROM events WHERE id = %s
+            """,
+            (event_id, event_id),
         )
         ev = cur.fetchone()
     if not ev:
@@ -391,29 +489,96 @@ def update_event(event_id: str, body: CreateEventBody, current_user: dict = Depe
     if ev["host_id"] != current_user["id"]:
         raise HTTPException(status_code=403, detail="Not your event")
 
-    edit_deadline = ev["date_time"] - timedelta(hours=7)
+    now = datetime.now(timezone.utc)
+    dt = ev["date_time"]
+    dt = dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt
+    edit_deadline = dt - timedelta(hours=7)
+    capacity_deadline = dt - timedelta(hours=2)
     ed = edit_deadline.replace(tzinfo=timezone.utc) if edit_deadline.tzinfo is None else edit_deadline
-    if datetime.now(timezone.utc) > ed:
+
+    capacity_increasing = body.capacity > ev["capacity"]
+    capacity_decreasing = body.capacity < ev["capacity"]
+
+    # Determine if any non-capacity fields have changed
+    def _parse_dt(s):
+        try: return datetime.fromisoformat(s.replace("Z", "+00:00")) if s else None
+        except: return None
+    body_dt = _parse_dt(body.date_time)
+    ev_dt   = ev["date_time"].replace(tzinfo=timezone.utc) if ev["date_time"].tzinfo is None else ev["date_time"]
+    body_end = _parse_dt(body.end_time) if body.end_time else None
+    ev_end   = (ev["end_time"].replace(tzinfo=timezone.utc) if ev["end_time"] and ev["end_time"].tzinfo is None else ev["end_time"]) if ev["end_time"] else None
+
+    non_capacity_changed = (
+        body.title != ev["title"] or
+        (body.description or "") != (ev["description"] or "") or
+        (body.rules or "") != (ev["rules"] or "") or
+        body.event_type != ev["event_type"] or
+        (body_dt and body_dt != ev_dt) or
+        (body_end != ev_end) or
+        body.age_restriction != ev["age_restriction"] or
+        (body.location_name or "") != (ev["location_name"] or "") or
+        body.location_lat != ev["location_lat"] or
+        body.location_lng != ev["location_lng"] or
+        body.price_inr != ev["price_inr"]
+    )
+
+    if non_capacity_changed and now > ed:
         raise HTTPException(status_code=403, detail="Events can only be edited up to 7 hours before start")
+
+    if capacity_decreasing and ev["attendee_count"] > 0:
+        raise HTTPException(status_code=400, detail="Cannot reduce capacity — attendees have already booked")
+
+    if capacity_increasing and now > capacity_deadline:
+        raise HTTPException(status_code=403, detail="Capacity cannot be changed within 2 hours of start")
+
+    old_capacity = ev["capacity"]
+    promoted_users = []
 
     with get_db() as (cur, conn):
         cur.execute(
             """
             UPDATE events SET
                 title=%s, description=%s, rules=%s, event_type=%s,
-                date_time=%s, end_time=%s, capacity=%s, age_restriction=%s,
+                date_time=%s, end_time=%s,
+                capacity=%s,
+                spots_left = GREATEST(0, spots_left + (%s - capacity)),
+                age_restriction=%s,
                 location_name=%s, location_lat=%s, location_lng=%s,
                 price_inr=%s, updated_at=NOW()
             WHERE id=%s
             """,
             (
                 body.title, body.description, body.rules, body.event_type,
-                body.date_time, body.end_time, body.capacity, body.age_restriction,
+                body.date_time, body.end_time,
+                body.capacity, body.capacity,
+                body.age_restriction,
                 body.location_name, body.location_lat, body.location_lng,
                 body.price_inr, event_id,
             ),
         )
+        spots_gained = body.capacity - old_capacity
+        for _ in range(max(0, spots_gained)):
+            promoted = _promote_next_waitlist(cur, event_id)
+            if not promoted:
+                break
+            promoted_users.append(promoted)
         conn.commit()
+
+    if promoted_users:
+        from routes.notifications import notify_waitlist_promoted
+        with get_db() as (cur, conn):
+            cur.execute("SELECT title FROM events WHERE id = %s", (event_id,))
+            ev_title = (cur.fetchone() or {}).get("title", "")
+            for p in promoted_users:
+                notify_waitlist_promoted(cur, p["user_id"], event_id, ev_title)
+            conn.commit()
+        for p in promoted_users:
+            background_tasks.add_task(
+                send_push, p["user_id"], "A spot opened up!",
+                "You have 24 hours to confirm your spot.",
+                {"type": "event", "event_id": event_id},
+            )
+
     return get_event(event_id, current_user)
 
 
@@ -425,19 +590,24 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
         raise HTTPException(status_code=400, detail="action must be 'going' or 'cancel'")
 
     with get_db() as (cur, conn):
+        # Lazy expiry: expire stale promotion offers before any logic
+        expired_user_ids = _expire_stale_offers(cur, event_id)
+
         # Fetch event + user dob for age check
         cur.execute(
-            "SELECT capacity, spots_left, age_restriction, date_time, end_time FROM events WHERE id = %s AND is_cancelled = FALSE",
+            "SELECT capacity, spots_left, age_restriction, date_time, end_time, title FROM events WHERE id = %s AND is_cancelled = FALSE",
             (event_id,),
         )
         ev = cur.fetchone()
         if not ev:
+            conn.commit()
             raise HTTPException(status_code=404, detail="Event not found")
 
         if body.action == "going":
             # Prevent RSVP after event has ended
             ev_end = ev["end_time"] if ev.get("end_time") else ev["date_time"] + timedelta(hours=6)
             if datetime.now(timezone.utc) > ev_end:
+                conn.commit()
                 raise HTTPException(status_code=400, detail="This event has ended")
             # Age check
             cur.execute("SELECT dob FROM users WHERE id = %s", (current_user["id"],))
@@ -445,29 +615,92 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
             if user and user.get("dob"):
                 age = _calc_age(user["dob"])
                 if age < ev["age_restriction"]:
+                    conn.commit()
                     raise HTTPException(
                         status_code=403,
                         detail=f"You must be {ev['age_restriction']}+ to attend this event",
                     )
 
-            # Check spots
-            status = "going" if ev["spots_left"] > 0 else "waitlist"
-
+            # Check if this user has an active promotion offer (promoted waitlist user confirming)
             cur.execute(
                 """
-                INSERT INTO event_attendees (event_id, user_id, status)
-                VALUES (%s, %s, %s)
-                ON CONFLICT (event_id, user_id) DO UPDATE SET status = EXCLUDED.status
+                SELECT id, offer_expires_at FROM event_attendees
+                WHERE event_id = %s AND user_id = %s AND status = 'waitlist'
+                  AND offer_expires_at IS NOT NULL AND offer_expires_at > NOW()
                 """,
-                (event_id, current_user["id"], status),
+                (event_id, current_user["id"]),
             )
-            if status == "going":
+            promoted_row = cur.fetchone()
+
+            if promoted_row:
+                # Promoted user confirming — spot was already held, just flip status
+                cur.execute(
+                    "UPDATE event_attendees SET status = 'going', offer_expires_at = NULL WHERE id = %s",
+                    (promoted_row["id"],),
+                )
+                status = "going"
+            elif ev["spots_left"] > 0:
+                # Normal RSVP — take a spot
+                cur.execute(
+                    """
+                    INSERT INTO event_attendees (event_id, user_id, status)
+                    VALUES (%s, %s, 'going')
+                    ON CONFLICT (event_id, user_id) DO UPDATE SET status = 'going', offer_expires_at = NULL
+                    """,
+                    (event_id, current_user["id"]),
+                )
                 cur.execute(
                     "UPDATE events SET spots_left = GREATEST(0, spots_left - 1) WHERE id = %s",
                     (event_id,),
                 )
+                status = "going"
+            else:
+                # Event is full — join waitlist with validation
+                cur.execute(
+                    "SELECT blocked_from_rejoin FROM event_attendees WHERE event_id = %s AND user_id = %s",
+                    (event_id, current_user["id"]),
+                )
+                existing = cur.fetchone()
+                if existing and existing["blocked_from_rejoin"]:
+                    conn.commit()
+                    raise HTTPException(status_code=403, detail="You previously ignored a spot offer and can't rejoin this waitlist")
 
-            # Notify host about the new attendee (suppress if either party has blocked the other)
+                # Timing check: no new waitlist joins within 2h of start
+                ev_dt = ev["date_time"].replace(tzinfo=timezone.utc) if ev["date_time"].tzinfo is None else ev["date_time"]
+                if datetime.now(timezone.utc) > ev_dt - timedelta(hours=2):
+                    conn.commit()
+                    raise HTTPException(status_code=403, detail="Waitlist closed — event starts soon")
+
+                # Waitlist cap: max 50% of capacity
+                cur.execute(
+                    "SELECT COUNT(*) AS cnt FROM event_attendees WHERE event_id = %s AND status = 'waitlist' AND offer_expires_at IS NULL",
+                    (event_id,),
+                )
+                wl_count = cur.fetchone()["cnt"]
+                if wl_count >= ev["capacity"] * 0.5:
+                    conn.commit()
+                    raise HTTPException(status_code=403, detail="Waitlist is full")
+
+                cur.execute(
+                    """
+                    INSERT INTO event_attendees (event_id, user_id, status)
+                    VALUES (%s, %s, 'waitlist')
+                    ON CONFLICT (event_id, user_id) DO UPDATE SET status = 'waitlist', blocked_from_rejoin = FALSE
+                    """,
+                    (event_id, current_user["id"]),
+                )
+                # Get position
+                cur.execute(
+                    """
+                    SELECT COUNT(*) AS pos FROM event_attendees
+                    WHERE event_id = %s AND status = 'waitlist' AND offer_expires_at IS NULL
+                    """,
+                    (event_id,),
+                )
+                position = cur.fetchone()["pos"]
+                status = "waitlist"
+
+            # Notify host if going
             if status == "going":
                 cur.execute("SELECT host_id::text, title FROM events WHERE id = %s", (event_id,))
                 ev_row = cur.fetchone()
@@ -491,28 +724,49 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
                         )
 
             conn.commit()
-            return {"ok": True, "status": status}
 
         else:  # cancel
             cur.execute(
-                "SELECT status FROM event_attendees WHERE event_id = %s AND user_id = %s",
+                "SELECT status, offer_expires_at FROM event_attendees WHERE event_id = %s AND user_id = %s",
                 (event_id, current_user["id"]),
             )
             existing = cur.fetchone()
             if not existing:
+                conn.commit()
                 raise HTTPException(status_code=404, detail="Not attending this event")
 
+            prev_status = existing["status"]
+            had_offer = existing["offer_expires_at"] is not None
+
             cur.execute(
-                "UPDATE event_attendees SET status = 'cancelled' WHERE event_id = %s AND user_id = %s",
+                "UPDATE event_attendees SET status = 'cancelled', offer_expires_at = NULL WHERE event_id = %s AND user_id = %s",
                 (event_id, current_user["id"]),
             )
-            if existing["status"] == "going":
+
+            # Only promote if event starts > 2h from now — under 2h the freed spot becomes an empty seat
+            ev_dt_cancel = ev["date_time"]
+            if ev_dt_cancel and ev_dt_cancel.tzinfo is None:
+                ev_dt_cancel = ev_dt_cancel.replace(tzinfo=timezone.utc)
+            can_promote = ev_dt_cancel and ev_dt_cancel > datetime.now(timezone.utc) + timedelta(hours=2)
+
+            promoted = None
+            if prev_status == "going":
                 cur.execute(
                     "UPDATE events SET spots_left = LEAST(capacity, spots_left + 1) WHERE id = %s",
                     (event_id,),
                 )
+                if can_promote:
+                    promoted = _promote_next_waitlist(cur, event_id)
+            elif prev_status == "waitlist" and had_offer:
+                # Was promoted, spot was held — restore it then offer to next
+                cur.execute(
+                    "UPDATE events SET spots_left = LEAST(capacity, spots_left + 1) WHERE id = %s",
+                    (event_id,),
+                )
+                if can_promote:
+                    promoted = _promote_next_waitlist(cur, event_id)
 
-            # Notify host about the cancellation
+            # Fetch for notifications
             cur.execute("SELECT host_id::text, title FROM events WHERE id = %s", (event_id,))
             ev_cancel = cur.fetchone()
             cur.execute("SELECT name FROM users WHERE id = %s::uuid", (current_user["id"],))
@@ -523,19 +777,52 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
 
             conn.commit()
 
-            if host_id_cancel and host_id_cancel != current_user["id"]:
+            if host_id_cancel and host_id_cancel != current_user["id"] and prev_status == "going":
                 background_tasks.add_task(
                     send_push, host_id_cancel, "RSVP Cancelled",
                     f"{attendee_name_cancel} can't make it to {event_title_cancel}",
                     {"type": "event", "event_id": event_id},
                 )
-            return {"ok": True, "status": "cancelled"}
+            if promoted:
+                from routes.notifications import notify_waitlist_promoted
+                with get_db() as (cur2, conn2):
+                    notify_waitlist_promoted(cur2, promoted["user_id"], event_id, event_title_cancel)
+                    conn2.commit()
+                background_tasks.add_task(
+                    send_push, promoted["user_id"], "A spot opened up!",
+                    f"You have 24 hours to confirm your spot at {event_title_cancel}.",
+                    {"type": "event", "event_id": event_id},
+                )
+
+            status = "cancelled"
+
+        # Queue expiry push notifications (outside transaction)
+        if expired_user_ids:
+            from routes.notifications import notify_waitlist_expired
+            with get_db() as (cur2, conn2):
+                cur2.execute("SELECT title FROM events WHERE id = %s", (event_id,))
+                ev_title_row = cur2.fetchone()
+                ev_title = ev_title_row["title"] if ev_title_row else ""
+                for uid in expired_user_ids:
+                    notify_waitlist_expired(cur2, uid, event_id, ev_title)
+                conn2.commit()
+            for uid in expired_user_ids:
+                background_tasks.add_task(
+                    send_push, uid, "Spot offer expired",
+                    f"Your reserved spot was given to the next person.",
+                    {"type": "event", "event_id": event_id},
+                )
+
+    result = {"ok": True, "status": status}
+    if status == "waitlist":
+        result["position"] = position
+    return result
 
 
 # ── DELETE /events/{id} ───────────────────────────────────────────────────────
 
 @router.delete("/{event_id}")
-def cancel_event(event_id: str, current_user: dict = Depends(get_current_user)):
+def cancel_event(event_id: str, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
     with get_db() as (cur, conn):
         cur.execute(
             "SELECT host_id::text, date_time FROM events WHERE id = %s",
@@ -554,10 +841,122 @@ def cancel_event(event_id: str, current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Events can only be cancelled up to 48 hours before start")
 
     with get_db() as (cur, conn):
+        cur.execute("SELECT title FROM events WHERE id = %s", (event_id,))
+        ev_title_row = cur.fetchone()
+        ev_title = ev_title_row["title"] if ev_title_row else ""
+
         cur.execute("UPDATE events SET is_cancelled = TRUE WHERE id = %s", (event_id,))
+
+        # Fetch waitlist users to notify
+        cur.execute(
+            "SELECT user_id::text FROM event_attendees WHERE event_id = %s AND status = 'waitlist'",
+            (event_id,),
+        )
+        waitlist_user_ids = [r["user_id"] for r in cur.fetchall()]
+
+        from routes.notifications import notify_waitlist_event_cancelled
+        for uid in waitlist_user_ids:
+            notify_waitlist_event_cancelled(cur, uid, event_id, ev_title)
+
         conn.commit()
 
+    for uid in waitlist_user_ids:
+        background_tasks.add_task(
+            send_push, uid, "Event cancelled",
+            f"{ev_title} was cancelled. You've been removed from the waitlist.",
+            {"type": "event", "event_id": event_id},
+        )
+
     return {"ok": True}
+
+
+# ── POST /events/{id}/waitlist/admit ─────────────────────────────────────────
+
+@router.post("/{event_id}/waitlist/admit")
+def admit_from_waitlist(event_id: str, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
+    with get_db() as (cur, conn):
+        cur.execute("SELECT host_id::text, title FROM events WHERE id = %s AND is_cancelled = FALSE", (event_id,))
+        ev = cur.fetchone()
+        if not ev:
+            raise HTTPException(status_code=404, detail="Event not found")
+        if ev["host_id"] != current_user["id"]:
+            raise HTTPException(status_code=403, detail="Not your event")
+
+        cur.execute(
+            "SELECT COUNT(*) AS cnt FROM event_attendees WHERE event_id = %s AND status = 'waitlist' AND offer_expires_at IS NULL",
+            (event_id,),
+        )
+        if cur.fetchone()["cnt"] == 0:
+            conn.commit()
+            raise HTTPException(status_code=404, detail="No one on the waitlist")
+
+        # Grow capacity by 1 then promote
+        cur.execute(
+            "UPDATE events SET capacity = capacity + 1, spots_left = spots_left + 1 WHERE id = %s",
+            (event_id,),
+        )
+        promoted = _promote_next_waitlist(cur, event_id)
+
+        cur.execute(
+            "SELECT COUNT(*) AS cnt FROM event_attendees WHERE event_id = %s AND status = 'waitlist' AND offer_expires_at IS NULL",
+            (event_id,),
+        )
+        waitlist_remaining = cur.fetchone()["cnt"]
+
+        from routes.notifications import notify_waitlist_promoted
+        if promoted:
+            notify_waitlist_promoted(cur, promoted["user_id"], event_id, ev["title"])
+
+        conn.commit()
+
+    if promoted:
+        background_tasks.add_task(
+            send_push, promoted["user_id"], "A spot opened up!",
+            f"You have 24 hours to confirm your spot at {ev['title']}.",
+            {"type": "event", "event_id": event_id},
+        )
+
+    return {
+        "ok": True,
+        "admitted": {"user_id": promoted["user_id"], "name": promoted["name"]} if promoted else None,
+        "waitlist_remaining": waitlist_remaining,
+    }
+
+
+# ── GET /events/{id}/waitlist ─────────────────────────────────────────────────
+
+@router.get("/{event_id}/waitlist")
+def get_waitlist(event_id: str, current_user: dict = Depends(get_current_user)):
+    with get_db() as (cur, _):
+        cur.execute("SELECT host_id::text FROM events WHERE id = %s", (event_id,))
+        ev = cur.fetchone()
+        if not ev:
+            raise HTTPException(status_code=404, detail="Event not found")
+        if ev["host_id"] != current_user["id"]:
+            raise HTTPException(status_code=403, detail="Only the host can view the waitlist")
+
+        cur.execute(
+            """
+            SELECT
+                u.id::text,
+                u.name,
+                u.username,
+                ea.joined_at::text,
+                ea.offer_expires_at::text,
+                ROW_NUMBER() OVER (
+                    PARTITION BY ea.event_id
+                    ORDER BY ea.joined_at ASC
+                ) AS position,
+                (SELECT url FROM user_photos WHERE user_id = u.id ORDER BY position LIMIT 1) AS avatar
+            FROM event_attendees ea
+            JOIN users u ON u.id = ea.user_id
+            WHERE ea.event_id = %s AND ea.status = 'waitlist'
+            ORDER BY ea.joined_at ASC
+            """,
+            (event_id,),
+        )
+        rows = [dict(r) for r in cur.fetchall()]
+    return {"waitlist": rows, "total": len(rows)}
 
 
 # ── GET /events/{id}/attendees ────────────────────────────────────────────────

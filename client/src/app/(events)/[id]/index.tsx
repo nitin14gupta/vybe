@@ -49,13 +49,13 @@ function renderOptionsBackdrop(props: BottomSheetBackdropProps) {
   return <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close" opacity={0.5} />
 }
 
-function EventOptionsSheetCore({ id, onEdit, onCancel, onClose }: { id: string; onEdit: () => void; onCancel: () => void; onClose: () => void }) {
+function EventOptionsSheetCore({ id, onEdit, onCancel, onWaitlist, onClose, showWaitlist }: { id: string; onEdit: () => void; onCancel: () => void; onWaitlist: () => void; onClose: () => void; showWaitlist: boolean }) {
   const sheetRef = useRef<BottomSheetModal>(null)
   useEffect(() => { sheetRef.current?.present() }, [])
   return (
     <BottomSheetModal
       ref={sheetRef}
-      snapPoints={['28%']}
+      snapPoints={[showWaitlist ? '42%' : '28%']}
       enableDynamicSizing={false}
       enablePanDownToClose
       onDismiss={onClose}
@@ -68,6 +68,15 @@ function EventOptionsSheetCore({ id, onEdit, onCancel, onClose }: { id: string; 
           <Pencil size={20} color={Colors.inkPrimary} strokeWidth={1.8} />
           <Text style={styles.optionText}>Edit Event</Text>
         </Pressable>
+        {showWaitlist && (
+          <>
+            <View style={styles.optionDivider} />
+            <Pressable style={styles.optionItem} onPress={() => { onClose(); onWaitlist() }}>
+              <Users size={20} color={Colors.inkPrimary} strokeWidth={1.8} />
+              <Text style={styles.optionText}>Manage Waitlist</Text>
+            </Pressable>
+          </>
+        )}
         <View style={styles.optionDivider} />
         <Pressable style={styles.optionItem} onPress={() => { onClose(); onCancel() }}>
           <XIcon size={20} color={Colors.brandCoral} strokeWidth={1.8} />
@@ -78,9 +87,9 @@ function EventOptionsSheetCore({ id, onEdit, onCancel, onClose }: { id: string; 
   )
 }
 
-function EventOptionsSheet({ visible, id, onEdit, onCancel, onClose }: { visible: boolean; id: string; onEdit: () => void; onCancel: () => void; onClose: () => void }) {
+function EventOptionsSheet({ visible, id, onEdit, onCancel, onWaitlist, onClose, showWaitlist }: { visible: boolean; id: string; onEdit: () => void; onCancel: () => void; onWaitlist: () => void; onClose: () => void; showWaitlist: boolean }) {
   if (!visible) return null
-  return <EventOptionsSheetCore id={id} onEdit={onEdit} onCancel={onCancel} onClose={onClose} />
+  return <EventOptionsSheetCore id={id} onEdit={onEdit} onCancel={onCancel} onWaitlist={onWaitlist} onClose={onClose} showWaitlist={showWaitlist} />
 }
 
 const { width: W } = Dimensions.get('window')
@@ -141,6 +150,13 @@ function formatPrice(price: number, isFree: boolean) {
   return `₹${price}`
 }
 
+function fmtCountdown(s: number) {
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const sec = s % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+}
+
 type RsvpStatus = 'idle' | 'going' | 'waitlist' | 'loading'
 
 const EVENT_PAST_THRESHOLD_MS = 0 // show rate button as soon as date_time passes
@@ -166,11 +182,16 @@ export default function EventDetailScreen() {
   const [attendees, setAttendees] = useState<EventAttendee[]>([])
   const [attendeesLoading, setAttendeesLoading] = useState(false)
 
+  const [offerSecondsLeft, setOfferSecondsLeft] = useState<number | null>(null)
+
   useEffect(() => {
     if (!id) return
     ApiService.getEvent(id)
       .then(ev => {
         setEvent(ev)
+        if (ev.my_rsvp_status === 'going' || ev.my_rsvp_status === 'waitlist') {
+          setRsvpStatus(ev.my_rsvp_status)
+        }
         if (ev.host_id === myId) {
           setAttendeesLoading(true)
           ApiService.getEventAttendees(id)
@@ -182,6 +203,16 @@ export default function EventDetailScreen() {
       .catch(() => showPill("Couldn't load this event", 'error'))
       .finally(() => setLoading(false))
   }, [id, myId])
+
+  useEffect(() => {
+    if (!event?.my_offer_expires_at) { setOfferSecondsLeft(null); return }
+    const tick = () => setOfferSecondsLeft(
+      Math.max(0, Math.floor((new Date(event.my_offer_expires_at!).getTime() - Date.now()) / 1000))
+    )
+    tick()
+    const t = setInterval(tick, 1000)
+    return () => clearInterval(t)
+  }, [event?.my_offer_expires_at])
 
   const [refreshing, setRefreshing] = useState(false)
 
@@ -225,7 +256,7 @@ export default function EventDetailScreen() {
 
   const handleEditEvent = () => {
     if (!event) return
-    if (hoursUntil(event.date_time) < 7) {
+    if (hoursUntil(event.date_time) < 2) {
       setLockedReason('edit')
     } else {
       router.push(`/(events)/${id}/edit` as any)
@@ -253,6 +284,46 @@ export default function EventDetailScreen() {
   const handleShare = () => {
     if (!event) return
     setShareOpen(true)
+  }
+
+  const handleJoinWaitlist = async () => {
+    if (!event) return
+    setRsvpStatus('loading')
+    try {
+      const res = await ApiService.rsvpEvent(id!, 'going')
+      if (res.status === 'waitlist') {
+        setRsvpStatus('waitlist')
+        setEvent(prev => prev ? { ...prev, spots_left: 0 } : prev)
+        showPill(`You're #${res.position} on the waitlist. We'll notify you if a spot opens.`, 'default')
+      } else if (res.status === 'going') {
+        setRsvpStatus('going')
+      }
+    } catch (e: any) {
+      setRsvpStatus('idle')
+      showPill(e?.message ?? "Couldn't join waitlist", 'error')
+    }
+  }
+
+  const handleLeaveWaitlist = async () => {
+    if (!event) return
+    setRsvpStatus('loading')
+    try {
+      await ApiService.rsvpEvent(id!, 'cancel')
+      setRsvpStatus('idle')
+      setEvent(prev => prev ? {
+        ...prev,
+        my_offer_expires_at: null,
+        my_waitlist_position: null,
+      } : prev)
+      showPill("You've left the waitlist", 'default')
+    } catch (e: any) {
+      setRsvpStatus('waitlist')
+      showPill(e?.message ?? "Couldn't leave waitlist", 'error')
+    }
+  }
+
+  const handleManageWaitlist = () => {
+    router.push(`/(events)/${id}/waitlist` as any)
   }
 
   const isPast = event ? new Date(event.date_time.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00')) < new Date() : false
@@ -494,7 +565,7 @@ export default function EventDetailScreen() {
           /* ── Attendee view ── */
           <>
             <View style={styles.stickyLeft}>
-              {spotsLow && !isGoing && (
+              {spotsLow && !isGoing && !isWaitlist && (
                 <View style={styles.spotsAlert}>
                   <View style={styles.spotsDot} />
                   <Text style={styles.spotsText}>Only {event.spots_left} left</Text>
@@ -534,12 +605,37 @@ export default function EventDetailScreen() {
                   <Text style={styles.ticketBtnText}>Ticket</Text>
                 </Pressable>
               </View>
-            ) : isWaitlist ? (
+            ) : rsvpStatus === 'loading' ? (
               <View style={styles.waitlistBtn}>
-                <Text style={styles.waitlistBtnText}>On Waitlist</Text>
+                <ActivityIndicator color={Colors.brandOrange} />
+              </View>
+            ) : isWaitlist && event.my_offer_expires_at ? (
+              <Pressable style={styles.offerBtn} onPress={() => { hSuccess(); handleRsvp() }}>
+                <Text style={styles.offerBtnText}>
+                  Spot Reserved! Confirm by {offerSecondsLeft != null ? fmtCountdown(offerSecondsLeft) : '...'}
+                </Text>
+              </Pressable>
+            ) : isWaitlist ? (
+              <View style={{ alignItems: 'flex-end' }}>
+                <View style={styles.waitlistBtn}>
+                  <Text style={styles.waitlistBtnText}>
+                    On Waitlist{event.my_waitlist_position ? ` (#${event.my_waitlist_position})` : ''}
+                  </Text>
+                </View>
+                <Pressable onPress={handleLeaveWaitlist} style={{ marginTop: 4 }}>
+                  <Text style={styles.leaveWaitlistLink}>Leave Waitlist</Text>
+                </Pressable>
+              </View>
+            ) : event.spots_left === 0 && hoursUntil(event.date_time) < 2 ? (
+              <View style={styles.eventFullBtn}>
+                <Text style={styles.waitlistBtnText}>Event starts soon</Text>
+              </View>
+            ) : event.spots_left === 0 && event.is_waitlist_full ? (
+              <View style={styles.waitlistFullBtn}>
+                <Text style={styles.waitlistBtnText}>Waitlist Full</Text>
               </View>
             ) : event.spots_left === 0 ? (
-              <Pressable style={styles.waitlistJoinBtn} onPress={() => { hSuccess(); handleRsvp() }}>
+              <Pressable style={styles.waitlistJoinBtn} onPress={() => { hSuccess(); handleJoinWaitlist() }}>
                 <Text style={styles.waitlistJoinText}>Join Waitlist</Text>
               </Pressable>
             ) : (
@@ -570,7 +666,9 @@ export default function EventDetailScreen() {
         id={id ?? ''}
         onEdit={handleEditEvent}
         onCancel={handleCancelEvent}
+        onWaitlist={handleManageWaitlist}
         onClose={() => setOptionsOpen(false)}
+        showWaitlist={(event?.waitlist_count ?? 0) > 0}
       />
       <ConfirmSheet
         visible={cancelConfirm}
@@ -810,6 +908,37 @@ const styles = StyleSheet.create({
     minWidth: 130,
   },
   waitlistJoinText: { color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
+
+  offerBtn: {
+    backgroundColor: '#00C896',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    minWidth: 130,
+  },
+  offerBtnText: { color: '#fff', fontFamily: FontFamily.bodySemiBold, fontSize: 13 },
+  leaveWaitlistLink: { color: Colors.inkSecondary, fontFamily: FontFamily.bodyRegular, fontSize: 12, textDecorationLine: 'underline' },
+  eventFullBtn: {
+    backgroundColor: Colors.elevated,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.divider,
+    minWidth: 120,
+  },
+  waitlistFullBtn: {
+    backgroundColor: Colors.elevated,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.divider,
+    minWidth: 120,
+  },
 
   cancelledBadge: {
     backgroundColor: 'rgba(255,56,100,0.15)',

@@ -57,6 +57,8 @@ export const ENDPOINTS = {
   EVENT_TICKET: '/events/:id/ticket',
   EVENT_CHECKIN: '/events/:id/checkin',
   EVENT_REVIEWS: '/events/:id/reviews',
+  EVENT_WAITLIST: '/events/:id/waitlist',
+  EVENT_WAITLIST_ADMIT: '/events/:id/waitlist/admit',
 
   // Chat
   CONVERSATIONS: '/chat/conversations',

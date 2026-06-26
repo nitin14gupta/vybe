@@ -146,6 +146,7 @@ export default function TicketScreen() {
 
   const [ticket, setTicket] = useState<TicketInfo | null>(null)
   const [loading, setLoading] = useState(true)
+  const cardRef = useRef<typeof ViewShot>(null)
 
   useEffect(() => {
     if (!id) return
@@ -164,7 +165,20 @@ export default function TicketScreen() {
   }
 
   const handleSave = async () => {
-    showPill('Save to Photos coming soon', 'default')
+    if (!cardRef.current) return
+    try {
+      const { status } = await MediaLibrary.requestPermissionsAsync()
+      if (status !== 'granted') {
+        showPill('Allow photo access to save your ticket', 'error')
+        return
+      }
+      const uri = await (cardRef.current as any).capture()
+      await MediaLibrary.saveToLibraryAsync(uri)
+      hSuccess()
+      showPill('Ticket saved to Photos!', 'default')
+    } catch {
+      showPill("Couldn't save ticket, try again", 'error')
+    }
   }
 
   if (loading) {
@@ -216,7 +230,9 @@ export default function TicketScreen() {
 
         <HeadingBlock />
 
-        <TicketCard ticket={ticket} />
+        <ViewShot ref={cardRef} options={{ format: 'png', quality: 1 }} style={s.viewShot}>
+          <TicketCard ticket={ticket} />
+        </ViewShot>
 
         {/* Action buttons */}
         <View style={s.actions}>
@@ -380,6 +396,8 @@ const s = StyleSheet.create({
     letterSpacing: 2,
     textTransform: 'uppercase',
   },
+
+  viewShot: { width: '100%', maxWidth: 380 },
 
   // Action buttons
   actions: { width: '100%', maxWidth: 380, gap: 10 },
