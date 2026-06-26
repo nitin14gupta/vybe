@@ -1,103 +1,115 @@
-01. Market Research — Why India, Why Now
-India is at an inflection point for social experiences. The data across multiple dimensions points to one conclusion: a platform that connects people around live social events has a massive, underserved market.
+there is somethnig calledas expo auto slelton npm install react-native-auto-skeleton ,  ihave installed it, we can make our whole proejct with expo skelton firs tdo in search sectino so simply will remove the search skeotn compnoent we mae becuase this is very simpler, it is auto skeleton let me give you the readme of it, React Native Auto Skeleton – Lightweight Skeleton Loader for React Native
+react-native-auto-skeleton is a modern skeleton loader for React Native, designed to automatically render loading placeholders (shimmer-style) based on your existing layout.
 
-1.1 The Live Events Market
-Metric	Value	Source
-India events & exhibition market (2025)	USD 5.69 Billion	Mordor Intelligence
-Projected market size by 2031	USD 9.04 Billion	Mordor Intelligence
-Market CAGR (2026–2031)	8.05%	Mordor Intelligence
-India live entertainment market (2026 proj.)	USD 35.91 Billion	Apparel Resources
-India dating apps market (2024)	USD 788 Million	MarkNtel Advisors
-Dating apps CAGR (2025–2030)	10.65%	MarkNtel Advisors
-Projected dating apps market (2030)	USD 1.42 Billion	MarkNtel Advisors
+Ideal replacement for react-native-skeleton-placeholder and other manual solutions.
 
-1.2 Cultural Tailwinds
-These are not just numbers — they reflect a real cultural shift happening right now in Indian cities:
-•	Urban millennials and Gen-Z are reshaping the Indian home party scene — investment in party decor, premium drinkware, LED setups, and themed gatherings has seen remarkable year-on-year growth (NotThatHigh Trend Report, Nov 2025).
-•	Going-out culture is filling a void. Young urban Indians are actively seeking real-life connections and experiences after years of digital fatigue (Apparel Resources, Sept 2025).
-•	FOMO amplified by social media is driving desire to be physically present at social events — this creates a perfect demand signal for a discovery platform.
-•	The live entertainment sector is expanding from Tier-1 into Tier-2 and Tier-3 cities — this is your expansion roadmap.
-•	Gen-Z is moving away from traditional bars toward house parties and soft clubbing events. Eventbrite globally recorded a 478% increase in coffee clubbing events and a 20% rise in morning dance parties in 2025.
-•	India has 900 million+ social media users. Average daily social media time: 2.5 hours. The attention is there — the IRL connection layer is missing.
+npm version npm downloads iOS Android TypeScript MIT License Bundle size
+Demo
+react-native-auto-skeleton demo
 
-1.3 The Gap VYBE Fills
-Platform	What They Do	What They Miss
-Bumble / Tinder	Dating & social discovery	No IRL event layer, no house parties
-Eventbrite / BookMyShow	Event discovery & ticketing	No social graph, no personal connections
-Instagram	Content & following	No meetup intent, no private events
-Meetup.com	Group events	Not India-native, no social vibe layer
-VYBE	Social discovery + IRL events + connections	THIS IS THE GAP
+✅ Platform Support
+Platform	Old Arch	Fabric
+iOS	✅	✅
+Android	✅	✅
+Installation
+Using npm:
 
-1.4 Target User
-Segment	Profile	Primary Need
-Attendee	18-30, urban, college or working professional	Find interesting parties & people
-Host	21-35, has space, wants to monetize or socialize	Fill their event, earn money
-Social Explorer	Any urban 18-30	Meet people with similar interests IRL
-01. Market Research — Why India, Why Now
-India is at an inflection point for social experiences. The data across multiple dimensions points to one conclusion: a platform that connects people around live social events has a massive, underserved market.
+npm install react-native-auto-skeleton
+Using yarn:
 
-1.1 The Live Events Market
-Metric	Value	Source
-India events & exhibition market (2025)	USD 5.69 Billion	Mordor Intelligence
-Projected market size by 2031	USD 9.04 Billion	Mordor Intelligence
-Market CAGR (2026–2031)	8.05%	Mordor Intelligence
-India live entertainment market (2026 proj.)	USD 35.91 Billion	Apparel Resources
-India dating apps market (2024)	USD 788 Million	MarkNtel Advisors
-Dating apps CAGR (2025–2030)	10.65%	MarkNtel Advisors
-Projected dating apps market (2030)	USD 1.42 Billion	MarkNtel Advisors
+yarn add react-native-auto-skeleton
+Expo
+This library works in Expo (with expo prebuild) without additional configuration.
 
-1.2 Cultural Tailwinds
-These are not just numbers — they reflect a real cultural shift happening right now in Indian cities:
-•	Urban millennials and Gen-Z are reshaping the Indian home party scene — investment in party decor, premium drinkware, LED setups, and themed gatherings has seen remarkable year-on-year growth (NotThatHigh Trend Report, Nov 2025).
-•	Going-out culture is filling a void. Young urban Indians are actively seeking real-life connections and experiences after years of digital fatigue (Apparel Resources, Sept 2025).
-•	FOMO amplified by social media is driving desire to be physically present at social events — this creates a perfect demand signal for a discovery platform.
-•	The live entertainment sector is expanding from Tier-1 into Tier-2 and Tier-3 cities — this is your expansion roadmap.
-•	Gen-Z is moving away from traditional bars toward house parties and soft clubbing events. Eventbrite globally recorded a 478% increase in coffee clubbing events and a 20% rise in morning dance parties in 2025.
-•	India has 900 million+ social media users. Average daily social media time: 2.5 hours. The attention is there — the IRL connection layer is missing.
+Usage
+⚠️ Warning: On Android, automatic detection of a view’s border-radius is not supported. You can override it manually via the defaultRadius prop.
 
-1.3 The Gap VYBE Fills
-Platform	What They Do	What They Miss
-Bumble / Tinder	Dating & social discovery	No IRL event layer, no house parties
-Eventbrite / BookMyShow	Event discovery & ticketing	No social graph, no personal connections
-Instagram	Content & following	No meetup intent, no private events
-Meetup.com	Group events	Not India-native, no social vibe layer
-VYBE	Social discovery + IRL events + connections	THIS IS THE GAP
+Here's a quick example to get started:
 
-1.4 Target User
-Segment	Profile	Primary Need
-Attendee	18-30, urban, college or working professional	Find interesting parties & people
-Host	21-35, has space, wants to monetize or socialize	Fill their event, earn money
-Social Explorer	Any urban 18-30	Meet people with similar interests IRL
+import { AutoSkeletonView, AutoSkeletonIgnoreView } from 'react-native-auto-skeleton';
+...
 
+<AutoSkeletonView isLoading={isLoading}>
+    ...YOUR VIEWS
+  <AutoSkeletonIgnoreView> // Content that will be ignored by the skeleton
+    ... Views without skeleton
+  </AutoSkeletonIgnoreView>
+</AutoSkeletonView>
+Full example
 
+import { AutoSkeletonView } from 'react-native-auto-skeleton';
 
+interface IProfile {
+  name: string;
+  jobTitle: string;
+  avatar: string;
+}
 
+const getProfile = async (): Promise<IProfile> => {
+  // Fetch profile data from your API
+};
 
+export default function App() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [profile, setProfile] = useState<IProfile>({} as IProfile);
 
-Scanner / Check-in (host side)
+  useEffect(() => {
+    (async () => {
+      const res = await getProfile();
+      setProfile(res);
+      setIsLoading(false);
+    })();
+  }, []);
 
-A. scanner.tsx — Event starts in >3h → Countdown timer screen ("Check-in opens in 2h 34m 12s") instead of pill. You specifically mentioned this one. ✅ clear yes
+  return (
+     <AutoSkeletonView isLoading={isLoading}>
+      <View style={styles.avatarWithName}>
+        <Image style={styles.avatar} source={{ uri: profile.avatar }} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.name}>{profile.name}</Text>
+          <Text style={styles.jobTitle}>{profile.jobTitle}</Text>
+        </View>
+      </View>
 
-B. scanner.tsx — Event has already ended → "Event Ended" screen instead of the scanner just failing silently
+      {/* This buttons block will have skeleton applied */}
+      <View style={styles.buttons}>
+        <TouchableOpacity style={styles.button}>
+          <Text style={styles.buttonTitle}>Add</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button}>
+          <Text style={styles.buttonTitle}>Delete</Text>
+        </TouchableOpacity>
+      </View>
 
-Booking flow (attendee side)
+      {/* Alternatively, to exclude buttons from skeleton rendering: */}
+      <AutoSkeletonIgnoreView>
+        <View style={styles.buttons}>
+           ...
+        </View>
+      </AutoSkeletonIgnoreView>
+    </AutoSkeletonView>
+  );
+}
+API
+AutoSkeletonView
+Prop	type	Description
+isLoading	boolean	Enables or disables the skeleton state
+shimmerSpeed	number	Duration of one shimmer animation cycle in seconds. Lower values = faster shimmer
+shimmerBackgroundColor	string	Background color for animation types: pulse and none
+gradientColors	[string,string]	Gradient colors for the skeleton gradient
+defaultRadius	number	Default corner radius for skeleton elements that don't have a defined borderRadius
+animationType	"gradient" | "pulse" | "none"	Skeleton animation
+AutoSkeletonIgnoreView
+Wrap any subtree with this component to exclude it from skeleton rendering. Children will remain visible while the skeleton is active.
 
-C. book.tsx — API rejects due to age (e.g. user is 18, event is 21+) → Age gate screen with icon + "This event is for 21+ only". You mentioned this one. ✅ clear yes
+Best Practices
+For rapid implementation, wrap entire UI sections with <AutoSkeletonView>.
+For precise control, wrap individual UI components or groups separately.
+Ensure components have clearly defined dimensions, backgrounds, or styles for optimal skeleton rendering.
+To exclude specific components from skeleton rendering, wrap them with <AutoSkeletonIgnoreView>. Any content inside this wrapper will not be processed by the skeleton system.
+🔁 Alternative Solutions
+You may also know:
 
-D. book.tsx — Booking returns status: waitlist → Waitlist confirmation screen ("You're on the waitlist at position #3, we'll notify you if a spot opens") instead of pill + back navigation
-
-E. index.tsx — spots_left = 0 at load time → Sold out screen/state instead of just disabling the Book button silently
-
-Event detail states
-
-F. index.tsx — Event is live right now (between date_time and end_time) → "Live Now" banner/state — orange pulsing dot, "Happening now until 4 AM"
-
-G. index.tsx — Event is cancelled → already shows a badge inline, but could be a more impactful full cancelled overlay when the detail screen loads
-
-Attendee ticket side
-
-H. ticket.tsx — User is already checked-in → "You're checked in!" celebration screen (green, timestamp) instead of just showing the QR code
-
-So that's 8 cases: A, B, C, D, E, F, G, H
-
-Which ones do you want as full UI screens? Say yes to each letter (or just "A C D" etc.) and I'll build them all in one go.
+react-native-skeleton-placeholder
+react-content-loader
+If you're looking for a React Native skeleton loader that works automatically, with Fabric support, and no manual configuration, react-native-auto-skeleton is your go-to solution.

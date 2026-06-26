@@ -75,7 +75,8 @@
       "@react-native-community/datetimepicker",
       "@maplibre/maplibre-react-native",
       "expo-video",
-      "expo-tracking-transparency"
+      "expo-tracking-transparency",
+      "react-native-auto-skeleton"
     ],
     "experiments": {
       "typedRoutes": true,

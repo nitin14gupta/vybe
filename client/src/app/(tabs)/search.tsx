@@ -9,11 +9,11 @@ import { Search, Users, X } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Colors, FontFamily } from '@/constants'
+import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import ApiService from '@/api/apiService'
 import type { DiscoverUser } from '@/api/apiService'
 import { useSearchHistoryStore } from '@/store/searchHistoryStore'
 import type { SearchHistoryUser } from '@/store/searchHistoryStore'
-import { SearchSkeleton } from '@/components/ui'
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets()
@@ -120,7 +120,17 @@ export default function SearchScreen() {
 
       {/* Content */}
       {loading ? (
-        <SearchSkeleton />
+        <AutoSkeletonView isLoading animationType="gradient" defaultRadius={7}>
+          {Array.from({ length: 7 }).map((_, i) => (
+            <View key={i} style={s.skRow}>
+              <View style={s.skAvatar} />
+              <View style={s.skInfo}>
+                <View style={s.skLineName} />
+                <View style={s.skLineUser} />
+              </View>
+            </View>
+          ))}
+        </AutoSkeletonView>
       ) : showHistory ? (
         <HistoryList
           history={history}
@@ -284,6 +294,12 @@ const s = StyleSheet.create({
     fontSize: 13,
     color: Colors.brandOrange,
   },
+
+  skRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, gap: 14 },
+  skAvatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#2a2a2a' },
+  skInfo: { flex: 1, gap: 8 },
+  skLineName: { height: 14, width: '55%', borderRadius: 7, backgroundColor: '#2a2a2a' },
+  skLineUser: { height: 12, width: '35%', borderRadius: 6, backgroundColor: '#2a2a2a' },
 
   listContent: { paddingBottom: 32 },
   row: {
