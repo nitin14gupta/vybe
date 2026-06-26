@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, Pressable,
-  Image, Dimensions, ActivityIndicator,
+  Image, Dimensions, ActivityIndicator, RefreshControl,
 } from 'react-native'
 import { router } from 'expo-router'
 import { hTap } from '@/lib/haptics'
@@ -9,6 +9,7 @@ import { MapPin, Play, Pause, Pencil, Settings } from 'lucide-react-native'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
 import { InterestChip, PlaybackWave, AppHeader, HeaderIconBtn } from '@/components/ui'
 import { useProfile } from '@/hooks/useProfile'
+import { useAuthStore } from '@/store/auth'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 import { useImageViewer } from '@/hooks/useImageViewer'
 import { MediaViewerModal } from '@/components/chat/MediaViewerModal'
@@ -34,6 +35,18 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (profile?.voice_url) player.replace({ uri: profile.voice_url })
   }, [profile?.voice_url])
+
+  useEffect(() => {
+    if (profile?.dob !== undefined) useAuthStore.getState().setDob(profile.dob ?? null)
+  }, [profile?.dob])
+
+  const [refreshing, setRefreshing] = useState(false)
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    await refresh()
+    setRefreshing(false)
+  }, [refresh])
 
   const toggleVoice = () => {
     hTap()
@@ -81,7 +94,7 @@ export default function ProfileScreen() {
         }
       />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.brandOrange} colors={[Colors.brandOrange]} />}>
 
         {/* ── Main profile card ──────────────────────────────── */}
         <View style={styles.card}>

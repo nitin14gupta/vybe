@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
   TextInput,
@@ -50,6 +51,17 @@ export default function ScannerScreen() {
       .finally(() => setLoadingAttendees(false))
   }, [id])
 
+  const [refreshing, setRefreshing] = useState(false)
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    try {
+      const r = await ApiService.getEventAttendees(id!)
+      setAttendees(r.attendees)
+    } catch {}
+    finally { setRefreshing(false) }
+  }, [id])
+
   const showResult = useCallback((result: ScanResult) => {
     setScanResult(result)
     setTimeout(() => setScanResult(null), 2500)
@@ -62,6 +74,9 @@ export default function ScannerScreen() {
     try {
       const res = await ApiService.checkinAttendee(id!, data)
       showResult(res)
+      if (res.already_checked_in) {
+        showPill(`${res.name} is already checked in`, 'default')
+      }
       if (!res.already_checked_in) {
         setAttendees(prev =>
           prev.map(a =>
@@ -85,6 +100,9 @@ export default function ScannerScreen() {
     try {
       const res = await ApiService.checkinAttendee(id!, (attendee as any).ticket_token ?? attendee.id)
       showResult(res)
+      if (res.already_checked_in) {
+        showPill(`${res.name} is already checked in`, 'default')
+      }
       setAttendees(prev => prev.map(a => a.id === attendee.id ? { ...a, status: 'checked_in' } : a))
     } catch (e: any) {
       showPill("Check-in didn't work, scan again", 'error')
@@ -202,6 +220,7 @@ export default function ScannerScreen() {
           data={filtered}
           keyExtractor={a => a.id}
           contentContainerStyle={s.listContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.brandOrange} colors={[Colors.brandOrange]} />}
           ListEmptyComponent={
             <View style={s.emptyState}>
               <Users size={36} color={Colors.inkDisabled} />

@@ -192,6 +192,8 @@ function EventsMapLibre({ events, userLat, userLng, activeEventId, onEventSelect
       style={{ flex: 1 }}
       mapStyle={TILE_STYLE.dark}
       onRegionDidChange={handleRegionDidChange}
+      logo={false}
+      attribution={false}
     >
       <Camera
         initialViewState={{

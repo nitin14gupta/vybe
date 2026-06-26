@@ -47,7 +47,11 @@ export default function ReviewScreen() {
   }, [id])
 
   const handleSubmit = async () => {
-    if (rating === 0 || submitting) return
+    if (rating === 0) {
+      showPill('Please select a star rating first', 'error')
+      return
+    }
+    if (submitting) return
     setSubmitting(true)
     try {
       await ApiService.submitReview(id!, rating, body.trim() || undefined)

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -37,6 +37,15 @@ export default function EditEventScreen() {
   const [hasAttendees, setHasAttendees] = useState(false)
   const showPill = usePillStore(s => s.show)
 
+  type Snapshot = {
+    title: string; eventType: string; description: string; rules: string
+    capacity: number; ageRestriction: number; locationName: string
+    locationLat: number | null; locationLng: number | null
+    isFree: boolean; priceInr: number; coverPhotos: string
+    dateTime: number | null; endTime: number | null
+  }
+  const originalRef = useRef<Snapshot | null>(null)
+
   useEffect(() => {
     if (!id) return
     ApiService.getEvent(id)
@@ -63,6 +72,23 @@ export default function EditEventScreen() {
         const editDeadline = parseTs(ev.edit_deadline)
         if (new Date() > editDeadline) setLocked(true)
         if (ev.attendee_count > 0)     setHasAttendees(true)
+
+        originalRef.current = {
+          title:          ev.title,
+          eventType:      ev.event_type,
+          description:    ev.description ?? '',
+          rules:          ev.rules ?? '',
+          capacity:       ev.capacity,
+          ageRestriction: (ev.age_restriction as number) ?? 18,
+          locationName:   ev.location_name ?? '',
+          locationLat:    ev.location_lat,
+          locationLng:    ev.location_lng,
+          isFree:         ev.is_free,
+          priceInr:       ev.price_inr,
+          coverPhotos:    JSON.stringify(ev.cover_photos?.map((p: { url: string }) => p.url) ?? []),
+          dateTime:       parseTs(ev.date_time).getTime(),
+          endTime:        ev.end_time ? parseTs(ev.end_time).getTime() : null,
+        }
       })
       .catch(() => showPill("Couldn't load this event", 'error'))
       .finally(() => setLoading(false))
@@ -96,10 +122,32 @@ export default function EditEventScreen() {
       })
       router.back()
     } catch (e: any) {
-      showPill("Couldn't save your changes, try again", 'error')
+      if (e?.status === 403) {
+        showPill('Editing window has passed — event starts too soon', 'error')
+      } else {
+        showPill("Couldn't save your changes, try again", 'error')
+      }
       setSaving(false)
     }
   }
+
+  const o = originalRef.current
+  const isDirty = o !== null && (
+    form.title !== o.title ||
+    form.eventType !== o.eventType ||
+    form.description !== o.description ||
+    form.rules !== o.rules ||
+    form.capacity !== o.capacity ||
+    form.ageRestriction !== o.ageRestriction ||
+    form.locationName !== o.locationName ||
+    form.locationLat !== o.locationLat ||
+    form.locationLng !== o.locationLng ||
+    form.isFree !== o.isFree ||
+    form.priceInr !== o.priceInr ||
+    JSON.stringify(form.coverPhotos) !== o.coverPhotos ||
+    (form.dateTime?.getTime() ?? null) !== o.dateTime ||
+    (form.endTime?.getTime() ?? null) !== o.endTime
+  )
 
   if (loading) {
     return (
@@ -163,16 +211,20 @@ export default function EditEventScreen() {
 
       {!locked && (
         <View style={[s.footer, { paddingBottom: insets.bottom + 16 }]}>
-          <Pressable style={s.saveBtn} onPress={() => { hSuccess(); handleSave() }} disabled={saving}>
+          <Pressable
+            style={[s.saveBtn, !isDirty && s.saveBtnDisabled]}
+            onPress={() => { if (!isDirty) return; hSuccess(); handleSave() }}
+            disabled={saving || !isDirty}
+          >
             <LinearGradient
-              colors={['#FF6B35', '#FF3864']}
+              colors={isDirty ? ['#FF6B35', '#FF3864'] : ['#333', '#333']}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
               style={s.saveGradient}
             >
               {saving ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={s.saveText}>SAVE CHANGES</Text>
+                <Text style={s.saveText}>Save Changes</Text>
               )}
             </LinearGradient>
           </Pressable>
@@ -214,6 +266,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(17,17,17,0.95)',
   },
   saveBtn: { borderRadius: 16, overflow: 'hidden' },
+  saveBtnDisabled: { opacity: 0.5 },
   saveGradient: { height: 54, alignItems: 'center', justifyContent: 'center', borderRadius: 16 },
   saveText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: '#fff', letterSpacing: 0.5 },
 })

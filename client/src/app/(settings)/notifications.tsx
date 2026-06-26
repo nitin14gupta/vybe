@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react'
 import {
   View, Text, StyleSheet, SectionList, Pressable,
-  ActivityIndicator, Image,
+  ActivityIndicator, Image, RefreshControl,
 } from 'react-native'
 import { hTap } from '@/lib/haptics'
 import { router } from 'expo-router'
@@ -103,6 +103,14 @@ export default function NotificationsScreen() {
     finally { setLoadingMore(false) }
   }, [])
 
+  const [refreshing, setRefreshing] = useState(false)
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    await loadInitial()
+    setRefreshing(false)
+  }, [loadInitial])
+
   useFocusEffect(useCallback(() => { loadInitial() }, [loadInitial]))
 
   const handleMarkAll = async () => {
@@ -152,6 +160,7 @@ export default function NotificationsScreen() {
           sections={sections}
           keyExtractor={n => n.id}
           renderItem={({ item }) => <NotifRow item={item} onPress={() => handleTap(item)} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.brandOrange} colors={[Colors.brandOrange]} />}
           renderSectionHeader={({ section }) => (
             <View style={s.sectionHeader}>
               <Text style={s.sectionHeaderText}>{section.title}</Text>

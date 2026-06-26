@@ -392,7 +392,8 @@ def update_event(event_id: str, body: CreateEventBody, current_user: dict = Depe
         raise HTTPException(status_code=403, detail="Not your event")
 
     edit_deadline = ev["date_time"] - timedelta(hours=7)
-    if datetime.now(timezone.utc) > edit_deadline.replace(tzinfo=timezone.utc) if edit_deadline.tzinfo is None else edit_deadline:
+    ed = edit_deadline.replace(tzinfo=timezone.utc) if edit_deadline.tzinfo is None else edit_deadline
+    if datetime.now(timezone.utc) > ed:
         raise HTTPException(status_code=403, detail="Events can only be edited up to 7 hours before start")
 
     with get_db() as (cur, conn):

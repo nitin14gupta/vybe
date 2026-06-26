@@ -48,7 +48,10 @@ export default function BookScreen() {
   useEffect(() => {
     if (!id) return
     ApiService.getEvent(id)
-      .then(setEvent)
+      .then(ev => {
+        setEvent(ev)
+        if (ev.is_cancelled) showPill('This event has been cancelled', 'error')
+      })
       .catch(() => showPill("Couldn't load this event", 'error'))
       .finally(() => setLoading(false))
   }, [id])
@@ -71,7 +74,11 @@ export default function BookScreen() {
         router.back()
       }
     } catch (e: any) {
-      showPill("Booking didn't go through, try again", 'error')
+      if (e?.status === 403) {
+        showPill(e?.message ?? "You don't meet the requirements for this event", 'error')
+      } else {
+        showPill("Booking didn't go through, try again", 'error')
+      }
       setPaying(false)
     }
   }
@@ -147,14 +154,23 @@ export default function BookScreen() {
 
       {/* Bottom pay button */}
       <View style={[s.footer, { paddingBottom: insets.bottom + 16 }]}>
-        <Pressable style={s.payBtn} onPress={() => { hSuccess(); handlePay() }} disabled={paying}>
+        <Pressable
+          style={[s.payBtn, event.is_cancelled && s.payBtnDisabled]}
+          onPress={() => {
+            if (event.is_cancelled) { showPill('This event has been cancelled', 'error'); return }
+            hSuccess(); handlePay()
+          }}
+          disabled={paying}
+        >
           <LinearGradient
-            colors={['#FF6B35', '#FF3864']}
+            colors={event.is_cancelled ? ['#333', '#333'] : ['#FF6B35', '#FF3864']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={s.payGradient}
           >
             {paying ? (
               <ActivityIndicator color="#fff" />
+            ) : event.is_cancelled ? (
+              <Text style={s.payText}>Event Cancelled</Text>
             ) : (
               <Text style={s.payText}>
                 {event.is_free ? 'RSVP Free' : `Pay ₹${total}`}
@@ -208,6 +224,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(17,17,17,0.95)',
   },
   payBtn: { borderRadius: 16, overflow: 'hidden' },
+  payBtnDisabled: { opacity: 0.6 },
   payGradient: { height: 54, alignItems: 'center', justifyContent: 'center', borderRadius: 16 },
   payText: { fontFamily: FontFamily.bodySemiBold, fontSize: 16, color: '#fff' },
 })

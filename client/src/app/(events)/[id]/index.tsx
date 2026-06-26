@@ -1,14 +1,16 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Dimensions,
   FlatList,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native'
+// ActivityIndicator kept for attendees loading spinner
 import { hTap, hSuccess, hSelection } from '@/lib/haptics'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
@@ -47,9 +49,8 @@ function renderOptionsBackdrop(props: BottomSheetBackdropProps) {
   return <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close" opacity={0.5} />
 }
 
-function EventOptionsSheetCore({ id, onCancel, onClose }: { id: string; onCancel: () => void; onClose: () => void }) {
+function EventOptionsSheetCore({ id, onEdit, onCancel, onClose }: { id: string; onEdit: () => void; onCancel: () => void; onClose: () => void }) {
   const sheetRef = useRef<BottomSheetModal>(null)
-  const router = useRouter()
   useEffect(() => { sheetRef.current?.present() }, [])
   return (
     <BottomSheetModal
@@ -63,7 +64,7 @@ function EventOptionsSheetCore({ id, onCancel, onClose }: { id: string; onCancel
       handleIndicatorStyle={styles.optionsHandle}
     >
       <BottomSheetView style={styles.optionsContent}>
-        <Pressable style={styles.optionItem} onPress={() => { onClose(); router.push(`/(events)/${id}/edit` as any) }}>
+        <Pressable style={styles.optionItem} onPress={() => { onClose(); onEdit() }}>
           <Pencil size={20} color={Colors.inkPrimary} strokeWidth={1.8} />
           <Text style={styles.optionText}>Edit Event</Text>
         </Pressable>
@@ -77,9 +78,9 @@ function EventOptionsSheetCore({ id, onCancel, onClose }: { id: string; onCancel
   )
 }
 
-function EventOptionsSheet({ visible, id, onCancel, onClose }: { visible: boolean; id: string; onCancel: () => void; onClose: () => void }) {
+function EventOptionsSheet({ visible, id, onEdit, onCancel, onClose }: { visible: boolean; id: string; onEdit: () => void; onCancel: () => void; onClose: () => void }) {
   if (!visible) return null
-  return <EventOptionsSheetCore id={id} onCancel={onCancel} onClose={onClose} />
+  return <EventOptionsSheetCore id={id} onEdit={onEdit} onCancel={onCancel} onClose={onClose} />
 }
 
 const { width: W } = Dimensions.get('window')
@@ -98,6 +99,20 @@ function parseDate(iso: string | null | undefined): Date | null {
   if (!iso) return null
   const d = new Date(iso.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'))
   return isNaN(d.getTime()) ? null : d
+}
+
+const hoursUntil = (iso: string) => {
+  const d = parseDate(iso)
+  return d ? (d.getTime() - Date.now()) / 3_600_000 : Infinity
+}
+
+function calcAge(dob: string): number {
+  const d = new Date(dob)
+  const now = new Date()
+  let age = now.getFullYear() - d.getFullYear()
+  const m = now.getMonth() - d.getMonth()
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--
+  return age
 }
 
 function formatDateTime(iso: string | null | undefined) {
@@ -145,6 +160,8 @@ export default function EventDetailScreen() {
   const [shareOpen, setShareOpen] = useState(false)
   const [optionsOpen, setOptionsOpen] = useState(false)
   const [cancelConfirm, setCancelConfirm] = useState(false)
+  const [lockedReason, setLockedReason] = useState<null | 'checkin' | 'edit' | 'cancel' | 'age'>(null)
+  const myDob = useAuthStore(s => s.dob)
   const showPill = usePillStore(s => s.show)
   const [attendees, setAttendees] = useState<EventAttendee[]>([])
   const [attendeesLoading, setAttendeesLoading] = useState(false)
@@ -166,12 +183,63 @@ export default function EventDetailScreen() {
       .finally(() => setLoading(false))
   }, [id, myId])
 
-  const handleRsvp = () => {
+  const [refreshing, setRefreshing] = useState(false)
+
+  const handleRefresh = useCallback(async () => {
+    if (!id) return
+    setRefreshing(true)
+    try {
+      const ev = await ApiService.getEvent(id)
+      setEvent(ev)
+    } catch {}
+    finally { setRefreshing(false) }
+  }, [id])
+
+  const handleRsvp = async () => {
     if (!event) return
+    if (event.age_restriction) {
+      let dob = myDob
+      if (!dob) {
+        try {
+          const me = await ApiService.getMe()
+          dob = me.dob ?? null
+          if (dob) useAuthStore.getState().setDob(dob)
+        } catch {}
+      }
+      if (dob && calcAge(dob) < event.age_restriction) {
+        setLockedReason('age')
+        return
+      }
+    }
     router.push(`/(events)/${id}/book` as any)
   }
 
-  const handleCancelEvent = () => setCancelConfirm(true)
+  const handleScanner = () => {
+    if (!event) return
+    if (hoursUntil(event.date_time) > 3) {
+      setLockedReason('checkin')
+    } else {
+      router.push(`/(events)/${id}/scanner` as any)
+    }
+  }
+
+  const handleEditEvent = () => {
+    if (!event) return
+    if (hoursUntil(event.date_time) < 7) {
+      setLockedReason('edit')
+    } else {
+      router.push(`/(events)/${id}/edit` as any)
+    }
+  }
+
+  const handleCancelEvent = () => {
+    if (!event) return
+    if (hoursUntil(event.date_time) < 48) {
+      setLockedReason('cancel')
+    } else {
+      setCancelConfirm(true)
+    }
+  }
 
   const doCancelEvent = async () => {
     try {
@@ -209,7 +277,11 @@ export default function EventDetailScreen() {
     )
   }
 
-  const spotsLow = event.spots_left <= 10 && !event.is_free
+  if (lockedReason) {
+    return <LockedScreen reason={lockedReason} event={event} onBack={() => setLockedReason(null)} />
+  }
+
+  const spotsLow = event.spots_left > 0 && event.spots_left <= 10 && !event.is_free
   const isGoing = rsvpStatus === 'going'
   const isWaitlist = rsvpStatus === 'waitlist'
   const coverPhotos = event.cover_photos ?? []
@@ -274,6 +346,7 @@ export default function EventDetailScreen() {
         style={styles.scroll}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.brandOrange} colors={[Colors.brandOrange]} />}
       >
         {/* Category + title */}
         <View style={styles.categoryRow}>
@@ -334,7 +407,7 @@ export default function EventDetailScreen() {
             </View>
             <View style={styles.hostInfo}>
               <Text style={styles.hostLabel}>Hosted by</Text>
-              <Text style={styles.hostName}>{event.host_name}</Text>
+              <Text style={styles.hostName}>{event.host_id === myId ? 'You' : event.host_name}</Text>
             </View>
           </View>
         )}
@@ -402,7 +475,7 @@ export default function EventDetailScreen() {
               </Pressable>
               <Pressable
                 style={[styles.hostBtn, styles.hostBtnPrimary]}
-                onPress={() => router.push(`/(events)/${id}/scanner` as any)}
+                onPress={handleScanner}
               >
                 <LinearGradient
                   colors={['#FF6B35', '#FF3864']}
@@ -465,6 +538,10 @@ export default function EventDetailScreen() {
               <View style={styles.waitlistBtn}>
                 <Text style={styles.waitlistBtnText}>On Waitlist</Text>
               </View>
+            ) : event.spots_left === 0 ? (
+              <Pressable style={styles.waitlistJoinBtn} onPress={() => { hSuccess(); handleRsvp() }}>
+                <Text style={styles.waitlistJoinText}>Join Waitlist</Text>
+              </Pressable>
             ) : (
               <Pressable style={styles.bookBtn} onPress={() => { hSuccess(); handleRsvp() }}>
                 <LinearGradient
@@ -491,6 +568,7 @@ export default function EventDetailScreen() {
       <EventOptionsSheet
         visible={optionsOpen}
         id={id ?? ''}
+        onEdit={handleEditEvent}
         onCancel={handleCancelEvent}
         onClose={() => setOptionsOpen(false)}
       />
@@ -503,6 +581,67 @@ export default function EventDetailScreen() {
         onConfirm={doCancelEvent}
         onClose={() => setCancelConfirm(false)}
       />
+    </View>
+  )
+}
+
+// ── Locked screen ─────────────────────────────────────────────────────────────
+
+function LockedScreen({
+  reason,
+  event,
+  onBack,
+}: {
+  reason: 'checkin' | 'edit' | 'cancel' | 'age'
+  event: EventDetail
+  onBack: () => void
+}) {
+  const insets = useSafeAreaInsets()
+  const eventStart = parseDate(event.date_time)
+
+  let title: string
+  let subtitle: string
+  let icon: React.ReactNode
+
+  if (reason === 'checkin') {
+    const opensAt = eventStart
+      ? new Date(eventStart.getTime() - 3 * 3600_000).toLocaleTimeString('en-IN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          day: 'numeric',
+          month: 'short',
+        })
+      : '3 hours before the event'
+    title = 'Check-in not open yet'
+    subtitle = `Scanner unlocks 3 hours before the event starts.\n\nComes alive at ${opensAt}.`
+    icon = <Clock size={40} color={Colors.brandOrange} strokeWidth={1.5} />
+  } else if (reason === 'edit') {
+    title = 'Editing is closed'
+    subtitle = 'Events can only be edited up to 7 hours before they start.\n\nThis window has passed for this event.'
+    icon = <Clock size={40} color={Colors.brandOrange} strokeWidth={1.5} />
+  } else if (reason === 'cancel') {
+    title = 'Cancellation is closed'
+    subtitle = 'Events can only be cancelled at least 48 hours in advance.\n\nThis window has passed for this event.'
+    icon = <Clock size={40} color={Colors.brandOrange} strokeWidth={1.5} />
+  } else {
+    title = `${event.age_restriction}+ Only`
+    subtitle = `This event has an age restriction of ${event.age_restriction}+.\n\nYou must be ${event.age_restriction} or older to attend.`
+    icon = <Shield size={40} color={Colors.brandCoral} strokeWidth={1.5} />
+  }
+
+  return (
+    <View style={[styles.root, { paddingTop: insets.top + 8, paddingHorizontal: 24 }]}>
+      <Pressable style={styles.lockedBack} onPress={onBack}>
+        <ArrowLeft size={20} color={Colors.inkSecondary} />
+        <Text style={styles.lockedBackText}>Back to Event</Text>
+      </Pressable>
+      <View style={styles.lockedBody}>
+        <View style={[styles.lockedIconWrap, reason === 'age' && { backgroundColor: 'rgba(255,56,100,0.12)' }]}>
+          {icon}
+        </View>
+        <Text style={styles.lockedTitle}>{title}</Text>
+        <Text style={styles.lockedSubtitle}>{subtitle}</Text>
+      </View>
     </View>
   )
 }
@@ -661,6 +800,16 @@ const styles = StyleSheet.create({
     minWidth: 120,
   },
   waitlistBtnText: { color: Colors.inkSecondary, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
+  waitlistJoinBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: Colors.brandOrange,
+    minWidth: 130,
+  },
+  waitlistJoinText: { color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
 
   cancelledBadge: {
     backgroundColor: 'rgba(255,56,100,0.15)',
@@ -689,6 +838,35 @@ const styles = StyleSheet.create({
   optionItem: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16 },
   optionText: { fontFamily: FontFamily.bodyMedium, fontSize: 16, color: Colors.inkPrimary },
   optionDivider: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.divider },
+
+  // Locked screen
+  lockedBack: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 40 },
+  lockedBackText: { fontFamily: FontFamily.bodyMedium, fontSize: 15, color: Colors.inkSecondary },
+  lockedBody: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 80 },
+  lockedIconWrap: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: 'rgba(255,107,53,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  lockedTitle: {
+    fontFamily: FontFamily.headingBold,
+    fontSize: 26,
+    color: Colors.inkPrimary,
+    textAlign: 'center',
+    lineHeight: 32,
+    marginBottom: 14,
+  },
+  lockedSubtitle: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 15,
+    color: Colors.inkSecondary,
+    textAlign: 'center',
+    lineHeight: 23,
+  },
 
   // Host bar
   hostBar: { flex: 1, gap: 10 },

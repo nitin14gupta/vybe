@@ -336,7 +336,7 @@ export default function EventsScreen() {
         )}
 
         {/* Preview strip — bottom frosted bar */}
-        {!isEmpty && (
+        {!isEmpty ? (
           <View style={[styles.previewStrip, { paddingBottom: Math.max(insets.bottom, 8) + 6 }]}>
             <FlatList
               ref={previewListRef}
@@ -362,7 +362,7 @@ export default function EventsScreen() {
               )}
             />
           </View>
-        )}
+        ) : null}
       </View>
     );
   }
@@ -393,6 +393,7 @@ export default function EventsScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={styles.chipsScroll}
         contentContainerStyle={styles.chipsRow}
       >
         {FILTER_CHIPS.map((chip) => (
@@ -412,7 +413,7 @@ export default function EventsScreen() {
 
       {/* List */}
       {error && !loading ? (
-        <View style={styles.listEmpty}>
+        <View style={[styles.listEmpty, { flex: 1 }]}>
           <Text style={styles.listEmptyTitle}>Couldn't load events</Text>
           <Text style={styles.listEmptySub}>Check your connection and try again</Text>
           <Pressable onPress={() => { hTap(); reload() }} style={styles.listEmptyCta}>
@@ -420,7 +421,7 @@ export default function EventsScreen() {
           </Pressable>
         </View>
       ) : isEmpty ? (
-        <View style={styles.listEmpty}>
+        <View style={[styles.listEmpty, { flex: 1 }]}>
           <Flame size={48} color={Colors.inkDisabled} strokeWidth={1.2} />
           <Text style={styles.listEmptyTitle}>No events nearby yet</Text>
           <Text style={styles.listEmptySub}>Be the first to host one</Text>
@@ -436,6 +437,7 @@ export default function EventsScreen() {
         <FlatList
           data={listEvents}
           keyExtractor={(e) => e.id}
+          style={{ flex: 1 }}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -645,7 +647,8 @@ const styles = StyleSheet.create({
   },
 
   // Filter chips
-  chipsRow: { paddingHorizontal: 16, paddingVertical: 10, gap: 8 },
+  chipsScroll: { flexGrow: 0, flexShrink: 0 },
+  chipsRow: { paddingHorizontal: 16, paddingVertical: 10, gap: 8, alignItems: 'center' },
   filterChip: {
     paddingHorizontal: 14,
     paddingVertical: 7,

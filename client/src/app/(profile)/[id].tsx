@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, Pressable, Image,
-  FlatList, ActivityIndicator, Dimensions,
+  FlatList, ActivityIndicator, Dimensions, RefreshControl,
 } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { hTap, hMedium, hSuccess } from '@/lib/haptics'
@@ -74,6 +74,22 @@ export default function UserProfileScreen() {
       })
       .catch(() => showPill("Couldn't load this profile", 'error'))
       .finally(() => setLoading(false))
+  }, [id])
+
+  const [refreshing, setRefreshing] = useState(false)
+
+  const handleRefresh = useCallback(async () => {
+    if (!id) return
+    setRefreshing(true)
+    try {
+      const p = await ApiService.getUserProfile(id)
+      setProfile(p)
+      setFollowing(!!p.is_following)
+      setVybeSent((p.vybe_status === 'pending' && !!p.vybe_sent_by_me) || isSentTo(p.id))
+      setBlockedByMe(!!p.is_blocked_by_me)
+      if (p.voice_url) voicePlayer.replace({ uri: p.voice_url })
+    } catch {}
+    finally { setRefreshing(false) }
   }, [id])
 
   const handleFollowToggle = async () => {
@@ -183,7 +199,7 @@ export default function UserProfileScreen() {
         </Pressable>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.brandOrange} colors={[Colors.brandOrange]} />}>
         {/* Photo carousel */}
         {photos.length > 0 ? (
           <View>

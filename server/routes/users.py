@@ -19,6 +19,7 @@ _USER_SELECT = """
         u.phone,
         u.name,
         u.username,
+        u.dob,
         u.gender,
         u.bio,
         u.city,

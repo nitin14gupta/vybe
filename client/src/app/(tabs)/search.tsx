@@ -120,7 +120,7 @@ export default function SearchScreen() {
 
       {/* Content */}
       {loading ? (
-        <AutoSkeletonView isLoading animationType="gradient" defaultRadius={7}>
+        <AutoSkeletonView isLoading animationType="gradient" defaultRadius={7} gradientColors={['#1e1e1e', '#2e2e2e']}>
           {Array.from({ length: 7 }).map((_, i) => (
             <View key={i} style={s.skRow}>
               <View style={s.skAvatar} />

@@ -8,6 +8,7 @@ interface AuthState {
   refreshToken: string | null
   phone: string | null
   profileComplete: boolean
+  dob: string | null
   setAuth: (payload: {
     userId: string
     accessToken: string
@@ -16,6 +17,7 @@ interface AuthState {
     profileComplete: boolean
   }) => void
   setProfileComplete: (val: boolean) => void
+  setDob: (dob: string | null) => void
   clearAuth: () => void
 }
 
@@ -26,6 +28,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   refreshToken: null,
   phone: null,
   profileComplete: false,
+  dob: null,
 
   setAuth: (payload) => {
     set({
@@ -43,6 +46,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     tokenStorage.updateProfileComplete(val)
   },
 
+  setDob: (dob) => set({ dob }),
+
   clearAuth: () => {
     set({
       isAuthenticated: false,
@@ -51,6 +56,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       refreshToken: null,
       phone: null,
       profileComplete: false,
+      dob: null,
     })
     tokenStorage.clear()
   },

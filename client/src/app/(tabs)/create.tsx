@@ -19,6 +19,7 @@ import { DateTimePickerSheet, Screen } from '@/components/ui'
 import { Step1Basics, Step2When, Step3Where, Step4Pricing } from '@/components/event-form'
 import { useCreateEvent } from '@/hooks/useCreateEvent'
 import { useEventDateTimePickers } from '@/hooks/useEventDateTimePickers'
+import { usePillStore } from '@/store/pillStore'
 
 // ── Step button ───────────────────────────────────────────────────────────────
 
@@ -64,34 +65,41 @@ export default function CreateScreen() {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [nextLoading, setNextLoading] = useState(false)
+  const showPill = usePillStore(s => s.show)
 
   const validateStep = (): boolean => {
     const errs: Record<string, string> = {}
+    let firstPill: string | null = null
+    const flag = (field: string, inline: string, pill: string) => {
+      errs[field] = inline
+      if (!firstPill) firstPill = pill
+    }
 
     if (step === 1) {
-      if (!form.title.trim()) errs.title = 'Event title is required'
-      if (!form.eventType)    errs.eventType = 'Please select an event type'
+      if (!form.title.trim()) flag('title', 'Event title is required', 'Please add an event title')
+      if (!form.eventType)    flag('eventType', 'Please select an event type', 'Please select an event type')
     }
     if (step === 2) {
       if (!form.dateTime) {
-        errs.dateTime = 'Event date is required'
+        flag('dateTime', 'Event date is required', 'Please set an event date and time')
       } else if (form.dateTime < new Date(Date.now() + 24 * 60 * 60 * 1000)) {
-        errs.dateTime = 'Events must be posted at least 24 hours in advance'
+        flag('dateTime', 'Events must be posted at least 24 hours in advance', 'Events must be posted at least 24 hours in advance')
       }
-      if (form.endTime && form.dateTime) {
-        if (form.endTime <= form.dateTime) errs.endTime = 'End time must be after start time'
+      if (form.endTime && form.dateTime && form.endTime <= form.dateTime) {
+        flag('endTime', 'End time must be after start time', 'End time must be after the start time')
       }
-      if (form.capacity < 5)   errs.capacity = 'Minimum 5 guests required'
-      if (form.capacity > 200) errs.capacity = 'Maximum 200 guests allowed'
+      if (form.capacity < 5)   flag('capacity', 'Minimum 5 guests required', 'Capacity must be between 5 and 200')
+      if (form.capacity > 200) flag('capacity', 'Maximum 200 guests allowed', 'Capacity must be between 5 and 200')
     }
     if (step === 3) {
-      if (!form.locationName.trim()) errs.locationName = 'Location is required'
+      if (!form.locationName.trim()) flag('locationName', 'Location is required', 'Please add a venue or address')
     }
     if (step === 4) {
-      if (!form.isFree && form.priceInr < 50) errs.priceInr = 'Minimum ticket price is ₹50'
+      if (!form.isFree && form.priceInr < 50) flag('priceInr', 'Minimum ticket price is ₹50', 'Minimum ticket price is ₹50')
     }
 
     setErrors(errs)
+    if (firstPill) showPill(firstPill, 'error')
     return Object.keys(errs).length === 0
   }
 
