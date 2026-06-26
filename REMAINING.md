@@ -4,6 +4,7 @@
 > Tick items off as you go. Grouped by priority.
 
 ---
+npx expo install expo-build-properties expo-edge-to-edge
 
 ## ✅ Done (this session)
 

@@ -222,6 +222,11 @@ ALTER TABLE public.refresh_tokens ADD CONSTRAINT refresh_tokens_user_id_fkey FOR
 ALTER TABLE public.user_blocks ADD CONSTRAINT user_blocks_blocked_id_fkey FOREIGN KEY (blocked_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.user_blocks ADD CONSTRAINT user_blocks_blocker_id_fkey FOREIGN KEY (blocker_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.user_photos ADD CONSTRAINT user_photos_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+-- ── Waitlist migration ───────────────────────────────────────────────────────
+ALTER TABLE public.event_attendees
+  ADD COLUMN IF NOT EXISTS offer_expires_at TIMESTAMP WITH TIME ZONE,
+  ADD COLUMN IF NOT EXISTS blocked_from_rejoin BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE public.user_reports ADD CONSTRAINT user_reports_reported_id_fkey FOREIGN KEY (reported_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.user_reports ADD CONSTRAINT user_reports_reporter_id_fkey FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.vibe_requests ADD CONSTRAINT vibe_requests_receiver_id_fkey FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE;
