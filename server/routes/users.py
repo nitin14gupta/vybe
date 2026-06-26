@@ -215,13 +215,37 @@ def search_users(
                 ) AS photos,
                 (
                     SELECT EXTRACT(YEAR FROM age(u.dob))::int
-                ) AS age
+                ) AS age,
+                EXISTS(
+                    SELECT 1 FROM follows
+                    WHERE follower_id = %s::uuid AND following_id = u.id
+                ) AS is_following,
+                EXISTS(
+                    SELECT 1 FROM follows
+                    WHERE follower_id = u.id AND following_id = %s::uuid
+                ) AS is_mutual,
+                EXISTS(
+                    SELECT 1 FROM conversations
+                    WHERE status = 'active'
+                      AND ((user1_id = %s::uuid AND user2_id = u.id)
+                        OR (user1_id = u.id AND user2_id = %s::uuid))
+                ) AS has_connection,
+                (
+                    u.city IS NOT NULL
+                    AND (SELECT city FROM users WHERE id = %s::uuid) = u.city
+                ) AS same_city,
+                cardinality(ARRAY(
+                    SELECT unnest(u.interests)
+                    INTERSECT
+                    SELECT unnest((SELECT interests FROM users WHERE id = %s::uuid))
+                )) AS shared_interests_count
             FROM users u
             LEFT JOIN user_photos p ON p.user_id = u.id
             WHERE u.id != %s::uuid
               AND u.profile_complete = true
               AND (
-                  u.name ILIKE %s
+                  u.username ILIKE %s
+                  OR u.name ILIKE %s
                   OR u.city ILIKE %s
                   OR u.bio ILIKE %s
               )
@@ -232,25 +256,49 @@ def search_users(
               )
             GROUP BY u.id
             ORDER BY
-                -- exact name match first
+                is_following DESC,
+                is_mutual DESC,
+                has_connection DESC,
+                same_city DESC,
+                (LOWER(u.username) = LOWER(%s)) DESC,
+                (LOWER(u.username) LIKE LOWER(%s)) DESC,
                 (LOWER(u.name) = LOWER(%s)) DESC,
-                -- name starts with query next
                 (LOWER(u.name) LIKE LOWER(%s)) DESC,
-                -- then alphabetical
+                shared_interests_count DESC,
                 u.name ASC
             LIMIT %s OFFSET %s
-        """, (viewer_id, f"%{q}%", f"%{q}%", f"%{q}%", viewer_id, viewer_id, q, f"{q}%", limit, offset))
+        """, (
+            viewer_id,       # is_following
+            viewer_id,       # is_mutual
+            viewer_id,       # has_connection pair 1
+            viewer_id,       # has_connection pair 2
+            viewer_id,       # same_city
+            viewer_id,       # shared_interests_count
+            viewer_id,       # WHERE u.id !=
+            f"{q}%",         # username ILIKE
+            f"%{q}%",        # name ILIKE
+            f"%{q}%",        # city ILIKE
+            f"%{q}%",        # bio ILIKE
+            viewer_id,       # block check 1
+            viewer_id,       # block check 2
+            q,               # exact username
+            f"{q}%",         # username prefix
+            q,               # exact name
+            f"{q}%",         # name prefix
+            limit,
+            offset,
+        ))
         rows = cur.fetchall()
         cur.execute("""
             SELECT COUNT(DISTINCT u.id) FROM users u
             WHERE u.id != %s::uuid AND u.profile_complete = true
-              AND (u.name ILIKE %s OR u.city ILIKE %s OR u.bio ILIKE %s)
+              AND (u.username ILIKE %s OR u.name ILIKE %s OR u.city ILIKE %s OR u.bio ILIKE %s)
               AND NOT EXISTS (
                   SELECT 1 FROM user_blocks
                   WHERE (blocker_id = %s::uuid AND blocked_id = u.id)
                      OR (blocker_id = u.id AND blocked_id = %s::uuid)
               )
-        """, (viewer_id, f"%{q}%", f"%{q}%", f"%{q}%", viewer_id, viewer_id))
+        """, (viewer_id, f"{q}%", f"%{q}%", f"%{q}%", f"%{q}%", viewer_id, viewer_id))
         total = cur.fetchone()["count"]
     users = []
     for row in rows:
