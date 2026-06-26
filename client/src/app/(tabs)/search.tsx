@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   View, Text, StyleSheet, TextInput, FlatList,
-  Pressable, Image, ActivityIndicator,
+  Pressable, Image,
 } from 'react-native'
 import { router } from 'expo-router'
 import { useFocusEffect } from 'expo-router'
@@ -13,6 +13,7 @@ import ApiService from '@/api/apiService'
 import type { DiscoverUser } from '@/api/apiService'
 import { useSearchHistoryStore } from '@/store/searchHistoryStore'
 import type { SearchHistoryUser } from '@/store/searchHistoryStore'
+import { SearchSkeleton } from '@/components/ui'
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets()
@@ -119,9 +120,7 @@ export default function SearchScreen() {
 
       {/* Content */}
       {loading ? (
-        <View style={s.center}>
-          <ActivityIndicator color={Colors.brandOrange} />
-        </View>
+        <SearchSkeleton />
       ) : showHistory ? (
         <HistoryList
           history={history}
