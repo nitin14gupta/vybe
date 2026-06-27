@@ -382,7 +382,9 @@ export default function EventDetailScreen() {
     return <LockedScreen reason={lockedReason} event={event} onBack={() => setLockedReason(null)} />
   }
 
-  const spotsLow = event.spots_left > 0 && event.spots_left <= 10 && !event.is_free
+  // True when user must join waitlist: either no seats OR active (non-promoted) waitlist exists
+  const shouldWaitlist = event.spots_left === 0 || (event.waitlist_count ?? 0) > 0
+  const spotsLow = !shouldWaitlist && event.spots_left <= 10 && !event.is_free
   const isGoing = rsvpStatus === 'going'
   const isWaitlist = rsvpStatus === 'waitlist'
   const coverPhotos = event.cover_photos ?? []
@@ -677,15 +679,15 @@ export default function EventDetailScreen() {
                 </Text>
                 <ChevronRight size={14} color={Colors.brandOrange} strokeWidth={2} />
               </Pressable>
-            ) : event.spots_left === 0 && hoursUntil(event.date_time) < 2 ? (
+            ) : shouldWaitlist && hoursUntil(event.date_time) < 2 ? (
               <View style={styles.eventFullBtn}>
                 <Text style={styles.waitlistBtnText}>Event starts soon</Text>
               </View>
-            ) : event.spots_left === 0 && event.is_waitlist_full ? (
+            ) : shouldWaitlist && event.is_waitlist_full ? (
               <View style={styles.waitlistFullBtn}>
                 <Text style={styles.waitlistBtnText}>Waitlist Full</Text>
               </View>
-            ) : event.spots_left === 0 ? (
+            ) : shouldWaitlist ? (
               <Pressable style={styles.waitlistJoinBtn} onPress={() => { hSuccess(); handleJoinWaitlist() }}>
                 <Text style={styles.waitlistJoinText}>Join Waitlist</Text>
               </Pressable>

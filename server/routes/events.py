@@ -632,6 +632,16 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
             )
             promoted_row = cur.fetchone()
 
+            # Count non-promoted waitlist members — they have priority over new bookings
+            cur.execute(
+                """
+                SELECT COUNT(*) AS cnt FROM event_attendees
+                WHERE event_id = %s AND status = 'waitlist' AND offer_expires_at IS NULL
+                """,
+                (event_id,),
+            )
+            active_waitlist_count = cur.fetchone()["cnt"]
+
             if promoted_row:
                 # Promoted user confirming — spot was already held, just flip status
                 cur.execute(
@@ -639,8 +649,8 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
                     (promoted_row["id"],),
                 )
                 status = "going"
-            elif ev["spots_left"] > 0:
-                # Normal RSVP — take a spot
+            elif ev["spots_left"] > 0 and active_waitlist_count == 0:
+                # Normal RSVP — spots available AND no one in the queue waiting
                 cur.execute(
                     """
                     INSERT INTO event_attendees (event_id, user_id, status)
