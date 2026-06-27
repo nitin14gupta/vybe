@@ -10,7 +10,8 @@ const PROJECT_ID = 'da4e0090-c985-42e9-ab31-f6832bcc46e9'
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
   }),
@@ -19,24 +20,43 @@ Notifications.setNotificationHandler({
 export function useNotificationSetup() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
   const permission = useNotificationStore(s => s.permission)
+  const setPermission = useNotificationStore(s => s.setPermission)
   const registeredToken = useNotificationStore(s => s.registeredToken)
   const setRegisteredToken = useNotificationStore(s => s.setRegisteredToken)
   const listenerRef = useRef<Notifications.EventSubscription | null>(null)
 
+  // Request permission once the user is authenticated — never before
+  useEffect(() => {
+    if (!isAuthenticated || permission !== 'undecided') return
+    ;(async () => {
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('vybe-default', {
+          name: 'Vybe notifications',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#FF6B35',
+        })
+      }
+      const { status: existing } = await Notifications.getPermissionsAsync()
+      const finalStatus =
+        existing === 'granted'
+          ? 'granted'
+          : (await Notifications.requestPermissionsAsync()).status
+      setPermission(finalStatus === 'granted' ? 'granted' : 'denied')
+    })()
+  }, [isAuthenticated, permission])
+
   useEffect(() => {
     if (!isAuthenticated || permission !== 'granted') return
 
-    // Always get token fresh from the OS — tokens can change after reinstall.
-    // Compare with the last token we registered; only hit the server if different.
     Notifications.getExpoPushTokenAsync({ projectId: PROJECT_ID })
       .then(async ({ data: freshToken }) => {
-        if (freshToken === registeredToken) return
-        // Token changed (or first run) — register the new one then drop the old one
-        await ApiService.registerDeviceToken(freshToken, Platform.OS)
-        if (registeredToken) {
-          // Delete the old token so this device doesn't receive duplicate pushes
+        // If token changed, remove the stale one first (prevents duplicate pushes)
+        if (registeredToken && registeredToken !== freshToken) {
           await ApiService.removeDeviceToken(registeredToken).catch(() => {})
         }
+        // Always register — server uses ON CONFLICT DO NOTHING so this is safe
+        await ApiService.registerDeviceToken(freshToken, Platform.OS)
         setRegisteredToken(freshToken)
       })
       .catch(() => {})

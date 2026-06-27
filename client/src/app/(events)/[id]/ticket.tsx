@@ -10,18 +10,26 @@ import {
   View,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
+import { StatusBar } from 'expo-status-bar'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, Calendar, Download, MapPin, Share2 } from 'lucide-react-native'
+import ReAnimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated'
 import QRCode from 'react-native-qrcode-svg'
 import ViewShot from 'react-native-view-shot'
-import * as MediaLibrary from 'expo-media-library'
+import { Asset as MediaAsset, requestPermissionsAsync as requestMediaPermissionsAsync } from 'expo-media-library'
 import { hTap, hSuccess } from '@/lib/haptics'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, Radius, Spacing, ComponentSize } from '@/constants'
 import ApiService, { type TicketInfo } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { ConfettiRain } from '@/components/ui'
 import { useGoBack } from '@/hooks/useGoBack'
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 const EVENT_EMOJIS: Record<string, string> = {
   house_party: '🎉',
@@ -41,7 +49,12 @@ function parseTs(iso: string | null | undefined): Date | null {
 function fmtDate(iso: string | null | undefined) {
   const d = parseTs(iso)
   if (!d) return 'Date TBC'
-  return d.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })
+  return d.toLocaleDateString('en-IN', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
 }
 
 function fmtTime(iso: string | null | undefined) {
@@ -50,13 +63,12 @@ function fmtTime(iso: string | null | undefined) {
   return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
 }
 
-/** Derive a short display reference from the ticket token — NOT the secret JWT itself */
 function orderRef(token: string): string {
   const tail = token.replace(/[^a-zA-Z0-9]/g, '').slice(-8).toUpperCase()
   return `TKT-${tail}`
 }
 
-// ── Confetti + header ────────────────────────────────────────────────────────
+// ── Heading block ─────────────────────────────────────────────────────────────
 
 function HeadingBlock() {
   const fadeY = useRef(new Animated.Value(20)).current
@@ -64,15 +76,15 @@ function HeadingBlock() {
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeY, { toValue: 0, duration: 550, useNativeDriver: true }),
-      Animated.timing(opacity, { toValue: 1, duration: 550, useNativeDriver: true }),
+      Animated.timing(fadeY, { toValue: 0, duration: 500, useNativeDriver: true }),
+      Animated.timing(opacity, { toValue: 1, duration: 500, useNativeDriver: true }),
     ]).start()
   }, [])
 
   return (
     <Animated.View style={[s.headingBlock, { opacity, transform: [{ translateY: fadeY }] }]}>
       <Text style={s.headline}>You're going! 🎉</Text>
-      <Text style={s.sub}>Your ticket is ready for scanning.</Text>
+      <Text style={s.sub}>Your ticket is ready — show it at the door.</Text>
     </Animated.View>
   )
 }
@@ -84,27 +96,23 @@ function TicketCard({ ticket }: { ticket: TicketInfo }) {
 
   return (
     <View style={s.card}>
-      {/* Info section */}
+      {/* Info */}
       <View style={s.cardTop}>
         <Text style={s.cardTitle}>{ticket.event_title}</Text>
-
         <View style={s.cardMeta}>
           <View style={s.metaRow}>
-            <Calendar size={16} color={Colors.inkSecondary} strokeWidth={1.5} />
+            <Calendar size={15} color={Colors.inkSecondary} strokeWidth={1.5} />
             <View style={s.metaTexts}>
               <Text style={s.metaMain}>{fmtDate(ticket.date_time)}</Text>
               {ticket.date_time && (
-                <Text style={s.metaSub}>Doors open at {fmtTime(ticket.date_time)}</Text>
+                <Text style={s.metaSub}>Doors open · {fmtTime(ticket.date_time)}</Text>
               )}
             </View>
           </View>
-
           {ticket.location_name && (
             <View style={s.metaRow}>
-              <MapPin size={16} color={Colors.inkSecondary} strokeWidth={1.5} />
-              <View style={s.metaTexts}>
-                <Text style={s.metaMain}>{ticket.location_name}</Text>
-              </View>
+              <MapPin size={15} color={Colors.inkSecondary} strokeWidth={1.5} />
+              <Text style={s.metaMain} numberOfLines={1}>{ticket.location_name}</Text>
             </View>
           )}
         </View>
@@ -117,21 +125,54 @@ function TicketCard({ ticket }: { ticket: TicketInfo }) {
         <View style={s.tearHole} />
       </View>
 
-      {/* QR section */}
+      {/* QR */}
       <View style={s.qrSection}>
         <View style={s.qrPaper}>
           <QRCode
             value={ticket.ticket_token}
-            size={180}
+            size={176}
             color="#111111"
             backgroundColor="#ffffff"
           />
         </View>
-
-        <Text style={s.scanHint}>Show this at the door</Text>
+        <Text style={s.scanHint}>Scan at the door</Text>
         <Text style={s.orderRef}>{orderRef(ticket.ticket_token)}</Text>
       </View>
     </View>
+  )
+}
+
+// ── Animated save button ──────────────────────────────────────────────────────
+
+function SaveButton({ onPress }: { onPress: () => void }) {
+  const scale = useSharedValue(1)
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }))
+
+  return (
+    <Pressable
+      onPressIn={() => {
+        hTap()
+        scale.value = withSpring(0.94, { damping: 18, stiffness: 380 })
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1, { damping: 10, stiffness: 180 })
+      }}
+      onPress={onPress}
+    >
+      <ReAnimated.View style={animStyle}>
+        <LinearGradient
+          colors={[Colors.brandOrange, Colors.brandCoral]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={s.saveGradient}
+        >
+          <Download size={18} color={Colors.background} strokeWidth={2.2} />
+          <Text style={s.saveBtnText}>Save to Photos</Text>
+        </LinearGradient>
+      </ReAnimated.View>
+    </Pressable>
   )
 }
 
@@ -167,13 +208,13 @@ export default function TicketScreen() {
   const handleSave = async () => {
     if (!cardRef.current) return
     try {
-      const { status } = await MediaLibrary.requestPermissionsAsync()
+      const { status } = await requestMediaPermissionsAsync()
       if (status !== 'granted') {
         showPill('Allow photo access to save your ticket', 'error')
         return
       }
       const uri = await (cardRef.current as any).capture()
-      await MediaLibrary.saveToLibraryAsync(uri)
+      await MediaAsset.create(uri)
       hSuccess()
       showPill('Ticket saved to Photos!', 'default')
     } catch {
@@ -184,6 +225,7 @@ export default function TicketScreen() {
   if (loading) {
     return (
       <View style={[s.root, s.center]}>
+        <StatusBar style="light" />
         <ActivityIndicator size="large" color={Colors.brandOrange} />
       </View>
     )
@@ -192,8 +234,9 @@ export default function TicketScreen() {
   if (!ticket) {
     return (
       <View style={[s.root, s.center]}>
+        <StatusBar style="light" />
         <Text style={s.errorText}>Ticket not found</Text>
-        <Pressable onPress={goBack} style={s.backLink}>
+        <Pressable onPress={goBack}>
           <Text style={s.backLinkText}>← Go back</Text>
         </Pressable>
       </View>
@@ -201,29 +244,22 @@ export default function TicketScreen() {
   }
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
-      {/* Confetti — behind everything */}
+    <View style={s.root}>
+      <StatusBar style="light" />
       <ConfettiRain />
 
-      {/* Top nav bar */}
-      <View style={s.nav}>
-        <Pressable style={s.navBtn} onPress={goBack} hitSlop={8}>
-          <ArrowLeft size={20} color={Colors.inkPrimary} />
-        </Pressable>
-        <Text style={s.navTitle}>Your Ticket</Text>
-        <Pressable style={s.navBtn} onPress={() => { hTap(); handleShare() }} hitSlop={8}>
-          <Share2 size={20} color={Colors.inkPrimary} />
-        </Pressable>
-      </View>
-
+      {/* Content — starts behind status bar, paddingTop makes room for float bar */}
       <ScrollView
         style={s.scroll}
-        contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 32 }]}
+        contentContainerStyle={[
+          s.content,
+          { paddingTop: insets.top + 60, paddingBottom: insets.bottom + 36 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Ambient glow */}
+        {/* Orange glow bleeds into status bar area */}
         <LinearGradient
-          colors={['rgba(255,107,53,0.12)', 'transparent']}
+          colors={['rgba(255,107,53,0.22)', 'transparent']}
           style={s.ambientGlow}
           pointerEvents="none"
         />
@@ -234,36 +270,44 @@ export default function TicketScreen() {
           <TicketCard ticket={ticket} />
         </ViewShot>
 
-        {/* Action buttons */}
+        {/* Actions */}
         <View style={s.actions}>
-          <Pressable style={s.saveBtn} onPress={() => { hSuccess(); handleSave() }}>
-            <LinearGradient
-              colors={['#FF6B35', '#FF8C5A']}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-              style={s.saveBtnGradient}
-            >
-              <Download size={18} color="#111" strokeWidth={2} />
-              <Text style={s.saveBtnText}>Save to Photos</Text>
-            </LinearGradient>
-          </Pressable>
+          <SaveButton onPress={handleSave} />
 
-          <Pressable style={s.shareBtn} onPress={() => { hTap(); handleShare() }}>
+          <Pressable
+            style={s.shareBtn}
+            onPress={() => { hTap(); handleShare() }}
+          >
             <Share2 size={18} color={Colors.inkPrimary} strokeWidth={1.8} />
             <Text style={s.shareBtnText}>Share Event</Text>
           </Pressable>
         </View>
 
-        {/* Footer link */}
         <Pressable
           style={s.allTicketsLink}
           onPress={() => router.replace('/(settings)/joined-events' as any)}
         >
-          <Text style={s.allTicketsText}>View all tickets</Text>
+          <Text style={s.allTicketsText}>View all tickets →</Text>
         </Pressable>
       </ScrollView>
+
+      {/* Floating back + share — rendered after scroll so they sit on top */}
+      <View
+        style={[s.floatingBar, { top: insets.top + 8 }]}
+        pointerEvents="box-none"
+      >
+        <Pressable style={s.circleBtn} onPress={goBack} hitSlop={8}>
+          <ArrowLeft size={20} color={Colors.inkPrimary} strokeWidth={2} />
+        </Pressable>
+        <Pressable style={s.circleBtn} onPress={() => { hTap(); handleShare() }} hitSlop={8}>
+          <Share2 size={20} color={Colors.inkPrimary} strokeWidth={1.8} />
+        </Pressable>
+      </View>
     </View>
   )
 }
+
+// ── Styles ────────────────────────────────────────────────────────────────────
 
 const CARD_BG = '#1A1A1A'
 const CARD_BORDER = '#2A2A2A'
@@ -271,84 +315,105 @@ const QR_BG = '#ECECEC'
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
-  center: { alignItems: 'center', justifyContent: 'center' },
-
-  // Nav
-  nav: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: Colors.divider,
-  },
-  navBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  navTitle: { fontFamily: FontFamily.headingBold, fontSize: 17, color: Colors.inkPrimary },
-
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { flex: 1 },
-  content: { alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, gap: 24 },
+  content: {
+    alignItems: 'center',
+    paddingHorizontal: Spacing.screenPadding,
+    gap: 24,
+  },
 
-  // Glow
+  // Ambient glow — absolute inside scroll, bleeds into status bar
   ambientGlow: {
     position: 'absolute',
-    top: 0, left: -40, right: -40,
-    height: 200,
+    top: -80,
+    left: -60,
+    right: -60,
+    height: 320,
+  },
+
+  // Floating top bar
+  floatingBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.screenPadding,
+  },
+  circleBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // Heading
   headingBlock: { alignItems: 'center', gap: 6, width: '100%' },
   headline: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 28,
-    color: Colors.brandOrange,
+    fontFamily: FontFamily.displayExtraBold,
+    fontSize: 32,
+    color: Colors.inkPrimary,
     textAlign: 'center',
-    letterSpacing: -0.5,
+    letterSpacing: -0.8,
   },
   sub: {
     fontFamily: FontFamily.bodyRegular,
-    fontSize: 15,
+    fontSize: 14,
     color: Colors.inkSecondary,
     textAlign: 'center',
   },
 
-  // Card
+  // Ticket card
+  viewShot: { width: '100%', maxWidth: 400 },
   card: {
     width: '100%',
-    maxWidth: 380,
+    maxWidth: 400,
     backgroundColor: CARD_BG,
-    borderRadius: 24,
+    borderRadius: Radius.card + 8,
     borderWidth: 1,
     borderColor: CARD_BORDER,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
+    shadowColor: Colors.brandOrange,
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
     shadowOffset: { width: 0, height: 8 },
-    elevation: 12,
+    elevation: 14,
   },
 
-  // Card top (info)
-  cardTop: { padding: 24, gap: 16 },
-  admissionLabel: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 10,
-    color: Colors.brandOrange,
-    letterSpacing: 2,
-  },
+  cardTop: { padding: 20, gap: 14 },
   cardTitle: {
     fontFamily: FontFamily.headingBold,
     fontSize: 22,
     color: Colors.inkPrimary,
     lineHeight: 28,
+    letterSpacing: -0.3,
   },
-  cardMeta: { gap: 12 },
-  metaRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  metaTexts: { gap: 2, flex: 1 },
-  metaMain: { fontFamily: FontFamily.bodyMedium, fontSize: 15, color: Colors.inkPrimary },
-  metaSub: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary },
+  cardMeta: { gap: 10 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  metaTexts: { flex: 1, gap: 2 },
+  metaMain: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 14,
+    color: Colors.inkPrimary,
+    flex: 1,
+  },
+  metaSub: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 12,
+    color: Colors.inkSecondary,
+  },
 
   // Tear line
   tearRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.background,
+    backgroundColor: CARD_BG,
   },
   tearHole: {
     width: 22,
@@ -365,7 +430,7 @@ const s = StyleSheet.create({
     borderStyle: 'dashed',
   },
 
-  // QR section
+  // QR
   qrSection: {
     backgroundColor: QR_BG,
     alignItems: 'center',
@@ -375,45 +440,49 @@ const s = StyleSheet.create({
   },
   qrPaper: {
     backgroundColor: '#fff',
-    padding: 14,
-    borderRadius: 14,
+    padding: 12,
+    borderRadius: 12,
     shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 4,
   },
   scanHint: {
     fontFamily: FontFamily.bodySemiBold,
-    fontSize: 14,
-    color: '#111',
+    fontSize: 13,
+    color: '#222',
     textAlign: 'center',
   },
   orderRef: {
     fontFamily: FontFamily.bodyMedium,
-    fontSize: 11,
-    color: '#555',
-    letterSpacing: 2,
+    fontSize: 10,
+    color: '#777',
+    letterSpacing: 2.5,
     textTransform: 'uppercase',
   },
 
-  viewShot: { width: '100%', maxWidth: 380 },
+  // Buttons
+  actions: { width: '100%', maxWidth: 400, gap: 10 },
 
-  // Action buttons
-  actions: { width: '100%', maxWidth: 380, gap: 10 },
-  saveBtn: { borderRadius: 32, overflow: 'hidden' },
-  saveBtnGradient: {
-    height: 56,
+  saveGradient: {
+    height: ComponentSize.btnPrimary,
+    borderRadius: Radius.pill,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
   },
-  saveBtnText: { fontFamily: FontFamily.headingBold, fontSize: 15, color: '#111' },
+  saveBtnText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 16,
+    color: Colors.background,
+    letterSpacing: 0.1,
+  },
 
   shareBtn: {
-    height: 56,
-    borderRadius: 32,
+    height: ComponentSize.btnPrimary,
+    borderRadius: Radius.pill,
     borderWidth: 1,
     borderColor: CARD_BORDER,
     flexDirection: 'row',
@@ -421,20 +490,31 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
   },
-  shareBtnText: { fontFamily: FontFamily.bodyMedium, fontSize: 15, color: Colors.inkPrimary },
+  shareBtnText: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 15,
+    color: Colors.inkPrimary,
+  },
 
   // Footer
-  allTicketsLink: { paddingBottom: 8 },
+  allTicketsLink: { paddingVertical: 4 },
   allTicketsText: {
     fontFamily: FontFamily.bodySemiBold,
-    fontSize: 14,
-    color: Colors.brandOrange,
-    textDecorationLine: 'underline',
-    textDecorationColor: `${Colors.brandOrange}55`,
+    fontSize: 13,
+    color: Colors.inkSecondary,
+    letterSpacing: 0.1,
   },
 
   // Error
-  errorText: { color: Colors.inkSecondary, fontFamily: FontFamily.bodyRegular, fontSize: 16, marginBottom: 16 },
-  backLink: {},
-  backLinkText: { color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
+  errorText: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 16,
+    color: Colors.inkSecondary,
+    marginBottom: 16,
+  },
+  backLinkText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 15,
+    color: Colors.brandOrange,
+  },
 })

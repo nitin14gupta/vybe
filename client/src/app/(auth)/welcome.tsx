@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { View, Text, Image, StyleSheet, Dimensions, Platform } from 'react-native'
+import { View, Text, Image, StyleSheet, Dimensions } from 'react-native'
 import { router } from 'expo-router'
 import Animated, {
   useSharedValue,
@@ -8,44 +8,18 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated'
 import { LinearGradient } from 'expo-linear-gradient'
-import * as Notifications from 'expo-notifications'
 import { PrimaryButton, TextLinkButton, Screen } from '@/components/ui'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
-import { useNotificationStore } from '@/store/notificationStore'
 
 const { height } = Dimensions.get('window')
 
 export default function WelcomeScreen() {
-  const { permission, setPermission } = useNotificationStore()
   const cardY = useSharedValue(40)
   const cardOpacity = useSharedValue(0)
 
   useEffect(() => {
     cardY.value = withDelay(80, withTiming(0, { duration: 400 }))
     cardOpacity.value = withDelay(80, withTiming(1, { duration: 400 }))
-  }, [])
-
-  // Ask for notification permission once — native OS dialog, no custom UI
-  useEffect(() => {
-    if (permission !== 'undecided') return
-    ;(async () => {
-      // Android requires a channel before the permission dialog will appear
-      if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync('vybe-default', {
-          name: 'Vybe notifications',
-          importance: Notifications.AndroidImportance.MAX,
-          vibrationPattern: [0, 250, 250, 250],
-          lightColor: Colors.brandOrange,
-        })
-      }
-      // Check existing status first — don't re-prompt if OS already decided
-      const { status: existing } = await Notifications.getPermissionsAsync()
-      const finalStatus =
-        existing === 'granted'
-          ? 'granted'
-          : (await Notifications.requestPermissionsAsync()).status
-      setPermission(finalStatus === 'granted' ? 'granted' : 'denied')
-    })()
   }, [])
 
   const cardStyle = useAnimatedStyle(() => ({

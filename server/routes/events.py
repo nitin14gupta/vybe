@@ -377,7 +377,7 @@ def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
             LEFT JOIN event_attendees going_ea ON going_ea.event_id = e.id AND going_ea.user_id = %s::uuid AND going_ea.status = 'going'
             WHERE e.id = %s
             """,
-            (uid, uid, uid, uid, uid, event_id),
+            (uid, uid, uid, uid, event_id),
         )
         row = cur.fetchone()
 

@@ -1,21 +1,28 @@
 import React, { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
-  Pressable,
+  Dimensions,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native'
-import { hSuccess } from '@/lib/haptics'
+import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
+import { StatusBar } from 'expo-status-bar'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { ArrowLeft, Calendar, MapPin } from 'lucide-react-native'
-import { Image } from 'expo-image'
-import { Colors, FontFamily } from '@/constants'
+import { Calendar, MapPin, ShieldCheck } from 'lucide-react-native'
+import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { BackButton, PrimaryButton } from '@/components/ui'
 import ApiService, { type EventDetail } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
+import { hSuccess } from '@/lib/haptics'
+
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window')
+const BANNER_H = SCREEN_H * 0.42
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
 
 function parseDate(iso: string | null | undefined) {
   if (!iso) return null
@@ -34,6 +41,35 @@ function formatDateTime(iso: string | null | undefined) {
     minute: '2-digit',
   })
 }
+
+// ── Price row ─────────────────────────────────────────────────────────────────
+
+function PriceRow({
+  label,
+  value,
+  total,
+}: {
+  label: string
+  value: string
+  total?: boolean
+}) {
+  return (
+    <View style={pr.row}>
+      <Text style={[pr.label, total && pr.totalLabel]}>{label}</Text>
+      <Text style={[pr.value, total && pr.totalValue]}>{value}</Text>
+    </View>
+  )
+}
+
+const pr = StyleSheet.create({
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  label: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary },
+  value: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.inkPrimary },
+  totalLabel: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
+  totalValue: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.brandOrange },
+})
+
+// ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function BookScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -64,7 +100,8 @@ export default function BookScreen() {
     setPaying(true)
     try {
       if (!event.is_free) {
-        await new Promise(res => setTimeout(res, 1500))
+        // TODO: open Razorpay checkout here; for now simulate
+        await new Promise(res => setTimeout(res, 1200))
       }
       const res = await ApiService.rsvpEvent(event.id, 'going')
       if (res.status === 'going') {
@@ -86,145 +123,231 @@ export default function BookScreen() {
   if (loading || !event) {
     return (
       <View style={[s.root, s.center]}>
+        <StatusBar style="light" />
         <ActivityIndicator size="large" color={Colors.brandOrange} />
       </View>
     )
   }
 
   const cover = event.cover_photos?.[0]?.url
+  const isCancelled = event.is_cancelled
+  const payLabel = isCancelled
+    ? 'Event Cancelled'
+    : event.is_free
+    ? 'RSVP Free'
+    : `Pay ₹${total}`
 
   return (
     <View style={s.root}>
-      <View style={[s.header, { paddingTop: insets.top + 8 }]}>
-        <Pressable style={s.backBtn} onPress={() => router.back()}>
-          <ArrowLeft size={20} color={Colors.inkPrimary} />
-        </Pressable>
-        <Text style={s.headerTitle}>Confirm Booking</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <StatusBar style="light" />
 
       <ScrollView
         style={s.scroll}
-        contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 100 }]}
+        contentContainerStyle={{ paddingBottom: insets.bottom + Spacing.xl }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Cover image */}
-        {cover ? (
-          <Image source={{ uri: cover }} style={s.cover} contentFit="cover" />
-        ) : (
-          <LinearGradient colors={['#1A1A1A', '#111']} style={[s.cover, s.coverPlaceholder]}>
-            <Text style={{ fontSize: 48 }}>🎉</Text>
-          </LinearGradient>
-        )}
+        {/* Full-bleed banner */}
+        <View style={s.bannerWrap}>
+          {cover ? (
+            <Image source={{ uri: cover }} style={s.bannerImg} contentFit="cover" />
+          ) : (
+            <LinearGradient colors={['#2A2A2A', '#111']} style={s.bannerImg}>
+              <Text style={s.bannerEmoji}>🎉</Text>
+            </LinearGradient>
+          )}
 
-        {/* Event title + details */}
-        <Text style={s.title}>{event.title}</Text>
-
-        <View style={s.detailRow}>
-          <Calendar size={14} color={Colors.inkSecondary} />
-          <Text style={s.detailText}>{formatDateTime(event.date_time)}</Text>
-        </View>
-        {event.location_name && (
-          <View style={s.detailRow}>
-            <MapPin size={14} color={Colors.inkSecondary} />
-            <Text style={s.detailText}>{event.location_name}</Text>
-          </View>
-        )}
-
-        {/* Price breakdown */}
-        {!event.is_free && (
-          <View style={s.priceCard}>
-            <Text style={s.priceCardTitle}>Price Breakdown</Text>
-            <View style={s.priceRow}>
-              <Text style={s.priceLabel}>Ticket price</Text>
-              <Text style={s.priceValue}>₹{event.price_inr}</Text>
-            </View>
-            <View style={s.priceRow}>
-              <Text style={s.priceLabel}>Platform fee (5%)</Text>
-              <Text style={s.priceValue}>₹{platformFee}</Text>
-            </View>
-            <View style={s.priceDivider} />
-            <View style={s.priceRow}>
-              <Text style={s.totalLabel}>Total</Text>
-              <Text style={s.totalValue}>₹{total}</Text>
-            </View>
-          </View>
-        )}
-      </ScrollView>
-
-      {/* Bottom pay button */}
-      <View style={[s.footer, { paddingBottom: insets.bottom + 16 }]}>
-        <Pressable
-          style={[s.payBtn, event.is_cancelled && s.payBtnDisabled]}
-          onPress={() => {
-            if (event.is_cancelled) { showPill('This event has been cancelled', 'error'); return }
-            hSuccess(); handlePay()
-          }}
-          disabled={paying}
-        >
+          {/* Gradient scrim so title is legible */}
           <LinearGradient
-            colors={event.is_cancelled ? ['#333', '#333'] : ['#FF6B35', '#FF3864']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={s.payGradient}
-          >
-            {paying ? (
-              <ActivityIndicator color="#fff" />
-            ) : event.is_cancelled ? (
-              <Text style={s.payText}>Event Cancelled</Text>
-            ) : (
-              <Text style={s.payText}>
-                {event.is_free ? 'RSVP Free' : `Pay ₹${total}`}
-              </Text>
-            )}
-          </LinearGradient>
-        </Pressable>
-      </View>
+            colors={['transparent', 'rgba(0,0,0,0.55)', Colors.surface]}
+            start={{ x: 0, y: 0.2 }}
+            end={{ x: 0, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+
+          {/* Event meta overlaid on banner bottom */}
+          <View style={s.bannerMeta}>
+            <View style={s.bannerChip}>
+              <Calendar size={12} color={Colors.inkSecondary} strokeWidth={1.8} />
+              <Text style={s.bannerChipText}>{formatDateTime(event.date_time)}</Text>
+            </View>
+            {event.location_name ? (
+              <View style={s.bannerChip}>
+                <MapPin size={12} color={Colors.inkSecondary} strokeWidth={1.8} />
+                <Text style={s.bannerChipText} numberOfLines={1}>{event.location_name}</Text>
+              </View>
+            ) : null}
+          </View>
+
+          {/* Floating back button */}
+          <View style={[s.backBtnWrap, { top: insets.top + 8 }]}>
+            <BackButton onPress={() => router.back()} />
+          </View>
+        </View>
+
+        {/* Card — full width, open at bottom */}
+        <View style={s.card}>
+          <Text style={s.label}>Confirm Booking</Text>
+          <Text style={s.title} numberOfLines={2}>{event.title}</Text>
+
+          {/* Price section */}
+          {!event.is_free ? (
+            <View style={s.priceSection}>
+              <PriceRow label="Ticket price" value={`₹${event.price_inr}`} />
+              <View style={s.priceDivider} />
+              <PriceRow label="Platform fee (5%)" value={`₹${platformFee}`} />
+              <View style={s.priceSep} />
+              <PriceRow label="Total" value={`₹${total}`} total />
+            </View>
+          ) : (
+            <View style={s.freeTag}>
+              <Text style={s.freeText}>Free event — no payment required</Text>
+            </View>
+          )}
+
+          {/* Pay button */}
+          <View style={s.actions}>
+            <PrimaryButton
+              label={payLabel}
+              onPress={() => { if (!isCancelled) { hSuccess(); handlePay() } }}
+              disabled={isCancelled || paying}
+              loading={paying}
+            />
+
+            {/* Razorpay note — shown for paid events */}
+            {!event.is_free && !isCancelled ? (
+              <View style={s.secureRow}>
+                <ShieldCheck size={13} color={Colors.inkDisabled} strokeWidth={1.6} />
+                <Text style={s.secureText}>Secure payment · Instant refund if event is cancelled</Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      </ScrollView>
     </View>
   )
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.background },
+  root: { flex: 1, backgroundColor: Colors.surface },
   center: { alignItems: 'center', justifyContent: 'center' },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingBottom: 12,
-    borderBottomWidth: 1, borderBottomColor: Colors.divider,
-  },
-  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontFamily: FontFamily.headingBold, fontSize: 17, color: Colors.inkPrimary },
   scroll: { flex: 1 },
-  content: { padding: 20, gap: 14 },
-  cover: { width: '100%', height: 200, borderRadius: 16 },
-  coverPlaceholder: { alignItems: 'center', justifyContent: 'center' },
-  title: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.inkPrimary, marginTop: 4 },
-  detailRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  detailText: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary },
-  priceCard: {
+
+  // Banner
+  bannerWrap: {
+    width: SCREEN_W,
+    height: BANNER_H,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bannerImg: { width: '100%', height: '100%' },
+  bannerEmoji: { fontSize: 64 },
+
+  bannerMeta: {
+    position: 'absolute',
+    bottom: Spacing.lg,
+    left: Spacing.screenPadding,
+    right: Spacing.screenPadding,
+    gap: 8,
+  },
+  bannerChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: Radius.pill,
+  },
+  bannerChipText: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 12,
+    color: Colors.inkSecondary,
+  },
+
+  backBtnWrap: {
+    position: 'absolute',
+    left: 0,
+    zIndex: 10,
+  },
+
+  // Card
+  card: {
+    marginTop: -Radius.modal,
     backgroundColor: Colors.surface,
-    borderRadius: 16,
+    borderTopLeftRadius: Radius.modal,
+    borderTopRightRadius: Radius.modal,
+    borderTopWidth: 1,
+    borderColor: Colors.divider,
+    paddingHorizontal: Spacing.screenPadding,
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.lg,
+  },
+
+  label: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 12,
+    color: Colors.inkDisabled,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  title: {
+    fontFamily: FontFamily.headingBold,
+    fontSize: 26,
+    letterSpacing: -0.5,
+    color: Colors.inkPrimary,
+    lineHeight: 32,
+    marginBottom: Spacing.lg,
+  },
+
+  // Price
+  priceSection: {
+    backgroundColor: Colors.elevated,
+    borderRadius: Radius.card,
     borderWidth: 1,
     borderColor: Colors.divider,
-    padding: 16,
-    gap: 10,
-    marginTop: 8,
+    padding: Spacing.md,
+    gap: 12,
+    marginBottom: Spacing.lg,
   },
-  priceCardTitle: { fontFamily: FontFamily.headingBold, fontSize: 15, color: Colors.inkPrimary, marginBottom: 4 },
-  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  priceLabel: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary },
-  priceValue: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.inkPrimary },
-  priceDivider: { height: 1, backgroundColor: Colors.divider },
-  totalLabel: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
-  totalValue: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.brandOrange },
-  footer: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: Colors.divider,
-    backgroundColor: 'rgba(17,17,17,0.95)',
+  priceDivider: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.divider },
+  priceSep: {
+    height: 1,
+    backgroundColor: Colors.divider,
+    marginTop: 2,
   },
-  payBtn: { borderRadius: 16, overflow: 'hidden' },
-  payBtnDisabled: { opacity: 0.6 },
-  payGradient: { height: 54, alignItems: 'center', justifyContent: 'center', borderRadius: 16 },
-  payText: { fontFamily: FontFamily.bodySemiBold, fontSize: 16, color: '#fff' },
+
+  freeTag: {
+    backgroundColor: 'rgba(255,107,53,0.08)',
+    borderRadius: Radius.card,
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,53,0.2)',
+    paddingVertical: 14,
+    paddingHorizontal: Spacing.md,
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+  },
+  freeText: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 14,
+    color: Colors.brandOrange,
+  },
+
+  actions: {
+    gap: 12,
+  },
+  secureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    justifyContent: 'center',
+  },
+  secureText: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 11,
+    color: Colors.inkDisabled,
+    textAlign: 'center',
+  },
 })

@@ -6,6 +6,7 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
@@ -14,7 +15,7 @@ import {
 import { hTap, hSuccess, hSelection } from '@/lib/haptics'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
-import { ShareEventSheet } from '@/components/ui'
+import { PrimaryButton } from '@/components/ui'
 import { StaticEventMap } from '@/components/maps'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -25,6 +26,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   ArrowLeft,
   Calendar,
+  ChevronRight,
   Clock,
   MapPin,
   MoreVertical,
@@ -138,11 +140,16 @@ function formatDateTime(iso: string | null | undefined) {
 }
 
 function daysUntil(iso: string) {
-  const diff = (parseDate(iso)?.getTime() ?? 0) - Date.now()
-  const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
-  if (days <= 0) return 'Today'
-  if (days === 1) return 'Tomorrow'
-  return `${days} days away`
+  const eventDate = parseDate(iso)
+  if (!eventDate) return ''
+  const now = new Date()
+  // Strip time — compare calendar dates only
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const eventMidnight = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate())
+  const diffDays = Math.round((eventMidnight.getTime() - todayMidnight.getTime()) / 86400000)
+  if (diffDays <= 0) return 'Today'
+  if (diffDays === 1) return 'Tomorrow'
+  return `${diffDays} days away`
 }
 
 function formatPrice(price: number, isFree: boolean) {
@@ -173,7 +180,6 @@ export default function EventDetailScreen() {
   const [rsvpStatus, setRsvpStatus] = useState<RsvpStatus>('idle')
   const [photoIdx, setPhotoIdx] = useState(0)
   const [showFullDesc, setShowFullDesc] = useState(false)
-  const [shareOpen, setShareOpen] = useState(false)
   const [optionsOpen, setOptionsOpen] = useState(false)
   const [cancelConfirm, setCancelConfirm] = useState(false)
   const [lockedReason, setLockedReason] = useState<null | 'checkin' | 'edit' | 'cancel' | 'age'>(null)
@@ -206,13 +212,20 @@ export default function EventDetailScreen() {
 
   useEffect(() => {
     if (!event?.my_offer_expires_at) { setOfferSecondsLeft(null); return }
-    const tick = () => setOfferSecondsLeft(
-      Math.max(0, Math.floor((new Date(event.my_offer_expires_at!).getTime() - Date.now()) / 1000))
-    )
+    const tick = () => {
+      const offerExpiry = parseDate(event.my_offer_expires_at)
+      const eventStart = parseDate(event.date_time)
+      if (!offerExpiry) return
+      // Confirm deadline = whichever comes first: offer window OR event start
+      const deadline = eventStart
+        ? Math.min(offerExpiry.getTime(), eventStart.getTime())
+        : offerExpiry.getTime()
+      setOfferSecondsLeft(Math.max(0, Math.floor((deadline - Date.now()) / 1000)))
+    }
     tick()
     const t = setInterval(tick, 1000)
     return () => clearInterval(t)
-  }, [event?.my_offer_expires_at])
+  }, [event?.my_offer_expires_at, event?.date_time])
 
   const [refreshing, setRefreshing] = useState(false)
 
@@ -281,9 +294,12 @@ export default function EventDetailScreen() {
     }
   }
 
-  const handleShare = () => {
+  const handleShare = async () => {
     if (!event) return
-    setShareOpen(true)
+    await Share.share({
+      message: `Check out "${event.title}" on VYBE! 🔥\n${formatDateTime(event.date_time)}${event.location_name ? `\n📍 ${event.location_name}` : ''}`,
+      title: event.title,
+    })
   }
 
   const handleJoinWaitlist = async () => {
@@ -294,7 +310,15 @@ export default function EventDetailScreen() {
       if (res.status === 'waitlist') {
         setRsvpStatus('waitlist')
         setEvent(prev => prev ? { ...prev, spots_left: 0 } : prev)
-        showPill(`You're #${res.position} on the waitlist. We'll notify you if a spot opens.`, 'default')
+        router.push({
+          pathname: '/(events)/[id]/waitlist-joined' as any,
+          params: {
+            id: id!,
+            position: String(res.position ?? 1),
+            coverUrl: event.cover_photos?.[0]?.url ?? '',
+            title: event.title,
+          },
+        })
       } else if (res.status === 'going') {
         setRsvpStatus('going')
       }
@@ -326,7 +350,13 @@ export default function EventDetailScreen() {
     router.push(`/(events)/${id}/waitlist` as any)
   }
 
-  const isPast = event ? new Date(event.date_time.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00')) < new Date() : false
+  const now = new Date()
+  const eventStart = event ? parseDate(event.date_time) : null
+  const eventEnd = event?.end_time ? parseDate(event.end_time) : null
+  const isStarted = !!eventStart && eventStart < now
+  const isEnded = isStarted && (eventEnd ? eventEnd < now : true)
+  const isInProgress = isStarted && !isEnded
+  const isPast = isEnded
   const hasTicket = !!(event?.my_ticket_token)
 
   if (loading) {
@@ -605,27 +635,48 @@ export default function EventDetailScreen() {
                   <Text style={styles.ticketBtnText}>Ticket</Text>
                 </Pressable>
               </View>
+            ) : isInProgress ? (
+              <View style={styles.inProgressBtn}>
+                <Text style={styles.inProgressText}>Event in Progress</Text>
+              </View>
             ) : rsvpStatus === 'loading' ? (
               <View style={styles.waitlistBtn}>
                 <ActivityIndicator color={Colors.brandOrange} />
               </View>
             ) : isWaitlist && event.my_offer_expires_at ? (
               <Pressable style={styles.offerBtn} onPress={() => { hSuccess(); handleRsvp() }}>
-                <Text style={styles.offerBtnText}>
-                  Spot Reserved! Confirm by {offerSecondsLeft != null ? fmtCountdown(offerSecondsLeft) : '...'}
-                </Text>
+                <LinearGradient
+                  colors={[Colors.brandOrange, Colors.brandCoral]}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={styles.offerGradient}
+                >
+                  <Text style={styles.offerTitle}>Spot Reserved! 🎉</Text>
+                  <Text style={styles.offerTimer}>
+                    Confirm by {offerSecondsLeft != null ? fmtCountdown(offerSecondsLeft) : '...'}
+                  </Text>
+                </LinearGradient>
               </Pressable>
             ) : isWaitlist ? (
-              <View style={{ alignItems: 'flex-end' }}>
-                <View style={styles.waitlistBtn}>
-                  <Text style={styles.waitlistBtnText}>
-                    On Waitlist{event.my_waitlist_position ? ` (#${event.my_waitlist_position})` : ''}
-                  </Text>
-                </View>
-                <Pressable onPress={handleLeaveWaitlist} style={{ marginTop: 4 }}>
-                  <Text style={styles.leaveWaitlistLink}>Leave Waitlist</Text>
-                </Pressable>
-              </View>
+              <Pressable
+                style={styles.waitlistActiveBtn}
+                onPress={() => {
+                  hTap()
+                  router.push({
+                    pathname: '/(events)/[id]/waitlist-joined' as any,
+                    params: {
+                      id: id!,
+                      position: String(event.my_waitlist_position ?? 1),
+                      coverUrl: event.cover_photos?.[0]?.url ?? '',
+                      title: event.title,
+                    },
+                  })
+                }}
+              >
+                <Text style={styles.waitlistActiveBtnText}>
+                  On Waitlist{event.my_waitlist_position ? ` · #${event.my_waitlist_position}` : ''}
+                </Text>
+                <ChevronRight size={14} color={Colors.brandOrange} strokeWidth={2} />
+              </Pressable>
             ) : event.spots_left === 0 && hoursUntil(event.date_time) < 2 ? (
               <View style={styles.eventFullBtn}>
                 <Text style={styles.waitlistBtnText}>Event starts soon</Text>
@@ -656,11 +707,6 @@ export default function EventDetailScreen() {
         )}
       </View>
 
-      <ShareEventSheet
-        visible={shareOpen}
-        event={event}
-        onClose={() => setShareOpen(false)}
-      />
       <EventOptionsSheet
         visible={optionsOpen}
         id={id ?? ''}
@@ -887,6 +933,23 @@ const styles = StyleSheet.create({
   },
   goingBtnText: { color: '#fff', fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
 
+  waitlistActiveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255,107,53,0.1)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,107,53,0.35)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+    minWidth: 120,
+  },
+  waitlistActiveBtnText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 14,
+    color: Colors.brandOrange,
+  },
   waitlistBtn: {
     backgroundColor: Colors.elevated,
     paddingHorizontal: 20,
@@ -909,16 +972,24 @@ const styles = StyleSheet.create({
   },
   waitlistJoinText: { color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
 
-  offerBtn: {
-    backgroundColor: '#00C896',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 14,
+  offerBtn: { borderRadius: 16, overflow: 'hidden', minWidth: 150 },
+  offerGradient: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     alignItems: 'center',
-    minWidth: 130,
+    gap: 2,
   },
-  offerBtnText: { color: '#fff', fontFamily: FontFamily.bodySemiBold, fontSize: 13 },
-  leaveWaitlistLink: { color: Colors.inkSecondary, fontFamily: FontFamily.bodyRegular, fontSize: 12, textDecorationLine: 'underline' },
+  offerTitle: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 13,
+    color: '#fff',
+  },
+  offerTimer: {
+    fontFamily: FontFamily.headingBold,
+    fontSize: 16,
+    color: '#fff',
+    letterSpacing: 0.5,
+  },
   eventFullBtn: {
     backgroundColor: Colors.elevated,
     paddingHorizontal: 20,
@@ -938,6 +1009,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.divider,
     minWidth: 120,
+  },
+
+  inProgressBtn: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.divider,
+    minWidth: 140,
+  },
+  inProgressText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 14,
+    color: Colors.inkSecondary,
+    letterSpacing: 0.1,
   },
 
   cancelledBadge: {
