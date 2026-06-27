@@ -1,61 +1,28 @@
 import React, { useState } from 'react'
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
+import { StyleSheet, Text, View, Pressable } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Location from 'expo-location'
-import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
-import { X } from 'lucide-react-native'
+import { ChevronLeft, X } from 'lucide-react-native'
 import { hTap, hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
-import { DateTimePickerSheet, Screen } from '@/components/ui'
+import {
+  DateTimePickerSheet,
+  KeyboardAvoidingWrapper,
+  PrimaryButton,
+  Screen,
+} from '@/components/ui'
 import { Step1Basics, Step2When, Step3Where, Step4Pricing } from '@/components/event-form'
 import { useCreateEvent } from '@/hooks/useCreateEvent'
 import { useEventDateTimePickers } from '@/hooks/useEventDateTimePickers'
 import { usePillStore } from '@/store/pillStore'
 
-// ── Step button ───────────────────────────────────────────────────────────────
-
-function StepButton({ step, loading, onPress }: { step: number; loading: boolean; onPress: () => void }) {
-  return (
-    <Pressable onPress={() => { step === 4 ? hSuccess() : hTap(); onPress() }} style={s.nextBtn} disabled={loading}>
-      <LinearGradient
-        colors={['#FF6B35', '#FF3864']}
-        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-        style={s.nextGradient}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" size="small" />
-        ) : (
-          <Text style={s.nextText}>
-            {step === 4 ? 'Publish Event 🔥' : 'Next Step →'}
-          </Text>
-        )}
-      </LinearGradient>
-    </Pressable>
-  )
-}
-
-// ── Step indicator ────────────────────────────────────────────────────────────
-
-function StepBar({ step }: { step: number }) {
-  return (
-    <View style={s.stepBar}>
-      {[1, 2, 3, 4].map(n => (
-        <View key={n} style={[s.stepSegment, n <= step && s.stepSegmentActive]} />
-      ))}
-    </View>
-  )
-}
-
-// ── Screen ────────────────────────────────────────────────────────────────────
+const STEPS = [
+  { title: 'The Basics', sub: 'Tell people what your event is about' },
+  { title: 'When & Capacity', sub: 'Set the date, time, and guest limit' },
+  { title: "Where's the VYBE?", sub: 'Help guests find your event' },
+  { title: 'Pricing', sub: 'Set a ticket price or keep it free' },
+]
 
 export default function CreateScreen() {
   const router = useRouter()
@@ -74,7 +41,6 @@ export default function CreateScreen() {
       errs[field] = inline
       if (!firstPill) firstPill = pill
     }
-
     if (step === 1) {
       if (!form.title.trim()) flag('title', 'Event title is required', 'Please add an event title')
       if (!form.eventType)    flag('eventType', 'Please select an event type', 'Please select an event type')
@@ -85,8 +51,17 @@ export default function CreateScreen() {
       } else if (form.dateTime < new Date(Date.now() + 24 * 60 * 60 * 1000)) {
         flag('dateTime', 'Events must be posted at least 24 hours in advance', 'Events must be posted at least 24 hours in advance')
       }
-      if (form.endTime && form.dateTime && form.endTime <= form.dateTime) {
-        flag('endTime', 'End time must be after start time', 'End time must be after the start time')
+      if (!form.endTime) {
+        flag('endTime', 'End date & time is required', 'Please set an end date and time for your event')
+      } else if (form.dateTime) {
+        const durMs = form.endTime.getTime() - form.dateTime.getTime()
+        if (durMs <= 0) {
+          flag('endTime', 'End time must be after start time', 'End time must be after the start time')
+        } else if (durMs < 60 * 60 * 1000) {
+          flag('endTime', 'Event must be at least 1 hour long', 'Event must be at least 1 hour long')
+        } else if (durMs > 72 * 60 * 60 * 1000) {
+          flag('endTime', "Events can't run longer than 3 days", "Events can't run longer than 3 days. Contact support for exceptions.")
+        }
       }
       if (form.capacity < 5)   flag('capacity', 'Minimum 5 guests required', 'Capacity must be between 5 and 200')
       if (form.capacity > 200) flag('capacity', 'Maximum 200 guests allowed', 'Capacity must be between 5 and 200')
@@ -97,7 +72,6 @@ export default function CreateScreen() {
     if (step === 4) {
       if (!form.isFree && form.priceInr < 50) flag('priceInr', 'Minimum ticket price is ₹50', 'Minimum ticket price is ₹50')
     }
-
     setErrors(errs)
     if (firstPill) showPill(firstPill, 'error')
     return Object.keys(errs).length === 0
@@ -129,92 +103,185 @@ export default function CreateScreen() {
     if (!validateStep()) return
     const result = await submit()
     if (result) {
+      hSuccess()
       reset()
       setStep(1)
       router.replace(`/(events)/published?id=${result.id}&title=${encodeURIComponent(result.title)}` as any)
     }
   }
 
+  const isLast = step === 4
+  const meta = STEPS[step - 1]
+
   return (
-    <Screen>
-      <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={s.header}>
-          <Pressable style={s.headerClose} onPress={() => { step > 1 ? back() : router.back() }}>
-            {step > 1 ? (
-              <Text style={s.headerBackText}>← Back</Text>
-            ) : (
-              <X size={22} color={Colors.inkPrimary} />
-            )}
-          </Pressable>
-          <Text style={s.headerTitle}>Create Event</Text>
-          <Text style={s.headerStep}>Step {step}/4</Text>
+    // Screen handles top + bottom safe area
+    <Screen bottom={false}>
+      {/* Header — no border */}
+      <View style={s.header}>
+        <Pressable
+          style={s.iconBtn}
+          onPress={() => { hTap(); step > 1 ? back() : router.back() }}
+          hitSlop={10}
+        >
+          {step > 1
+            ? <ChevronLeft size={20} color={Colors.inkPrimary} strokeWidth={2.2} />
+            : <X size={20} color={Colors.inkPrimary} strokeWidth={2.2} />}
+        </Pressable>
+
+        <Text style={s.headerTitle}>Create Event</Text>
+
+        <View style={s.stepPill}>
+          <Text style={s.stepPillNum}>{step}</Text>
+          <Text style={s.stepPillOf}>/4</Text>
         </View>
+      </View>
 
-        <StepBar step={step} />
+      {/* Progress — 4 thin segments, no container */}
+      <View style={s.progress}>
+        {[1, 2, 3, 4].map(n => (
+          <View key={n} style={[s.seg, n <= step && s.segActive]} />
+        ))}
+      </View>
 
-        {step === 1 && (
-          <Step1Basics form={form} set={set} errors={errors} setErrors={setErrors} />
-        )}
-        {step === 2 && (
-          <Step2When
-            form={form} set={set} errors={errors} setErrors={setErrors}
-            openDate={openDate} openStartTime={openStartTime} openEndDate={openEndDate} openEndTime={openEndTime}
-          />
-        )}
-        {step === 3 && (
+      {/* Step 3: has its own internal scroll + pinned map, button goes below */}
+      {step === 3 ? (
+        <View style={{ flex: 1 }}>
           <Step3Where form={form} set={set} errors={errors} setErrors={setErrors} />
-        )}
-        {step === 4 && (
-          <Step4Pricing
-            form={form} set={set} errors={errors} setErrors={setErrors}
-            submitError={submitError}
-          />
-        )}
-
-        <View style={[s.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-          <StepButton
-            step={step}
-            loading={step === 4 ? submitting : nextLoading}
-            onPress={step === 4 ? publish : next}
-          />
+          <View style={[s.step3Footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+            <PrimaryButton
+              label="Next Step →"
+              onPress={next}
+              loading={nextLoading}
+            />
+          </View>
         </View>
+      ) : (
+        // Steps 1, 2, 4 — key={step} resets scroll to top on every step change
+        <KeyboardAvoidingWrapper key={step}>
+          <View style={s.stepContent}>
+            <Text style={s.stepTitle}>{meta.title}</Text>
+            <Text style={s.stepSub}>{meta.sub}</Text>
 
-        <DateTimePickerSheet
-          visible={picker.visible}
-          mode={picker.mode}
-          value={picker.value}
-          onConfirm={picker.confirm}
-          onDismiss={picker.dismiss}
-        />
-      </KeyboardAvoidingView>
+            {step === 1 && (
+              <Step1Basics
+                form={form} set={set} errors={errors} setErrors={setErrors}
+                scrollable={false}
+              />
+            )}
+            {step === 2 && (
+              <Step2When
+                form={form} set={set} errors={errors} setErrors={setErrors}
+                openDate={openDate} openStartTime={openStartTime}
+                openEndDate={openEndDate} openEndTime={openEndTime}
+                scrollable={false}
+              />
+            )}
+            {step === 4 && (
+              <Step4Pricing
+                form={form} set={set} errors={errors} setErrors={setErrors}
+                submitError={submitError}
+                scrollable={false}
+              />
+            )}
+
+            <View style={s.btnWrap}>
+              <PrimaryButton
+                label={isLast ? 'Publish Event 🔥' : 'Next Step →'}
+                onPress={isLast ? publish : next}
+                loading={isLast ? submitting : nextLoading}
+              />
+            </View>
+            <View style={{ height: Math.max(insets.bottom, 24) }} />
+          </View>
+        </KeyboardAvoidingWrapper>
+      )}
+
+      <DateTimePickerSheet
+        visible={picker.visible}
+        mode={picker.mode}
+        value={picker.value}
+        onConfirm={picker.confirm}
+        onDismiss={picker.dismiss}
+      />
     </Screen>
   )
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.background },
   header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingBottom: 8,
-    backgroundColor: Colors.background,
-    borderBottomWidth: 1, borderBottomColor: Colors.divider,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 14,
   },
-  headerClose: { width: 70, justifyContent: 'flex-start' },
-  headerBackText: { color: Colors.brandOrange, fontFamily: FontFamily.bodyMedium, fontSize: 14 },
-  headerTitle: { flex: 1, textAlign: 'center', fontFamily: FontFamily.headingBold, fontSize: 17, color: Colors.inkPrimary },
-  headerStep: { width: 70, textAlign: 'right', fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.inkSecondary },
-  stepBar: {
-    flexDirection: 'row', paddingHorizontal: 16, gap: 4,
-    paddingVertical: 8, backgroundColor: Colors.background,
+  iconBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  stepSegment: { flex: 1, height: 3, borderRadius: 2, backgroundColor: Colors.elevated },
-  stepSegmentActive: { backgroundColor: Colors.brandOrange },
-  bottomBar: {
-    backgroundColor: Colors.background,
-    paddingHorizontal: 20, paddingTop: 12,
-    borderTopWidth: 1, borderTopColor: Colors.divider,
+  headerTitle: {
+    fontFamily: FontFamily.headingBold,
+    fontSize: 17,
+    color: Colors.inkPrimary,
+    letterSpacing: -0.2,
   },
-  nextBtn: { borderRadius: 16, overflow: 'hidden' },
-  nextGradient: { paddingVertical: 16, alignItems: 'center' },
-  nextText: { color: '#fff', fontFamily: FontFamily.bodySemiBold, fontSize: 16 },
+  stepPill: {
+    width: 38,
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'flex-end',
+    gap: 1,
+  },
+  stepPillNum: {
+    fontFamily: FontFamily.headingBold,
+    fontSize: 16,
+    color: Colors.brandOrange,
+  },
+  stepPillOf: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 13,
+    color: Colors.inkDisabled,
+  },
+  progress: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    gap: 5,
+    marginBottom: 4,
+  },
+  seg: {
+    flex: 1,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: Colors.elevated,
+  },
+  segActive: { backgroundColor: Colors.brandOrange },
+  stepContent: {
+    padding: 24,
+    paddingTop: 20,
+  },
+  stepTitle: {
+    fontFamily: FontFamily.headingBold,
+    fontSize: 26,
+    color: Colors.inkPrimary,
+    marginBottom: 6,
+    letterSpacing: -0.5,
+  },
+  stepSub: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 14,
+    color: Colors.inkSecondary,
+    marginBottom: 28,
+  },
+  btnWrap: {
+    marginTop: 12,
+  },
+  step3Footer: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+  },
 })

@@ -135,7 +135,7 @@ class CreateEventBody(BaseModel):
     description: Optional[str] = None
     rules: Optional[str] = None
     date_time: str
-    end_time: Optional[str] = None
+    end_time: str
     capacity: int = 20
     age_restriction: int = 18
     location_name: Optional[str] = None
@@ -407,6 +407,17 @@ def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, curre
     if dt < now + timedelta(hours=24):
         raise HTTPException(status_code=422, detail="Events must be posted at least 24 hours in advance")
 
+    try:
+        end_dt = datetime.fromisoformat(body.end_time.replace("Z", "+00:00"))
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid end_time format")
+
+    duration = end_dt - dt
+    if duration.total_seconds() < 3600:
+        raise HTTPException(status_code=422, detail="Event must be at least 1 hour long")
+    if duration.total_seconds() > 72 * 3600:
+        raise HTTPException(status_code=422, detail="Events can't run longer than 3 days")
+
     if not (5 <= body.capacity <= 200):
         raise HTTPException(status_code=422, detail="Capacity must be between 5 and 200")
 
@@ -524,6 +535,16 @@ def update_event(event_id: str, body: CreateEventBody, background_tasks: Backgro
 
     if non_capacity_changed and now > ed:
         raise HTTPException(status_code=403, detail="Events can only be edited up to 7 hours before start")
+
+    # Validate end_time duration whenever start or end changes
+    new_dt  = body_dt or ev_dt
+    new_end = body_end or ev_end
+    if new_end:
+        duration = new_end - new_dt
+        if duration.total_seconds() < 3600:
+            raise HTTPException(status_code=422, detail="Event must be at least 1 hour long")
+        if duration.total_seconds() > 72 * 3600:
+            raise HTTPException(status_code=422, detail="Events can't run longer than 3 days")
 
     if capacity_decreasing and ev["attendee_count"] > 0:
         raise HTTPException(status_code=400, detail="Cannot reduce capacity — attendees have already booked")

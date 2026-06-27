@@ -335,9 +335,14 @@ export default function EventsScreen() {
           </View>
         )}
 
-        {/* Preview strip — bottom frosted bar */}
+        {/* Preview strip — floats over map with fade gradient */}
         {!isEmpty ? (
           <View style={[styles.previewStrip, { paddingBottom: Math.max(insets.bottom, 8) + 6 }]}>
+            <LinearGradient
+              colors={['transparent', 'rgba(6,6,6,0.72)', 'rgba(6,6,6,0.94)']}
+              style={StyleSheet.absoluteFill}
+              pointerEvents="none"
+            />
             <FlatList
               ref={previewListRef}
               data={previewEvents}
@@ -554,18 +559,24 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingTop: 10,
-    backgroundColor: "rgba(12,12,12,0.82)",
+    paddingTop: 32,
   },
   previewCard: {
     width: CARD_W,
     backgroundColor: Colors.surface,
     borderRadius: 14,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: Colors.divider,
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
   },
-  previewCardActive: { borderColor: Colors.brandOrange, borderWidth: 2 },
+  previewCardActive: {
+    shadowColor: Colors.brandOrange,
+    shadowOpacity: 0.4,
+    shadowRadius: 14,
+  },
   previewImageWrap: { height: 118 },
   previewImage: { width: "100%", height: "100%" },
   previewPlaceholder: {
@@ -636,8 +647,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.divider,
   },
   listHeaderTitle: {
     fontFamily: FontFamily.headingBold,
@@ -667,13 +676,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: 20,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.07)",
     shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    shadowOpacity: 0.25,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 5,
   },
   cardImageWrap: { width: "100%", aspectRatio: 16 / 9, position: "relative", overflow: "hidden" },
   cardPlaceholder: { alignItems: "center", justifyContent: "center" },

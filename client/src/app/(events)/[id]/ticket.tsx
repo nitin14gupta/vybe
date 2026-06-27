@@ -161,7 +161,6 @@ function SaveButton({ onPress }: { onPress: () => void }) {
       }}
       onPress={onPress}
     >
-      <ReAnimated.View style={animStyle}>
         <LinearGradient
           colors={[Colors.brandOrange, Colors.brandCoral]}
           start={{ x: 0, y: 0 }}
@@ -171,7 +170,6 @@ function SaveButton({ onPress }: { onPress: () => void }) {
           <Download size={18} color={Colors.background} strokeWidth={2.2} />
           <Text style={s.saveBtnText}>Save to Photos</Text>
         </LinearGradient>
-      </ReAnimated.View>
     </Pressable>
   )
 }
@@ -463,7 +461,7 @@ const s = StyleSheet.create({
   },
 
   // Buttons
-  actions: { width: '100%', maxWidth: 400, gap: 10 },
+  actions: { width: '100%', gap: 10 },
 
   saveGradient: {
     height: ComponentSize.btnPrimary,

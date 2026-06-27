@@ -69,19 +69,19 @@ function Inner({ form, set, errors, setErrors, openDate, openStartTime, openEndD
         onPress={disabled ? () => {} : openStartTime}
       />
 
-      <Text style={[ef.fieldLabel, { marginTop: 20 }]}>Ends (optional)</Text>
+      <Text style={[ef.fieldLabel, { marginTop: 20 }]}>Ends</Text>
       <PickerRow
-        icon={<Calendar size={18} color={Colors.inkSecondary} />}
+        icon={<Calendar size={18} color={Colors.brandOrange} />}
         label="End Date"
         value={form.endTime ? fmt(form.endTime) : ''}
-        placeholder="Optional"
+        placeholder="Select end date"
         onPress={disabled ? () => {} : openEndDate}
       />
       <PickerRow
-        icon={<Clock size={18} color={Colors.inkSecondary} />}
+        icon={<Clock size={18} color={Colors.brandOrange} />}
         label="End Time"
         value={form.endTime ? fmtTime(form.endTime) : ''}
-        placeholder="Optional"
+        placeholder="Select end time"
         onPress={disabled ? () => {} : openEndTime}
       />
       {errors.endTime ? <Text style={ef.errorText}>{errors.endTime}</Text> : null}

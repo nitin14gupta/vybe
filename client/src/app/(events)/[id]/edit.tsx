@@ -127,11 +127,10 @@ export default function EditEventScreen() {
     }
 
     if (end && (startChanged || endChanged)) {
-      if (end <= start) { showPill('End time must be after start time', 'error'); return }
-      if (end.getTime() - start.getTime() < 60 * 60 * 1000) {
-        showPill('Event must be at least 1 hour long', 'error')
-        return
-      }
+      const durMs = end.getTime() - start.getTime()
+      if (durMs <= 0) { showPill('End time must be after start time', 'error'); return }
+      if (durMs < 60 * 60 * 1000) { showPill('Event must be at least 1 hour long', 'error'); return }
+      if (durMs > 72 * 60 * 60 * 1000) { showPill("Events can't run longer than 3 days", 'error'); return }
     }
 
     if (!skipLargeDateCheck && startChanged && o?.dateTime) {
