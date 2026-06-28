@@ -24,15 +24,10 @@ const BANNER_H = SCREEN_H * 0.42
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function parseDate(iso: string | null | undefined) {
-  if (!iso) return null
-  const d = new Date(iso.replace(' ', 'T'))
-  return isNaN(d.getTime()) ? null : d
-}
-
 function formatDateTime(iso: string | null | undefined) {
-  const d = parseDate(iso)
-  if (!d) return 'Date TBC'
+  if (!iso) return 'Date TBC'
+  const d = new Date(iso.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'))
+  if (isNaN(d.getTime())) return 'Date TBC'
   return d.toLocaleDateString('en-IN', {
     weekday: 'short',
     day: 'numeric',
@@ -164,20 +159,6 @@ export default function BookScreen() {
             style={StyleSheet.absoluteFill}
           />
 
-          {/* Event meta overlaid on banner bottom */}
-          <View style={s.bannerMeta}>
-            <View style={s.bannerChip}>
-              <Calendar size={12} color={Colors.inkSecondary} strokeWidth={1.8} />
-              <Text style={s.bannerChipText}>{formatDateTime(event.date_time)}</Text>
-            </View>
-            {event.location_name ? (
-              <View style={s.bannerChip}>
-                <MapPin size={12} color={Colors.inkSecondary} strokeWidth={1.8} />
-                <Text style={s.bannerChipText} numberOfLines={1}>{event.location_name}</Text>
-              </View>
-            ) : null}
-          </View>
-
           {/* Floating back button */}
           <View style={[s.backBtnWrap, { top: insets.top + 8 }]}>
             <BackButton onPress={() => router.back()} />
@@ -188,6 +169,20 @@ export default function BookScreen() {
         <View style={s.card}>
           <Text style={s.label}>Confirm Booking</Text>
           <Text style={s.title} numberOfLines={2}>{event.title}</Text>
+
+          {/* Event summary row */}
+          <View style={s.summaryCard}>
+            <View style={s.summaryRow}>
+              <Calendar size={14} color={Colors.inkSecondary} strokeWidth={1.8} />
+              <Text style={s.summaryText}>{formatDateTime(event.date_time)}</Text>
+            </View>
+            {event.location_name ? (
+              <View style={s.summaryRow}>
+                <MapPin size={14} color={Colors.inkSecondary} strokeWidth={1.8} />
+                <Text style={s.summaryText} numberOfLines={1}>{event.location_name}</Text>
+              </View>
+            ) : null}
+          </View>
 
           {/* Price section */}
           {!event.is_free ? (
@@ -213,7 +208,6 @@ export default function BookScreen() {
               loading={paying}
             />
 
-            {/* Razorpay note — shown for paid events */}
             {!event.is_free && !isCancelled ? (
               <View style={s.secureRow}>
                 <ShieldCheck size={13} color={Colors.inkDisabled} strokeWidth={1.6} />
@@ -242,29 +236,6 @@ const s = StyleSheet.create({
   },
   bannerImg: { width: '100%', height: '100%' },
   bannerEmoji: { fontSize: 64 },
-
-  bannerMeta: {
-    position: 'absolute',
-    bottom: Spacing.lg,
-    left: Spacing.screenPadding,
-    right: Spacing.screenPadding,
-    gap: 8,
-  },
-  bannerChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: Radius.pill,
-  },
-  bannerChipText: {
-    fontFamily: FontFamily.bodyMedium,
-    fontSize: 12,
-    color: Colors.inkSecondary,
-  },
 
   backBtnWrap: {
     position: 'absolute',
@@ -300,6 +271,29 @@ const s = StyleSheet.create({
     color: Colors.inkPrimary,
     lineHeight: 32,
     marginBottom: Spacing.lg,
+  },
+
+  // Event summary
+  summaryCard: {
+    backgroundColor: Colors.elevated,
+    borderRadius: Radius.card,
+    borderWidth: 1,
+    borderColor: Colors.divider,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 12,
+    gap: 8,
+    marginBottom: Spacing.lg,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  summaryText: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 13,
+    color: Colors.inkSecondary,
+    flex: 1,
   },
 
   // Price

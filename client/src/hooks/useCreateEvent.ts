@@ -31,7 +31,7 @@ const INITIAL: CreateEventForm = {
   locationLat: null,
   locationLng: null,
   priceInr: 0,
-  isFree: true,
+  isFree: false,
   coverPhotos: [],
 }
 

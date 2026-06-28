@@ -6,6 +6,7 @@ import { Colors } from '@/constants'
 import type { CreateEventForm } from '@/hooks/useCreateEvent'
 import { useEventPhotos } from '@/hooks/useEventPhotos'
 import { ef } from './styles'
+import { usePillStore } from '@/store/pillStore'
 
 interface Props {
   form: CreateEventForm
@@ -78,6 +79,7 @@ function PhotoSlotView({
 
 function Inner({ form, set, errors, setErrors, submitError, priceLocked, priceLockNote, disabled, freeUsed = 0, resetsOn = '' }: Omit<Props, 'scrollable'>) {
   const { slotStates, pickPhoto, removePhoto, displayUri } = useEventPhotos(form.coverPhotos, set)
+  const showPill = usePillStore.getState().show
   const effectivelyLocked = disabled || priceLocked
   const slotsExhausted = freeUsed >= 2
 
@@ -104,9 +106,18 @@ function Inner({ form, set, errors, setErrors, submitError, priceLocked, priceLo
         <View style={ef.pricingToggle}>
           <Pressable
             style={[ef.pricingBtn, form.isFree && ef.pricingBtnActive, slotsExhausted && s.freeDisabled]}
-            onPress={() => { if (!effectivelyLocked && !slotsExhausted) { set('isFree', true); set('priceInr', 0) } }}
+            onPress={() => {
+              if (slotsExhausted) {
+                const msg = resetsOnFormatted
+                  ? `Free events reset on ${resetsOnFormatted}`
+                  : "You've used your 2 free events this month"
+                showPill(msg, 'error')
+                return
+              }
+              if (!effectivelyLocked) { set('isFree', true); set('priceInr', 0) }
+            }}
           >
-            <Text style={[ef.pricingBtnText, form.isFree && ef.pricingBtnTextActive, slotsExhausted && s.freeDisabledText]}>Free</Text>
+            <Text style={[ef.pricingBtnText, form.isFree && ef.pricingBtnTextActive]}>Free</Text>
           </Pressable>
           <Pressable
             style={[ef.pricingBtn, !form.isFree && ef.pricingBtnActive]}
@@ -116,19 +127,6 @@ function Inner({ form, set, errors, setErrors, submitError, priceLocked, priceLo
           </Pressable>
         </View>
 
-        {/* Free slot usage note */}
-        {slotsExhausted ? (
-          <View style={s.slotNote}>
-            <Text style={s.slotNoteText}>
-              You've used 2/2 free events this month.{resetsOnFormatted ? ` Free events reset on ${resetsOnFormatted}.` : ''}
-            </Text>
-          </View>
-        ) : freeUsed === 1 ? (
-          <View style={s.slotNoteSubtle}>
-            <Text style={s.slotNoteSubtleText}>1 of 2 free events used this month</Text>
-          </View>
-        ) : null}
-
         {!form.isFree && (
           <View style={[ef.inputWrap, { marginTop: 12 }, errors.priceInr && ef.inputWrapError]}>
             <Text style={ef.currencySymbol}>₹</Text>
@@ -136,7 +134,7 @@ function Inner({ form, set, errors, setErrors, submitError, priceLocked, priceLo
               style={[ef.textInput, { flex: 1 }]}
               value={form.priceInr > 0 ? String(form.priceInr) : ''}
               onChangeText={v => { const n = parseInt(v, 10); set('priceInr', isNaN(n) ? 0 : n); setErrors(e => ({ ...e, priceInr: '' })) }}
-              placeholder={slotsExhausted ? 'Minimum ₹299' : 'Ticket price'}
+              placeholder="Ticket price"
               placeholderTextColor={Colors.inkDisabled}
               keyboardType="numeric"
               editable={!effectivelyLocked}
@@ -209,29 +207,4 @@ const s = StyleSheet.create({
   },
   submitErrorText: { color: Colors.brandCoral, fontFamily: 'Satoshi-Medium', fontSize: 13 },
   freeDisabled: { opacity: 0.35 },
-  freeDisabledText: { color: 'rgba(255,255,255,0.4)' },
-  slotNote: {
-    marginTop: 10,
-    backgroundColor: 'rgba(255,107,53,0.08)',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,107,53,0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  slotNoteText: {
-    fontFamily: 'Satoshi-Regular',
-    fontSize: 12,
-    color: Colors.brandOrange,
-    lineHeight: 17,
-  },
-  slotNoteSubtle: {
-    marginTop: 8,
-    paddingHorizontal: 2,
-  },
-  slotNoteSubtleText: {
-    fontFamily: 'Satoshi-Regular',
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.4)',
-  },
 })

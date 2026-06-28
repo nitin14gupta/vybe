@@ -75,8 +75,8 @@ class InterestsUpdate(BaseModel):
     def validate_interests(cls, v: List[str]) -> List[str]:
         if len(v) < 3:
             raise ValueError("Must select at least 3 interests")
-        if len(v) > 8:
-            raise ValueError("Cannot select more than 8 interests")
+        if len(v) > 4:
+            raise ValueError("Cannot select more than 4 interests")
         return v
 
 

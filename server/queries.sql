@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS public.event_attendees (
   status text DEFAULT 'going'::text NOT NULL,
   joined_at timestamp with time zone DEFAULT now(),
   checked_in_at timestamp with time zone,
+  check_in_method text DEFAULT 'qr_scan',
   ticket_token text DEFAULT (gen_random_uuid())::text,
   payment_id text,
   CONSTRAINT event_attendees_pkey PRIMARY KEY (id),

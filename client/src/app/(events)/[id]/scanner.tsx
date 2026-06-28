@@ -72,7 +72,7 @@ export default function ScannerScreen() {
     scanCooldown.current = true
     setScanning(true)
     try {
-      const res = await ApiService.checkinAttendee(id!, data)
+      const res = await ApiService.checkinAttendee(id!, data, 'qr_scan')
       showResult(res)
       if (res.already_checked_in) {
         showPill(`${res.name} is already checked in`, 'default')
@@ -99,7 +99,7 @@ export default function ScannerScreen() {
     if (checkingIn || !attendee.ticket_token) return
     setCheckingIn(attendee.id)
     try {
-      const res = await ApiService.checkinAttendee(id!, attendee.ticket_token)
+      const res = await ApiService.checkinAttendee(id!, attendee.ticket_token, 'manual_host')
       showResult(res)
       if (res.already_checked_in) {
         showPill(`${res.name} is already checked in`, 'default')
@@ -107,6 +107,7 @@ export default function ScannerScreen() {
         setAttendees(prev => prev.map(a =>
           a.id === attendee.id ? { ...a, checked_in_at: new Date().toISOString() } : a
         ))
+        showPill(`Manually checked in ${res.name} — this is logged`, 'default')
       }
     } catch (e: any) {
       const msg = e?.detail || e?.message || "Check-in didn't work"

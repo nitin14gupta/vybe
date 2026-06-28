@@ -1,9 +1,8 @@
-import { View, Text, StyleSheet, Pressable, Image, ActivityIndicator, Dimensions } from 'react-native'
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Dimensions, ScrollView } from 'react-native'
+import { Image } from 'expo-image'
 import { router } from 'expo-router'
 import { hTap, hError } from '@/lib/haptics'
 import { Camera, X, Plus, AlertCircle, Crown } from 'lucide-react-native'
-import { SortableGrid, SortableGridItem, GridStrategy } from 'react-native-reanimated-dnd'
-import type { SortableGridRenderItemProps, GridPositions } from 'react-native-reanimated-dnd'
 import { OutlineButton, ProgressBar, PrimaryButton, Screen } from '@/components/ui'
 import { usePhotos } from '@/hooks/usePhotos'
 import type { PhotoItem } from '@/hooks/usePhotos'
@@ -12,6 +11,82 @@ import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const COL_GAP = 10
 const ITEM_SIZE = Math.floor((SCREEN_WIDTH - Spacing.screenPadding * 2 - COL_GAP) / 2)
+
+function PhotoSlot({
+  item,
+  index,
+  onSlotPress,
+  retryUpload,
+  removePhoto,
+}: {
+  item: PhotoItem
+  index: number
+  onSlotPress: (id: string) => void
+  retryUpload: (id: string) => void
+  removePhoto: (id: string) => void
+}) {
+  const isMain = index === 0
+  const isDone = item.state === 'done'
+  const isUploading = item.state === 'uploading'
+  const isError = item.state === 'error'
+
+  return (
+    <Pressable
+      onPress={() => { hTap(); onSlotPress(item.id) }}
+      style={[styles.slot, isMain && !!item.uri && styles.slotMain]}
+    >
+      {item.uri ? (
+        <>
+          <Image
+            source={item.uri}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            transition={120}
+          />
+
+          {isUploading && (
+            <View style={styles.uploadOverlay}>
+              <ActivityIndicator size="small" color="#fff" />
+            </View>
+          )}
+
+          {isError && (
+            <Pressable onPress={() => retryUpload(item.id)} style={styles.errorOverlay}>
+              <AlertCircle size={18} color="#fff" />
+              <Text style={styles.retryTxt}>Tap to retry</Text>
+            </Pressable>
+          )}
+
+          {isDone && (
+            <Pressable
+              onPress={() => { hError(); removePhoto(item.id) }}
+              style={styles.removeBtn}
+              hitSlop={10}
+            >
+              <X size={11} color="#fff" strokeWidth={3} />
+            </Pressable>
+          )}
+
+          {isMain && (
+            <View style={styles.mainBadge}>
+              <Crown size={9} color={Colors.brandOrange} strokeWidth={2.5} />
+              <Text style={styles.mainBadgeText}>MAIN</Text>
+            </View>
+          )}
+        </>
+      ) : isMain ? (
+        <View style={styles.emptyMain}>
+          <View style={styles.cameraCircle}>
+            <Camera size={22} color={Colors.inkPrimary} strokeWidth={2} />
+          </View>
+          <Text style={styles.addLabel}>Add photo</Text>
+        </View>
+      ) : (
+        <Plus size={22} color={Colors.brandOrange} strokeWidth={1.5} />
+      )}
+    </Pressable>
+  )
+}
 
 export default function PhotosScreen() {
   const {
@@ -22,90 +97,7 @@ export default function PhotosScreen() {
     retryUpload,
     removePhoto,
     handleNext,
-    handleDrop,
   } = usePhotos()
-
-  const renderItem = ({
-    item,
-    index,
-    id,
-    ...rest
-  }: SortableGridRenderItemProps<PhotoItem>) => {
-    const isMain = index === 0
-    const isDone = item.state === 'done'
-    const isUploading = item.state === 'uploading'
-    const isError = item.state === 'error'
-
-    const onDrop = (_id: string, _pos: number, allPositions?: GridPositions) =>
-      handleDrop(_id, _pos, allPositions)
-
-    return (
-      <SortableGridItem
-        key={id}
-        id={id}
-        data={item}
-        {...rest}
-        // block drag while uploading / in error — keep a tactile delay for done slots
-        activationDelay={isDone ? 350 : 99999}
-        onDrop={onDrop}
-        style={styles.itemWrapper}
-      >
-        <Pressable
-          onPress={() => { hTap(); onSlotPress(index) }}
-          style={[styles.slot, isMain && !!item.uri && styles.slotMain]}
-        >
-          {item.uri ? (
-            <>
-              <Image
-                source={{ uri: item.uri }}
-                style={StyleSheet.absoluteFill}
-                resizeMode="cover"
-              />
-
-              {isUploading && (
-                <View style={styles.uploadOverlay}>
-                  <ActivityIndicator size="small" color="#fff" />
-                </View>
-              )}
-
-              {isError && (
-                <Pressable onPress={() => retryUpload(index)} style={styles.errorOverlay}>
-                  <AlertCircle size={18} color="#fff" />
-                  <Text style={styles.retryTxt}>Tap to retry</Text>
-                </Pressable>
-              )}
-
-              {isDone && (
-                <Pressable
-                  onPress={() => { hError(); removePhoto(index) }}
-                  style={styles.removeBtn}
-                  hitSlop={10}
-                >
-                  <X size={11} color="#fff" strokeWidth={3} />
-                </Pressable>
-              )}
-
-              {isMain && (
-                <View style={styles.mainBadge}>
-                  <Crown size={9} color={Colors.brandOrange} strokeWidth={2.5} />
-                  <Text style={styles.mainBadgeText}>MAIN</Text>
-                </View>
-              )}
-            </>
-          ) : isMain ? (
-            <View style={styles.emptyMain}>
-              <View style={styles.cameraCircle}>
-                <Camera size={22} color={Colors.inkPrimary} strokeWidth={2} />
-              </View>
-              <Text style={styles.addLabel}>Add photo</Text>
-            </View>
-          ) : (
-            <Plus size={22} color={Colors.brandOrange} strokeWidth={1.5} />
-          )}
-        </Pressable>
-      </SortableGridItem>
-    )
-  }
 
   return (
     <Screen>
@@ -113,23 +105,24 @@ export default function PhotosScreen() {
 
       <View style={styles.header}>
         <Text style={styles.title}>Add your photos</Text>
-        <Text style={styles.subtitle}>Add at least 1 · Hold &amp; drag to reorder</Text>
+        <Text style={styles.subtitle}>Add at least 1 photo</Text>
       </View>
 
-      <SortableGrid
-        data={items}
-        renderItem={renderItem}
-        strategy={GridStrategy.Swap}
-        dimensions={{
-          columns: 2,
-          itemWidth: ITEM_SIZE,
-          itemHeight: ITEM_SIZE,
-          rowGap: COL_GAP,
-          columnGap: COL_GAP,
-        }}
-        style={styles.grid}
-        contentContainerStyle={styles.gridContent}
-      />
+      <ScrollView
+        contentContainerStyle={styles.grid}
+        showsVerticalScrollIndicator={false}
+      >
+        {items.map((item, index) => (
+          <PhotoSlot
+            key={item.id}
+            item={item}
+            index={index}
+            onSlotPress={onSlotPress}
+            retryUpload={retryUpload}
+            removePhoto={removePhoto}
+          />
+        ))}
+      </ScrollView>
 
       <View style={styles.footer}>
         <OutlineButton label="Back" onPress={() => router.back()} style={styles.backBtn} />
@@ -161,15 +154,14 @@ const styles = StyleSheet.create({
     color: Colors.inkSecondary,
   },
 
-  grid: { flex: 1 },
-  gridContent: {
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: COL_GAP,
     paddingHorizontal: Spacing.screenPadding,
     paddingBottom: 16,
   },
-  itemWrapper: {
-    width: ITEM_SIZE,
-    height: ITEM_SIZE,
-  },
+
   slot: {
     width: ITEM_SIZE,
     height: ITEM_SIZE,

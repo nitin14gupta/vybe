@@ -5,7 +5,7 @@ import { setInterests, getInterests } from '@/api/user'
 import type { InterestResponse } from '@/api/user'
 import { usePillStore } from '@/store/pillStore'
 
-const MAX_INTERESTS = 8
+const MAX_INTERESTS = 4
 
 // Fallback if backend is unreachable
 const FALLBACK: InterestResponse[] = [

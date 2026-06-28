@@ -696,8 +696,9 @@ class ApiService {
   static async checkinAttendee(
     eventId: string,
     ticketToken: string,
-  ): Promise<{ ok: boolean; already_checked_in?: boolean; name: string; username?: string | null }> {
-    return this.post(ENDPOINTS.EVENT_CHECKIN.replace(':id', eventId), { ticket_token: ticketToken })
+    method: 'qr_scan' | 'manual_host' = 'qr_scan',
+  ): Promise<{ ok: boolean; already_checked_in?: boolean; name: string; username?: string | null; method?: string }> {
+    return this.post(ENDPOINTS.EVENT_CHECKIN.replace(':id', eventId), { ticket_token: ticketToken, method })
   }
 
   static async submitReview(eventId: string, rating: number, body?: string): Promise<{ ok: boolean }> {

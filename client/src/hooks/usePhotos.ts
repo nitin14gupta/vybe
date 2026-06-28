@@ -1,10 +1,9 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { router } from 'expo-router'
 import * as ImagePicker from 'expo-image-picker'
-import { uploadPhoto, swapPhotos } from '@/api/user'
+import { uploadPhoto } from '@/api/user'
 import { useOnboardingStore } from '@/store/onboarding'
 import { usePillStore } from '@/store/pillStore'
-import type { GridPositions } from 'react-native-reanimated-dnd'
 
 export type SlotState = 'idle' | 'uploading' | 'done' | 'error'
 
@@ -31,11 +30,16 @@ export function usePhotos() {
   )
   const [nextLoading, setNextLoading] = useState(false)
 
-  const uploadGens = useRef<Record<string, number>>({})
-  const uploadPromises = useRef<Map<string, Promise<void>>>(new Map())
-  // Always-current snapshot for use inside async callbacks
   const itemsRef = useRef(items)
   itemsRef.current = items
+
+  const uploadGens = useRef<Record<string, number>>({})
+  const uploadPromises = useRef<Map<string, Promise<void>>>(new Map())
+
+  // Request permission on enter so the picker opens instantly on first tap
+  useEffect(() => {
+    ImagePicker.requestMediaLibraryPermissionsAsync()
+  }, [])
 
   const hasAnyPhoto = items.some(item => item.uri)
 
@@ -57,7 +61,16 @@ export function usePhotos() {
     uploadPromises.current.set(id, promise)
   }
 
-  const pickPhoto = async (index: number) => {
+  const onSlotPress = (id: string) => {
+    const current = itemsRef.current
+    const idx = current.findIndex(i => i.id === id)
+    const item = current[idx]
+    if (!item) return
+    if (!item.uri) pickPhoto(idx)
+    else if (item.state === 'error') retryUpload(id)
+  }
+
+  const pickPhoto = async (fromIndex: number) => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync()
     if (!perm.granted) {
       showPill('Allow photo access to add photos', 'error')
@@ -65,8 +78,8 @@ export function usePhotos() {
     }
 
     const currentItems = itemsRef.current
-    const emptyFromIndex = currentItems.slice(index).filter(i => !i.uri).length
-    const selectionLimit = Math.max(1, emptyFromIndex)
+    const emptyCount = currentItems.slice(fromIndex).filter(i => !i.uri).length
+    const selectionLimit = Math.max(1, emptyCount)
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images' as ImagePicker.MediaType,
@@ -88,23 +101,31 @@ export function usePhotos() {
     }
     if (!validAssets.length) return
 
-    const existingUris = currentItems.map(i => i.uri)
+    const latestItems = itemsRef.current
+    const existingUris = latestItems.map(i => i.uri)
     const fresh = validAssets.map(a => a.uri).filter(uri => !existingUris.includes(uri))
     if (!fresh.length) return
 
     const uploads: { id: string; uri: string; position: number }[] = []
+    let slot = fromIndex
+
+    for (const uri of fresh) {
+      while (slot < PHOTO_SLOTS && latestItems[slot]?.uri) slot++
+      if (slot >= PHOTO_SLOTS) break
+      const target = latestItems[slot]
+      uploads.push({ id: target.id, uri, position: slot })
+      slot++
+    }
+    if (!uploads.length) return
 
     setItems(prev => {
       const next = [...prev]
-      let slot = index
-      for (const uri of fresh) {
-        while (slot < PHOTO_SLOTS && next[slot].uri) slot++
-        if (slot >= PHOTO_SLOTS) break
-        const id = next[slot].id
-        uploads.push({ id, uri, position: slot })
-        uploadGens.current[id] = (uploadGens.current[id] ?? 0) + 1
-        next[slot] = { ...next[slot], uri, state: 'uploading', serverUrl: null }
-        slot++
+      for (const { id, uri } of uploads) {
+        const idx = next.findIndex(i => i.id === id)
+        if (idx >= 0) {
+          uploadGens.current[id] = (uploadGens.current[id] ?? 0) + 1
+          next[idx] = { ...next[idx], uri, state: 'uploading', serverUrl: null }
+        }
       }
       return next
     })
@@ -114,78 +135,21 @@ export function usePhotos() {
     }
   }
 
-  const retryUpload = (index: number) => {
-    const item = itemsRef.current[index]
+  const retryUpload = (id: string) => {
+    const current = itemsRef.current
+    const idx = current.findIndex(i => i.id === id)
+    const item = current[idx]
     if (!item?.uri) return
-    updateItem(item.id, { state: 'uploading', serverUrl: null })
-    startUpload(item.id, item.uri, index)
+    updateItem(id, { state: 'uploading', serverUrl: null })
+    startUpload(id, item.uri, idx)
   }
 
-  const removePhoto = (index: number) => {
-    const item = itemsRef.current[index]
+  const removePhoto = (id: string) => {
+    const item = itemsRef.current.find(i => i.id === id)
     if (!item?.uri) return
-    uploadGens.current[item.id] = (uploadGens.current[item.id] ?? 0) + 1
-    uploadPromises.current.delete(item.id)
-    updateItem(item.id, { uri: null, state: 'idle', serverUrl: null })
-  }
-
-  const onSlotPress = (index: number) => {
-    const item = itemsRef.current[index]
-    if (!item) return
-    if (!item.uri) {
-      pickPhoto(index)
-    } else if (item.state === 'error') {
-      retryUpload(index)
-    }
-  }
-
-  const handleDrop = (
-    _droppedId: string,
-    _position: number,
-    allPositions?: GridPositions,
-  ) => {
-    if (!allPositions) return
-
-    const currentItems = itemsRef.current
-
-    // Build old index map
-    const oldIndexOf: Record<string, number> = {}
-    currentItems.forEach((item, i) => { oldIndexOf[item.id] = i })
-
-    // Find which items changed position
-    type Change = { id: string; oldPos: number; newPos: number }
-    const changed: Change[] = []
-    for (const [id, pos] of Object.entries(allPositions)) {
-      const oldPos = oldIndexOf[id]
-      if (oldPos !== undefined && oldPos !== pos.index) {
-        changed.push({ id, oldPos, newPos: pos.index })
-      }
-    }
-    if (changed.length === 0) return
-
-    // Build new items order from allPositions
-    const idToItem: Record<string, PhotoItem> = {}
-    currentItems.forEach(item => { idToItem[item.id] = item })
-    const newItems = Object.entries(allPositions)
-      .sort(([, a], [, b]) => a.index - b.index)
-      .map(([id]) => idToItem[id])
-      .filter(Boolean) as PhotoItem[]
-
-    setItems(newItems)
-
-    // Swap strategy produces exactly 2 changed items → one server call
-    if (changed.length === 2) {
-      const [a, b] = changed
-      const itemA = idToItem[a.id]
-      const itemB = idToItem[b.id]
-      // Only call if at least one has a server-side photo
-      if (itemA?.serverUrl || itemB?.serverUrl) {
-        swapPhotos(a.oldPos, b.oldPos).catch(() => {
-          showPill('Failed to reorder photos', 'error')
-          setItems(currentItems)
-        })
-      }
-    }
+    uploadGens.current[id] = (uploadGens.current[id] ?? 0) + 1
+    uploadPromises.current.delete(id)
+    updateItem(id, { uri: null, state: 'idle', serverUrl: null })
   }
 
   const handleNext = async () => {
@@ -193,12 +157,19 @@ export function usePhotos() {
     setNextLoading(true)
     try {
       await Promise.all([...uploadPromises.current.values()])
-      const filled = itemsRef.current.filter(i => i.uri)
-      if (filled.some(i => !i.serverUrl)) {
+
+      const latestItems = itemsRef.current
+      const failedCount = latestItems.filter(i => i.uri && !i.serverUrl).length
+      if (failedCount > 0) {
         showPill('Some photos failed — tap the red slots to retry', 'error')
         return
       }
-      store.setField('photoUris', filled.map(i => i.serverUrl!))
+
+      const urls = latestItems
+        .filter((i): i is PhotoItem & { serverUrl: string } => !!i.serverUrl)
+        .map(i => i.serverUrl)
+
+      store.setField('photoUris', urls)
       router.push('/(onboarding)/voice')
     } finally {
       setNextLoading(false)
@@ -213,6 +184,5 @@ export function usePhotos() {
     retryUpload,
     removePhoto,
     handleNext,
-    handleDrop,
   }
 }

@@ -18,26 +18,25 @@ export function useLocation() {
   const [detecting, setDetecting] = useState(false)
 
   useEffect(() => {
-    getCities()
-      .then(data => setCities(data))
-      .catch(() => {})
+    const init = async () => {
+      // Load cities and request permission in parallel
+      const [data, { status }] = await Promise.all([
+        getCities().catch(() => [] as CityResponse[]),
+        Location.requestForegroundPermissionsAsync(),
+      ])
+      setCities(data)
+      // If user just allowed (or had already allowed), auto-detect immediately
+      if (status === 'granted') {
+        runDetect(data)
+      }
+    }
+    init()
   }, [])
 
-  const filtered = cities.filter(c =>
-    c.name.toLowerCase().includes(query.toLowerCase()) ||
-    c.state.toLowerCase().includes(query.toLowerCase()),
-  )
-
-  const selectCity = (name: string) => store.setField('city', name)
-
-  const detectLocation = async () => {
+  // Core GPS detection — takes cityList explicitly so it works before state settles
+  const runDetect = async (cityList: CityResponse[]) => {
     setDetecting(true)
     try {
-      const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync()
-      if (status !== 'granted') {
-        if (!canAskAgain) Linking.openSettings()
-        return
-      }
       const { coords } = await Location.getCurrentPositionAsync({})
       store.setField('lat', coords.latitude)
       store.setField('lng', coords.longitude)
@@ -48,7 +47,7 @@ export function useLocation() {
       })
       const detected = place?.city ?? place?.subregion ?? place?.region ?? null
       if (detected) {
-        const match = cities.find(c =>
+        const match = cityList.find(c =>
           c.name.toLowerCase() === detected.toLowerCase() ||
           detected.toLowerCase().includes(c.name.toLowerCase()),
         )
@@ -67,6 +66,23 @@ export function useLocation() {
       setDetecting(false)
     }
   }
+
+  // Manual "Use my current location" button
+  const detectLocation = async () => {
+    const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync()
+    if (status !== 'granted') {
+      if (!canAskAgain) Linking.openSettings()
+      return
+    }
+    runDetect(cities)
+  }
+
+  const filtered = cities.filter(c =>
+    c.name.toLowerCase().includes(query.toLowerCase()) ||
+    c.state.toLowerCase().includes(query.toLowerCase()),
+  )
+
+  const selectCity = (name: string) => store.setField('city', name)
 
   const handleContinue = async () => {
     if (!store.city) return

@@ -123,6 +123,7 @@ class EventDetail(EventSummary):
 
 class CheckinBody(BaseModel):
     ticket_token: str
+    method: str = 'qr_scan'  # 'qr_scan' | 'manual_host'
 
 
 class ReviewBody(BaseModel):
@@ -324,6 +325,32 @@ def get_joined_events(current_user: dict = Depends(get_current_user)):
     return result
 
 
+# ── GET /events/free-slots ────────────────────────────────────────────────────
+# Must be registered BEFORE /{event_id} so FastAPI doesn't swallow "free-slots" as a UUID.
+
+@router.get("/free-slots")
+def get_free_slots(current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    with get_db() as (cur, _):
+        cur.execute(
+            """
+            SELECT COUNT(*)::int AS count FROM events
+            WHERE host_id = %s::uuid AND price_inr = 0
+              AND DATE_TRUNC('month', created_at AT TIME ZONE 'UTC')
+                = DATE_TRUNC('month', NOW() AT TIME ZONE 'UTC')
+              AND is_cancelled = FALSE
+            """,
+            (uid,),
+        )
+        used = cur.fetchone()["count"]
+    today = date.today()
+    if today.month == 12:
+        resets_on = date(today.year + 1, 1, 1).isoformat()
+    else:
+        resets_on = date(today.year, today.month + 1, 1).isoformat()
+    return {"used": used, "limit": 2, "resets_on": resets_on}
+
+
 # ── GET /events/{id} ──────────────────────────────────────────────────────────
 
 @router.get("/{event_id}", response_model=EventDetail)
@@ -395,31 +422,6 @@ def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
     return d
 
 
-# ── GET /events/free-slots ────────────────────────────────────────────────────
-
-@router.get("/free-slots")
-def get_free_slots(current_user: dict = Depends(get_current_user)):
-    uid = current_user["id"]
-    with get_db() as (cur, _):
-        cur.execute(
-            """
-            SELECT COUNT(*)::int FROM events
-            WHERE host_id = %s::uuid AND price_inr = 0
-              AND DATE_TRUNC('month', created_at AT TIME ZONE 'UTC')
-                = DATE_TRUNC('month', NOW() AT TIME ZONE 'UTC')
-              AND is_cancelled = FALSE
-            """,
-            (uid,),
-        )
-        used = cur.fetchone()[0]
-    today = date.today()
-    if today.month == 12:
-        resets_on = date(today.year + 1, 1, 1).isoformat()
-    else:
-        resets_on = date(today.year, today.month + 1, 1).isoformat()
-    return {"used": used, "limit": 2, "resets_on": resets_on}
-
-
 # ── POST /events ──────────────────────────────────────────────────────────────
 
 @router.post("", response_model=EventDetail, status_code=201)
@@ -453,7 +455,7 @@ def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, curre
     with get_db() as (cur, _):
         cur.execute(
             """
-            SELECT COUNT(*)::int FROM events
+            SELECT COUNT(*)::int AS count FROM events
             WHERE host_id = %s::uuid AND price_inr = 0
               AND DATE_TRUNC('month', created_at AT TIME ZONE 'UTC')
                 = DATE_TRUNC('month', NOW() AT TIME ZONE 'UTC')
@@ -461,7 +463,7 @@ def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, curre
             """,
             (uid,),
         )
-        free_this_month = cur.fetchone()[0]
+        free_this_month = cur.fetchone()["count"]
 
     slots_exhausted = free_this_month >= 2
     min_price = 299 if slots_exhausted else 50
@@ -1133,12 +1135,13 @@ def checkin_attendee(event_id: str, body: CheckinBody, current_user: dict = Depe
         if row["checked_in_at"] is not None:
             return {"ok": True, "already_checked_in": True, "name": row["name"], "username": row["username"]}
 
+        method = body.method if body.method in ('qr_scan', 'manual_host') else 'qr_scan'
         cur.execute(
-            "UPDATE event_attendees SET checked_in_at = NOW() WHERE id = %s",
-            (row["id"],),
+            "UPDATE event_attendees SET checked_in_at = NOW(), check_in_method = %s WHERE id = %s",
+            (method, row["id"]),
         )
         conn.commit()
-    return {"ok": True, "already_checked_in": False, "name": row["name"], "username": row["username"]}
+    return {"ok": True, "already_checked_in": False, "name": row["name"], "username": row["username"], "method": method}
 
 
 # ── POST /events/{id}/reviews ─────────────────────────────────────────────────

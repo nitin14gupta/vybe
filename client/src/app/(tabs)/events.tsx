@@ -20,6 +20,7 @@ import { Image } from "expo-image";
 import { Colors, FontFamily } from "@/constants";
 import { useEvents } from "@/hooks/useEvents";
 import type { EventSummary } from "@/api/apiService";
+import { EventCard, formatEventDate } from "@/components/EventCard";
 
 const { width: W } = Dimensions.get("window");
 const CARD_W = 268;
@@ -46,18 +47,6 @@ const FILTER_CHIPS = [
   { key: "house_party", label: "Party" },
   { key: "game_night", label: "Games" },
 ];
-
-function formatDate(iso: string | null | undefined) {
-  if (!iso) return "Date TBC";
-  const d = new Date(iso.replace(" ", "T").replace(/([+-]\d{2})$/, "$1:00"));
-  if (isNaN(d.getTime())) return "Date TBC";
-  return d.toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 function formatPrice(price: number, isFree: boolean) {
   if (isFree) return "Free";
@@ -97,7 +86,7 @@ function PreviewCard({
       </View>
       <View style={styles.previewBody}>
         <Text style={styles.previewTitle} numberOfLines={2}>{event.title}</Text>
-        <Text style={styles.previewMeta} numberOfLines={1}>{formatDate(event.date_time)}</Text>
+        <Text style={styles.previewMeta} numberOfLines={1}>{formatEventDate(event.date_time)}</Text>
         {event.distance_km != null && (
           <Text style={styles.previewDist}>{event.distance_km} km away</Text>
         )}
@@ -116,63 +105,7 @@ function MoreCard({ count, onPress }: { count: number; onPress: () => void }) {
   );
 }
 
-// ── List event card ──────────────────────────────────────────────────────────
-
-function EventCard({ event, onPress }: { event: EventSummary; onPress: () => void }) {
-  const cover = event.cover_photos?.[0]?.url;
-  const spotsLow = event.spots_left > 0 && event.spots_left <= 10;
-  return (
-    <Pressable style={styles.card} onPress={onPress}>
-      {/* 16:9 cover image */}
-      <View style={styles.cardImageWrap}>
-        {cover ? (
-          <Image source={{ uri: cover }} style={StyleSheet.absoluteFill} contentFit="cover" />
-        ) : (
-          <LinearGradient colors={["#1a1a1a", "#0d0d0d"]} style={[StyleSheet.absoluteFill, styles.cardPlaceholder]}>
-            <Text style={styles.cardEmoji}>{EVENT_EMOJIS[event.event_type] ?? "🔥"}</Text>
-          </LinearGradient>
-        )}
-        {/* Bottom gradient for text legibility */}
-        <LinearGradient
-          colors={["transparent", "rgba(0,0,0,0.78)"]}
-          style={styles.cardGradient}
-          pointerEvents="none"
-        />
-        {/* Price badge */}
-        <View style={[styles.cardPriceBadge, event.is_free && styles.cardPriceBadgeFree]}>
-          <Text style={styles.cardPriceText}>{formatPrice(event.price_inr, event.is_free)}</Text>
-        </View>
-        {/* Title + date over gradient */}
-        <View style={styles.cardFooter}>
-          <Text style={styles.cardTitle} numberOfLines={2}>{event.title}</Text>
-          <Text style={styles.cardDate}>{formatDate(event.date_time)}</Text>
-        </View>
-      </View>
-
-      {/* Meta row */}
-      <View style={styles.cardMeta}>
-        <View style={styles.cardMetaLeft}>
-          <Text style={styles.cardType}>{EVENT_EMOJIS[event.event_type] ?? "🔥"} {event.event_type.replace("_", " ")}</Text>
-          {event.location_name ? (
-            <Text style={styles.cardLocation} numberOfLines={1}>📍 {event.location_name}</Text>
-          ) : null}
-        </View>
-        <View style={styles.cardMetaRight}>
-          {event.distance_km != null && (
-            <Text style={styles.cardDist}>{event.distance_km} km</Text>
-          )}
-          <Text style={styles.cardAttendees}>{event.attendee_count} going</Text>
-        </View>
-      </View>
-
-      {spotsLow && (
-        <View style={styles.cardSpotsBar}>
-          <Text style={styles.cardSpotsText}>🔥 Only {event.spots_left} spots left</Text>
-        </View>
-      )}
-    </Pressable>
-  );
-}
+// ── List event card — uses shared EventCard component ────────────────────────
 
 // ── Main screen ──────────────────────────────────────────────────────────────
 
@@ -672,56 +605,6 @@ const styles = StyleSheet.create({
 
   // List cards
   listContent: { padding: 16, gap: 16 },
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: 20,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOpacity: 0.25,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 5,
-  },
-  cardImageWrap: { width: "100%", aspectRatio: 16 / 9, position: "relative", overflow: "hidden" },
-  cardPlaceholder: { alignItems: "center", justifyContent: "center" },
-  cardEmoji: { fontSize: 52, textAlign: "center" },
-  cardGradient: { position: "absolute", bottom: 0, left: 0, right: 0, height: 120 },
-  cardPriceBadge: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    backgroundColor: Colors.brandOrange,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  cardPriceBadgeFree: { backgroundColor: Colors.accentGreen },
-  cardPriceText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: "#fff" },
-  cardFooter: { position: "absolute", bottom: 0, left: 0, right: 0, padding: 14 },
-  cardTitle: { fontFamily: FontFamily.headingBold, fontSize: 16, color: "#fff", lineHeight: 21 },
-  cardDate: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: "rgba(255,255,255,0.75)", marginTop: 3 },
-  cardMeta: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 8,
-  },
-  cardMetaLeft: { flex: 1, gap: 3 },
-  cardMetaRight: { alignItems: "flex-end", gap: 3 },
-  cardType: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.inkSecondary, textTransform: "capitalize" },
-  cardLocation: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary },
-  cardDist: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.inkDisabled },
-  cardAttendees: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled },
-  cardSpotsBar: {
-    backgroundColor: "rgba(255,107,53,0.1)",
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,107,53,0.2)",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  cardSpotsText: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.brandOrange },
 
   // List empty
   listEmpty: { flex: 1, alignItems: "center", justifyContent: "center", gap: 10 },
