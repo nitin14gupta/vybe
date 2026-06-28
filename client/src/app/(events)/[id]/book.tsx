@@ -92,12 +92,15 @@ export default function BookScreen() {
 
   const handlePay = async () => {
     if (!event || paying) return
+
+    // Paid events go through the custom payment screen
+    if (!event.is_free) {
+      router.push(`/(events)/${id}/payment` as any)
+      return
+    }
+
     setPaying(true)
     try {
-      if (!event.is_free) {
-        // TODO: open Razorpay checkout here; for now simulate
-        await new Promise(res => setTimeout(res, 1200))
-      }
       const res = await ApiService.rsvpEvent(event.id, 'going')
       if (res.status === 'going') {
         router.replace(`/(events)/${id}/ticket` as any)

@@ -238,6 +238,28 @@ export interface Message {
   reactions: Record<string, string> | null
 }
 
+export interface WalletTransaction {
+  id: string
+  amount_inr: number
+  type: 'credit' | 'debit' | 'refund_requested'
+  source: 'event_refund' | 'ticket_purchase' | 'bank_refund_request'
+  description: string | null
+  expires_at: string | null
+  created_at: string
+}
+
+export interface PaymentOrderResponse {
+  full_wallet: boolean
+  order_id?: string
+  razorpay_key?: string
+  amount?: number
+  total: number
+  ticket_price: number
+  platform_fee: number
+  wallet_amount: number
+  event_title?: string
+}
+
 export interface BlockedUser {
   id: string
   name: string | null
@@ -711,6 +733,69 @@ class ApiService {
 
   static async getFreeSlots(): Promise<{ used: number; limit: number; resets_on: string }> {
     return this.get(ENDPOINTS.EVENT_FREE_SLOTS)
+  }
+
+  static async reportEvent(eventId: string, reason: string, description?: string): Promise<{ ok: boolean }> {
+    return this.post(ENDPOINTS.EVENT_REPORT.replace(':id', eventId), { reason, description: description ?? null })
+  }
+
+  // ── Wallet ─────────────────────────────────────────────────────────────────
+
+  static async getWallet(): Promise<{ balance: number; transactions: WalletTransaction[] }> {
+    return this.get(ENDPOINTS.WALLET)
+  }
+
+  static async requestBankRefund(): Promise<{ ok: boolean; amount: number }> {
+    return this.post(ENDPOINTS.WALLET_BANK_REFUND, {})
+  }
+
+  // ── Payments ───────────────────────────────────────────────────────────────
+
+  static async createPaymentOrder(eventId: string, walletAmount = 0): Promise<PaymentOrderResponse> {
+    return this.post(ENDPOINTS.PAYMENT_CREATE_ORDER, { event_id: eventId, wallet_amount: walletAmount })
+  }
+
+  static async verifyPayment(body: {
+    event_id: string
+    razorpay_order_id: string
+    razorpay_payment_id: string
+    razorpay_signature: string
+    wallet_amount?: number
+  }): Promise<{ ok: boolean; status: string }> {
+    return this.post(ENDPOINTS.PAYMENT_VERIFY, body)
+  }
+
+  static async getPaymentStatus(orderId: string): Promise<{ status: 'paid' | 'pending' | 'failed'; event_id?: string }> {
+    return this.get(ENDPOINTS.PAYMENT_STATUS.replace(':order_id', orderId))
+  }
+
+  static async walletPay(eventId: string): Promise<{ ok: boolean; status: string }> {
+    return this.post(ENDPOINTS.PAYMENT_WALLET_PAY, { event_id: eventId })
+  }
+
+  static async createUpiIntent(eventId: string, walletAmount = 0): Promise<{
+    full_wallet?: boolean
+    order_id?: string
+    razorpay_key?: string
+    payment_id?: string
+    intent_url?: string | null   // upi:// deep link; null if test mode doesn't support it
+    amount?: number
+    total: number
+    wallet_amount: number
+    event_title?: string
+  }> {
+    return this.post(ENDPOINTS.PAYMENT_UPI_INTENT, { event_id: eventId, wallet_amount: walletAmount })
+  }
+
+  static async createUpiCollect(eventId: string, vpa: string, walletAmount = 0): Promise<{
+    full_wallet?: boolean
+    order_id?: string
+    payment_id?: string
+    amount?: number
+    total: number
+    wallet_amount: number
+  }> {
+    return this.post(ENDPOINTS.PAYMENT_UPI_COLLECT, { event_id: eventId, vpa, wallet_amount: walletAmount })
   }
 
   static async getMyReview(eventId: string): Promise<{ rating: number; body: string | null } | null> {

@@ -28,6 +28,7 @@ import {
   Calendar,
   ChevronRight,
   Clock,
+  Flag,
   MapPin,
   MoreVertical,
   Pencil,
@@ -44,6 +45,7 @@ import ApiService, { type EventDetail, type EventAttendee } from '@/api/apiServi
 import { useAuthStore } from '@/store/auth'
 import { usePillStore } from '@/store/pillStore'
 import { ConfirmSheet } from '@/components/ui'
+import { ReportEventSheet } from '@/components/ReportEventSheet'
 
 // ── Event options bottom sheet ────────────────────────────────────────────────
 
@@ -182,6 +184,7 @@ export default function EventDetailScreen() {
   const [showFullDesc, setShowFullDesc] = useState(false)
   const [optionsOpen, setOptionsOpen] = useState(false)
   const [cancelConfirm, setCancelConfirm] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
   const [lockedReason, setLockedReason] = useState<null | 'checkin' | 'edit' | 'cancel' | 'age'>(null)
   const myDob = useAuthStore(s => s.dob)
   const showPill = usePillStore(s => s.show)
@@ -434,9 +437,13 @@ export default function EventDetailScreen() {
             <Pressable style={styles.heroCircleBtn} onPress={() => { hTap(); handleShare() }}>
               <Share2 size={20} color="#fff" />
             </Pressable>
-            {event?.host_id === myId && (
+            {event?.host_id === myId ? (
               <Pressable style={styles.heroCircleBtn} onPress={() => { hTap(); setOptionsOpen(true) }}>
                 <MoreVertical size={20} color="#fff" />
+              </Pressable>
+            ) : (
+              <Pressable style={styles.heroCircleBtn} onPress={() => { hTap(); setReportOpen(true) }}>
+                <Flag size={20} color="#fff" strokeWidth={1.8} />
               </Pressable>
             )}
           </View>
@@ -731,6 +738,11 @@ export default function EventDetailScreen() {
         destructive
         onConfirm={doCancelEvent}
         onClose={() => setCancelConfirm(false)}
+      />
+      <ReportEventSheet
+        visible={reportOpen}
+        eventId={id ?? ''}
+        onClose={() => setReportOpen(false)}
       />
     </View>
   )

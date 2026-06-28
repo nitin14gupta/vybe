@@ -82,7 +82,7 @@ function ReportSheetCore({ targetName, onSubmit, onClose }: Omit<Props, 'visible
               ))}
             </View>
             <Pressable style={[s.submitBtn, !selected && s.submitBtnDisabled]} onPress={handleSubmit} disabled={!selected || loading}>
-              {loading ? <ActivityIndicator color="#111" size="small" /> : <Text style={s.submitBtnText}>SUBMIT REPORT</Text>}
+              {loading ? <ActivityIndicator color="#111" size="small" /> : <Text style={s.submitBtnText}>Submit Report</Text>}
             </Pressable>
           </>
         )}

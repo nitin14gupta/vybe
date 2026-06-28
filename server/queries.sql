@@ -255,3 +255,55 @@ CREATE INDEX idx_users_username_trgm ON public.users USING gin (username gin_trg
 
 -- ── Triggers ────────────────────────────────────────────────────────────────
 -- TRIGGER users_updated_at BEFORE UPDATE ON public.users: EXECUTE FUNCTION update_updated_at()
+
+-- ── Event reports ────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.event_reports (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  event_id uuid NOT NULL,
+  reporter_id uuid NOT NULL,
+  reason text NOT NULL,
+  description text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT event_reports_pkey PRIMARY KEY (id),
+  CONSTRAINT event_reports_unique UNIQUE (event_id, reporter_id),
+  CONSTRAINT event_reports_event_id_fkey FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+  CONSTRAINT event_reports_reporter_id_fkey FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- ── Vybe Wallet ──────────────────────────────────────────────────────────────
+ALTER TABLE public.users
+  ADD COLUMN IF NOT EXISTS wallet_balance INTEGER NOT NULL DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS public.wallet_transactions (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  user_id uuid NOT NULL,
+  amount_inr INTEGER NOT NULL,
+  type text NOT NULL,
+  source text NOT NULL,
+  reference_id uuid,
+  description text,
+  expires_at timestamp with time zone,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT wallet_transactions_pkey PRIMARY KEY (id),
+  CONSTRAINT wallet_transactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT wallet_transactions_type_check CHECK (type IN ('credit', 'debit', 'refund_requested')),
+  CONSTRAINT wallet_transactions_source_check CHECK (source IN ('event_refund', 'ticket_purchase', 'bank_refund_request'))
+);
+
+-- ── Payment orders ───────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.payment_orders (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  user_id uuid NOT NULL,
+  event_id uuid NOT NULL,
+  razorpay_order_id text NOT NULL UNIQUE,
+  amount_inr INTEGER NOT NULL,
+  wallet_amount_inr INTEGER NOT NULL DEFAULT 0,
+  razorpay_amount_inr INTEGER NOT NULL DEFAULT 0,
+  status text NOT NULL DEFAULT 'created',
+  razorpay_payment_id text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT payment_orders_pkey PRIMARY KEY (id),
+  CONSTRAINT payment_orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT payment_orders_event_id_fkey FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+  CONSTRAINT payment_orders_status_check CHECK (status IN ('created', 'paid', 'failed'))
+);

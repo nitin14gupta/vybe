@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import { router } from 'expo-router'
 import {
   User, Bell, HelpCircle, MessageSquare, Shield, FileText,
-  Info, LogOut, Calendar, Ticket,
+  Info, LogOut, Calendar, Ticket, Wallet,
 } from 'lucide-react-native'
 import { Screen, BackButton, SettingRow, ConfirmSheet } from '@/components/ui'
 import { useSettings } from '@/hooks/useSettings'
@@ -57,6 +57,11 @@ export default function SettingsScreen() {
             icon={<Ticket size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
             label="Joined Events"
             onPress={() => router.push('/(settings)/joined-events' as any)}
+          />
+          <SettingRow
+            icon={<Wallet size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
+            label="Vybe Wallet"
+            onPress={() => router.push('/(settings)/wallet' as any)}
             showSeparator={false}
           />
         </View>

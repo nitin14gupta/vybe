@@ -131,6 +131,11 @@ class ReviewBody(BaseModel):
     body: Optional[str] = None
 
 
+class ReportEventBody(BaseModel):
+    reason: str
+    description: Optional[str] = None
+
+
 class CreateEventBody(BaseModel):
     title: str
     event_type: str
@@ -921,9 +926,10 @@ def cancel_event(event_id: str, background_tasks: BackgroundTasks, current_user:
         raise HTTPException(status_code=403, detail="Events can only be cancelled up to 48 hours before start")
 
     with get_db() as (cur, conn):
-        cur.execute("SELECT title FROM events WHERE id = %s", (event_id,))
+        cur.execute("SELECT title, price_inr FROM events WHERE id = %s", (event_id,))
         ev_title_row = cur.fetchone()
         ev_title = ev_title_row["title"] if ev_title_row else ""
+        ev_price = ev_title_row["price_inr"] if ev_title_row else 0
 
         cur.execute("UPDATE events SET is_cancelled = TRUE WHERE id = %s", (event_id,))
 
@@ -935,16 +941,52 @@ def cancel_event(event_id: str, background_tasks: BackgroundTasks, current_user:
         waitlist_user_ids = [r["user_id"] for r in cur.fetchall()]
 
         from routes.notifications import notify_waitlist_event_cancelled
-        for uid in waitlist_user_ids:
-            notify_waitlist_event_cancelled(cur, uid, event_id, ev_title)
+        for wl_uid in waitlist_user_ids:
+            notify_waitlist_event_cancelled(cur, wl_uid, event_id, ev_title)
+
+        # Refund paid attendees to Vybe Wallet
+        paid_user_ids = []
+        if ev_price > 0:
+            # Refund = ticket price (platform fee absorbed by VYBE on cancellation)
+            refund_amount = ev_price
+            cur.execute(
+                """
+                SELECT user_id::text FROM event_attendees
+                WHERE event_id = %s AND status = 'going'
+                """,
+                (event_id,),
+            )
+            for att_row in cur.fetchall():
+                att_uid = att_row["user_id"]
+                paid_user_ids.append(att_uid)
+                cur.execute(
+                    "UPDATE users SET wallet_balance = wallet_balance + %s WHERE id = %s::uuid",
+                    (refund_amount, att_uid),
+                )
+                cur.execute(
+                    """
+                    INSERT INTO wallet_transactions
+                        (user_id, amount_inr, type, source, reference_id, description, expires_at)
+                    VALUES (%s::uuid, %s, 'credit', 'event_refund', %s::uuid, %s, NOW() + INTERVAL '6 months')
+                    """,
+                    (att_uid, refund_amount, event_id, f"Refund — {ev_title}"),
+                )
 
         conn.commit()
 
-    for uid in waitlist_user_ids:
+    for wl_uid in waitlist_user_ids:
         background_tasks.add_task(
-            send_push, uid, "Event cancelled",
+            send_push, wl_uid, "Event cancelled",
             f"{ev_title} was cancelled. You've been removed from the waitlist.",
             {"type": "event", "event_id": event_id},
+        )
+
+    for att_uid in paid_user_ids:
+        background_tasks.add_task(
+            send_push, att_uid,
+            "Refund in your Vybe Wallet 💰",
+            f"₹{ev_price} from '{ev_title}' is now in your Vybe Wallet.",
+            {"type": "wallet", "event_id": event_id},
         )
 
     return {"ok": True}
@@ -1142,6 +1184,32 @@ def checkin_attendee(event_id: str, body: CheckinBody, current_user: dict = Depe
         )
         conn.commit()
     return {"ok": True, "already_checked_in": False, "name": row["name"], "username": row["username"], "method": method}
+
+
+# ── POST /events/{id}/report ──────────────────────────────────────────────────
+
+@router.post("/{event_id}/report", status_code=201)
+def report_event(event_id: str, body: ReportEventBody, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    allowed = {"fake_scam", "inappropriate_content", "misleading_info", "spam", "dangerous_activity", "other"}
+    if body.reason not in allowed:
+        raise HTTPException(status_code=400, detail="Invalid reason")
+    with get_db() as (cur, conn):
+        cur.execute("SELECT 1 FROM events WHERE id = %s", (event_id,))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Event not found")
+        cur.execute(
+            "SELECT 1 FROM event_reports WHERE event_id = %s AND reporter_id = %s::uuid",
+            (event_id, uid),
+        )
+        if cur.fetchone():
+            raise HTTPException(status_code=409, detail="You have already reported this event")
+        cur.execute(
+            "INSERT INTO event_reports (event_id, reporter_id, reason, description) VALUES (%s, %s::uuid, %s, %s)",
+            (event_id, uid, body.reason, body.description),
+        )
+        conn.commit()
+    return {"ok": True}
 
 
 # ── POST /events/{id}/reviews ─────────────────────────────────────────────────
