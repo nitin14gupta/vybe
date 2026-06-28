@@ -1,12 +1,13 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { router } from 'expo-router'
 import { getMe, updateProfile, setInterests as apiSetInterests, setLocation as apiSetLocation, getBadges } from '@/api/user'
 import { useOnboardingStore } from '@/store/onboarding'
+import { usePillStore } from '@/store/pillStore'
 import type { ProfileResponse } from '@/api/user'
-import type { ToastType } from '@/components/ui'
 
 interface OriginalState {
   name: string
+  username: string
   bio: string
   gender: string
   interests: string[]
@@ -15,9 +16,11 @@ interface OriginalState {
 
 export function useEditProfile() {
   const onboardingStore = useOnboardingStore()
+  const showPill = usePillStore(s => s.show)
 
   const [profile, setProfile] = useState<ProfileResponse | null>(null)
   const [name, setName] = useState('')
+  const [username, setUsername] = useState('')
   const [gender, setGender] = useState('')
   const [bio, setBio] = useState('')
   const [selectedBadges, setSelectedBadges] = useState<string[]>([])
@@ -25,18 +28,13 @@ export function useEditProfile() {
   const [original, setOriginal] = useState<OriginalState | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [toast, setToast] = useState<{ key: number; message: string; type: ToastType } | null>(null)
-  const toastKeyRef = useRef(0)
-
-  const showToast = (message: string, type: ToastType = 'info') => {
-    setToast({ key: ++toastKeyRef.current, message, type })
-  }
 
   useEffect(() => {
     Promise.all([getMe(), getBadges()])
       .then(([p, badges]) => {
         setProfile(p)
         setName(p.name ?? '')
+        setUsername(p.username ?? '')
         setGender(p.gender ?? '')
         setBio(p.bio ?? '')
         setSelectedBadges(p.badges ?? [])
@@ -45,13 +43,14 @@ export function useEditProfile() {
         onboardingStore.setField('interests', p.interests ?? [])
         setOriginal({
           name: p.name ?? '',
+          username: p.username ?? '',
           bio: p.bio ?? '',
           gender: p.gender ?? '',
           interests: [...(p.interests ?? [])].sort(),
           badges: [...(p.badges ?? [])].sort(),
         })
       })
-      .catch(() => showToast('Failed to load profile', 'error'))
+      .catch(() => showPill('Failed to load profile', 'error'))
       .finally(() => setLoading(false))
   }, [])
 
@@ -59,6 +58,7 @@ export function useEditProfile() {
 
   const isDirty = original
     ? name !== original.name
+      || username !== original.username
       || bio !== original.bio
       || gender !== original.gender
       || JSON.stringify([...selectedInterests].sort()) !== JSON.stringify(original.interests)
@@ -75,29 +75,39 @@ export function useEditProfile() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      showToast('Name cannot be empty', 'error')
+      showPill('Name cannot be empty', 'error')
       return
     }
     setSaving(true)
     try {
       const store = useOnboardingStore.getState()
+      const payload: Parameters<typeof updateProfile>[0] = {
+        name: name.trim(),
+        gender,
+        bio: bio.trim() || undefined,
+        badges: selectedBadges,
+      }
+      if (username.trim() && username.trim() !== original?.username) {
+        payload.username = username.trim()
+      }
       await Promise.all([
-        updateProfile({ name: name.trim(), gender, bio: bio.trim() || undefined, badges: selectedBadges }),
+        updateProfile(payload),
         store.interests.length >= 3 ? apiSetInterests(store.interests) : Promise.resolve(),
         store.city ? apiSetLocation(store.city, store.lat ?? 0, store.lng ?? 0) : Promise.resolve(),
       ])
-      // Update original so dirty tracking resets after save
       setOriginal({
         name: name.trim(),
+        username: username.trim(),
         bio: bio.trim(),
         gender,
         interests: [...selectedInterests].sort(),
         badges: [...selectedBadges].sort(),
       })
-      showToast('Profile updated!', 'success')
+      showPill('Profile updated!', 'default')
       setTimeout(() => router.back(), 900)
     } catch (e: any) {
-      showToast(String(e?.message ?? 'Failed to save'), 'error')
+      const msg = e?.detail || e?.message || 'Failed to save'
+      showPill(msg, 'error')
     } finally {
       setSaving(false)
     }
@@ -106,6 +116,8 @@ export function useEditProfile() {
   return {
     profile,
     name, setName,
+    username, setUsername,
+    originalUsername: original?.username ?? null,
     bio, setBio,
     gender, setGender,
     selectedBadges,
@@ -114,7 +126,6 @@ export function useEditProfile() {
     isDirty,
     loading,
     saving,
-    toast,
     handleSave,
   }
 }

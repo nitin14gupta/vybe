@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { StyleSheet, Text, View, Pressable } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Location from 'expo-location'
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui'
 import { Step1Basics, Step2When, Step3Where, Step4Pricing } from '@/components/event-form'
 import { useCreateEvent } from '@/hooks/useCreateEvent'
+import ApiService from '@/api/apiService'
 import { useEventDateTimePickers } from '@/hooks/useEventDateTimePickers'
 import { usePillStore } from '@/store/pillStore'
 
@@ -33,6 +34,11 @@ export default function CreateScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [nextLoading, setNextLoading] = useState(false)
   const showPill = usePillStore(s => s.show)
+  const [freeSlots, setFreeSlots] = useState<{ used: number; limit: number; resets_on: string } | null>(null)
+
+  useEffect(() => {
+    ApiService.getFreeSlots().then(setFreeSlots).catch(() => {})
+  }, [])
 
   const validateStep = (): boolean => {
     const errs: Record<string, string> = {}
@@ -70,7 +76,13 @@ export default function CreateScreen() {
       if (!form.locationName.trim()) flag('locationName', 'Location is required', 'Please add a venue or address')
     }
     if (step === 4) {
-      if (!form.isFree && form.priceInr < 50) flag('priceInr', 'Minimum ticket price is ₹50', 'Minimum ticket price is ₹50')
+      const slotsExhausted = (freeSlots?.used ?? 0) >= 2
+      const minPrice = slotsExhausted ? 299 : 50
+      if (form.isFree && slotsExhausted) {
+        flag('priceInr', "You've used 2 free events this month", "You've used your 2 free events this month. Set a ticket price.")
+      } else if (!form.isFree && form.priceInr < minPrice) {
+        flag('priceInr', `Minimum ticket price is ₹${minPrice}`, `Minimum ticket price is ₹${minPrice}`)
+      }
     }
     setErrors(errs)
     if (firstPill) showPill(firstPill, 'error')
@@ -181,6 +193,8 @@ export default function CreateScreen() {
                 form={form} set={set} errors={errors} setErrors={setErrors}
                 submitError={submitError}
                 scrollable={false}
+                freeUsed={freeSlots?.used ?? 0}
+                resetsOn={freeSlots?.resets_on ?? ''}
               />
             )}
 

@@ -4,7 +4,7 @@ export type { UserResponse, PhotoResponse, CityResponse, ProfileResponse, Intere
 export const createProfile = (data: { name: string; dob: string; gender: string; bio?: string }) =>
   ApiService.createProfile(data)
 
-export const updateProfile = (data: { name?: string; dob?: string; gender?: string; bio?: string; badges?: string[] }) =>
+export const updateProfile = (data: { name?: string; username?: string; dob?: string; gender?: string; bio?: string; badges?: string[] }) =>
   ApiService.updateProfile(data)
 
 export const setInterests = (interests: string[]) =>

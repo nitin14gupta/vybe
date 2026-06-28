@@ -395,6 +395,31 @@ def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
     return d
 
 
+# ── GET /events/free-slots ────────────────────────────────────────────────────
+
+@router.get("/free-slots")
+def get_free_slots(current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    with get_db() as (cur, _):
+        cur.execute(
+            """
+            SELECT COUNT(*)::int FROM events
+            WHERE host_id = %s::uuid AND price_inr = 0
+              AND DATE_TRUNC('month', created_at AT TIME ZONE 'UTC')
+                = DATE_TRUNC('month', NOW() AT TIME ZONE 'UTC')
+              AND is_cancelled = FALSE
+            """,
+            (uid,),
+        )
+        used = cur.fetchone()[0]
+    today = date.today()
+    if today.month == 12:
+        resets_on = date(today.year + 1, 1, 1).isoformat()
+    else:
+        resets_on = date(today.year, today.month + 1, 1).isoformat()
+    return {"used": used, "limit": 2, "resets_on": resets_on}
+
+
 # ── POST /events ──────────────────────────────────────────────────────────────
 
 @router.post("", response_model=EventDetail, status_code=201)
@@ -423,8 +448,28 @@ def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, curre
     if not (5 <= body.capacity <= 200):
         raise HTTPException(status_code=422, detail="Capacity must be between 5 and 200")
 
-    if body.price_inr != 0 and body.price_inr < 50:
-        raise HTTPException(status_code=422, detail="Minimum ticket price is ₹50")
+    # Check monthly free event limit
+    uid = current_user["id"]
+    with get_db() as (cur, _):
+        cur.execute(
+            """
+            SELECT COUNT(*)::int FROM events
+            WHERE host_id = %s::uuid AND price_inr = 0
+              AND DATE_TRUNC('month', created_at AT TIME ZONE 'UTC')
+                = DATE_TRUNC('month', NOW() AT TIME ZONE 'UTC')
+              AND is_cancelled = FALSE
+            """,
+            (uid,),
+        )
+        free_this_month = cur.fetchone()[0]
+
+    slots_exhausted = free_this_month >= 2
+    min_price = 299 if slots_exhausted else 50
+
+    if body.price_inr == 0 and slots_exhausted:
+        raise HTTPException(status_code=422, detail="You've used your 2 free events this month. Set a ticket price (minimum ₹299).")
+    if body.price_inr != 0 and body.price_inr < min_price:
+        raise HTTPException(status_code=422, detail=f"Minimum ticket price is ₹{min_price}")
 
     if body.age_restriction not in (18, 21, 25):
         raise HTTPException(status_code=422, detail="Age restriction must be 18, 21, or 25")

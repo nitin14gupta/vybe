@@ -227,6 +227,12 @@ ALTER TABLE public.user_photos ADD CONSTRAINT user_photos_user_id_fkey FOREIGN K
 ALTER TABLE public.event_attendees
   ADD COLUMN IF NOT EXISTS offer_expires_at TIMESTAMP WITH TIME ZONE,
   ADD COLUMN IF NOT EXISTS blocked_from_rejoin BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- ── Name change tracking + username rate limiting ────────────────────────────
+ALTER TABLE public.users
+  ADD COLUMN IF NOT EXISTS name_changed_at TIMESTAMP WITH TIME ZONE,
+  ADD COLUMN IF NOT EXISTS username_changes_this_month INT NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS username_reset_month VARCHAR(7);
 ALTER TABLE public.user_reports ADD CONSTRAINT user_reports_reported_id_fkey FOREIGN KEY (reported_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.user_reports ADD CONSTRAINT user_reports_reporter_id_fkey FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.vibe_requests ADD CONSTRAINT vibe_requests_receiver_id_fkey FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE;

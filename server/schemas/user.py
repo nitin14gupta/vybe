@@ -101,6 +101,7 @@ class UserResponse(BaseModel):
     photos: List[PhotoResponse] = []
     vibers_count: int = 0
     vibing_count: int = 0
+    name_changed_at: Optional[str] = None
 
 
 class ProfileResponse(UserResponse):

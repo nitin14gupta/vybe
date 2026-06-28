@@ -1,26 +1,57 @@
 import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, TextInput } from 'react-native'
+import { useState, useEffect } from 'react'
 import { router } from 'expo-router'
 import { hSuccess, hSelection } from '@/lib/haptics'
 import { Mic, Square, Play, Pause, RotateCcw } from 'lucide-react-native'
-import { BackButton, Input, GenderSelector, InterestChip, PrimaryButton, ToastBanner, Screen, RecordingWave, PlaybackWave } from '@/components/ui'
+import { BackButton, Input, GenderSelector, InterestChip, PrimaryButton, Screen, RecordingWave, PlaybackWave } from '@/components/ui'
 import { useEditProfile } from '@/hooks/useEditProfile'
 import { useInterests } from '@/hooks/useInterests'
 import { useVoiceEdit } from '@/hooks/useVoiceEdit'
 import { useOnboardingStore } from '@/store/onboarding'
+import { usePillStore } from '@/store/pillStore'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 import { useHardwareBack } from '@/hooks/useHardwareBack'
+import ApiService from '@/api/apiService'
+
+type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid'
 
 export default function EditProfileScreen() {
   useHardwareBack()
   const {
-    profile, name, setName, bio, setBio, gender, setGender,
+    profile, name, setName, username, setUsername, bio, setBio, gender, setGender,
     selectedBadges, availableBadges, toggleBadge,
-    isDirty, loading, saving, toast, handleSave,
+    isDirty, loading, saving, handleSave,
+    originalUsername,
   } = useEditProfile()
 
   const { availableInterests, selected: selectedInterests, atMax: interestsAtMax, toggle: toggleInterest } = useInterests()
   const voice = useVoiceEdit(profile?.voice_url)
   const city = useOnboardingStore(s => s.city)
+  const showPill = usePillStore(s => s.show)
+
+  const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle')
+
+  // Debounced username availability check
+  useEffect(() => {
+    if (!username || username === originalUsername) {
+      setUsernameStatus('idle')
+      return
+    }
+    if (!/^[a-z0-9_]{3,30}$/.test(username)) {
+      setUsernameStatus('invalid')
+      return
+    }
+    setUsernameStatus('checking')
+    const t = setTimeout(async () => {
+      try {
+        const res = await ApiService.checkUsername(username)
+        setUsernameStatus(res.available ? 'available' : 'taken')
+      } catch {
+        setUsernameStatus('idle')
+      }
+    }, 400)
+    return () => clearTimeout(t)
+  }, [username, originalUsername])
 
   if (loading) {
     return (
@@ -30,6 +61,18 @@ export default function EditProfileScreen() {
     )
   }
 
+  // Compute name lock from name_changed_at
+  const nameChangedAt = profile?.name_changed_at
+    ? new Date(profile.name_changed_at.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'))
+    : null
+  const nameLockedUntil = nameChangedAt
+    ? new Date(nameChangedAt.getTime() + 60 * 24 * 3600 * 1000)
+    : null
+  const nameLocked = !!nameLockedUntil && nameLockedUntil > new Date()
+  const nameLockedUntilStr = nameLockedUntil
+    ? nameLockedUntil.toLocaleDateString([], { month: 'short', day: 'numeric' })
+    : ''
+
   const voiceDirty = !!voice.localUri && voice.recorded
   const canSave = (isDirty || voiceDirty) && !saving
 
@@ -38,8 +81,7 @@ export default function EditProfileScreen() {
       try {
         await voice.saveVoice()
       } catch {
-        // saveError is set inside useVoiceEdit and shown in VoiceSection
-        // still save other profile fields below
+        // saveError shown in VoiceSection; still save other fields
       }
     }
     await handleSave()
@@ -64,7 +106,47 @@ export default function EditProfileScreen() {
         {/* Name */}
         <View style={styles.section}>
           <Text style={styles.label}>NAME</Text>
-          <Input value={name} onChangeText={setName} placeholder="Your name" />
+          {nameLocked ? (
+            <Pressable
+              onPress={() => showPill(`Cannot change name until ${nameLockedUntilStr}`, 'error')}
+              style={styles.lockedField}
+            >
+              <Text style={styles.lockedValue}>{name}</Text>
+            </Pressable>
+          ) : (
+            <Input value={name} onChangeText={setName} placeholder="Your name" />
+          )}
+        </View>
+
+        {/* Username */}
+        <View style={styles.section}>
+          <Text style={styles.label}>USERNAME</Text>
+          <View style={[
+            styles.usernameWrap,
+            usernameStatus === 'taken' || usernameStatus === 'invalid' ? styles.usernameWrapError : null,
+            usernameStatus === 'available' ? styles.usernameWrapOk : null,
+          ]}>
+            <Text style={styles.atSign}>@</Text>
+            <TextInput
+              value={username}
+              onChangeText={v => setUsername(v.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+              placeholder="your_username"
+              placeholderTextColor={Colors.inkDisabled}
+              autoCapitalize="none"
+              autoCorrect={false}
+              style={styles.usernameInput}
+            />
+            {usernameStatus === 'checking' && <ActivityIndicator size="small" color={Colors.inkDisabled} />}
+            {usernameStatus === 'available' && <Text style={styles.usernameAvail}>✓</Text>}
+            {usernameStatus === 'taken' && <Text style={styles.usernameTaken}>✗</Text>}
+          </View>
+          {usernameStatus === 'taken' ? (
+            <Text style={styles.usernameHintError}>Username is taken</Text>
+          ) : usernameStatus === 'invalid' ? (
+            <Text style={styles.usernameHintError}>3–30 chars · letters, numbers, underscore only</Text>
+          ) : (
+            <Text style={styles.usernameHint}>3–30 chars · letters, numbers, underscore</Text>
+          )}
         </View>
 
         {/* Bio */}
@@ -152,8 +234,6 @@ export default function EditProfileScreen() {
           <PrimaryButton label="Save Changes" onPress={onPressSave} loading={saving} disabled={!canSave} />
         </View>
       </ScrollView>
-
-      {toast && <ToastBanner key={toast.key} message={toast.message} type={toast.type} />}
     </Screen>
   )
 }
@@ -170,7 +250,6 @@ function VoiceSection({
   const { isRecording, seconds, recorded, saveError, playing, tapRecord, handlePlayPause, handleRetake } = voice
   const fmt = (s: number) => `${s}s`
 
-  // ── Currently recording ──
   if (isRecording) {
     return (
       <View style={styles.voiceBox}>
@@ -185,7 +264,6 @@ function VoiceSection({
     )
   }
 
-  // ── New recording done — review before saving ──
   if (recorded) {
     return (
       <View style={{ gap: 6 }}>
@@ -209,7 +287,6 @@ function VoiceSection({
     )
   }
 
-  // ── Has existing voice — show playback + option to re-record ──
   if (hasExistingVoice) {
     return (
       <View style={{ gap: 8 }}>
@@ -233,7 +310,6 @@ function VoiceSection({
     )
   }
 
-  // ── No voice yet — idle ──
   return (
     <View style={styles.voiceBox}>
       <Pressable onPress={tapRecord} style={styles.voiceMicBtn}>
@@ -282,6 +358,73 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 0.88,
     color: Colors.inkSecondary,
+  },
+
+  // Name locked state
+  lockedField: {
+    height: 52,
+    backgroundColor: Colors.elevated,
+    borderRadius: Radius.input,
+    borderWidth: 1.5,
+    borderColor: Colors.divider,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    opacity: 0.6,
+  },
+  lockedValue: {
+    flex: 1,
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 16,
+    color: Colors.inkSecondary,
+  },
+
+  // Username
+  usernameWrap: {
+    height: 52,
+    backgroundColor: Colors.elevated,
+    borderRadius: Radius.input,
+    borderWidth: 1.5,
+    borderColor: Colors.divider,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    gap: 8,
+  },
+  usernameWrapError: { borderColor: Colors.brandCoral },
+  usernameWrapOk: { borderColor: Colors.accentGreen },
+  atSign: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 16,
+    color: Colors.inkDisabled,
+  },
+  usernameInput: {
+    flex: 1,
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 16,
+    color: Colors.inkPrimary,
+  },
+  usernameAvail: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 15,
+    color: Colors.accentGreen,
+  },
+  usernameTaken: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 15,
+    color: Colors.brandCoral,
+  },
+  usernameHint: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 11,
+    color: Colors.inkDisabled,
+    marginTop: -4,
+  },
+  usernameHintError: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 11,
+    color: Colors.brandCoral,
+    marginTop: -4,
   },
 
   // Bio

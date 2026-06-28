@@ -27,6 +27,7 @@ export interface UserResponse {
   badges: string[]
   profile_complete: boolean
   photos: PhotoResponse[]
+  name_changed_at: string | null
 }
 
 export interface InterestResponse {
@@ -705,6 +706,10 @@ class ApiService {
 
   static async getEventReviews(eventId: string): Promise<{ avg_rating: number | null; count: number; reviews: ReviewItem[] }> {
     return this.get(ENDPOINTS.EVENT_REVIEWS.replace(':id', eventId))
+  }
+
+  static async getFreeSlots(): Promise<{ used: number; limit: number; resets_on: string }> {
+    return this.get(ENDPOINTS.EVENT_FREE_SLOTS)
   }
 
   static async getMyReview(eventId: string): Promise<{ rating: number; body: string | null } | null> {

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, status, Depends
 from pydantic import BaseModel
-from datetime import date
+from datetime import date, datetime, timezone, timedelta
 from schemas.user import (
     ProfileCreate, ProfileUpdate, LocationUpdate, InterestsUpdate,
     UserResponse, ProfileResponse, DEFAULT_BADGES,
@@ -29,6 +29,7 @@ _USER_SELECT = """
         u.voice_url,
         u.lat,
         u.lng,
+        u.name_changed_at::text,
         (SELECT COUNT(*) FROM follows WHERE following_id = u.id)::int AS vibers_count,
         (SELECT COUNT(*) FROM follows WHERE follower_id  = u.id)::int AS vibing_count,
         CASE
@@ -85,10 +86,27 @@ def _age_from_dob(dob: date) -> int:
     return today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
 
 
+def _assign_unique_username(cur, uid: str, name: str) -> None:
+    import re, random, uuid as _uuid
+    base = re.sub(r'[^a-z0-9]', '', name.lower())[:12] or 'user'
+    for _ in range(10):
+        candidate = f"{base}{random.randint(100, 9999)}"
+        cur.execute("SELECT 1 FROM users WHERE username = %s", (candidate,))
+        if not cur.fetchone():
+            cur.execute("UPDATE users SET username = %s WHERE id = %s::uuid", (candidate, uid))
+            return
+    # Fallback: short UUID-based username (guaranteed unique)
+    cur.execute(
+        "UPDATE users SET username = %s WHERE id = %s::uuid",
+        (f"u{_uuid.uuid4().hex[:10]}", uid),
+    )
+
+
 # ── Own profile ───────────────────────────────────────────────────────────────
 
 @router.post("/profile", response_model=UserResponse)
 def create_profile(body: ProfileCreate, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
     age = _age_from_dob(body.dob)
     if age < 18:
         raise HTTPException(
@@ -101,11 +119,16 @@ def create_profile(body: ProfileCreate, current_user: dict = Depends(get_current
             UPDATE users
             SET name = %s, dob = %s, gender = %s, bio = %s,
                 badges = COALESCE(badges, %s::text[])
-            WHERE id = %s
+            WHERE id = %s::uuid
             """,
-            (body.name, body.dob, body.gender, body.bio, DEFAULT_BADGES, current_user["id"]),
+            (body.name, body.dob, body.gender, body.bio, DEFAULT_BADGES, uid),
         )
-        user = _fetch_user(cur, current_user["id"], current_user["id"])
+        # Auto-assign a unique username if not already set
+        cur.execute("SELECT username FROM users WHERE id = %s::uuid", (uid,))
+        row = cur.fetchone()
+        if not row or not row["username"]:
+            _assign_unique_username(cur, uid, body.name)
+        user = _fetch_user(cur, uid, uid)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return UserResponse(**user)
@@ -113,29 +136,88 @@ def create_profile(body: ProfileCreate, current_user: dict = Depends(get_current
 
 @router.patch("/profile", response_model=UserResponse)
 def update_profile(body: ProfileUpdate, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
     updates = {k: v for k, v in body.model_dump().items() if v is not None}
     if not updates:
         raise HTTPException(status_code=400, detail="No fields to update")
 
-    # Check username uniqueness
-    if "username" in updates:
+    # Load current user state for comparisons
+    with get_db() as (cur, _):
+        cur.execute(
+            """SELECT name, username, name_changed_at,
+                      username_changes_this_month, username_reset_month
+               FROM users WHERE id = %s::uuid""",
+            (uid,),
+        )
+        current = dict(cur.fetchone() or {})
+
+    # Remove fields that haven't actually changed (avoids false rate-limit triggers)
+    if "name" in updates and updates["name"] == current.get("name"):
+        del updates["name"]
+    if "username" in updates and updates["username"] == current.get("username"):
+        del updates["username"]
+
+    if not updates:
+        user = _fetch_user_standalone(uid)
+        return UserResponse(**user) if user else UserResponse(**current)
+
+    # Username: uniqueness + 3-per-month limit
+    updating_username = "username" in updates
+    if updating_username:
         with get_db() as (cur, _):
             cur.execute(
                 "SELECT id FROM users WHERE username = %s AND id != %s::uuid",
-                (updates["username"], current_user["id"]),
+                (updates["username"], uid),
             )
             if cur.fetchone():
                 raise HTTPException(status_code=409, detail="Username already taken")
 
+        current_month = datetime.now(timezone.utc).strftime("%Y-%m")
+        monthly = current.get("username_changes_this_month", 0)
+        if current.get("username_reset_month") != current_month:
+            monthly = 0
+        if monthly >= 3:
+            raise HTTPException(
+                status_code=429,
+                detail="You can change your username 3 times per month. Try again next month.",
+            )
+
+    # Name: 60-day cooldown (only when name actually changes)
+    name_actually_changed = "name" in updates
+    if name_actually_changed and current.get("name_changed_at"):
+        next_allowed = current["name_changed_at"] + timedelta(days=60)
+        if datetime.now(timezone.utc) < next_allowed:
+            raise HTTPException(
+                status_code=429,
+                detail=f"Cannot change name until {next_allowed.strftime('%b %d, %Y')}.",
+            )
+
     set_clauses = ", ".join(f"{k} = %s" for k in updates)
-    values = list(updates.values()) + [current_user["id"]]
+    values = list(updates.values())
+
+    if name_actually_changed:
+        set_clauses += ", name_changed_at = NOW()"
+
+    if updating_username:
+        current_month = datetime.now(timezone.utc).strftime("%Y-%m")
+        set_clauses += (
+            ", username_changes_this_month = CASE WHEN username_reset_month = %s"
+            " THEN username_changes_this_month + 1 ELSE 1 END"
+            ", username_reset_month = %s"
+        )
+        values += [current_month, current_month]
 
     with get_db() as (cur, _):
-        cur.execute(f"UPDATE users SET {set_clauses} WHERE id = %s", values)
-        user = _fetch_user(cur, current_user["id"], current_user["id"])
+        cur.execute(f"UPDATE users SET {set_clauses} WHERE id = %s::uuid", values + [uid])
+        user = _fetch_user(cur, uid, uid)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return UserResponse(**user)
+
+
+def _fetch_user_standalone(uid: str) -> dict | None:
+    with get_db() as (cur, _):
+        return _fetch_user(cur, uid, uid)
 
 
 @router.post("/interests", response_model=UserResponse)
