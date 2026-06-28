@@ -20,7 +20,7 @@ import { Colors, FontFamily } from '@/constants'
 import ApiService, { type EventAttendee } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 
-type ScanResult = { ok: boolean; already_checked_in?: boolean; name: string; username?: string | null }
+type ScanResult = { ok: boolean; already_checked_in?: boolean; name: string; username?: string | null; error?: string }
 
 export default function ScannerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -76,18 +76,19 @@ export default function ScannerScreen() {
       showResult(res)
       if (res.already_checked_in) {
         showPill(`${res.name} is already checked in`, 'default')
-      }
-      if (!res.already_checked_in) {
+      } else {
         setAttendees(prev =>
           prev.map(a =>
-            a.id === data || (a as any).ticket_token === data
-              ? { ...a, status: 'checked_in' }
+            a.ticket_token === data
+              ? { ...a, checked_in_at: new Date().toISOString() }
               : a,
           ),
         )
       }
-    } catch {
-      showResult({ ok: false, name: 'Unknown', already_checked_in: false })
+    } catch (e: any) {
+      const msg = e?.detail || e?.message || 'Invalid ticket'
+      showResult({ ok: false, name: '', already_checked_in: false, error: msg })
+      showPill(msg, 'error')
     } finally {
       setScanning(false)
       setTimeout(() => { scanCooldown.current = false }, 3000)
@@ -95,17 +96,21 @@ export default function ScannerScreen() {
   }, [id, scanning])
 
   const handleManualCheckin = async (attendee: EventAttendee) => {
-    if (checkingIn) return
+    if (checkingIn || !attendee.ticket_token) return
     setCheckingIn(attendee.id)
     try {
-      const res = await ApiService.checkinAttendee(id!, (attendee as any).ticket_token ?? attendee.id)
+      const res = await ApiService.checkinAttendee(id!, attendee.ticket_token)
       showResult(res)
       if (res.already_checked_in) {
         showPill(`${res.name} is already checked in`, 'default')
+      } else {
+        setAttendees(prev => prev.map(a =>
+          a.id === attendee.id ? { ...a, checked_in_at: new Date().toISOString() } : a
+        ))
       }
-      setAttendees(prev => prev.map(a => a.id === attendee.id ? { ...a, status: 'checked_in' } : a))
     } catch (e: any) {
-      showPill("Check-in didn't work, scan again", 'error')
+      const msg = e?.detail || e?.message || "Check-in didn't work"
+      showPill(msg, 'error')
     } finally {
       setCheckingIn(null)
     }
@@ -120,7 +125,7 @@ export default function ScannerScreen() {
     )
   })
 
-  const checkedInCount = attendees.filter(a => (a as any).checked_in_at || a.status === 'checked_in').length
+  const checkedInCount = attendees.filter(a => !!a.checked_in_at).length
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
@@ -171,7 +176,7 @@ export default function ScannerScreen() {
                 ) : scanResult.ok ? (
                   <Text style={s.resultText}>✓ {scanResult.name} checked in!</Text>
                 ) : (
-                  <Text style={s.resultText}>❌ Invalid ticket</Text>
+                  <Text style={s.resultText}>❌ {scanResult.error ?? 'Invalid ticket'}</Text>
                 )}
               </Animated.View>
             )}
@@ -228,7 +233,7 @@ export default function ScannerScreen() {
             </View>
           }
           renderItem={({ item }) => {
-            const checkedIn = !!(item as any).checked_in_at || item.status === 'checked_in'
+            const checkedIn = !!item.checked_in_at
             return (
               <View style={[s.row, checkedIn && s.rowChecked]}>
                 <View style={s.rowAvatar}>

@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { BackHandler } from 'react-native'
 import { useFocusEffect, useRouter } from 'expo-router'
 
-export function useHardwareBack(fallback: string = '/(tabs)') {
+export function useHardwareBack(fallback: string = '/(tabs)/events') {
   const router = useRouter()
 
   useFocusEffect(

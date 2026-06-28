@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
+  BackHandler,
   FlatList,
   Pressable,
   StyleSheet,
@@ -8,16 +9,28 @@ import {
   View,
 } from 'react-native'
 import { Image } from 'expo-image'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { ArrowLeft, Clock, Users } from 'lucide-react-native'
+import { ArrowLeft, QrCode, Users } from 'lucide-react-native'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
-import ApiService, { type EventAttendee } from '@/api/apiService'
+import ApiService, { type EventAttendee, type EventDetail } from '@/api/apiService'
+import { usePillStore } from '@/store/pillStore'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+function parseDate(iso: string): Date {
+  // PostgreSQL returns "2024-01-15 14:30:00+05:30" — normalize to ISO 8601
+  return new Date(iso.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'))
+}
+
+function fmtTime(iso: string): string {
+  const d = parseDate(iso)
+  if (isNaN(d.getTime())) return '--:--'
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
 function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime()
+  const diff = Date.now() - parseDate(iso).getTime()
   const m = Math.floor(diff / 60000)
   if (m < 1) return 'just now'
   if (m < 60) return `${m}m ago`
@@ -26,154 +39,155 @@ function timeAgo(iso: string): string {
   return `${Math.floor(h / 24)}d ago`
 }
 
-// ── AvatarBlock ───────────────────────────────────────────────────────────────
+// ── Avatar ────────────────────────────────────────────────────────────────────
 
-function AvatarBlock({ name, avatar }: { name: string | null; avatar: string | null }) {
-  if (avatar) return <Image source={{ uri: avatar }} style={row.avatar} contentFit="cover" />
+function Avatar({
+  name,
+  avatar,
+  checkedIn,
+}: {
+  name: string | null
+  avatar: string | null
+  checkedIn: boolean
+}) {
+  const inner = avatar ? (
+    <Image source={{ uri: avatar }} style={a.img} contentFit="cover" />
+  ) : (
+    <View style={[a.img, a.fallback]}>
+      <Text style={a.initial}>{(name ?? '?').charAt(0).toUpperCase()}</Text>
+    </View>
+  )
+
+  if (!checkedIn) return <View style={a.wrap}>{inner}</View>
+
   return (
-    <View style={[row.avatar, row.avatarFallback]}>
-      <Text style={row.avatarInitial}>{(name ?? '?').charAt(0).toUpperCase()}</Text>
+    <View style={[a.wrap, a.ring]}>
+      {inner}
     </View>
   )
 }
 
-// ── GoingRow ──────────────────────────────────────────────────────────────────
+const a = StyleSheet.create({
+  wrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    padding: 2,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  ring: { borderColor: Colors.brandOrange },
+  img: { width: 40, height: 40, borderRadius: 20 },
+  fallback: {
+    backgroundColor: Colors.elevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  initial: { fontFamily: FontFamily.headingBold, fontSize: 17, color: Colors.inkPrimary },
+})
 
-function GoingRow({ item }: { item: EventAttendee }) {
+// ── AttendeeRow ───────────────────────────────────────────────────────────────
+
+function AttendeeRow({ item, position }: { item: EventAttendee; position?: number }) {
   const router = useRouter()
+  const checkedIn = !!item.checked_in_at
+  const isWaitlist = item.status === 'waitlist'
+
   return (
     <Pressable
-      style={row.root}
+      style={r.root}
       onPress={() => router.push(`/(profile)/${item.id}` as any)}
       android_ripple={{ color: 'rgba(255,255,255,0.04)' }}
     >
-      <AvatarBlock name={item.name} avatar={item.avatar} />
-      <View style={row.info}>
-        <Text style={row.name} numberOfLines={1}>{item.name ?? 'User'}</Text>
-        {item.username ? (
-          <Text style={row.sub}>@{item.username}</Text>
+      <Avatar name={item.name} avatar={item.avatar} checkedIn={checkedIn} />
+
+      <View style={r.info}>
+        <Text style={r.name} numberOfLines={1}>{item.name ?? 'User'}</Text>
+        {checkedIn ? (
+          <Text style={r.checkedInTime}>Checked in at {fmtTime(item.checked_in_at!)}</Text>
+        ) : isWaitlist ? (
+          <Text style={r.sub}>Waitlist {position != null ? `#${position}` : ''}</Text>
+        ) : item.username ? (
+          <Text style={r.sub}>@{item.username}</Text>
         ) : item.city ? (
-          <Text style={row.sub}>{item.city}</Text>
-        ) : null}
-      </View>
-      <View style={row.goingDot} />
-    </Pressable>
-  )
-}
-
-// ── WaitlistRow ───────────────────────────────────────────────────────────────
-
-function WaitlistRow({ item, position }: { item: EventAttendee; position: number }) {
-  const router = useRouter()
-  return (
-    <Pressable
-      style={row.root}
-      onPress={() => router.push(`/(profile)/${item.id}` as any)}
-      android_ripple={{ color: 'rgba(255,255,255,0.04)' }}
-    >
-      {/* Position badge */}
-      <View style={row.posBadge}>
-        <Text style={row.posNum}>#{position}</Text>
+          <Text style={r.sub}>{item.city}</Text>
+        ) : (
+          <Text style={r.sub}>Joined {timeAgo(item.joined_at)}</Text>
+        )}
       </View>
 
-      <AvatarBlock name={item.name} avatar={item.avatar} />
-
-      <View style={row.info}>
-        <Text style={row.name} numberOfLines={1}>{item.name ?? 'User'}</Text>
-        <View style={row.subRow}>
-          <Clock size={11} color={Colors.inkDisabled} strokeWidth={1.8} />
-          <Text style={row.sub}>Joined {timeAgo(item.joined_at)}</Text>
+      {checkedIn && (
+        <View style={r.checkBadge}>
+          <Text style={r.checkMark}>✓</Text>
         </View>
-      </View>
+      )}
     </Pressable>
   )
 }
 
-const row = StyleSheet.create({
+const r = StyleSheet.create({
   root: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.screenPadding,
-    paddingVertical: 14,
+    paddingVertical: 12,
     gap: 14,
   },
-  avatar: { width: 46, height: 46, borderRadius: 23 },
-  avatarFallback: {
-    backgroundColor: Colors.elevated,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: Colors.divider,
-  },
-  avatarInitial: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 18,
-    color: Colors.inkPrimary,
-  },
   info: { flex: 1, gap: 3 },
-  name: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 15,
-    color: Colors.inkPrimary,
-  },
-  sub: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 12,
-    color: Colors.inkSecondary,
-  },
-  subRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  // Going tab — subtle green dot
-  goingDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.accentGreen,
-    opacity: 0.85,
-  },
-  // Waitlist tab — position badge
-  posBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: Radius.sm,
-    backgroundColor: 'rgba(255,107,53,0.1)',
+  name: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.inkPrimary },
+  sub: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary },
+  checkedInTime: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.brandOrange },
+  checkBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,107,53,0.15)',
     borderWidth: 1,
-    borderColor: 'rgba(255,107,53,0.22)',
+    borderColor: 'rgba(255,107,53,0.35)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  posNum: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 11,
-    color: Colors.brandOrange,
-    letterSpacing: 0.3,
-  },
+  checkMark: { fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: Colors.brandOrange },
 })
 
-// ── Tab bar ───────────────────────────────────────────────────────────────────
+// ── Pills ─────────────────────────────────────────────────────────────────────
 
-type Tab = 'going' | 'waitlist'
+type Filter = 'all' | 'checked_in' | 'not_arrived'
 
-function TabBar({
+const PILL_LABELS: Record<Filter, string> = {
+  all: 'All',
+  checked_in: 'Checked In',
+  not_arrived: 'Not Arrived',
+}
+
+function Pills({
   active,
+  counts,
   onChange,
 }: {
-  active: Tab
-  onChange: (t: Tab) => void
+  active: Filter
+  counts: Record<Filter, number>
+  onChange: (f: Filter) => void
 }) {
   return (
-    <View style={tabs.wrap}>
-      {(['going', 'waitlist'] as Tab[]).map(t => {
-        const isActive = active === t
+    <View style={p.wrap}>
+      {(Object.keys(PILL_LABELS) as Filter[]).map(f => {
+        const isActive = f === active
         return (
           <Pressable
-            key={t}
-            style={[tabs.tab, isActive && tabs.tabActive]}
-            onPress={() => onChange(t)}
+            key={f}
+            onPress={() => onChange(f)}
             android_ripple={null}
+            style={[p.pill, isActive && p.pillActive]}
           >
-            <Text style={[tabs.text, isActive && tabs.textActive]}>
-              {t === 'going' ? 'Going' : 'Waitlist'}
+            <Text style={[p.label, isActive && p.labelActive]}>
+              {PILL_LABELS[f]}
             </Text>
+            <View style={[p.badge, isActive && p.badgeActive]}>
+              <Text style={[p.badgeNum, isActive && p.badgeNumActive]}>
+                {counts[f]}
+              </Text>
+            </View>
           </Pressable>
         )
       })}
@@ -181,27 +195,50 @@ function TabBar({
   )
 }
 
-const tabs = StyleSheet.create({
+const p = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.divider,
-  },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
+    paddingHorizontal: Spacing.screenPadding,
     paddingVertical: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
+    gap: 8,
   },
-  tabActive: { borderBottomColor: Colors.inkPrimary },
-  text: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 14,
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: Colors.divider,
+    backgroundColor: 'transparent',
+  },
+  pillActive: {
+    backgroundColor: Colors.brandOrange,
+    borderColor: Colors.brandOrange,
+  },
+  label: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 13,
     color: Colors.inkSecondary,
-    letterSpacing: 0.1,
   },
-  textActive: { color: Colors.inkPrimary },
+  labelActive: { color: '#fff' },
+  badge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: Colors.elevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeActive: { backgroundColor: 'rgba(255,255,255,0.25)' },
+  badgeNum: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 11,
+    color: Colors.inkSecondary,
+  },
+  badgeNumActive: { color: '#fff' },
 })
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -211,62 +248,127 @@ export default function AttendeesScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
 
-  const [activeTab, setActiveTab] = useState<Tab>('going')
+  const showPill = usePillStore(s => s.show)
+
+  const [filter, setFilter] = useState<Filter>('all')
   const [all, setAll] = useState<EventAttendee[]>([])
+  const [event, setEvent] = useState<EventDetail | null>(null)
   const [loading, setLoading] = useState(true)
+
+  useFocusEffect(useCallback(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      router.back()
+      return true
+    })
+    return () => sub.remove()
+  }, [router]))
 
   useEffect(() => {
     if (!id) return
-    ApiService.getEventAttendees(id)
-      .then(r => setAll(r.attendees))
+    Promise.all([
+      ApiService.getEventAttendees(id),
+      ApiService.getEvent(id),
+    ])
+      .then(([attendeesRes, eventRes]) => {
+        setAll(attendeesRes.attendees)
+        setEvent(eventRes)
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [id])
 
-  const going = useMemo(
-    () => all.filter(a => a.status === 'going'),
-    [all],
-  )
+  const scannerStatus = useMemo((): 'open' | 'not_yet' | 'ended' => {
+    if (!event) return 'not_yet'
+    const now = Date.now()
+    const start = parseDate(event.date_time).getTime()
+    const end = event.end_time
+      ? parseDate(event.end_time).getTime()
+      : start + 6 * 60 * 60 * 1000
+    const openAt = start - 3 * 60 * 60 * 1000
+    if (now > end) return 'ended'
+    if (now < openAt) return 'not_yet'
+    return 'open'
+  }, [event])
 
-  // Waitlist sorted by joined_at asc → position 1, 2, 3...
+  const handleScannerPress = () => {
+    if (scannerStatus === 'ended') {
+      showPill('Event has ended — scanner is closed', 'error')
+    } else if (scannerStatus === 'not_yet') {
+      showPill('Scanner opens 3 hours before the event', 'default')
+    } else {
+      router.push(`/(events)/${id}/scanner` as any)
+    }
+  }
+
+  const going = useMemo(() => all.filter(a => a.status === 'going'), [all])
+  const checkedIn = useMemo(() => going.filter(a => !!a.checked_in_at), [going])
+  const notArrived = useMemo(() => going.filter(a => !a.checked_in_at), [going])
   const waitlist = useMemo(
-    () =>
-      all
-        .filter(a => a.status === 'waitlist')
-        .sort((a, b) => new Date(a.joined_at).getTime() - new Date(b.joined_at).getTime()),
+    () => all.filter(a => a.status === 'waitlist')
+      .sort((x, y) => new Date(x.joined_at).getTime() - new Date(y.joined_at).getTime()),
     [all],
   )
 
-  const list = activeTab === 'going' ? going : waitlist
+  const counts: Record<Filter, number> = {
+    all: going.length + waitlist.length,
+    checked_in: checkedIn.length,
+    not_arrived: notArrived.length,
+  }
 
-  const emptyText =
-    activeTab === 'going'
-      ? `No one has RSVP'd yet`
-      : `No one on the waitlist`
+  const list = useMemo(() => {
+    if (filter === 'checked_in') return checkedIn
+    if (filter === 'not_arrived') return notArrived
+    return [...going, ...waitlist]
+  }, [filter, going, checkedIn, notArrived, waitlist])
+
+  const emptyLabel =
+    filter === 'checked_in' ? 'No one has checked in yet' :
+    filter === 'not_arrived' ? 'Everyone has checked in!' :
+    "No attendees yet"
+
   const emptySub =
-    activeTab === 'going'
-      ? 'Share the event to get people to join.'
-      : 'When the event fills up, waitlisted users appear here.'
+    filter === 'checked_in' ? 'Check-ins show here once the scanner is used.' :
+    filter === 'not_arrived' ? 'Share the event to get people to join.' :
+    'Share the event to get people to join.'
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
 
       {/* Header */}
       <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
+        <Pressable onPress={() => router.back()} style={s.iconBtn} hitSlop={8}>
           <ArrowLeft size={20} color={Colors.inkPrimary} strokeWidth={1.8} />
         </Pressable>
+
         <View style={s.headerCenter}>
           <Text style={s.headerTitle}>Attendees</Text>
           {!loading && (
-            <Text style={s.headerSub}>{going.length} going{waitlist.length > 0 ? ` · ${waitlist.length} on waitlist` : ''}</Text>
+            <Text style={s.headerSub}>
+              {going.length} going
+              {checkedIn.length > 0 ? ` · ${checkedIn.length} checked in` : ''}
+              {waitlist.length > 0 ? ` · ${waitlist.length} waitlist` : ''}
+            </Text>
           )}
         </View>
-        <View style={{ width: 40 }} />
+
+        <Pressable
+          style={[s.iconBtn, scannerStatus !== 'open' && s.iconBtnDim]}
+          onPress={handleScannerPress}
+          hitSlop={8}
+        >
+          <QrCode
+            size={20}
+            color={scannerStatus === 'open' ? Colors.brandOrange : Colors.inkDisabled}
+            strokeWidth={1.8}
+          />
+        </Pressable>
       </View>
 
-      {/* Tab bar */}
-      <TabBar active={activeTab} onChange={setActiveTab} />
+      {/* Pills */}
+      <Pills active={filter} counts={counts} onChange={setFilter} />
+
+      {/* Divider */}
+      <View style={s.divider} />
 
       {/* Content */}
       {loading ? (
@@ -276,23 +378,20 @@ export default function AttendeesScreen() {
       ) : list.length === 0 ? (
         <View style={s.center}>
           <Users size={44} color={Colors.inkDisabled} strokeWidth={1.2} />
-          <Text style={s.emptyTitle}>{emptyText}</Text>
+          <Text style={s.emptyTitle}>{emptyLabel}</Text>
           <Text style={s.emptySub}>{emptySub}</Text>
         </View>
       ) : (
         <FlatList
-          key={activeTab}
+          key={filter}
           data={list}
-          keyExtractor={a => a.id}
+          keyExtractor={item => item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
-          renderItem={({ item, index }) =>
-            activeTab === 'going' ? (
-              <GoingRow item={item} />
-            ) : (
-              <WaitlistRow item={item} position={index + 1} />
-            )
-          }
+          renderItem={({ item, index }) => {
+            const pos = item.status === 'waitlist' ? index - going.length + 1 : undefined
+            return <AttendeeRow item={item} position={pos} />
+          }}
         />
       )}
     </View>
@@ -307,29 +406,27 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.md,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.divider,
+    paddingVertical: 10,
   },
-  backBtn: {
+  iconBtn: {
     width: 40,
     height: 40,
     borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
+  iconBtnDim: { opacity: 0.45 },
   headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 17,
-    color: Colors.inkPrimary,
-  },
+  headerTitle: { fontFamily: FontFamily.headingBold, fontSize: 17, color: Colors.inkPrimary },
   headerSub: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 12,
     color: Colors.inkSecondary,
     marginTop: 1,
   },
+
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.divider },
 
   center: {
     flex: 1,

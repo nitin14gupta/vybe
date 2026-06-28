@@ -123,6 +123,7 @@ export interface EventDetail extends EventSummary {
   my_rsvp_status: 'going' | 'waitlist' | 'cancelled' | null
   my_waitlist_position: number | null
   my_offer_expires_at: string | null
+  my_review_rating: number | null
 }
 
 export interface WaitlistEntry {
@@ -220,6 +221,8 @@ export interface EventAttendee {
   avatar: string | null
   status: string
   joined_at: string
+  checked_in_at: string | null
+  ticket_token: string | null
 }
 
 export interface Message {

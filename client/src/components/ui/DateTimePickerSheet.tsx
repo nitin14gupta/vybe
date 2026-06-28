@@ -8,9 +8,7 @@ import {
   Text,
   View,
 } from 'react-native'
-import DateTimePicker, {
-  type DateTimePickerEvent,
-} from '@react-native-community/datetimepicker'
+import DateTimePicker from '@react-native-community/datetimepicker'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -73,10 +71,8 @@ export function DateTimePickerSheet({
         mode={mode}
         display="default"
         minimumDate={minimumDate}
-        onChange={(event: DateTimePickerEvent, date?: Date) => {
-          if (event.type === 'set' && date) onConfirm(date)
-          else onDismiss()
-        }}
+        onValueChange={(date) => { if (date) onConfirm(date) }}
+        onDismiss={onDismiss}
       />
     )
   }
@@ -100,9 +96,7 @@ export function DateTimePickerSheet({
           minimumDate={minimumDate}
           textColor="#fff"
           themeVariant="dark"
-          onChange={(_: DateTimePickerEvent, date?: Date) => {
-            if (date) setLocalDate(date)
-          }}
+          onValueChange={(date) => { if (date) setLocalDate(date) }}
           style={{ height: 200 }}
         />
         <Pressable onPress={confirm} style={s.doneBtn}>

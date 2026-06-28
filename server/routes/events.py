@@ -118,6 +118,7 @@ class EventDetail(EventSummary):
     my_rsvp_status: Optional[str] = None        # 'going' | 'waitlist' | 'cancelled' | None
     my_waitlist_position: Optional[int] = None  # position in queue (1-indexed), None if not on waitlist
     my_offer_expires_at: Optional[str] = None   # ISO string when promoted, else None
+    my_review_rating: Optional[int] = None
 
 
 class CheckinBody(BaseModel):
@@ -349,6 +350,7 @@ def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
                 going_ea.ticket_token AS my_ticket_token,
                 going_ea.checked_in_at::text AS my_checked_in_at,
                 (SELECT ROUND(AVG(rating)::numeric, 1) FROM event_reviews WHERE event_id = e.id) AS avg_rating,
+                (SELECT rating FROM event_reviews WHERE event_id = e.id AND reviewer_id = %s::uuid LIMIT 1) AS my_review_rating,
                 -- Waitlist fields
                 (SELECT COUNT(*) FROM event_attendees wl
                  WHERE wl.event_id = e.id AND wl.status = 'waitlist' AND wl.offer_expires_at IS NULL)::int AS waitlist_count,
@@ -377,7 +379,7 @@ def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
             LEFT JOIN event_attendees going_ea ON going_ea.event_id = e.id AND going_ea.user_id = %s::uuid AND going_ea.status = 'going'
             WHERE e.id = %s
             """,
-            (uid, uid, uid, uid, event_id),
+            (uid, uid, uid, uid, uid, event_id),
         )
         row = cur.fetchone()
 
@@ -1011,7 +1013,9 @@ def get_attendees(event_id: str, current_user: dict = Depends(get_current_user))
                 u.username,
                 u.city,
                 ea.status,
-                ea.joined_at,
+                ea.joined_at::text,
+                ea.checked_in_at::text,
+                ea.ticket_token,
                 (SELECT url FROM user_photos WHERE user_id = u.id ORDER BY position LIMIT 1) AS avatar
             FROM event_attendees ea
             JOIN users u ON u.id = ea.user_id
@@ -1109,17 +1113,26 @@ def submit_review(event_id: str, body: ReviewBody, background_tasks: BackgroundT
             raise HTTPException(status_code=403, detail="Event has not ended yet")
 
         cur.execute(
-            "SELECT 1 FROM event_attendees WHERE event_id = %s AND user_id = %s::uuid AND status = 'going'",
+            "SELECT checked_in_at FROM event_attendees WHERE event_id = %s AND user_id = %s::uuid AND status = 'going'",
             (event_id, uid),
         )
-        if not cur.fetchone():
+        ea_row = cur.fetchone()
+        if not ea_row:
             raise HTTPException(status_code=403, detail="You did not attend this event")
+        if ea_row["checked_in_at"] is None:
+            raise HTTPException(status_code=403, detail="You didn't check in at this event")
+
+        cur.execute(
+            "SELECT 1 FROM event_reviews WHERE event_id = %s AND reviewer_id = %s::uuid",
+            (event_id, uid),
+        )
+        if cur.fetchone():
+            raise HTTPException(status_code=409, detail="You have already reviewed this event")
 
         cur.execute(
             """
             INSERT INTO event_reviews (event_id, reviewer_id, rating, body)
             VALUES (%s, %s::uuid, %s, %s)
-            ON CONFLICT (event_id, reviewer_id) DO UPDATE SET rating = EXCLUDED.rating, body = EXCLUDED.body
             """,
             (event_id, uid, body.rating, body.body),
         )

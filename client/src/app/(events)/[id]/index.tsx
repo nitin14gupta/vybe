@@ -18,7 +18,7 @@ import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { PrimaryButton } from '@/components/ui'
 import { StaticEventMap } from '@/components/maps'
 import { LinearGradient } from 'expo-linear-gradient'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 import { useHardwareBack } from '@/hooks/useHardwareBack'
 import { useGoBack } from '@/hooks/useGoBack'
 import { Image } from 'expo-image'
@@ -190,7 +190,7 @@ export default function EventDetailScreen() {
 
   const [offerSecondsLeft, setOfferSecondsLeft] = useState<number | null>(null)
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     if (!id) return
     ApiService.getEvent(id)
       .then(ev => {
@@ -208,7 +208,7 @@ export default function EventDetailScreen() {
       })
       .catch(() => showPill("Couldn't load this event", 'error'))
       .finally(() => setLoading(false))
-  }, [id, myId])
+  }, [id, myId]))
 
   useEffect(() => {
     if (!event?.my_offer_expires_at) { setOfferSecondsLeft(null); return }
@@ -578,7 +578,9 @@ export default function EventDetailScreen() {
               </Pressable>
               <Pressable
                 style={[styles.hostBtn, styles.hostBtnPrimary]}
-                onPress={handleScanner}
+                onPress={isPast
+                  ? () => router.push(`/(events)/${id}/reviews` as any)
+                  : handleScanner}
               >
                 <LinearGradient
                   colors={['#FF6B35', '#FF3864']}
@@ -586,8 +588,12 @@ export default function EventDetailScreen() {
                   style={styles.hostBtnGradient}
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <ScanLine size={16} color="#111" strokeWidth={2} />
-                    <Text style={styles.hostBtnPrimaryText}>Scanner</Text>
+                    {isPast
+                      ? <Star size={16} color="#111" strokeWidth={2} />
+                      : <ScanLine size={16} color="#111" strokeWidth={2} />}
+                    <Text style={styles.hostBtnPrimaryText}>
+                      {isPast ? 'Review' : 'Scanner'}
+                    </Text>
                   </View>
                 </LinearGradient>
               </Pressable>
@@ -611,19 +617,18 @@ export default function EventDetailScreen() {
                 <Text style={styles.cancelledText}>Cancelled</Text>
               </View>
             ) : isPast && (isGoing || hasTicket) ? (
-              <Pressable
-                style={styles.bookBtn}
-                onPress={() => router.push(`/(events)/${id}/review` as any)}
-              >
-                <LinearGradient
-                  colors={['#FF6B35', '#FF3864']}
-                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                  style={styles.bookGradient}
-                >
-                  <Star size={15} color="#fff" fill="#fff" />
-                  <Text style={[styles.bookBtnText, { marginLeft: 6 }]}>Rate Event</Text>
-                </LinearGradient>
-              </Pressable>
+              event?.my_review_rating ? (
+                <View style={styles.reviewedPill}>
+                  <Star size={13} color={Colors.brandOrange} fill={Colors.brandOrange} strokeWidth={1.5} />
+                  <Text style={styles.reviewedPillText}>Reviewed ✓</Text>
+                </View>
+              ) : (
+                <PrimaryButton
+                  label="Rate Event"
+                  onPress={() => router.push(`/(events)/${id}/review` as any)}
+                  style={{ minWidth: 140 }}
+                />
+              )
             ) : isGoing || hasTicket ? (
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <View style={styles.goingBtn}>
@@ -924,6 +929,14 @@ const styles = StyleSheet.create({
   bookBtn: { borderRadius: 14, overflow: 'hidden' },
   bookGradient: { paddingHorizontal: 28, paddingVertical: 14, borderRadius: 14, alignItems: 'center', minWidth: 120 },
   bookBtnText: { color: '#fff', fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
+  reviewedPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 18, height: 48,
+    borderRadius: 24, borderWidth: 1,
+    borderColor: 'rgba(255,107,53,0.3)',
+    backgroundColor: 'rgba(255,107,53,0.08)',
+  },
+  reviewedPillText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandOrange },
 
   goingBtn: {
     backgroundColor: Colors.accentGreen,

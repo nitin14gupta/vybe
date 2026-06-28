@@ -1,7 +1,8 @@
-import { useState, useRef } from 'react'
-import { View, Text, StyleSheet, TextInput, Pressable } from 'react-native'
+import { useState, useRef, useCallback } from 'react'
+import { View, Text, StyleSheet, TextInput, Pressable, BackHandler } from 'react-native'
 import { router } from 'expo-router'
-import { BackButton, Input, GenderSelector, ProgressBar, PrimaryButton, Screen, KeyboardAvoidingWrapper } from '@/components/ui'
+import { useFocusEffect } from 'expo-router'
+import { Input, GenderSelector, ProgressBar, PrimaryButton, Screen, KeyboardAvoidingWrapper } from '@/components/ui'
 import { useOnboardingStore } from '@/store/onboarding'
 import { useAuthStore } from '@/store/auth'
 import { createProfile } from '@/api/user'
@@ -39,6 +40,11 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [dobError, setDobError] = useState('')
+
+  useFocusEffect(useCallback(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => true)
+    return () => sub.remove()
+  }, []))
 
   const canProceed = !!store.name.trim() && store.dob.replace(/\D/g, '').length === 8 && !!store.gender && !dobError && !!store.bio?.trim()
 
@@ -108,7 +114,6 @@ export default function ProfileScreen() {
 
   return (
     <Screen>
-      <BackButton onPress={() => router.back()} />
       <ProgressBar step={1} />
       <View style={styles.header}>
         <Text style={styles.title}>Let's set up your profile</Text>
