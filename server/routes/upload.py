@@ -47,6 +47,9 @@ async def upload_photo(
     if len(contents) == 0:
         raise HTTPException(status_code=400, detail="Empty file received")
 
+    if len(contents) < 20 * 1024:
+        raise HTTPException(status_code=400, detail="Image is too small — please choose a full-size photo.")
+
     if not has_face(contents):
         raise HTTPException(
             status_code=400,

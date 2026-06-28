@@ -24,6 +24,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 5,
     paddingHorizontal: Spacing.screenPadding,
+    paddingTop: 10,
     paddingBottom: Spacing.sectionGap,
   },
   segment: {

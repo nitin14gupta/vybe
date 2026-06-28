@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { router } from 'expo-router'
+import { usePillStore } from '@/store/pillStore'
 import {
   useAudioRecorder,
   useAudioRecorderState,
@@ -16,9 +17,9 @@ const MAX_SECONDS = 30
 
 export function useVoice() {
   const store = useOnboardingStore()
+  const showPill = usePillStore.getState().show
   const [recorded, setRecorded] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [uploadError, setUploadError] = useState<string | null>(null)
 
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY)
   const recorderState = useAudioRecorderState(audioRecorder)
@@ -81,12 +82,11 @@ export function useVoice() {
   const handleUse = async () => {
     if (!store.voiceUri) return
     setUploading(true)
-    setUploadError(null)
     try {
       await uploadVoice(store.voiceUri)
       router.push('/(onboarding)/interests')
     } catch (e: any) {
-      setUploadError(e?.message ?? 'Upload failed — check your connection')
+      showPill(e?.message ?? 'Upload failed — check your connection', 'error')
     } finally {
       setUploading(false)
     }
@@ -101,7 +101,6 @@ export function useVoice() {
     playbackTotal,
     recorded,
     uploading,
-    uploadError,
     playing,
     tapRecord,
     handlePlayPause,

@@ -11,7 +11,7 @@ import Animated, {
   withTiming,
   cancelAnimation,
 } from 'react-native-reanimated'
-import { BackButton, ProgressBar, PrimaryButton, TextLinkButton, Screen, RecordingWave, PlaybackWave } from '@/components/ui'
+import { OutlineButton, ProgressBar, PrimaryButton, TextLinkButton, Screen, RecordingWave, PlaybackWave } from '@/components/ui'
 import { useVoice } from '@/hooks/useVoice'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 
@@ -24,7 +24,6 @@ export default function VoiceScreen() {
     playbackTotal,
     recorded,
     uploading,
-    uploadError,
     playing,
     tapRecord,
     handlePlayPause,
@@ -59,7 +58,6 @@ export default function VoiceScreen() {
 
   return (
     <Screen>
-      <BackButton onPress={() => router.back()} />
       <ProgressBar step={3} />
 
       <View style={styles.header}>
@@ -119,14 +117,14 @@ export default function VoiceScreen() {
       </View>
 
       <View style={styles.footer}>
-        {uploadError ? (
-          <Text style={styles.uploadError}>{uploadError}</Text>
-        ) : null}
-        {recorded ? (
-          <PrimaryButton label="Use this" onPress={handleUse} loading={uploading} />
-        ) : (
-          <TextLinkButton label="Skip for now" onPress={handleSkip} />
-        )}
+        <OutlineButton label="Back" onPress={() => router.back()} style={styles.backBtn} />
+        <View style={styles.footerMain}>
+          {recorded ? (
+            <PrimaryButton label="Use this" onPress={handleUse} loading={uploading} />
+          ) : (
+            <TextLinkButton label="Skip for now" onPress={handleSkip} />
+          )}
+        </View>
       </View>
     </Screen>
   )
@@ -228,14 +226,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     paddingHorizontal: Spacing.screenPadding,
     paddingBottom: 16,
-    gap: 10,
   },
-  uploadError: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 13,
-    color: Colors.brandCoral,
-    textAlign: 'center',
-  },
+  backBtn: { width: 96 },
+  footerMain: { flex: 1 },
 })

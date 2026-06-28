@@ -156,7 +156,7 @@ export default function EditProfileScreen() {
             <TextInput
               value={bio}
               onChangeText={v => setBio(v.slice(0, 150))}
-              placeholder="A short intro — who are you? ✨"
+              placeholder="A short intro — who are you?"
               placeholderTextColor={Colors.inkDisabled}
               multiline
               textAlignVertical="top"

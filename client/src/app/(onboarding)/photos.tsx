@@ -1,124 +1,153 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, Image, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, Pressable, Image, ActivityIndicator, Dimensions } from 'react-native'
 import { router } from 'expo-router'
 import { hTap, hError } from '@/lib/haptics'
-import { Camera, X, Plus, AlertCircle } from 'lucide-react-native'
-import { BackButton, ProgressBar, PrimaryButton, Screen, ToastBanner } from '@/components/ui'
+import { Camera, X, Plus, AlertCircle, Crown } from 'lucide-react-native'
+import { SortableGrid, SortableGridItem, GridStrategy } from 'react-native-reanimated-dnd'
+import type { SortableGridRenderItemProps, GridPositions } from 'react-native-reanimated-dnd'
+import { OutlineButton, ProgressBar, PrimaryButton, Screen } from '@/components/ui'
 import { usePhotos } from '@/hooks/usePhotos'
-import type { SlotState } from '@/hooks/usePhotos'
+import type { PhotoItem } from '@/hooks/usePhotos'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window')
+const COL_GAP = 10
+const ITEM_SIZE = Math.floor((SCREEN_WIDTH - Spacing.screenPadding * 2 - COL_GAP) / 2)
 
 export default function PhotosScreen() {
   const {
-    localUris,
-    slotStates,
+    items,
     nextLoading,
     hasAnyPhoto,
-    toast,
     onSlotPress,
     retryUpload,
     removePhoto,
     handleNext,
+    handleDrop,
   } = usePhotos()
 
-  const renderSlot = (index: number, isMain: boolean) => {
-    const uri = localUris[index]
-    const state: SlotState = slotStates[index]
+  const renderItem = ({
+    item,
+    index,
+    id,
+    ...rest
+  }: SortableGridRenderItemProps<PhotoItem>) => {
+    const isMain = index === 0
+    const isDone = item.state === 'done'
+    const isUploading = item.state === 'uploading'
+    const isError = item.state === 'error'
+
+    const onDrop = (_id: string, _pos: number, allPositions?: GridPositions) =>
+      handleDrop(_id, _pos, allPositions)
 
     return (
-      <Pressable
-        key={index}
-        onPress={() => { hTap(); onSlotPress(index) }}
-        style={isMain ? styles.mainSlot : styles.smallSlot}
+      <SortableGridItem
+        key={id}
+        id={id}
+        data={item}
+        {...rest}
+        // block drag while uploading / in error — keep a tactile delay for done slots
+        activationDelay={isDone ? 350 : 99999}
+        onDrop={onDrop}
+        style={styles.itemWrapper}
       >
-        {uri ? (
-          <>
-            <Image
-              source={{ uri }}
-              style={StyleSheet.absoluteFill}
-              resizeMode="cover"
-            />
+        <Pressable
+          onPress={() => { hTap(); onSlotPress(index) }}
+          style={[styles.slot, isMain && !!item.uri && styles.slotMain]}
+        >
+          {item.uri ? (
+            <>
+              <Image
+                source={{ uri: item.uri }}
+                style={StyleSheet.absoluteFill}
+                resizeMode="cover"
+              />
 
-            {state === 'uploading' && (
-              <View style={styles.uploadOverlay}>
-                <ActivityIndicator size="small" color="#fff" />
+              {isUploading && (
+                <View style={styles.uploadOverlay}>
+                  <ActivityIndicator size="small" color="#fff" />
+                </View>
+              )}
+
+              {isError && (
+                <Pressable onPress={() => retryUpload(index)} style={styles.errorOverlay}>
+                  <AlertCircle size={18} color="#fff" />
+                  <Text style={styles.retryTxt}>Tap to retry</Text>
+                </Pressable>
+              )}
+
+              {isDone && (
+                <Pressable
+                  onPress={() => { hError(); removePhoto(index) }}
+                  style={styles.removeBtn}
+                  hitSlop={10}
+                >
+                  <X size={11} color="#fff" strokeWidth={3} />
+                </Pressable>
+              )}
+
+              {isMain && (
+                <View style={styles.mainBadge}>
+                  <Crown size={9} color={Colors.brandOrange} strokeWidth={2.5} />
+                  <Text style={styles.mainBadgeText}>MAIN</Text>
+                </View>
+              )}
+            </>
+          ) : isMain ? (
+            <View style={styles.emptyMain}>
+              <View style={styles.cameraCircle}>
+                <Camera size={22} color={Colors.inkPrimary} strokeWidth={2} />
               </View>
-            )}
-
-            {state === 'error' && (
-              <Pressable onPress={() => retryUpload(index)} style={styles.errorOverlay}>
-                <AlertCircle size={18} color="#fff" />
-                <Text style={styles.retryTxt}>Tap to retry</Text>
-              </Pressable>
-            )}
-
-            {(state === 'done' || state === 'uploading') && (
-              <Pressable
-                onPress={() => { hError(); removePhoto(index) }}
-                style={styles.removeBtn}
-                hitSlop={10}
-              >
-                <X size={11} color="#fff" strokeWidth={3} />
-              </Pressable>
-            )}
-          </>
-        ) : isMain ? (
-          <View style={styles.mainEmpty}>
-            <View style={styles.cameraCircle}>
-              <Camera size={22} color={Colors.inkPrimary} strokeWidth={2} />
+              <Text style={styles.addLabel}>Add photo</Text>
             </View>
-            <Text style={styles.addLabel}>Add photo</Text>
-          </View>
-        ) : (
-          <Plus size={24} color={Colors.brandOrange} strokeWidth={1.5} />
-        )}
-      </Pressable>
+          ) : (
+            <Plus size={22} color={Colors.brandOrange} strokeWidth={1.5} />
+          )}
+        </Pressable>
+      </SortableGridItem>
     )
   }
 
   return (
     <Screen>
-      <BackButton onPress={() => router.back()} />
       <ProgressBar step={2} />
 
       <View style={styles.header}>
         <Text style={styles.title}>Add your photos</Text>
-        <Text style={styles.subtitle}>Add at least 1 photo to continue</Text>
+        <Text style={styles.subtitle}>Add at least 1 · Hold &amp; drag to reorder</Text>
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.grid}
-        showsVerticalScrollIndicator={false}
-      >
-        {renderSlot(0, true)}
-        <View style={styles.row}>
-          {renderSlot(1, false)}
-          {renderSlot(2, false)}
-        </View>
-        <View style={styles.row}>
-          {renderSlot(3, false)}
-          {renderSlot(4, false)}
-        </View>
-      </ScrollView>
+      <SortableGrid
+        data={items}
+        renderItem={renderItem}
+        strategy={GridStrategy.Swap}
+        dimensions={{
+          columns: 2,
+          itemWidth: ITEM_SIZE,
+          itemHeight: ITEM_SIZE,
+          rowGap: COL_GAP,
+          columnGap: COL_GAP,
+        }}
+        style={styles.grid}
+        contentContainerStyle={styles.gridContent}
+      />
 
       <View style={styles.footer}>
-        <PrimaryButton
-          label="Next →"
-          onPress={handleNext}
-          disabled={!hasAnyPhoto}
-          loading={nextLoading}
-        />
+        <OutlineButton label="Back" onPress={() => router.back()} style={styles.backBtn} />
+        <View style={styles.nextBtn}>
+          <PrimaryButton
+            label="Next →"
+            onPress={handleNext}
+            disabled={!hasAnyPhoto}
+            loading={nextLoading}
+          />
+        </View>
       </View>
-
-      {toast && (
-        <ToastBanner key={toast.key} message={toast.message} type={toast.type} />
-      )}
     </Screen>
   )
 }
 
 const styles = StyleSheet.create({
-  header: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 16 },
+  header: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 12 },
   title: {
     fontFamily: FontFamily.headingBold,
     fontSize: 24,
@@ -131,34 +160,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.inkSecondary,
   },
-  scroll: { flex: 1 },
-  grid: {
+
+  grid: { flex: 1 },
+  gridContent: {
     paddingHorizontal: Spacing.screenPadding,
-    paddingBottom: 12,
-    gap: 10,
+    paddingBottom: 16,
   },
-  row: { flexDirection: 'row', gap: 10 },
-
-  mainSlot: {
-    width: '100%',
-    aspectRatio: 1,
+  itemWrapper: {
+    width: ITEM_SIZE,
+    height: ITEM_SIZE,
+  },
+  slot: {
+    width: ITEM_SIZE,
+    height: ITEM_SIZE,
     borderRadius: Radius.card,
     backgroundColor: Colors.elevated,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  smallSlot: {
-    flex: 1,
-    aspectRatio: 1,
-    borderRadius: Radius.card,
-    backgroundColor: Colors.elevated,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
+  slotMain: {
+    borderWidth: 2,
+    borderColor: 'rgba(255,107,53,0.35)',
   },
 
-  mainEmpty: { alignItems: 'center', gap: 12 },
+  emptyMain: { alignItems: 'center', gap: 10 },
   cameraCircle: {
     width: 52,
     height: 52,
@@ -171,6 +197,25 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 14,
     color: Colors.inkPrimary,
+  },
+
+  mainBadge: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0,0,0,0.52)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  mainBadgeText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 9,
+    color: '#fff',
+    letterSpacing: 0.8,
   },
 
   uploadOverlay: {
@@ -203,5 +248,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  footer: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 16 },
+  footer: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: Spacing.screenPadding,
+    paddingBottom: 16,
+  },
+  backBtn: { width: 96 },
+  nextBtn: { flex: 1 },
 })

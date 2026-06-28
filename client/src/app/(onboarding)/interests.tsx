@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native'
 import { router } from 'expo-router'
-import { BackButton, ProgressBar, InterestChip, PrimaryButton, Screen } from '@/components/ui'
+import { OutlineButton, ProgressBar, InterestChip, PrimaryButton, Screen } from '@/components/ui'
 import { useInterests } from '@/hooks/useInterests'
 import { Colors, FontFamily, Spacing } from '@/constants'
 
@@ -9,7 +9,6 @@ export default function InterestsScreen() {
 
   return (
     <Screen>
-      <BackButton onPress={() => router.back()} />
       <ProgressBar step={4} />
 
       <View style={styles.header}>
@@ -54,12 +53,17 @@ export default function InterestsScreen() {
         {!canProceed && !atMax && (
           <Text style={styles.hint}>Select {remaining} more to continue</Text>
         )}
-        <PrimaryButton
-          label="Next"
-          onPress={handleNext}
-          disabled={!canProceed}
-          loading={loading}
-        />
+        <View style={styles.footerRow}>
+          <OutlineButton label="Back" onPress={() => router.back()} style={styles.backBtn} />
+          <View style={styles.nextBtn}>
+            <PrimaryButton
+              label="Next"
+              onPress={handleNext}
+              disabled={!canProceed}
+              loading={loading}
+            />
+          </View>
+        </View>
       </View>
     </Screen>
   )
@@ -98,6 +102,9 @@ const styles = StyleSheet.create({
   },
   spacer: { width: '100%', height: 12 },
   footer: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 16 },
+  footerRow: { flexDirection: 'row', gap: 12 },
+  backBtn: { width: 96 },
+  nextBtn: { flex: 1 },
   hint: {
     textAlign: 'center',
     fontFamily: FontFamily.bodyRegular,

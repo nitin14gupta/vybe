@@ -1,26 +1,21 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Linking } from 'react-native'
 import { router } from 'expo-router'
 import * as Location from 'expo-location'
 import { useOnboardingStore } from '@/store/onboarding'
 import { setLocation, getCities } from '@/api/user'
 import type { CityResponse } from '@/api/user'
-import type { ToastType } from '@/components/ui'
+import { usePillStore } from '@/store/pillStore'
 
 export type { CityResponse }
 
 export function useLocation() {
   const store = useOnboardingStore()
+  const showPill = usePillStore.getState().show
   const [cities, setCities] = useState<CityResponse[]>([])
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [detecting, setDetecting] = useState(false)
-  const [toast, setToast] = useState<{ key: number; message: string; type: ToastType } | null>(null)
-  const toastKeyRef = useRef(0)
-
-  const showToast = (message: string, type: ToastType = 'info') => {
-    setToast({ key: ++toastKeyRef.current, message, type })
-  }
 
   useEffect(() => {
     getCities()
@@ -59,15 +54,15 @@ export function useLocation() {
         )
         if (match) {
           store.setField('city', match.name)
-          showToast(`📍 ${match.name} detected`, 'success')
+          showPill(`${match.name} detected`)
         } else {
-          showToast(`📍 ${detected} detected — pick the closest city`, 'info')
+          showPill(`${detected} detected — pick the closest city`)
         }
       } else {
-        showToast('Location detected — pick your city below', 'success')
+        showPill('Location detected — pick your city below')
       }
     } catch {
-      showToast('Could not detect location', 'error')
+      showPill('Could not detect location', 'error')
     } finally {
       setDetecting(false)
     }
@@ -91,7 +86,6 @@ export function useLocation() {
     selectedCity: store.city,
     loading,
     detecting,
-    toast,
     selectCity,
     detectLocation,
     handleContinue,

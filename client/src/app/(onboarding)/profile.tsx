@@ -2,11 +2,12 @@ import { useState, useRef, useCallback } from 'react'
 import { View, Text, StyleSheet, TextInput, Pressable, BackHandler } from 'react-native'
 import { router } from 'expo-router'
 import { useFocusEffect } from 'expo-router'
-import { Input, GenderSelector, ProgressBar, PrimaryButton, Screen, KeyboardAvoidingWrapper } from '@/components/ui'
+import { Input, GenderSelector, ProgressBar, PrimaryButton, Screen, KeyboardAvoidingWrapper, DateTimePickerSheet, useDateTimePicker } from '@/components/ui'
 import { useOnboardingStore } from '@/store/onboarding'
-import { useAuthStore } from '@/store/auth'
 import { createProfile } from '@/api/user'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { usePillStore } from '@/store/pillStore'
+import { CalendarDays } from 'lucide-react-native'
 
 function BioInput({ value, onChangeText }: { value: string; onChangeText: (t: string) => void }) {
   const [focused, setFocused] = useState(false)
@@ -20,7 +21,7 @@ function BioInput({ value, onChangeText }: { value: string; onChangeText: (t: st
         ref={inputRef}
         value={value}
         onChangeText={v => onChangeText(v.slice(0, 150))}
-        placeholder="A short intro — who are you? ✨"
+        placeholder="A short intro — who are you?"
         placeholderTextColor={Colors.inkDisabled}
         multiline
         textAlignVertical="top"
@@ -34,11 +35,14 @@ function BioInput({ value, onChangeText }: { value: string; onChangeText: (t: st
   )
 }
 
+const MIN_DOB_DATE = new Date(new Date().setFullYear(new Date().getFullYear() - 100))
+const MAX_DOB_DATE = new Date(new Date().setFullYear(new Date().getFullYear() - 18))
+
 export default function ProfileScreen() {
   const store = useOnboardingStore()
-  const accessToken = useAuthStore(s => s.accessToken)
+  const showPill = usePillStore(s => s.show)
+  const datePicker = useDateTimePicker(MAX_DOB_DATE)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
   const [dobError, setDobError] = useState('')
 
   useFocusEffect(useCallback(() => {
@@ -82,17 +86,27 @@ export default function ProfileScreen() {
     if (store.dob) setDobError(validateDOB(store.dob))
   }
 
+  const handlePickedDate = (date: Date) => {
+    const dd = String(date.getDate()).padStart(2, '0')
+    const mm = String(date.getMonth() + 1).padStart(2, '0')
+    const yyyy = String(date.getFullYear())
+    const formatted = `${dd} / ${mm} / ${yyyy}`
+    store.setField('dob', formatted)
+    setDobError(validateDOB(formatted))
+  }
+
   const dobToISO = (dob: string): string => {
     const d = dob.replace(/\D/g, '')
     return `${d.slice(4, 8)}-${d.slice(2, 4)}-${d.slice(0, 2)}`
   }
 
   const handleNext = async () => {
-    if (!canProceed) return
+    if (!store.name.trim()) { showPill('Enter your full name', 'error'); return }
     const dobErr = validateDOB(store.dob)
-    if (dobErr) { setDobError(dobErr); return }
+    if (dobErr) { setDobError(dobErr); showPill(dobErr, 'error'); return }
+    if (!store.gender) { showPill('Select your gender', 'error'); return }
+    if (!store.bio?.trim()) { showPill('Add a short bio to continue', 'error'); return }
     setLoading(true)
-    setError('')
     try {
       await createProfile({
         name: store.name.trim(),
@@ -102,11 +116,8 @@ export default function ProfileScreen() {
       })
       router.push('/(onboarding)/photos')
     } catch (e: any) {
-      if (e?.status === 400) {
-        setError(e.message || 'You must be 18+ to use Vybe.')
-      } else {
-        setError('Something went wrong. Please try again.')
-      }
+      const msg = e?.status === 400 ? (e.message || 'You must be 18+ to use Vybe.') : 'Something went wrong. Please try again.'
+      showPill(msg, 'error')
     } finally {
       setLoading(false)
     }
@@ -114,6 +125,7 @@ export default function ProfileScreen() {
 
   return (
     <Screen>
+      <View style={styles.topSpacer} />
       <ProgressBar step={1} />
       <View style={styles.header}>
         <Text style={styles.title}>Let's set up your profile</Text>
@@ -137,6 +149,11 @@ export default function ProfileScreen() {
             keyboardType="number-pad"
             error={dobError}
             style={styles.field}
+            rightIcon={
+              <Pressable onPress={() => datePicker.open('date', datePicker.value)} hitSlop={8}>
+                <CalendarDays size={18} color={Colors.inkSecondary} strokeWidth={1.8} />
+              </Pressable>
+            }
           />
           <View style={styles.field}>
             <Text style={styles.fieldLabel}>GENDER</Text>
@@ -152,22 +169,31 @@ export default function ProfileScreen() {
               onChangeText={v => store.setField('bio', v)}
             />
           </View>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
         <View style={styles.footer}>
           <PrimaryButton
             label="Next"
             onPress={handleNext}
-            disabled={!canProceed}
             loading={loading}
           />
         </View>
       </KeyboardAvoidingWrapper>
+
+      <DateTimePickerSheet
+        visible={datePicker.visible}
+        mode="date"
+        value={datePicker.value}
+        minimumDate={MIN_DOB_DATE}
+        maximumDate={MAX_DOB_DATE}
+        onConfirm={(date) => { datePicker.confirm(date); handlePickedDate(date) }}
+        onDismiss={datePicker.dismiss}
+      />
     </Screen>
   )
 }
 
 const styles = StyleSheet.create({
+  topSpacer: { height: Spacing.sm },
   header: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 12 },
   title: {
     fontFamily: FontFamily.headingBold,
@@ -189,12 +215,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.88,
     color: Colors.inkSecondary,
     marginBottom: 6,
-  },
-  error: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 13,
-    color: Colors.brandCoral,
-    marginTop: 12,
   },
   footer: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 16 },
 })

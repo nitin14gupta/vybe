@@ -3,6 +3,7 @@ import { router } from 'expo-router'
 import { useOnboardingStore } from '@/store/onboarding'
 import { setInterests, getInterests } from '@/api/user'
 import type { InterestResponse } from '@/api/user'
+import { usePillStore } from '@/store/pillStore'
 
 const MAX_INTERESTS = 8
 
@@ -21,6 +22,7 @@ const FALLBACK: InterestResponse[] = [
 
 export function useInterests() {
   const store = useOnboardingStore()
+  const showPill = usePillStore.getState().show
   const [availableInterests, setAvailableInterests] = useState<InterestResponse[]>([])
   const [loadingList, setLoadingList] = useState(true)
   const [loading, setLoading] = useState(false)
@@ -50,7 +52,9 @@ export function useInterests() {
     setLoading(true)
     try {
       await setInterests(selected)
-    } catch {}
+    } catch {
+      showPill('Failed to save interests — check your connection', 'error')
+    }
     setLoading(false)
     router.push('/(onboarding)/location')
   }

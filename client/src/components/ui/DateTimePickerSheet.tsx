@@ -8,7 +8,9 @@ import {
   Text,
   View,
 } from 'react-native'
-import DateTimePicker from '@react-native-community/datetimepicker'
+import DateTimePicker, {
+  type DateTimePickerEvent,
+} from '@react-native-community/datetimepicker'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -21,6 +23,7 @@ interface SheetProps {
   onConfirm: (date: Date) => void
   onDismiss: () => void
   minimumDate?: Date
+  maximumDate?: Date
 }
 
 export function DateTimePickerSheet({
@@ -30,6 +33,7 @@ export function DateTimePickerSheet({
   onConfirm,
   onDismiss,
   minimumDate,
+  maximumDate,
 }: SheetProps) {
   const insets = useSafeAreaInsets()
   const slideAnim = useRef(new Animated.Value(400)).current
@@ -71,8 +75,11 @@ export function DateTimePickerSheet({
         mode={mode}
         display="default"
         minimumDate={minimumDate}
-        onValueChange={(date) => { if (date) onConfirm(date) }}
-        onDismiss={onDismiss}
+        maximumDate={maximumDate}
+        onChange={(event: DateTimePickerEvent, date?: Date) => {
+          if (event.type === 'set' && date) onConfirm(date)
+          else onDismiss()
+        }}
       />
     )
   }
@@ -94,9 +101,12 @@ export function DateTimePickerSheet({
           mode={mode}
           display="spinner"
           minimumDate={minimumDate}
+          maximumDate={maximumDate}
           textColor="#fff"
           themeVariant="dark"
-          onValueChange={(date) => { if (date) setLocalDate(date) }}
+          onChange={(_: DateTimePickerEvent, date?: Date) => {
+            if (date) setLocalDate(date)
+          }}
           style={{ height: 200 }}
         />
         <Pressable onPress={confirm} style={s.doneBtn}>
@@ -147,7 +157,7 @@ export function useDateTimePicker(initial?: Date) {
 
 const s = StyleSheet.create({
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.55)',
   },
   sheet: {

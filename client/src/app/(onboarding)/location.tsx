@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, Pressable, FlatList, KeyboardAvoidingView, Plat
 import { router } from 'expo-router'
 import { hTap, hSelection } from '@/lib/haptics'
 import { Search, MapPin, Check } from 'lucide-react-native'
-import { BackButton, ProgressBar, Input, PrimaryButton, Screen, ToastBanner } from '@/components/ui'
+import { OutlineButton, ProgressBar, Input, PrimaryButton, Screen } from '@/components/ui'
 import { useLocation } from '@/hooks/useLocation'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 
@@ -14,7 +14,6 @@ export default function LocationScreen() {
     selectedCity,
     loading,
     detecting,
-    toast,
     selectCity,
     detectLocation,
     handleContinue,
@@ -22,7 +21,6 @@ export default function LocationScreen() {
 
   return (
     <Screen>
-      <BackButton onPress={() => router.back()} />
       <ProgressBar step={5} />
 
       <KeyboardAvoidingView
@@ -82,18 +80,18 @@ export default function LocationScreen() {
         />
 
         <View style={styles.footer}>
-          <PrimaryButton
-            label="Continue"
-            onPress={handleContinue}
-            disabled={!selectedCity}
-            loading={loading}
-          />
+          <OutlineButton label="Back" onPress={() => router.back()} style={styles.backBtn} />
+          <View style={styles.nextBtn}>
+            <PrimaryButton
+              label="Continue"
+              onPress={handleContinue}
+              disabled={!selectedCity}
+              loading={loading}
+            />
+          </View>
         </View>
       </KeyboardAvoidingView>
 
-      {toast && (
-        <ToastBanner key={toast.key} message={toast.message} type={toast.type} />
-      )}
     </Screen>
   )
 }
@@ -162,5 +160,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.divider,
     marginHorizontal: Spacing.screenPadding,
   },
-  footer: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 16 },
+  footer: { flexDirection: 'row', gap: 12, paddingHorizontal: Spacing.screenPadding, paddingBottom: 16 },
+  backBtn: { width: 96 },
+  nextBtn: { flex: 1 },
 })
