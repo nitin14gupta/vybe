@@ -5,7 +5,8 @@ import {
 } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { ChevronLeft, Mail, ChevronRight } from 'lucide-react-native'
+import { ArrowLeft, Mail, ChevronRight } from 'lucide-react-native'
+import { AppHeader, HeaderIconBtn } from '@/components/ui'
 import { Colors, FontFamily } from '@/constants'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
@@ -56,15 +57,11 @@ export default function SupportScreen() {
   }
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-          <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
-        </Pressable>
-        <Text style={s.headerTitle}>Contact Support</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <View style={s.root}>
+      <AppHeader
+        title="Contact Support"
+        leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
+      />
 
       <ScrollView
         style={s.scroll}
@@ -162,9 +159,6 @@ export default function SupportScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
-  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center', fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
 
   scroll: { flex: 1 },
   content: { paddingHorizontal: 16, gap: 12 },

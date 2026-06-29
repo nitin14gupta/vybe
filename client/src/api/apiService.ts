@@ -55,6 +55,7 @@ export interface ProfileResponse extends UserResponse {
   is_following?: boolean
   is_blocked_by_me?: boolean
   is_blocked_by_them?: boolean
+  is_deleted?: boolean
 }
 
 export interface ExtendedProfile extends ProfileResponse {
@@ -207,6 +208,7 @@ export interface Conversation {
   partner_name: string | null
   partner_username: string | null
   partner_avatar: string | null
+  partner_is_deleted: boolean
   last_message: string | null
   last_message_type: string | null
   last_sender_id: string | null

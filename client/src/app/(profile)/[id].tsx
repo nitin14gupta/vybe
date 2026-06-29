@@ -8,7 +8,7 @@ import { hTap, hMedium, hSuccess } from '@/lib/haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   ChevronLeft, MoreVertical, Flame, UserPlus, UserCheck,
-  MessageCircle, Ban, Play, Pause, Check,
+  MessageCircle, Ban, Play, Pause, Check, Ghost,
 } from 'lucide-react-native'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
 import { VybeRequestModal, VybeIcebreakerModal, PlaybackWave, ProfileMenuSheet } from '@/components/ui'
@@ -175,6 +175,21 @@ export default function UserProfileScreen() {
         <Pressable onPress={() => router.back()} style={s.backBtn}>
           <Text style={s.backBtnText}>← Go back</Text>
         </Pressable>
+      </View>
+    )
+  }
+
+  if (profile.is_deleted) {
+    return (
+      <View style={[s.root, s.center]}>
+        <Pressable onPress={() => router.back()} style={[s.backBtn, { position: 'absolute', top: insets.top + 8, left: 0 }]}>
+          <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
+        </Pressable>
+        <View style={s.deletedIconWrap}>
+          <Ghost size={40} color={Colors.inkDisabled} strokeWidth={1.5} />
+        </View>
+        <Text style={s.deletedTitle}>Not Found</Text>
+        <Text style={s.deletedBody}>This profile is no longer available.</Text>
       </View>
     )
   }
@@ -451,6 +466,14 @@ const s = StyleSheet.create({
   errorText: { fontFamily: FontFamily.bodyRegular, fontSize: 16, color: Colors.inkSecondary, marginBottom: 12 },
   backBtn: { paddingHorizontal: 20, paddingVertical: 10 },
   backBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandOrange },
+  deletedIconWrap: {
+    width: 88, height: 88, borderRadius: 44,
+    backgroundColor: Colors.elevated,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 20,
+  },
+  deletedTitle: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.inkSecondary, marginBottom: 10 },
+  deletedBody: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkDisabled, textAlign: 'center', lineHeight: 21 },
 
   // Header overlay
   headerOverlay: {

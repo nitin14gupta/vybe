@@ -1,15 +1,14 @@
 import { useState, useCallback } from 'react'
 import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, RefreshControl } from 'react-native'
 import { router, useFocusEffect } from 'expo-router'
-import { ChevronLeft, Ticket } from 'lucide-react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { ArrowLeft, Ticket } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
+import { AppHeader, HeaderIconBtn } from '@/components/ui'
 import ApiService from '@/api/apiService'
 import type { EventSummary } from '@/api/apiService'
 import { EventCard } from '@/components/EventCard'
 
 export default function JoinedEventsScreen() {
-  const insets = useSafeAreaInsets()
   const [events, setEvents] = useState<EventSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -31,14 +30,11 @@ export default function JoinedEventsScreen() {
   useFocusEffect(useCallback(() => { load() }, [load]))
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
-      <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-          <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
-        </Pressable>
-        <Text style={s.headerTitle}>Joined Events</Text>
-        <View style={{ width: 32 }} />
-      </View>
+    <View style={s.root}>
+      <AppHeader
+        title="Joined Events"
+        leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
+      />
 
       {loading ? (
         <View style={s.center}>
@@ -81,12 +77,6 @@ export default function JoinedEventsScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingBottom: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
-  },
   backBtn: { padding: 4 },
   headerTitle: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32 },

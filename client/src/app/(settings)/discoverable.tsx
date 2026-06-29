@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Switch, ActivityIndicator } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Eye, EyeOff } from 'lucide-react-native'
-import { Screen, BackButton } from '@/components/ui'
+import { Screen, AppHeader, HeaderIconBtn } from '@/components/ui'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
@@ -41,12 +41,11 @@ export default function DiscoverableScreen() {
   }
 
   return (
-    <Screen>
-      <View style={s.header}>
-        <BackButton onPress={() => router.back()} />
-        <Text style={s.title}>Show in Discover</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <Screen top={false}>
+      <AppHeader
+        title="Show in Discover"
+        leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
+      />
 
       <View style={s.content}>
         <View style={s.iconCircle}>
@@ -98,14 +97,6 @@ export default function DiscoverableScreen() {
 }
 
 const s = StyleSheet.create({
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingRight: Spacing.screenPadding, paddingBottom: 8,
-  },
-  title: {
-    flex: 1, textAlign: 'center',
-    fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary,
-  },
   content: { flex: 1, paddingHorizontal: Spacing.screenPadding, paddingTop: 16 },
   iconCircle: {
     width: 72, height: 72, borderRadius: 36,

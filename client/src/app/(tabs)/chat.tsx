@@ -4,7 +4,7 @@ import {
   TextInput, ActivityIndicator,
 } from 'react-native'
 import { router } from 'expo-router'
-import { Search, MessageCircle, Flame, RefreshCw } from 'lucide-react-native'
+import { Search, MessageCircle, Flame, RefreshCw, Ghost } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { VybeInboxSheet, VybeIcebreakerModal } from '@/components/ui'
@@ -39,24 +39,30 @@ function formatLastMessage(conv: Conversation): string {
 // ── Conversation row ──────────────────────────────────────────────────────────
 
 function ConvRow({ conv, onPress }: { conv: Conversation; onPress: () => void }) {
-  const isLocked = conv.status === 'pending'
+  const isLocked   = conv.status === 'pending'
+  const isDeleted  = conv.partner_is_deleted
+  const displayName = conv.partner_name ?? 'User'
+
   return (
     <Pressable onPress={onPress} style={[s.convRow, isLocked && s.convRowLocked]}>
       <View style={s.convAvatarWrap}>
-        {conv.partner_avatar ? (
+        {isDeleted ? (
+          <View style={[s.convAvatar, s.convAvatarDeleted]}>
+            <Ghost size={20} color={Colors.inkDisabled} strokeWidth={1.5} />
+          </View>
+        ) : conv.partner_avatar ? (
           <Image source={{ uri: conv.partner_avatar }} style={s.convAvatar} />
         ) : (
           <View style={[s.convAvatar, s.convAvatarFallback]}>
             <Text style={s.convAvatarInitial}>{(conv.partner_name ?? '?').charAt(0)}</Text>
           </View>
         )}
-        {/* Online dot — shown when isPartnerOnline; omitted for now, real-time handled in chat */}
       </View>
 
       <View style={s.convBody}>
         <View style={s.convTopRow}>
-          <Text style={[s.convName, isLocked && s.convNameLocked]} numberOfLines={1}>
-            {conv.partner_name ?? 'User'}
+          <Text style={[s.convName, isLocked && s.convNameLocked, isDeleted && s.convNameDeleted]} numberOfLines={1}>
+            {displayName}
           </Text>
           <Text style={[s.convTime, conv.unread_count > 0 && s.convTimeUnread]}>
             {formatTime(conv.last_sent_at ?? conv.last_message_at)}
@@ -381,6 +387,8 @@ const s = StyleSheet.create({
   convTopRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
   convName: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.inkPrimary, flex: 1 },
   convNameLocked: { color: Colors.inkSecondary },
+  convNameDeleted: { color: Colors.inkDisabled, fontStyle: 'italic' },
+  convAvatarDeleted: { backgroundColor: Colors.elevated, alignItems: 'center', justifyContent: 'center' },
   convTime: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary, marginLeft: 8 },
   convTimeUnread: { color: Colors.brandOrange },
   convBottomRow: { flexDirection: 'row', alignItems: 'center' },

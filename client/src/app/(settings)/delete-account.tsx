@@ -1,15 +1,20 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
+import { useFocusEffect } from 'expo-router'
 import {
-  View, Text, StyleSheet, Pressable, TextInput,
+  View, Text, StyleSheet, TextInput,
   ScrollView, ActivityIndicator, Animated,
 } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
-  ChevronLeft, AlertTriangle, Trash2, ShieldOff,
-  Wallet, Calendar, MessageCircle, CheckCircle2,
+  ArrowLeft, AlertTriangle, Trash2, ShieldOff,
+  Wallet, Calendar, MessageCircle, CheckCircle2, Users,
 } from 'lucide-react-native'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import {
+  AppHeader, HeaderIconBtn,
+  PrimaryButton, OutlineButton,
+} from '@/components/ui'
 import ApiService from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
 import { usePillStore } from '@/store/pillStore'
@@ -17,7 +22,6 @@ import { hTap, hSuccess } from '@/lib/haptics'
 
 const TOTAL_STEPS = 4
 
-// What the user loses — shown in step 2
 const LOSSES = [
   { icon: Calendar,       text: 'All your event bookings and tickets' },
   { icon: Wallet,         text: 'Any remaining Vybe Wallet credits' },
@@ -50,35 +54,49 @@ export default function DeleteAccountScreen() {
   const showPill = usePillStore(s => s.show)
   const clearAuth = useAuthStore(s => s.clearAuth)
 
-  const [step, setStep]         = useState(1)
-  const [otpSent, setOtpSent]   = useState(false)
-  const [otp, setOtp]           = useState('')
-  const [otpLoading, setOtpLoading] = useState(false)
+  const [step, setStep]               = useState(1)
+  const [otpSent, setOtpSent]         = useState(false)
+  const [otp, setOtp]                 = useState('')
+  const [otpLoading, setOtpLoading]   = useState(false)
   const [otpVerified, setOtpVerified] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-  const [typed, setTyped]       = useState('')
+  const [deleting, setDeleting]       = useState(false)
+  const [typed, setTyped]             = useState('')
+  const [upcomingEvents, setUpcomingEvents] = useState(0)
+  const [checkingEvents, setCheckingEvents] = useState(true)
+
+  useFocusEffect(
+    useCallback(() => {
+      setCheckingEvents(true)
+      ApiService.getMyHostedEvents()
+        .then(events => {
+          setUpcomingEvents(events.length)
+        })
+        .catch(() => {})
+        .finally(() => setCheckingEvents(false))
+    }, [])
+  )
 
   const shakeAnim = useRef(new Animated.Value(0)).current
 
   const shake = () => {
     Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 8, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 8,  duration: 60, useNativeDriver: true }),
       Animated.timing(shakeAnim, { toValue: -8, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 6, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 6,  duration: 60, useNativeDriver: true }),
       Animated.timing(shakeAnim, { toValue: -6, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0,  duration: 60, useNativeDriver: true }),
     ]).start()
   }
 
-  const phone = useAuthStore(s => s.phone ?? '')
+  const rawPhone    = useAuthStore(s => s.phone ?? '')
+  const maskedPhone = `+91 ******${rawPhone.slice(-4)}`
 
-  // Send OTP to their registered phone
   const handleSendOtp = async () => {
     if (otpLoading) return
     hTap()
     setOtpLoading(true)
     try {
-      await ApiService.sendOTP(phone)
+      await ApiService.sendOTP(rawPhone)
       setOtpSent(true)
     } catch {
       showPill('Could not send OTP. Please try again.', 'error')
@@ -87,13 +105,12 @@ export default function DeleteAccountScreen() {
     }
   }
 
-  // Verify OTP — we just need a valid OTP call (it doesn't log them in fresh)
   const handleVerifyOtp = async () => {
     if (otp.length !== 6 || otpLoading) return
     hTap()
     setOtpLoading(true)
     try {
-      await ApiService.verifyOTP(phone, otp)
+      await ApiService.verifyOTP(rawPhone, otp)
       hSuccess()
       setOtpVerified(true)
       setStep(4)
@@ -120,15 +137,57 @@ export default function DeleteAccountScreen() {
     }
   }
 
-  return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
-      <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-          <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
-        </Pressable>
-        <Text style={s.headerTitle}>Delete Account</Text>
-        <View style={{ width: 40 }} />
+  const backAction = (
+    <HeaderIconBtn onPress={() => router.back()}>
+      <ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} />
+    </HeaderIconBtn>
+  )
+
+  // ── Loading ───────────────────────────────────────────────────────────────
+  if (checkingEvents) {
+    return (
+      <View style={s.root}>
+        <AppHeader title="Delete Account" leftAction={backAction} />
+        <View style={s.center}>
+          <ActivityIndicator color={Colors.brandOrange} />
+        </View>
       </View>
+    )
+  }
+
+  // ── Blocked: has upcoming hosted events ───────────────────────────────────
+  if (upcomingEvents > 0) {
+    return (
+      <View style={s.root}>
+        <AppHeader title="Delete Account" leftAction={backAction} />
+        <View style={s.center}>
+          <View style={s.blockerIconWrap}>
+            <Users size={38} color={Colors.brandOrange} strokeWidth={1.8} />
+          </View>
+          <Text style={s.blockerTitle}>
+            You have {upcomingEvents} upcoming hosted event{upcomingEvents > 1 ? 's' : ''}
+          </Text>
+          <Text style={s.blockerBody}>
+            You can't delete your account while you have upcoming events as a host. Cancel your events first, then come back.
+          </Text>
+          <View style={s.blockerBtns}>
+            <PrimaryButton
+              label="Go to My Events"
+              onPress={() => router.push('/(settings)/my-events' as any)}
+            />
+            <OutlineButton
+              label="Back"
+              onPress={() => router.back()}
+            />
+          </View>
+        </View>
+      </View>
+    )
+  }
+
+  return (
+    <View style={s.root}>
+      <AppHeader title="Delete Account" leftAction={backAction} />
 
       <ScrollView
         contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 40 }]}
@@ -155,12 +214,8 @@ export default function DeleteAccountScreen() {
 
             <View style={s.spacer} />
 
-            <Pressable style={s.btnDestructive} onPress={() => { hTap(); setStep(2) }}>
-              <Text style={s.btnDestructiveText}>Continue</Text>
-            </Pressable>
-            <Pressable style={s.btnSecondary} onPress={() => router.back()}>
-              <Text style={s.btnSecondaryText}>Keep My Account</Text>
-            </Pressable>
+            <PrimaryButton label="Continue" onPress={() => { hTap(); setStep(2) }} />
+            <OutlineButton label="Keep My Account" onPress={() => router.back()} style={s.secondaryBtn} />
           </>
         )}
 
@@ -188,12 +243,8 @@ export default function DeleteAccountScreen() {
 
             <View style={s.spacer} />
 
-            <Pressable style={s.btnDestructive} onPress={() => { hTap(); setStep(3) }}>
-              <Text style={s.btnDestructiveText}>I understand, continue</Text>
-            </Pressable>
-            <Pressable style={s.btnSecondary} onPress={() => router.back()}>
-              <Text style={s.btnSecondaryText}>Keep My Account</Text>
-            </Pressable>
+            <PrimaryButton label="I understand, continue" onPress={() => { hTap(); setStep(3) }} />
+            <OutlineButton label="Keep My Account" onPress={() => router.back()} style={s.secondaryBtn} />
           </>
         )}
 
@@ -206,17 +257,17 @@ export default function DeleteAccountScreen() {
             <Text style={s.title}>Verify it's you</Text>
             <Text style={s.body}>
               We'll send a one-time code to{' '}
-              <Text style={s.phoneHighlight}>+91 {phone}</Text>
+              <Text style={s.phoneHighlight}>{maskedPhone}</Text>
               {' '}to confirm this is really you.
             </Text>
 
             {!otpSent ? (
-              <Pressable style={s.btnOrange} onPress={handleSendOtp} disabled={otpLoading}>
-                {otpLoading
-                  ? <ActivityIndicator color="#111" />
-                  : <Text style={s.btnOrangeText}>Send OTP</Text>
-                }
-              </Pressable>
+              <PrimaryButton
+                label="Send OTP"
+                onPress={handleSendOtp}
+                loading={otpLoading}
+                style={s.otpBtn}
+              />
             ) : (
               <>
                 <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
@@ -231,25 +282,23 @@ export default function DeleteAccountScreen() {
                     autoFocus
                   />
                 </Animated.View>
-                <Pressable
-                  style={[s.btnOrange, otp.length !== 6 && s.btnDisabled]}
+                <PrimaryButton
+                  label="Verify OTP"
                   onPress={handleVerifyOtp}
-                  disabled={otp.length !== 6 || otpLoading}
-                >
-                  {otpLoading
-                    ? <ActivityIndicator color="#111" />
-                    : <Text style={s.btnOrangeText}>Verify OTP</Text>
-                  }
-                </Pressable>
-                <Pressable style={s.resendBtn} onPress={handleSendOtp} disabled={otpLoading}>
-                  <Text style={s.resendText}>Resend code</Text>
-                </Pressable>
+                  disabled={otp.length !== 6}
+                  loading={otpLoading}
+                  style={s.otpBtn}
+                />
+                <OutlineButton
+                  label="Resend code"
+                  onPress={handleSendOtp}
+                  disabled={otpLoading}
+                  style={s.secondaryBtn}
+                />
               </>
             )}
 
-            <Pressable style={[s.btnSecondary, { marginTop: 12 }]} onPress={() => router.back()}>
-              <Text style={s.btnSecondaryText}>Cancel</Text>
-            </Pressable>
+            <OutlineButton label="Cancel" onPress={() => router.back()} style={s.secondaryBtn} />
           </>
         )}
 
@@ -274,24 +323,20 @@ export default function DeleteAccountScreen() {
               maxLength={6}
             />
 
-            <Pressable
-              style={[s.btnFinalDelete, typed !== 'DELETE' && s.btnDisabled]}
-              onPress={handleDelete}
-              disabled={typed !== 'DELETE' || deleting}
-            >
-              {deleting
-                ? <ActivityIndicator color="#fff" />
-                : (
-                  <>
-                    <Trash2 size={16} color="#fff" strokeWidth={2} />
-                    <Text style={s.btnFinalDeleteText}>Delete My Account</Text>
-                  </>
-                )
-              }
-            </Pressable>
-            <Pressable style={s.btnSecondary} onPress={() => router.back()}>
-              <Text style={s.btnSecondaryText}>Cancel</Text>
-            </Pressable>
+            <View style={s.finalDeleteBtn}>
+              {deleting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <OutlineButton
+                  label="Delete My Account"
+                  onPress={handleDelete}
+                  disabled={typed !== 'DELETE'}
+                  style={s.destructiveOutline}
+                />
+              )}
+            </View>
+
+            <OutlineButton label="Cancel" onPress={() => router.back()} style={s.secondaryBtn} />
           </>
         )}
       </ScrollView>
@@ -301,11 +346,8 @@ export default function DeleteAccountScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
-  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center', fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
 
-  content: { paddingHorizontal: Spacing.screenPadding, paddingTop: 20, gap: 0 },
+  content: { paddingHorizontal: Spacing.screenPadding, paddingTop: 20 },
 
   iconCircle: {
     width: 80, height: 80, borderRadius: 40,
@@ -351,47 +393,38 @@ const s = StyleSheet.create({
     backgroundColor: Colors.surface, borderRadius: 14, borderWidth: 1,
     borderColor: Colors.divider, paddingHorizontal: 16, paddingVertical: 14,
     fontFamily: FontFamily.headingBold, fontSize: 24, color: Colors.inkPrimary,
-    textAlign: 'center', letterSpacing: 12, marginBottom: 16, marginTop: 8,
+    textAlign: 'center', letterSpacing: 12, marginBottom: 4, marginTop: 8,
   },
   typeInput: {
     backgroundColor: Colors.surface, borderRadius: 14, borderWidth: 1,
     borderColor: 'rgba(255,56,100,0.4)', paddingHorizontal: 16, paddingVertical: 14,
     fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.brandCoral,
-    textAlign: 'center', letterSpacing: 4, marginBottom: 24, marginTop: 8,
+    textAlign: 'center', letterSpacing: 4, marginBottom: 16, marginTop: 8,
   },
 
-  btnDestructive: {
-    height: 56, borderRadius: 28,
-    backgroundColor: 'rgba(255,56,100,0.12)',
-    borderWidth: 1, borderColor: 'rgba(255,56,100,0.3)',
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    marginBottom: 10,
-  },
-  btnDestructiveText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.brandCoral },
+  secondaryBtn: { marginTop: 10 },
+  otpBtn: { marginTop: 12 },
 
-  btnFinalDelete: {
-    height: 56, borderRadius: 28,
-    backgroundColor: Colors.brandCoral,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    marginBottom: 10,
+  finalDeleteBtn: { marginBottom: 4 },
+  destructiveOutline: {
+    borderColor: 'rgba(255,56,100,0.5)',
   },
-  btnFinalDeleteText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: '#fff' },
 
-  btnOrange: {
-    height: 56, borderRadius: 28, backgroundColor: Colors.brandOrange,
-    alignItems: 'center', justifyContent: 'center', marginTop: 12, marginBottom: 10,
-  },
-  btnOrangeText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: '#111' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.screenPadding, gap: 12 },
 
-  btnSecondary: {
-    height: 48, borderRadius: 24,
-    backgroundColor: Colors.elevated,
+  blockerIconWrap: {
+    width: 88, height: 88, borderRadius: 44,
+    backgroundColor: 'rgba(255,107,53,0.1)',
     alignItems: 'center', justifyContent: 'center',
+    marginBottom: 8,
   },
-  btnSecondaryText: { fontFamily: FontFamily.bodyMedium, fontSize: 15, color: Colors.inkSecondary },
-
-  btnDisabled: { opacity: 0.4 },
-
-  resendBtn: { alignItems: 'center', paddingVertical: 10, marginBottom: 4 },
-  resendText: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.brandOrange },
+  blockerTitle: {
+    fontFamily: FontFamily.headingBold, fontSize: 22, letterSpacing: -0.3,
+    color: Colors.inkPrimary, textAlign: 'center',
+  },
+  blockerBody: {
+    fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkSecondary,
+    textAlign: 'center', lineHeight: 23, marginBottom: 8,
+  },
+  blockerBtns: { alignSelf: 'stretch', gap: 10 },
 })

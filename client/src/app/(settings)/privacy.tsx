@@ -1,70 +1,34 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import { router } from 'expo-router'
-import { Screen, BackButton } from '@/components/ui'
+import { ArrowLeft } from 'lucide-react-native'
+import { Screen, AppHeader, HeaderIconBtn } from '@/components/ui'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { PRIVACY_SECTIONS, LEGAL_UPDATED } from '@/constants/legalContent'
 
 export default function PrivacyScreen() {
   return (
-    <Screen>
-      <View style={styles.header}>
-        <BackButton onPress={() => router.back()} />
-        <Text style={styles.title}>Privacy Policy</Text>
-        <View style={styles.headerEnd} />
-      </View>
+    <Screen top={false}>
+      <AppHeader
+        title="Privacy Policy"
+        leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
+      />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.card}>
-          <Text style={styles.updated}>Last updated: June 2025</Text>
-
-          <ContentSection title="Information We Collect">
-            We collect information you provide directly — like your name, phone number, photos, voice intro, and interests — when you create and use your Vybe profile. We also collect your approximate location when you grant permission.
-          </ContentSection>
-
-          <ContentSection title="How We Use It">
-            Your information helps us show you relevant people and events nearby, personalize your feed, and keep Vybe safe. We never sell your personal data to third parties.
-          </ContentSection>
-
-          <ContentSection title="Photos & Voice">
-            Your photos and voice intro are stored securely and displayed only to other Vybe users. You can delete them at any time from your profile settings.
-          </ContentSection>
-
-          <ContentSection title="Data Retention">
-            You can delete your account at any time from Settings → Delete Account. After verifying your identity, your profile, photos, voice intro, and wallet credits are permanently removed within 30 days. If you change your mind, email privacy@vybe.in within 30 days.
-          </ContentSection>
-
-          <ContentSection title="Contact">
-            Questions? Reach us at privacy@vybe.in
-          </ContentSection>
+          <Text style={styles.updated}>{LEGAL_UPDATED}</Text>
+          {PRIVACY_SECTIONS.map((sec, i) => (
+            <View key={i} style={styles.section}>
+              <Text style={styles.sectionTitle}>{sec.title}</Text>
+              <Text style={styles.body}>{sec.body}</Text>
+            </View>
+          ))}
         </View>
       </ScrollView>
     </Screen>
   )
 }
 
-function ContentSection({ title, children }: { title: string; children: string }) {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <Text style={styles.body}>{children}</Text>
-    </View>
-  )
-}
-
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingRight: Spacing.screenPadding,
-    paddingBottom: 8,
-  },
-  title: {
-    flex: 1,
-    fontFamily: FontFamily.headingBold,
-    fontSize: 18,
-    color: Colors.inkPrimary,
-    textAlign: 'center',
-  },
-  headerEnd: { width: 40 },
   content: {
     paddingHorizontal: Spacing.screenPadding,
     paddingBottom: 40,

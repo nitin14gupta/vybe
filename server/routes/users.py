@@ -31,6 +31,7 @@ _USER_SELECT = """
         u.lng,
         u.name_changed_at::text,
         COALESCE(u.discoverable, TRUE) AS discoverable,
+        COALESCE(u.is_deleted, FALSE) AS is_deleted,
         (SELECT COUNT(*) FROM follows WHERE following_id = u.id)::int AS vibers_count,
         (SELECT COUNT(*) FROM follows WHERE follower_id  = u.id)::int AS vibing_count,
         CASE
@@ -698,13 +699,28 @@ def report_user(user_id: str, body: ReportRequest, current_user: dict = Depends(
 @router.delete("/me", status_code=status.HTTP_200_OK)
 def delete_account(current_user: dict = Depends(get_current_user)):
     """
-    Soft-delete: marks is_deleted=TRUE and records deleted_at.
-    Hard purge can run server-side after 30 days.
-    All active sessions will fail auth because we check is_deleted in get_current_user.
+    Soft-delete: cancels upcoming hosted events (refunds attendees), cancels
+    own RSVPs, then marks is_deleted=TRUE. Auth middleware blocks on next call.
     """
     uid = current_user["id"]
     with get_db() as (cur, conn):
-        # Cancel all upcoming RSVPs and free spots
+        # Block deletion if user still has upcoming hosted events
+        # (they must cancel events manually first so the 48-hour refund rules apply)
+        cur.execute(
+            """
+            SELECT COUNT(*) AS cnt FROM events
+            WHERE host_id = %s::uuid AND is_cancelled = FALSE AND date_time > NOW()
+            """,
+            (uid,),
+        )
+        row = cur.fetchone()
+        if row and row["cnt"] > 0:
+            raise HTTPException(
+                status_code=409,
+                detail=f"CANCEL_EVENTS_FIRST:{row['cnt']}",
+            )
+
+        # ── Cancel this user's own RSVPs and free up spots ────────────────────
         cur.execute(
             """
             UPDATE event_attendees
@@ -715,8 +731,7 @@ def delete_account(current_user: dict = Depends(get_current_user)):
         )
         cur.execute(
             """
-            UPDATE events
-            SET spots_left = spots_left + 1
+            UPDATE events SET spots_left = spots_left + 1
             WHERE id IN (
                 SELECT event_id FROM event_attendees
                 WHERE user_id = %s::uuid AND status = 'cancelled'
@@ -724,7 +739,8 @@ def delete_account(current_user: dict = Depends(get_current_user)):
             """,
             (uid,),
         )
-        # Soft-delete the account
+
+        # ── 3. Soft-delete the account ────────────────────────────────────────
         cur.execute(
             """
             UPDATE users

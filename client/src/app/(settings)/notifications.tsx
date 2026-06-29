@@ -6,8 +6,9 @@ import {
 import { hTap } from '@/lib/haptics'
 import { router } from 'expo-router'
 import { useFocusEffect } from 'expo-router'
-import { ChevronLeft, Bell, Calendar, Star, Users, Clock, PartyPopper } from 'lucide-react-native'
+import { ArrowLeft, Bell, Calendar, Star, Users, Clock, PartyPopper } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { AppHeader, HeaderIconBtn } from '@/components/ui'
 import ApiService, { AppNotification } from '@/api/apiService'
 import { useNotifStore } from '@/store/notifStore'
 import { Colors, FontFamily } from '@/constants'
@@ -168,29 +169,18 @@ export default function NotificationsScreen() {
   const sections = groupByDate(notifs)
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
-      <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={10}>
-          <ChevronLeft size={22} color={Colors.inkPrimary} strokeWidth={2} />
-        </Pressable>
-
-        <View style={s.headerCenter}>
-          <Text style={s.headerTitle}>Notifications</Text>
-          {unreadCount > 0 && (
-            <View style={s.unreadBadge}>
-              <Text style={s.unreadBadgeText}>{unreadCount}</Text>
-            </View>
-          )}
-        </View>
-
-        {unreadCount > 0 ? (
-          <Pressable onPress={() => { hTap(); handleMarkAll() }} hitSlop={8}>
-            <Text style={s.markAllText}>Mark all read</Text>
-          </Pressable>
-        ) : (
-          <View style={{ width: 80 }} />
-        )}
-      </View>
+    <View style={s.root}>
+      <AppHeader
+        title="Notifications"
+        leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
+        rightAction={
+          unreadCount > 0 ? (
+            <Pressable onPress={() => { hTap(); handleMarkAll() }} hitSlop={8}>
+              <Text style={s.markAllText}>Mark all read</Text>
+            </Pressable>
+          ) : undefined
+        }
+      />
 
       {loading ? (
         <View style={s.center}>
@@ -244,48 +234,6 @@ export default function NotificationsScreen() {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.divider,
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerCenter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerTitle: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 17,
-    color: Colors.inkPrimary,
-    letterSpacing: -0.2,
-  },
-  unreadBadge: {
-    backgroundColor: Colors.brandOrange,
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-  },
-  unreadBadgeText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 11,
-    color: '#fff',
-  },
   markAllText: {
     fontFamily: FontFamily.bodyMedium,
     fontSize: 13,

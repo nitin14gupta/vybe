@@ -6,8 +6,8 @@ import {
 import { router } from 'expo-router'
 import { hError } from '@/lib/haptics'
 import { useFocusEffect } from 'expo-router'
-import { ChevronLeft, ShieldOff } from 'lucide-react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { ArrowLeft, ShieldOff } from 'lucide-react-native'
+import { AppHeader, HeaderIconBtn } from '@/components/ui'
 import ApiService, { BlockedUser } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
 import { ConfirmSheet } from '@/components/ui'
@@ -41,14 +41,11 @@ export default function BlockedUsersScreen() {
   }
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
-      <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-          <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
-        </Pressable>
-        <Text style={s.title}>Blocked Users</Text>
-        <View style={{ width: 32 }} />
-      </View>
+    <View style={s.root}>
+      <AppHeader
+        title="Blocked Users"
+        leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
+      />
 
       {loading ? (
         <View style={s.center}>
@@ -102,17 +99,6 @@ export default function BlockedUsersScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
-  },
-  backBtn: { padding: 4 },
-  title: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32 },
   emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
   emptySub: {

@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { View, Text, StyleSheet, Pressable, TextInput, ScrollView } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { ChevronLeft, Send } from 'lucide-react-native'
+import { ArrowLeft, Send } from 'lucide-react-native'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { AppHeader, HeaderIconBtn } from '@/components/ui'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { hSuccess, hTap } from '@/lib/haptics'
@@ -32,14 +33,11 @@ export default function FeedbackScreen() {
   }
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
-      <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-          <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
-        </Pressable>
-        <Text style={s.headerTitle}>Send Feedback</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <View style={[s.root]}>
+      <AppHeader
+        title="Send Feedback"
+        leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
+      />
 
       <ScrollView
         style={s.scroll}
@@ -81,9 +79,6 @@ export default function FeedbackScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
-  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center', fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
 
   scroll: { flex: 1 },
   content: { paddingHorizontal: 16, gap: 14 },

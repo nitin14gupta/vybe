@@ -1,7 +1,8 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import { router } from 'expo-router'
 import Constants from 'expo-constants'
-import { Screen, BackButton } from '@/components/ui'
+import { ArrowLeft } from 'lucide-react-native'
+import { Screen, AppHeader, HeaderIconBtn } from '@/components/ui'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 
 export default function AboutScreen() {
@@ -9,12 +10,11 @@ export default function AboutScreen() {
   const buildNumber = Constants.expoConfig?.android?.versionCode ?? '1'
 
   return (
-    <Screen>
-      <View style={styles.header}>
-        <BackButton onPress={() => router.back()} />
-        <Text style={styles.title}>About Vybe</Text>
-        <View style={styles.headerEnd} />
-      </View>
+    <Screen top={false}>
+      <AppHeader
+        title="About Vybe"
+        leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
+      />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         {/* Logo block */}
@@ -51,20 +51,6 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingRight: Spacing.screenPadding,
-    paddingBottom: 8,
-  },
-  title: {
-    flex: 1,
-    fontFamily: FontFamily.headingBold,
-    fontSize: 18,
-    color: Colors.inkPrimary,
-    textAlign: 'center',
-  },
-  headerEnd: { width: 40 },
   content: {
     paddingHorizontal: Spacing.screenPadding,
     paddingBottom: 40,

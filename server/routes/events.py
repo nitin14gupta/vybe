@@ -279,7 +279,9 @@ def get_hosted_events(current_user: dict = Depends(get_current_user)):
             FROM events e
             JOIN users u ON u.id = e.host_id
             WHERE e.host_id = %s::uuid
-            ORDER BY e.date_time DESC
+              AND e.date_time > NOW()
+              AND e.is_cancelled = FALSE
+            ORDER BY e.date_time ASC
             """,
             (uid,),
         )

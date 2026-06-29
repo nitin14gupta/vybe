@@ -3,8 +3,8 @@ import {
   RefreshControl,
 } from 'react-native'
 import { router } from 'expo-router'
-import { ChevronLeft, Wallet, ArrowDownLeft, ArrowUpRight, HeadphonesIcon, Receipt } from 'lucide-react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { ArrowLeft, Wallet, ArrowDownLeft, ArrowUpRight, HeadphonesIcon, Receipt } from 'lucide-react-native'
+import { AppHeader, HeaderIconBtn } from '@/components/ui'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Colors, FontFamily } from '@/constants'
 import { useWallet } from '@/hooks/useWallet'
@@ -59,14 +59,11 @@ export default function WalletScreen() {
   const { balance, transactions, loading, refreshing, reload } = useWallet()
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
-      <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-          <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
-        </Pressable>
-        <Text style={s.headerTitle}>Vybe Wallet</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <View style={s.root}>
+      <AppHeader
+        title="Vybe Wallet"
+        leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
+      />
 
       <FlatList
         data={transactions}
@@ -142,9 +139,6 @@ export default function WalletScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
-  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center', fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
 
   balanceCard: { margin: 16, borderRadius: 20, padding: 24 },
   balanceIconRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },

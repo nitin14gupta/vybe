@@ -1,15 +1,14 @@
 import { useState, useCallback } from 'react'
 import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, RefreshControl } from 'react-native'
 import { router, useFocusEffect } from 'expo-router'
-import { ChevronLeft, Calendar, Plus } from 'lucide-react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { ArrowLeft, Calendar, Plus } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
+import { AppHeader, HeaderIconBtn } from '@/components/ui'
 import ApiService from '@/api/apiService'
 import type { EventSummary } from '@/api/apiService'
 import { EventCard } from '@/components/EventCard'
 
 export default function MyEventsScreen() {
-  const insets = useSafeAreaInsets()
   const [events, setEvents] = useState<EventSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -31,16 +30,12 @@ export default function MyEventsScreen() {
   useFocusEffect(useCallback(() => { load() }, [load]))
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
-      <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-          <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
-        </Pressable>
-        <Text style={s.headerTitle}>My Events</Text>
-        <Pressable onPress={() => router.push('/(tabs)/create' as any)} style={s.createBtn} hitSlop={8}>
-          <Plus size={20} color={Colors.brandOrange} strokeWidth={2.5} />
-        </Pressable>
-      </View>
+    <View style={s.root}>
+      <AppHeader
+        title="My Events"
+        leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
+        rightAction={<HeaderIconBtn onPress={() => router.push('/(tabs)/create' as any)}><Plus size={20} color={Colors.brandOrange} strokeWidth={2.5} /></HeaderIconBtn>}
+      />
 
       {loading ? (
         <View style={s.center}>
@@ -84,15 +79,6 @@ export default function MyEventsScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingBottom: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
-  },
-  backBtn: { padding: 4 },
-  headerTitle: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
-  createBtn: { padding: 4 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32 },
   emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
   emptySub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center' },
