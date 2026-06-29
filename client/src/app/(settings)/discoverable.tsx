@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, Switch, ActivityIndicator } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Eye, EyeOff } from 'lucide-react-native'
+import { Eye, EyeOff, ArrowLeft } from 'lucide-react-native'
 import { Screen, AppHeader, HeaderIconBtn } from '@/components/ui'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 import ApiService from '@/api/apiService'
@@ -10,7 +10,6 @@ import { usePillStore } from '@/store/pillStore'
 import { hSelection } from '@/lib/haptics'
 
 export default function DiscoverableScreen() {
-  const insets   = useSafeAreaInsets()
   const showPill = usePillStore(s => s.show)
 
   const [discoverable, setDiscoverable] = useState(true)

@@ -55,7 +55,6 @@ function TransactionRow({ item }: { item: WalletTransaction }) {
 // ── Main screen ───────────────────────────────────────────────────────────────
 
 export default function WalletScreen() {
-  const insets = useSafeAreaInsets()
   const { balance, transactions, loading, refreshing, reload } = useWallet()
 
   return (
@@ -129,7 +128,7 @@ export default function WalletScreen() {
             </View>
           ) : null
         }
-        contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+        contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={s.txDivider} />}
       />

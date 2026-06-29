@@ -14,7 +14,6 @@ import { ConfirmSheet } from '@/components/ui'
 import { usePillStore } from '@/store/pillStore'
 
 export default function BlockedUsersScreen() {
-  const insets = useSafeAreaInsets()
   const showPill = usePillStore(s => s.show)
   const [blocked, setBlocked] = useState<BlockedUser[]>([])
   const [loading, setLoading] = useState(true)
