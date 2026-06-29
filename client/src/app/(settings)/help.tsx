@@ -30,7 +30,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'How do I delete my account?',
-    a: 'Email us at support@vybe.in with your registered phone number and we\'ll delete your account within 7 days.',
+    a: 'Go to Settings → Delete Account. You\'ll verify your phone number via OTP, then type DELETE to confirm. Your account is removed within 30 days. Changed your mind? Email support@vybe.in within 30 days.',
   },
 ]
 

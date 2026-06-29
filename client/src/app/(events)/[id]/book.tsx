@@ -13,7 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { StatusBar } from 'expo-status-bar'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Calendar, MapPin, ShieldCheck, Wallet } from 'lucide-react-native'
+import { Calendar, MapPin, ShieldCheck, Wallet, Music2 } from 'lucide-react-native'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 import { BackButton, PrimaryButton } from '@/components/ui'
 import ApiService, { type EventDetail } from '@/api/apiService'
@@ -143,8 +143,8 @@ export default function BookScreen() {
           {cover ? (
             <Image source={{ uri: cover }} style={s.bannerImg} contentFit="cover" />
           ) : (
-            <LinearGradient colors={['#2A2A2A', '#111']} style={s.bannerImg}>
-              <Text style={s.bannerEmoji}>🎉</Text>
+            <LinearGradient colors={['#2A2A2A', '#111']} style={[s.bannerImg, { alignItems: 'center', justifyContent: 'center' }]}>
+              <Music2 size={52} color="rgba(255,107,53,0.4)" strokeWidth={1.2} />
             </LinearGradient>
           )}
           <LinearGradient

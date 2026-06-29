@@ -87,7 +87,10 @@ export const ENDPOINTS = {
 
   // Wallet
   WALLET: '/wallet',
-  WALLET_BANK_REFUND: '/wallet/bank-refund-request',
+
+  // Misc
+  FEEDBACK: '/feedback',
+  SUPPORT: '/support',
 
   // Payments
   PAYMENT_PUBLIC_KEY: '/payments/public-key',
@@ -97,6 +100,10 @@ export const ENDPOINTS = {
 
   // Event report
   EVENT_REPORT: '/events/:id/report',
+
+  // Account management
+  DELETE_ACCOUNT: '/users/me',
+  SET_DISCOVERABLE: '/users/me/discoverable',
 } as const
 
 export const WS_BASE_URL: string =

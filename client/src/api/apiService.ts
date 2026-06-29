@@ -28,6 +28,7 @@ export interface UserResponse {
   profile_complete: boolean
   photos: PhotoResponse[]
   name_changed_at: string | null
+  discoverable: boolean
 }
 
 export interface InterestResponse {
@@ -241,8 +242,8 @@ export interface Message {
 export interface WalletTransaction {
   id: string
   amount_inr: number
-  type: 'credit' | 'debit' | 'refund_requested'
-  source: 'event_refund' | 'ticket_purchase' | 'bank_refund_request'
+  type: 'credit' | 'debit'
+  source: 'event_refund' | 'ticket_purchase'
   description: string | null
   expires_at: string | null
   created_at: string
@@ -259,7 +260,7 @@ export interface PaymentOrderResponse {
   wallet_amount: number
   event_title?: string
   contact?: string   // user's phone e.g. "+919876543210"
-  email?: string     // synthetic pay_<uid>@vybe.app
+  email?: string     // synthetic pay_<uid>@vybe.in
 }
 
 export interface BlockedUser {
@@ -747,9 +748,22 @@ class ApiService {
     return this.get(ENDPOINTS.WALLET)
   }
 
-  static async requestBankRefund(): Promise<{ ok: boolean; amount: number }> {
-    return this.post(ENDPOINTS.WALLET_BANK_REFUND, {})
+  static async submitFeedback(text: string): Promise<{ ok: boolean }> {
+    return this.post(ENDPOINTS.FEEDBACK, { text })
   }
+
+  static async submitSupport(topic: string, message: string): Promise<{ ok: boolean }> {
+    return this.post(ENDPOINTS.SUPPORT, { topic, message })
+  }
+
+  static async deleteAccount(): Promise<{ ok: boolean }> {
+    return this.delete(ENDPOINTS.DELETE_ACCOUNT)
+  }
+
+  static async setDiscoverable(discoverable: boolean): Promise<{ ok: boolean; discoverable: boolean }> {
+    return this.patch(ENDPOINTS.SET_DISCOVERABLE, { discoverable })
+  }
+
 
   // ── Payments ───────────────────────────────────────────────────────────────
 

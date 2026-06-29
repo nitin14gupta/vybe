@@ -1,20 +1,21 @@
 import { useState } from 'react'
-import { View, Text, StyleSheet, Linking } from 'react-native'
+import { View, Text, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
 import { BackButton, PhoneInput, PrimaryButton, KeyboardAvoidingWrapper } from '@/components/ui'
-import { useAuthStore } from '@/store/auth'
+import { LegalSheet } from '@/components/ui/LegalSheet'
+import type { LegalType } from '@/components/ui/LegalSheet'
 import { useAuth } from '@/hooks/useAuth'
 import { Colors, FontFamily, Spacing } from '@/constants'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function PhoneScreen() {
-  const [phone, setPhone] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const { handleSendOTP } = useAuth()
-  const setAuthPhone = useAuthStore(s => s.setAuth)
-  const insets = useSafeAreaInsets()
-  const isValid = phone.length === 10
+  const [phone, setPhone]           = useState('')
+  const [loading, setLoading]       = useState(false)
+  const [error, setError]           = useState('')
+  const [legalType, setLegalType]   = useState<LegalType | null>(null)
+  const { handleSendOTP }           = useAuth()
+  const insets                      = useSafeAreaInsets()
+  const isValid                     = phone.length === 10
 
   const handleContinue = async () => {
     if (!isValid) return
@@ -34,33 +35,39 @@ export default function PhoneScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <BackButton onPress={() => router.back()} />
       <KeyboardAvoidingWrapper>
-      <View style={styles.inner}>
-        <View style={styles.header}>
-          <Text style={styles.title}>What's your number?</Text>
-          <Text style={styles.subtitle}>We'll send a one-time code</Text>
-        </View>
-        <PhoneInput
-          value={phone}
-          onChangeText={setPhone}
-          error={error}
+        <View style={styles.inner}>
+          <View style={styles.header}>
+            <Text style={styles.title}>What's your number?</Text>
+            <Text style={styles.subtitle}>We'll send a one-time code</Text>
+          </View>
+          <PhoneInput
+            value={phone}
+            onChangeText={setPhone}
+            error={error}
             autoFocus
-        />
-      </View>
-      <View style={styles.footer}>
-        <PrimaryButton
-          label="Continue"
-          onPress={handleContinue}
-          disabled={!isValid}
-          loading={loading}
-        />
-        <Text style={styles.legal}>
-          By continuing you agree to our{' '}
-          <Text style={styles.legalLink} onPress={() => Linking.openURL('https://vybe.app/terms')}>Terms</Text>
-          {' '}&amp;{' '}
-          <Text style={styles.legalLink} onPress={() => Linking.openURL('https://vybe.app/privacy')}>Privacy Policy</Text>
-        </Text>
-      </View>
+          />
+        </View>
+        <View style={styles.footer}>
+          <PrimaryButton
+            label="Continue"
+            onPress={handleContinue}
+            disabled={!isValid}
+            loading={loading}
+          />
+          <Text style={styles.legal}>
+            By continuing you agree to our{' '}
+            <Text style={styles.legalLink} onPress={() => setLegalType('terms')}>Terms</Text>
+            {' '}&amp;{' '}
+            <Text style={styles.legalLink} onPress={() => setLegalType('privacy')}>Privacy Policy</Text>
+          </Text>
+        </View>
       </KeyboardAvoidingWrapper>
+
+      <LegalSheet
+        visible={legalType !== null}
+        type={legalType ?? 'terms'}
+        onClose={() => setLegalType(null)}
+      />
     </View>
   )
 }

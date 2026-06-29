@@ -37,6 +37,20 @@ def verify_otp_route(body: OTPVerifyRequest):
         raise HTTPException(status_code=400, detail="Invalid or expired OTP")
 
     with get_db() as (cur, conn):
+        # Check if phone belongs to a soft-deleted account first
+        cur.execute(
+            "SELECT is_deleted, deleted_at FROM users WHERE phone = %s",
+            (body.phone,),
+        )
+        existing = cur.fetchone()
+        if existing and existing["is_deleted"]:
+            deleted_at = existing["deleted_at"]
+            deleted_str = deleted_at.strftime("%d %b %Y") if deleted_at else "recently"
+            raise HTTPException(
+                status_code=410,
+                detail=f"ACCOUNT_DELETED:{deleted_str}",
+            )
+
         cur.execute(
             """
             INSERT INTO users (phone, country_code)

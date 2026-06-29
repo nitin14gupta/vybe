@@ -3,18 +3,19 @@ import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { hTap } from '@/lib/haptics'
 import { Pencil } from 'lucide-react-native'
-import { BackButton, OTPInput, PrimaryButton, Screen, KeyboardAvoidingWrapper } from '@/components/ui'
+import { BackButton, OTPInput, PrimaryButton, Screen, KeyboardAvoidingWrapper, DeletedAccountSheet } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
 import { useCountdown } from '@/hooks/useCountdown'
 import { Colors, FontFamily, Spacing } from '@/constants'
 
 export default function OTPScreen() {
   const { phone } = useLocalSearchParams<{ phone: string }>()
-  const [code, setCode] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(false)
-  const [errorMsg, setErrorMsg] = useState('')
-  const [attempts, setAttempts] = useState(0)
+  const [code, setCode]               = useState('')
+  const [loading, setLoading]         = useState(false)
+  const [error, setError]             = useState(false)
+  const [errorMsg, setErrorMsg]       = useState('')
+  const [attempts, setAttempts]       = useState(0)
+  const [deletedOn, setDeletedOn]     = useState<string | null>(null)
   const tooManyAttempts = attempts >= 3
   const { handleVerifyOTP, handleSendOTP } = useAuth()
   const { seconds, isExpired, reset } = useCountdown(45)
@@ -34,6 +35,14 @@ export default function OTPScreen() {
         router.replace('/(auth)/age-gate')
       }
     } catch (e: any) {
+      // Soft-deleted account: backend returns 410 with "ACCOUNT_DELETED:DD Mon YYYY"
+      const msg: string = e?.message ?? ''
+      if (msg.startsWith('ACCOUNT_DELETED:')) {
+        setDeletedOn(msg.replace('ACCOUNT_DELETED:', ''))
+        setCode('')
+        setLoading(false)
+        return
+      }
       const next = attempts + 1
       setAttempts(next)
       setError(true)
@@ -63,6 +72,11 @@ export default function OTPScreen() {
 
   return (
     <Screen>
+      <DeletedAccountSheet
+        visible={deletedOn !== null}
+        deletedOn={deletedOn ?? ''}
+        onClose={() => setDeletedOn(null)}
+      />
       <BackButton onPress={() => router.back()} />
       <KeyboardAvoidingWrapper>
         <View style={styles.inner}>

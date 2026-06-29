@@ -1,115 +1,100 @@
-import { useState, useRef } from 'react'
-import { View, Text, StyleSheet, TextInput, ActivityIndicator } from 'react-native'
+import { useState } from 'react'
+import { View, Text, StyleSheet, Pressable, TextInput, ScrollView } from 'react-native'
 import { router } from 'expo-router'
-import { Screen, BackButton, PrimaryButton, ToastBanner } from '@/components/ui'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { ChevronLeft, Send } from 'lucide-react-native'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
-import type { ToastType } from '@/components/ui'
+import ApiService from '@/api/apiService'
+import { usePillStore } from '@/store/pillStore'
+import { hSuccess, hTap } from '@/lib/haptics'
 
 export default function FeedbackScreen() {
-  const [text, setText] = useState('')
+  const insets   = useSafeAreaInsets()
+  const showPill = usePillStore(s => s.show)
+  const [text, setText]         = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [toast, setToast] = useState<{ key: number; message: string; type: ToastType } | null>(null)
-  const keyRef = useRef(0)
 
-  const showToast = (message: string, type: ToastType) =>
-    setToast({ key: ++keyRef.current, message, type })
+  const canSend = text.trim().length > 0
 
   const handleSubmit = async () => {
-    if (!text.trim()) {
-      showToast('Please write something first', 'error')
-      return
-    }
+    if (!canSend || submitting) return
+    hTap()
     setSubmitting(true)
-    await new Promise(r => setTimeout(r, 800))
-    setSubmitting(false)
-    showToast('Thanks for your feedback!', 'success')
-    setTimeout(() => router.back(), 1000)
+    try {
+      await ApiService.submitFeedback(text.trim())
+      hSuccess()
+      showPill('Thanks for your feedback! We read everything.', 'default')
+      router.back()
+    } catch {
+      showPill('Failed to send. Please try again.', 'error')
+      setSubmitting(false)
+    }
   }
 
   return (
-    <Screen>
-      <View style={styles.header}>
-        <BackButton onPress={() => router.back()} />
-        <Text style={styles.title}>Send Feedback</Text>
-        <View style={styles.headerEnd} />
+    <View style={[s.root, { paddingTop: insets.top }]}>
+      <View style={s.header}>
+        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
+          <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
+        </Pressable>
+        <Text style={s.headerTitle}>Send Feedback</Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      <View style={styles.body}>
-        <Text style={styles.hint}>
-          Tell us what you love, what's broken, or what you'd like to see next.
+      <ScrollView
+        style={s.scroll}
+        contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 40 }]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={s.hint}>
+          Tell us what you love, what's broken, or what you'd like to see next. Every message is read by the team.
         </Text>
 
-        <TextInput
-          style={styles.textarea}
-          value={text}
-          onChangeText={setText}
-          placeholder="Your feedback..."
-          placeholderTextColor={Colors.inkDisabled}
-          multiline
-          textAlignVertical="top"
-          maxLength={1000}
-        />
+        <View style={s.inputCard}>
+          <TextInput
+            style={s.textarea}
+            value={text}
+            onChangeText={setText}
+            placeholder="Your thoughts..."
+            placeholderTextColor={Colors.inkDisabled}
+            multiline
+            textAlignVertical="top"
+            maxLength={1000}
+            autoFocus
+          />
+          <Text style={s.charCount}>{text.length}/1000</Text>
+        </View>
 
-        <Text style={styles.charCount}>{text.length}/1000</Text>
-
-        <PrimaryButton
-          label="Send Feedback"
+        <Pressable
+          style={[s.sendBtn, !canSend && s.sendBtnDisabled]}
           onPress={handleSubmit}
-          loading={submitting}
-          disabled={!text.trim()}
-        />
-      </View>
-
-      {toast && (
-        <ToastBanner key={toast.key} message={toast.message} type={toast.type} />
-      )}
-    </Screen>
+          disabled={!canSend || submitting}
+        >
+          <Send size={16} color="#111" strokeWidth={2} />
+          <Text style={s.sendText}>{submitting ? 'Sending…' : 'Send Feedback'}</Text>
+        </Pressable>
+      </ScrollView>
+    </View>
   )
 }
 
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingRight: Spacing.screenPadding,
-    paddingBottom: 8,
-  },
-  title: {
-    flex: 1,
-    fontFamily: FontFamily.headingBold,
-    fontSize: 18,
-    color: Colors.inkPrimary,
-    textAlign: 'center',
-  },
-  headerEnd: { width: 40 },
-  body: {
-    flex: 1,
-    paddingHorizontal: Spacing.screenPadding,
-    paddingTop: 8,
-    gap: 12,
-  },
-  hint: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 14,
-    color: Colors.inkSecondary,
-    lineHeight: 21,
-  },
-  textarea: {
-    height: 160,
-    backgroundColor: Colors.elevated,
-    borderRadius: Radius.card,
-    borderWidth: 1.5,
-    borderColor: Colors.divider,
-    padding: 14,
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 15,
-    color: Colors.inkPrimary,
-    lineHeight: 22,
-  },
-  charCount: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 12,
-    color: Colors.inkDisabled,
-    textAlign: 'right',
-  },
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: Colors.background },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
+  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { flex: 1, textAlign: 'center', fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
+
+  scroll: { flex: 1 },
+  content: { paddingHorizontal: 16, gap: 14 },
+
+  hint: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, lineHeight: 21 },
+
+  inputCard: { backgroundColor: Colors.surface, borderRadius: Radius.card, borderWidth: 1, borderColor: Colors.divider, padding: 14 },
+  textarea: { minHeight: 160, fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkPrimary, lineHeight: 22 },
+  charCount: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, textAlign: 'right', marginTop: 8 },
+
+  sendBtn: { height: 56, borderRadius: 28, backgroundColor: Colors.brandOrange, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  sendBtnDisabled: { opacity: 0.4 },
+  sendText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: '#111' },
 })

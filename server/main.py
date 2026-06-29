@@ -12,6 +12,7 @@ from routes.notifications import router as notifications_router
 from routes.devices import router as devices_router
 from routes.wallet import router as wallet_router
 from routes.payments import router as payments_router
+from routes.misc import router as misc_router
 
 app = FastAPI(title="Vybe API", version="1.0.0")
 
@@ -35,6 +36,7 @@ app.include_router(notifications_router)
 app.include_router(devices_router)
 app.include_router(wallet_router)
 app.include_router(payments_router)
+app.include_router(misc_router)
 
 
 @app.get("/health")

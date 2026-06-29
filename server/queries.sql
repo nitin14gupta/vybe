@@ -307,3 +307,30 @@ CREATE TABLE IF NOT EXISTS public.payment_orders (
   CONSTRAINT payment_orders_event_id_fkey FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
   CONSTRAINT payment_orders_status_check CHECK (status IN ('created', 'paid', 'failed'))
 );
+
+-- ── App feedback & support ───────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.app_feedback (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  user_id uuid NOT NULL,
+  text text NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT app_feedback_pkey PRIMARY KEY (id),
+  CONSTRAINT app_feedback_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS public.support_requests (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  user_id uuid NOT NULL,
+  topic text NOT NULL,
+  message text NOT NULL,
+  status text NOT NULL DEFAULT 'open',
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT support_requests_pkey PRIMARY KEY (id),
+  CONSTRAINT support_requests_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- ── Account deletion & discovery ─────────────────────────────────────────────
+ALTER TABLE public.users
+  ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE,
+  ADD COLUMN IF NOT EXISTS discoverable BOOLEAN NOT NULL DEFAULT TRUE;

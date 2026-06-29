@@ -24,7 +24,10 @@ def get_current_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
 
     with get_db() as (cur, _):
-        cur.execute("SELECT id, phone, profile_complete, is_active FROM users WHERE id = %s", (user_id,))
+        cur.execute(
+            "SELECT id, phone, profile_complete, is_active, COALESCE(is_deleted, FALSE) AS is_deleted FROM users WHERE id = %s",
+            (user_id,),
+        )
         user = cur.fetchone()
 
     if not user:
@@ -32,5 +35,8 @@ def get_current_user(
 
     if not user["is_active"]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is deactivated")
+
+    if user["is_deleted"]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account has been deleted")
 
     return dict(user)

@@ -2,7 +2,8 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import { router } from 'expo-router'
 import {
   User, Bell, HelpCircle, MessageSquare, Shield, FileText,
-  Info, LogOut, Calendar, Ticket, Wallet,
+  Info, LogOut, Calendar, Ticket, Wallet, HeadphonesIcon,
+  Trash2, Eye,
 } from 'lucide-react-native'
 import { Screen, BackButton, SettingRow, ConfirmSheet } from '@/components/ui'
 import { useSettings } from '@/hooks/useSettings'
@@ -78,6 +79,11 @@ export default function SettingsScreen() {
             icon={<MessageSquare size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
             label="Send Feedback"
             onPress={() => router.push('/(settings)/feedback')}
+          />
+          <SettingRow
+            icon={<HeadphonesIcon size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
+            label="Contact Support"
+            onPress={() => router.push('/(settings)/support' as any)}
             showSeparator={false}
           />
         </View>
@@ -106,6 +112,23 @@ export default function SettingsScreen() {
             label="About Vybe"
             value={`v${appVersion}`}
             onPress={() => router.push('/(settings)/about')}
+            showSeparator={false}
+          />
+        </View>
+
+        {/* Privacy */}
+        <Text style={styles.sectionLabel}>PRIVACY</Text>
+        <View style={styles.card}>
+          <SettingRow
+            icon={<Eye size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
+            label="Show Me in Discover"
+            onPress={() => router.push('/(settings)/discoverable' as any)}
+          />
+          <SettingRow
+            icon={<Trash2 size={18} color={Colors.brandCoral} strokeWidth={1.5} />}
+            label="Delete Account"
+            onPress={() => router.push('/(settings)/delete-account' as any)}
+            destructive
             showSeparator={false}
           />
         </View>

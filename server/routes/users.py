@@ -30,6 +30,7 @@ _USER_SELECT = """
         u.lat,
         u.lng,
         u.name_changed_at::text,
+        COALESCE(u.discoverable, TRUE) AS discoverable,
         (SELECT COUNT(*) FROM follows WHERE following_id = u.id)::int AS vibers_count,
         (SELECT COUNT(*) FROM follows WHERE follower_id  = u.id)::int AS vibing_count,
         CASE
@@ -690,3 +691,66 @@ def report_user(user_id: str, body: ReportRequest, current_user: dict = Depends(
         )
         conn.commit()
     return {"ok": True}
+
+
+# ── Delete account (soft) ─────────────────────────────────────────────────────
+
+@router.delete("/me", status_code=status.HTTP_200_OK)
+def delete_account(current_user: dict = Depends(get_current_user)):
+    """
+    Soft-delete: marks is_deleted=TRUE and records deleted_at.
+    Hard purge can run server-side after 30 days.
+    All active sessions will fail auth because we check is_deleted in get_current_user.
+    """
+    uid = current_user["id"]
+    with get_db() as (cur, conn):
+        # Cancel all upcoming RSVPs and free spots
+        cur.execute(
+            """
+            UPDATE event_attendees
+            SET status = 'cancelled'
+            WHERE user_id = %s::uuid AND status IN ('going', 'waitlist')
+            """,
+            (uid,),
+        )
+        cur.execute(
+            """
+            UPDATE events
+            SET spots_left = spots_left + 1
+            WHERE id IN (
+                SELECT event_id FROM event_attendees
+                WHERE user_id = %s::uuid AND status = 'cancelled'
+            )
+            """,
+            (uid,),
+        )
+        # Soft-delete the account
+        cur.execute(
+            """
+            UPDATE users
+            SET is_deleted = TRUE, deleted_at = NOW(),
+                name = '[deleted]', bio = NULL, voice_url = NULL
+            WHERE id = %s::uuid
+            """,
+            (uid,),
+        )
+        conn.commit()
+    return {"ok": True}
+
+
+# ── Update discoverable ───────────────────────────────────────────────────────
+
+class DiscoverableBody(BaseModel):
+    discoverable: bool
+
+
+@router.patch("/me/discoverable", status_code=status.HTTP_200_OK)
+def set_discoverable(body: DiscoverableBody, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    with get_db() as (cur, conn):
+        cur.execute(
+            "UPDATE users SET discoverable = %s WHERE id = %s::uuid",
+            (body.discoverable, uid),
+        )
+        conn.commit()
+    return {"ok": True, "discoverable": body.discoverable}

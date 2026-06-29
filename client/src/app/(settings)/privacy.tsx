@@ -29,7 +29,7 @@ export default function PrivacyScreen() {
           </ContentSection>
 
           <ContentSection title="Data Retention">
-            You can delete your account at any time. On deletion, your profile, photos, and voice intro are permanently removed within 30 days.
+            You can delete your account at any time from Settings → Delete Account. After verifying your identity, your profile, photos, voice intro, and wallet credits are permanently removed within 30 days. If you change your mind, email privacy@vybe.in within 30 days.
           </ContentSection>
 
           <ContentSection title="Contact">

@@ -11,7 +11,6 @@ import Animated, {
   withSpring, withDelay, withTiming, Easing,
 } from 'react-native-reanimated'
 import RazorpayCustomUI from 'react-native-customui'
-import RazorpayCheckout from 'react-native-razorpay'
 import {
   ArrowLeft, CreditCard, Building2,
   ChevronRight, Wallet, CheckCircle,
@@ -82,7 +81,7 @@ function WalletSuccessOverlay({ amount, onDone }: { amount: number; onDone: () =
 }
 
 const ov = StyleSheet.create({
-  root: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center', zIndex: 100 },
+  root: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center', zIndex: 100 },
   center: { alignItems: 'center', justifyContent: 'center' },
   circle: { width: 100, height: 100, borderRadius: 50, backgroundColor: Colors.brandOrange, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
   label: { fontFamily: FontFamily.headingBold, fontSize: 22, color: '#fff', textAlign: 'center' },
@@ -244,31 +243,31 @@ export default function PaymentScreen() {
 
   // ── Card / Net Banking ───────────────────────────────────────────────────
 
-  const handleCard = async () => {
-    if (!id || paying) return
-    hTap()
-    if (amountToPay === 0) { await doWalletPay(); return }
-    setPaying(true)
-    setPayingMsg('Preparing payment…')
-    try {
-      const order = await fetchOrder()
-      if (!order) return
-      const data = await RazorpayCheckout.open({
-        key: order.razorpay_key,
-        amount: String(order.amount * 100),
-        currency: 'INR',
-        name: 'Vybe',
-        description: eventTitle,
-        order_id: order.order_id,
-        prefill: { contact: order.contact ?? '', email: order.email ?? '' },
-        theme: { color: '#FF6B35' },
-      })
-      await finalise(data)
-    } catch (err: any) {
-      setFailedMsg(err?.code === 0 ? 'Payment was cancelled.' : (err?.description ?? err?.detail ?? 'Payment failed. Please try again.'))
-      setPaying(false)
-    }
-  }
+  // const handleCard = async () => {
+  //   if (!id || paying) return
+  //   hTap()
+  //   if (amountToPay === 0) { await doWalletPay(); return }
+  //   setPaying(true)
+  //   setPayingMsg('Preparing payment…')
+  //   try {
+  //     const order = await fetchOrder()
+  //     if (!order) return
+  //     const data = await RazorpayCheckout.open({
+  //       key: order.razorpay_key,
+  //       amount: String(order.amount * 100),
+  //       currency: 'INR',
+  //       name: 'Vybe',
+  //       description: eventTitle,
+  //       order_id: order.order_id,
+  //       prefill: { contact: order.contact ?? '', email: order.email ?? '' },
+  //       theme: { color: '#FF6B35' },
+  //     })
+  //     await finalise(data)
+  //   } catch (err: any) {
+  //     setFailedMsg(err?.code === 0 ? 'Payment was cancelled.' : (err?.description ?? err?.detail ?? 'Payment failed. Please try again.'))
+  //     setPaying(false)
+  //   }
+  // }
 
   // ── Loading ───────────────────────────────────────────────────────────────
 
@@ -388,7 +387,7 @@ export default function PaymentScreen() {
             </View>
 
             {/* Cards */}
-            <Text style={s.sectionLabel}>CARDS & NET BANKING</Text>
+            {/* <Text style={s.sectionLabel}>CARDS & NET BANKING</Text>
             <View style={s.methodCard}>
               <Pressable style={[s.methodRow, s.methodBorder]} onPress={handleCard}>
                 <View style={[s.dot, { backgroundColor: '#1A3A6B' }]}>
@@ -410,7 +409,7 @@ export default function PaymentScreen() {
                 </View>
                 <ChevronRight size={18} color={Colors.inkDisabled} strokeWidth={1.8} />
               </Pressable>
-            </View>
+            </View> */}
           </>
         )}
 

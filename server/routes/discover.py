@@ -136,6 +136,8 @@ def get_discover_feed(
             WHERE u.id != %s
               AND u.profile_complete = TRUE
               AND u.is_active = TRUE
+              AND COALESCE(u.is_deleted, FALSE) = FALSE
+              AND COALESCE(u.discoverable, TRUE) = TRUE
               AND NOT EXISTS (
                   SELECT 1 FROM follows
                   WHERE follower_id = %s AND following_id = u.id
