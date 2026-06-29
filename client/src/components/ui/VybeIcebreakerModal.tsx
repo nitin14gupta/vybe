@@ -7,7 +7,7 @@ import { hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 
 const MAX_CHARS = 150
-const SNAP_POINTS = ['55%', '85%']
+const SNAP_POINTS = ['86%', '85%']
 
 interface Props {
   visible: boolean

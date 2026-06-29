@@ -8,7 +8,7 @@ import { Colors, FontFamily } from '@/constants'
 import type { DiscoverUser } from '@/api/apiService'
 
 const MAX_CHARS = 150
-const SNAP_POINTS = ['52%', '85%']
+const SNAP_POINTS = ['86%', '85%']
 
 interface Props {
   visible: boolean

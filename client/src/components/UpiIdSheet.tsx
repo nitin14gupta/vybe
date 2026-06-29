@@ -9,7 +9,7 @@ import { hTap, hSuccess } from '@/lib/haptics'
 
 interface VpaResult { name: string; vpa: string }
 
-const SNAP_POINTS = ['48%', '82%']
+const SNAP_POINTS = ['66%', '82%']
 
 function renderBackdrop(props: BottomSheetBackdropProps) {
   return (
