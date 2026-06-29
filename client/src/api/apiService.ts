@@ -258,6 +258,8 @@ export interface PaymentOrderResponse {
   platform_fee: number
   wallet_amount: number
   event_title?: string
+  contact?: string   // user's phone e.g. "+919876543210"
+  email?: string     // synthetic pay_<uid>@vybe.app
 }
 
 export interface BlockedUser {
@@ -750,6 +752,10 @@ class ApiService {
   }
 
   // ── Payments ───────────────────────────────────────────────────────────────
+
+  static async getPaymentPublicKey(): Promise<{ key: string }> {
+    return this.get(ENDPOINTS.PAYMENT_PUBLIC_KEY)
+  }
 
   static async createPaymentOrder(eventId: string, walletAmount = 0): Promise<PaymentOrderResponse> {
     return this.post(ENDPOINTS.PAYMENT_CREATE_ORDER, { event_id: eventId, wallet_amount: walletAmount })

@@ -90,6 +90,7 @@ export const ENDPOINTS = {
   WALLET_BANK_REFUND: '/wallet/bank-refund-request',
 
   // Payments
+  PAYMENT_PUBLIC_KEY: '/payments/public-key',
   PAYMENT_CREATE_ORDER: '/payments/create-order',
   PAYMENT_VERIFY: '/payments/verify',
   PAYMENT_WALLET_PAY: '/payments/wallet-pay',

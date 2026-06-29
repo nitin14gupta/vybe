@@ -45,6 +45,14 @@ class WalletPayBody(BaseModel):
     event_id: str
 
 
+# ── GET /payments/public-key ─────────────────────────────────────────────────
+
+@router.get("/public-key")
+def get_public_key(current_user: dict = Depends(get_current_user)):
+    """Returns the Razorpay public key so the client can initialise the SDK early."""
+    return {"key": os.getenv("RAZORPAY_KEY_ID")}
+
+
 # ── POST /payments/create-order ───────────────────────────────────────────────
 
 @router.post("/create-order")
@@ -62,9 +70,14 @@ def create_order(body: CreateOrderBody, current_user: dict = Depends(get_current
         if ev["spots_left"] <= 0:
             raise HTTPException(status_code=409, detail="No spots left for this event")
 
-        cur.execute("SELECT wallet_balance FROM users WHERE id = %s::uuid", (uid,))
+        cur.execute(
+            "SELECT wallet_balance, phone, country_code FROM users WHERE id = %s::uuid", (uid,)
+        )
         user = cur.fetchone()
         wallet_bal = user["wallet_balance"] if user else 0
+        raw_phone = (user["phone"] or "") if user else ""
+        country_code = (user.get("country_code") or "+91") if user else "+91"
+        contact = f"{country_code}{raw_phone}".replace(" ", "")
 
     ticket_price = ev["price_inr"]
     platform_fee = round(ticket_price * 0.05)
@@ -112,6 +125,8 @@ def create_order(body: CreateOrderBody, current_user: dict = Depends(get_current
         "platform_fee": platform_fee,
         "wallet_amount": wallet_use,
         "event_title": ev["title"],
+        "contact": contact,
+        "email": f"pay_{uid[:8]}@vybe.app",
     }
 
 

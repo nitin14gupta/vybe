@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native'
+import { View, Text, TextInput, Pressable, StyleSheet, Keyboard } from 'react-native'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { MessageCircle } from 'lucide-react-native'
@@ -7,6 +7,7 @@ import { hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 
 const MAX_CHARS = 150
+const SNAP_POINTS = ['55%', '85%']
 
 interface Props {
   visible: boolean
@@ -25,6 +26,12 @@ function VybeIcebreakerCore({ partnerName, onSend, onClose }: Omit<Props, 'visib
 
   useEffect(() => { sheetRef.current?.present() }, [])
 
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => sheetRef.current?.snapToIndex(1))
+    const hide = Keyboard.addListener('keyboardDidHide', () => sheetRef.current?.snapToIndex(0))
+    return () => { show.remove(); hide.remove() }
+  }, [])
+
   const handleSend = () => {
     const trimmed = message.trim()
     if (!trimmed) return
@@ -39,10 +46,11 @@ function VybeIcebreakerCore({ partnerName, onSend, onClose }: Omit<Props, 'visib
   return (
     <BottomSheetModal
       ref={sheetRef}
-      enableDynamicSizing
+      snapPoints={SNAP_POINTS}
       enablePanDownToClose
       keyboardBehavior="interactive"
       keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
       onDismiss={onClose}
       backdropComponent={renderBackdrop}
       backgroundStyle={s.bg}

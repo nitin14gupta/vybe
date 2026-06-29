@@ -78,7 +78,8 @@
       "expo-tracking-transparency",
       "react-native-auto-skeleton",
       "expo-sharing",
-      "expo-build-properties"
+      "expo-build-properties",
+      "./plugins/withUpiQueries"
     ],
     "experiments": {
       "typedRoutes": true,

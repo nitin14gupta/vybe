@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { View, Text, TextInput, Pressable, Image, StyleSheet } from 'react-native'
+import { View, Text, TextInput, Pressable, Image, StyleSheet, Keyboard } from 'react-native'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { Flame } from 'lucide-react-native'
@@ -8,6 +8,7 @@ import { Colors, FontFamily } from '@/constants'
 import type { DiscoverUser } from '@/api/apiService'
 
 const MAX_CHARS = 150
+const SNAP_POINTS = ['52%', '85%']
 
 interface Props {
   visible: boolean
@@ -34,6 +35,12 @@ function VybeRequestModalCore({ user, onSend, onClose }: Omit<Props, 'visible'>)
 
   useEffect(() => { sheetRef.current?.present() }, [])
 
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => sheetRef.current?.snapToIndex(1))
+    const hide = Keyboard.addListener('keyboardDidHide', () => sheetRef.current?.snapToIndex(0))
+    return () => { show.remove(); hide.remove() }
+  }, [])
+
   const handleSend = () => {
     const trimmed = message.trim()
     if (!trimmed) return
@@ -55,10 +62,11 @@ function VybeRequestModalCore({ user, onSend, onClose }: Omit<Props, 'visible'>)
   return (
     <BottomSheetModal
       ref={sheetRef}
-      enableDynamicSizing
+      snapPoints={SNAP_POINTS}
       enablePanDownToClose
       keyboardBehavior="interactive"
       keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
       onDismiss={handleClose}
       backdropComponent={renderBackdrop}
       backgroundStyle={s.bg}
@@ -126,113 +134,24 @@ export function VybeRequestModal({ visible, user, onSend, onClose }: Props) {
 const s = StyleSheet.create({
   bg: { backgroundColor: '#1a1a1a' },
   handleIndicator: { backgroundColor: 'rgba(255,255,255,0.18)' },
-  content: {
-    paddingHorizontal: 20,
-    paddingBottom: 36,
-    paddingTop: 8,
-  },
-  partnerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 2,
-    borderColor: Colors.brandOrange,
-  },
-  avatarFallback: {
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarInitial: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 22,
-    color: Colors.inkPrimary,
-  },
+  content: { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 8 },
+  partnerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  avatar: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: Colors.brandOrange },
+  avatarFallback: { backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center' },
+  avatarInitial: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.inkPrimary },
   partnerInfo: { flex: 1, marginLeft: 12 },
-  partnerName: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 18,
-    color: Colors.inkPrimary,
-  },
-  partnerCity: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 13,
-    color: Colors.inkSecondary,
-    marginTop: 2,
-  },
-  flameBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,107,53,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heading: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 22,
-    color: Colors.inkPrimary,
-    marginBottom: 4,
-  },
-  sub: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 13,
-    color: Colors.inkSecondary,
-    marginBottom: 20,
-    lineHeight: 18,
-  },
-  inputWrapper: {
-    backgroundColor: '#222',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#333',
-    padding: 14,
-    marginBottom: 16,
-    minHeight: 100,
-  },
-  input: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 15,
-    color: Colors.inkPrimary,
-    lineHeight: 22,
-    flex: 1,
-  },
-  charCount: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 11,
-    color: Colors.inkDisabled,
-    textAlign: 'right',
-    marginTop: 6,
-  },
+  partnerName: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
+  partnerCity: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, marginTop: 2 },
+  flameBadge: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,107,53,0.15)', alignItems: 'center', justifyContent: 'center' },
+  heading: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.inkPrimary, marginBottom: 4 },
+  sub: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, marginBottom: 20, lineHeight: 18 },
+  inputWrapper: { backgroundColor: '#222', borderRadius: 16, borderWidth: 1, borderColor: '#333', padding: 14, marginBottom: 16, minHeight: 100 },
+  input: { fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkPrimary, lineHeight: 22, flex: 1 },
+  charCount: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, textAlign: 'right', marginTop: 6 },
   charCountWarn: { color: Colors.brandCoral },
-  sendBtn: {
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: Colors.brandOrange,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
+  sendBtn: { height: 52, borderRadius: 26, backgroundColor: Colors.brandOrange, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 },
   sendBtnDisabled: { opacity: 0.4 },
-  sendBtnText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 16,
-    color: '#111',
-  },
-  cancelBtn: {
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  cancelText: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 14,
-    color: Colors.inkSecondary,
-  },
+  sendBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 16, color: '#111' },
+  cancelBtn: { alignItems: 'center', paddingVertical: 10 },
+  cancelText: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary },
 })
