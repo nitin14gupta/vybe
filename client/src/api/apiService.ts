@@ -765,37 +765,8 @@ class ApiService {
     return this.post(ENDPOINTS.PAYMENT_VERIFY, body)
   }
 
-  static async getPaymentStatus(orderId: string): Promise<{ status: 'paid' | 'pending' | 'failed'; event_id?: string }> {
-    return this.get(ENDPOINTS.PAYMENT_STATUS.replace(':order_id', orderId))
-  }
-
   static async walletPay(eventId: string): Promise<{ ok: boolean; status: string }> {
     return this.post(ENDPOINTS.PAYMENT_WALLET_PAY, { event_id: eventId })
-  }
-
-  static async createUpiIntent(eventId: string, walletAmount = 0): Promise<{
-    full_wallet?: boolean
-    order_id?: string
-    razorpay_key?: string
-    payment_id?: string
-    intent_url?: string | null   // upi:// deep link; null if test mode doesn't support it
-    amount?: number
-    total: number
-    wallet_amount: number
-    event_title?: string
-  }> {
-    return this.post(ENDPOINTS.PAYMENT_UPI_INTENT, { event_id: eventId, wallet_amount: walletAmount })
-  }
-
-  static async createUpiCollect(eventId: string, vpa: string, walletAmount = 0): Promise<{
-    full_wallet?: boolean
-    order_id?: string
-    payment_id?: string
-    amount?: number
-    total: number
-    wallet_amount: number
-  }> {
-    return this.post(ENDPOINTS.PAYMENT_UPI_COLLECT, { event_id: eventId, vpa, wallet_amount: walletAmount })
   }
 
   static async getMyReview(eventId: string): Promise<{ rating: number; body: string | null } | null> {

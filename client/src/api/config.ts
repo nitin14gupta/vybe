@@ -92,10 +92,7 @@ export const ENDPOINTS = {
   // Payments
   PAYMENT_CREATE_ORDER: '/payments/create-order',
   PAYMENT_VERIFY: '/payments/verify',
-  PAYMENT_STATUS: '/payments/status/:order_id',
   PAYMENT_WALLET_PAY: '/payments/wallet-pay',
-  PAYMENT_UPI_INTENT: '/payments/upi-intent',
-  PAYMENT_UPI_COLLECT: '/payments/upi-collect',
 
   // Event report
   EVENT_REPORT: '/events/:id/report',

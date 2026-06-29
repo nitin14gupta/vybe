@@ -1,12 +1,12 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   View, Text, StyleSheet, Pressable, ScrollView,
-  ActivityIndicator, Switch, TextInput, Linking,
-  AppState, type AppStateStatus,
+  ActivityIndicator, Switch, TextInput, Image,
 } from 'react-native'
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
+import RazorpayCustomUI from 'react-native-customui'
 import RazorpayCheckout from 'react-native-razorpay'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
@@ -18,31 +18,17 @@ import { Colors, FontFamily } from '@/constants'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { hTap, hSuccess, hSelection } from '@/lib/haptics'
+import { usePaymentData } from '@/hooks/usePaymentData'
+import { useInstalledUpiApps } from '@/hooks/useInstalledUpiApps'
+import type { UpiApp } from '@/hooks/useInstalledUpiApps'
 
-// ── UPI app definitions ───────────────────────────────────────────────────────
-
-interface UpiOption {
-  key: string
-  label: string
-  color: string
-  initial: string
-  rzpApp: string
-}
-
-const UPI_OPTIONS: UpiOption[] = [
-  { key: 'gpay',    label: 'Google Pay', color: '#4285F4', initial: 'G', rzpApp: 'google_pay' },
-  { key: 'phonepe', label: 'PhonePe',   color: '#5F259F', initial: 'P', rzpApp: 'phonepe' },
-  { key: 'paytm',   label: 'Paytm',     color: '#00BAF2', initial: 'T', rzpApp: 'paytm' },
-  { key: 'bhim',    label: 'BHIM',      color: '#1A6B3B', initial: 'B', rzpApp: 'bhim' },
-]
-
-// ── Backdrop helper ───────────────────────────────────────────────────────────
+// ── Backdrop ──────────────────────────────────────────────────────────────────
 
 function renderBackdrop(props: BottomSheetBackdropProps) {
   return <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close" opacity={0.65} />
 }
 
-// ── UPI ID entry sheet ────────────────────────────────────────────────────────
+// ── UPI ID sheet ──────────────────────────────────────────────────────────────
 
 function UpiIdSheetCore({ onPay, onClose }: { onPay: (vpa: string) => void; onClose: () => void }) {
   const ref = useRef<BottomSheetModal>(null)
@@ -85,7 +71,7 @@ function UpiIdSheetCore({ onPay, onClose }: { onPay: (vpa: string) => void; onCl
           onPress={() => { if (valid) { hSuccess(); onPay(vpa.trim()) } }}
           disabled={!valid}
         >
-          <Text style={s.payBtnText}>SEND COLLECT REQUEST</Text>
+          <Text style={s.payBtnText}>Send Collect Request</Text>
         </Pressable>
       </BottomSheetView>
     </BottomSheetModal>
@@ -105,47 +91,23 @@ export default function PaymentScreen() {
   const router = useRouter()
   const showPill = usePillStore(s => s.show)
 
-  const [eventTitle, setEventTitle]   = useState('')
-  const [ticketPrice, setTicketPrice] = useState(0)
-  const [platformFee, setPlatformFee] = useState(0)
-  const [total, setTotal]             = useState(0)
-  const [walletBalance, setWalletBalance] = useState(0)
-  const [loading, setLoading]         = useState(true)
-  const [paying, setPaying]           = useState(false)
-  const [payingMsg, setPayingMsg]     = useState('Processing…')
+  const { eventTitle, ticketPrice, platformFee, total, walletBalance, loading, error } = usePaymentData(id)
+  const { apps: upiApps, loading: upiAppsLoading } = useInstalledUpiApps()
 
+  const [paying, setPaying]   = useState(false)
+  const [payingMsg, setPayingMsg] = useState('Processing…')
   const [walletEnabled, setWalletEnabled] = useState(false)
+  const [upiSheetOpen, setUpiSheetOpen]   = useState(false)
+
   const walletApplied = walletEnabled ? Math.min(walletBalance, total) : 0
   const amountToPay   = Math.max(0, total - walletApplied)
 
-  // UPI ID sheet
-  const [upiSheetOpen, setUpiSheetOpen] = useState(false)
+  // Navigate back on data load error
+  useEffect(() => {
+    if (error) { showPill(error, 'error'); router.back() }
+  }, [error])
 
-  // Polling state (for UPI flows)
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const pendingOrderId = useRef<string | null>(null)
-
-  useFocusEffect(useCallback(() => {
-    if (!id) return
-    setLoading(true)
-    Promise.all([ApiService.getEvent(id), ApiService.getWallet()])
-      .then(([ev, wallet]) => {
-        setEventTitle(ev.title)
-        setTicketPrice(ev.price_inr)
-        const fee = Math.round(ev.price_inr * 0.05)
-        setPlatformFee(fee)
-        setTotal(ev.price_inr + fee)
-        setWalletBalance(wallet.balance)
-      })
-      .catch(() => { showPill("Couldn't load payment details", 'error'); router.back() })
-      .finally(() => setLoading(false))
-
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current)
-    }
-  }, [id]))
-
-  // ── Full wallet payment ────────────────────────────────────────────────────
+  // ── Full wallet payment ──────────────────────────────────────────────────
 
   const doWalletPay = async () => {
     if (!id || paying) return
@@ -161,54 +123,11 @@ export default function PaymentScreen() {
     }
   }
 
-  // ── Poll for UPI payment capture ──────────────────────────────────────────
+  // ── UPI intent via react-native-customui ─────────────────────────────────
+  // Opens the specific UPI app directly. Promise resolves when user completes
+  // payment inside the UPI app and returns to Vybe. No polling needed.
 
-  const startPolling = (orderId: string) => {
-    pendingOrderId.current = orderId
-    let attempts = 0
-    pollRef.current = setInterval(async () => {
-      attempts++
-      try {
-        const res = await ApiService.getPaymentStatus(orderId)
-        if (res.status === 'paid') {
-          if (pollRef.current) clearInterval(pollRef.current)
-          hSuccess()
-          router.replace(`/(events)/${id}/ticket` as any)
-        } else if (res.status === 'failed') {
-          if (pollRef.current) clearInterval(pollRef.current)
-          showPill('Payment failed or expired. Try again.', 'error')
-          setPaying(false)
-        } else if (attempts >= 40) {
-          // 40 × 3s = 2 minutes
-          if (pollRef.current) clearInterval(pollRef.current)
-          showPill("Payment not confirmed yet — we'll notify you when it clears.", 'default')
-          setPaying(false)
-        }
-      } catch {
-        if (attempts >= 40) {
-          if (pollRef.current) clearInterval(pollRef.current)
-          setPaying(false)
-        }
-      }
-    }, 3000)
-  }
-
-  // Resume polling if user backgrounds app during UPI and comes back
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
-      if (state === 'active' && pendingOrderId.current && !pollRef.current) {
-        setPayingMsg('Checking payment…')
-        startPolling(pendingOrderId.current)
-      }
-    })
-    return () => sub.remove()
-  }, [])
-
-  // ── UPI intent: opens GPay/PhonePe etc. via Linking ──────────────────────
-  // Server creates the payment via Razorpay S2S API and returns a upi:// URL.
-  // No Razorpay UI appears. Falls back to RazorpayCheckout if S2S not available (test mode).
-
-  const handleUpiApp = async (opt: UpiOption) => {
+  const handleUpiApp = async (packageName: string) => {
     if (!id || paying) return
     hTap()
 
@@ -218,39 +137,37 @@ export default function PaymentScreen() {
     setPayingMsg('Preparing payment…')
 
     try {
-      const res = await ApiService.createUpiIntent(id, walletApplied)
-
-      if (res.full_wallet) { await doWalletPay(); return }
-
-      if (res.intent_url) {
-        // S2S UPI intent URL available — open the UPI app directly, no Razorpay UI
-        await Linking.openURL(res.intent_url)
-        setPayingMsg('Waiting for payment…')
-        startPolling(res.order_id!)
-      } else if (res.order_id && res.razorpay_key && res.amount) {
-        // Test mode fallback: S2S UPI not available, use RazorpayCheckout (shows Razorpay UI)
-        setPayingMsg('Opening checkout…')
-        const data = await RazorpayCheckout.open({
-          key: res.razorpay_key,
-          amount: String(res.amount * 100),
-          currency: 'INR',
-          name: 'Vybe',
-          description: eventTitle,
-          order_id: res.order_id,
-          theme: { color: '#FF6B35' },
-        })
-        await ApiService.verifyPayment({
-          event_id: id,
-          razorpay_order_id: data.razorpay_order_id,
-          razorpay_payment_id: data.razorpay_payment_id,
-          razorpay_signature: data.razorpay_signature,
-          wallet_amount: walletApplied,
-        })
-        hSuccess()
-        router.replace(`/(events)/${id}/ticket` as any)
+      const order = await ApiService.createPaymentOrder(id, walletApplied)
+      if (order.full_wallet) { await doWalletPay(); return }
+      if (!order.order_id || !order.razorpay_key || !order.amount) {
+        showPill('Could not initialise payment. Try again.', 'error')
+        setPaying(false)
+        return
       }
+
+      setPayingMsg('Opening UPI app…')
+      const data: any = await RazorpayCustomUI.open({
+        key_id: order.razorpay_key,
+        order_id: order.order_id,
+        amount: String(order.amount * 100),
+        currency: 'INR',
+        name: 'Vybe',
+        description: eventTitle,
+        method: 'upi',
+        '_[flow]': 'intent',
+        upi_app_package_name: packageName,
+      })
+
+      await ApiService.verifyPayment({
+        event_id: id,
+        razorpay_order_id: data.razorpay_order_id,
+        razorpay_payment_id: data.razorpay_payment_id,
+        razorpay_signature: data.razorpay_signature,
+        wallet_amount: walletApplied,
+      })
+      hSuccess()
+      router.replace(`/(events)/${id}/ticket` as any)
     } catch (err: any) {
-      if (pollRef.current) clearInterval(pollRef.current)
       if (err?.code !== 0) {
         showPill(err?.description ?? err?.detail ?? 'Payment failed. Try again.', 'error')
       }
@@ -258,7 +175,7 @@ export default function PaymentScreen() {
     }
   }
 
-  // ── UPI Collect: user enters VPA, Razorpay sends a collect request ────────
+  // ── UPI collect (enter VPA) ──────────────────────────────────────────────
 
   const handleUpiCollect = async (vpa: string) => {
     if (!id || paying) return
@@ -270,17 +187,47 @@ export default function PaymentScreen() {
     setPayingMsg('Sending collect request…')
 
     try {
-      const res = await ApiService.createUpiCollect(id, vpa, walletApplied)
-      if (res.full_wallet) { await doWalletPay(); return }
+      const order = await ApiService.createPaymentOrder(id, walletApplied)
+      if (order.full_wallet) { await doWalletPay(); return }
+      if (!order.order_id || !order.razorpay_key || !order.amount) {
+        showPill('Could not initialise payment. Try again.', 'error')
+        setPaying(false)
+        return
+      }
+
       setPayingMsg('Check your UPI app to approve…')
-      startPolling(res.order_id!)
+      const data: any = await RazorpayCustomUI.open({
+        key_id: order.razorpay_key,
+        order_id: order.order_id,
+        amount: String(order.amount * 100),
+        currency: 'INR',
+        name: 'Vybe',
+        description: eventTitle,
+        method: 'upi',
+        '_[flow]': 'collect',
+        '_[vpa]': vpa,
+      })
+
+      await ApiService.verifyPayment({
+        event_id: id,
+        razorpay_order_id: data.razorpay_order_id,
+        razorpay_payment_id: data.razorpay_payment_id,
+        razorpay_signature: data.razorpay_signature,
+        wallet_amount: walletApplied,
+      })
+      hSuccess()
+      router.replace(`/(events)/${id}/ticket` as any)
     } catch (err: any) {
-      showPill(err?.detail ?? 'Could not send collect request. Check your UPI ID.', 'error')
+      if (err?.code !== 0) {
+        showPill(err?.description ?? err?.detail ?? 'UPI collect failed. Try again.', 'error')
+      }
       setPaying(false)
     }
   }
 
-  // ── Card / Net Banking: RazorpayCheckout native SDK (needed for PCI) ─────
+  // ── Card / Net Banking via standard RazorpayCheckout ────────────────────
+  // Card input must go through Razorpay's SDK (PCI). User tapped "Card" in
+  // our UI so they won't see Razorpay's UPI selection — just the card form.
 
   const handleCard = async () => {
     if (!id || paying) return
@@ -293,7 +240,6 @@ export default function PaymentScreen() {
 
     try {
       const order = await ApiService.createPaymentOrder(id, walletApplied)
-
       if (order.full_wallet) { await doWalletPay(); return }
       if (!order.order_id || !order.razorpay_key || !order.amount) {
         showPill('Could not initialise payment. Try again.', 'error')
@@ -345,15 +291,6 @@ export default function PaymentScreen() {
       <View style={[s.root, s.center]}>
         <ActivityIndicator size="large" color={Colors.brandOrange} />
         <Text style={s.payingMsg}>{payingMsg}</Text>
-        {payingMsg.includes('Waiting') || payingMsg.includes('Check') ? (
-          <Pressable style={s.cancelBtn} onPress={() => {
-            if (pollRef.current) clearInterval(pollRef.current)
-            pendingOrderId.current = null
-            setPaying(false)
-          }}>
-            <Text style={s.cancelBtnText}>Cancel</Text>
-          </Pressable>
-        ) : null}
       </View>
     )
   }
@@ -427,20 +364,42 @@ export default function PaymentScreen() {
             {/* UPI */}
             <Text style={s.sectionLabel}>PAY VIA UPI</Text>
             <View style={s.methodCard}>
-              {UPI_OPTIONS.map((opt, i) => (
-                <Pressable
-                  key={opt.key}
-                  style={[s.methodRow, i < UPI_OPTIONS.length - 1 && s.methodBorder]}
-                  onPress={() => handleUpiApp(opt)}
-                >
-                  <View style={[s.dot, { backgroundColor: opt.color }]}>
-                    <Text style={s.dotText}>{opt.initial}</Text>
-                  </View>
-                  <Text style={s.methodLabel}>{opt.label}</Text>
-                  <ChevronRight size={18} color={Colors.inkDisabled} strokeWidth={1.8} />
-                </Pressable>
-              ))}
-              <Pressable style={s.methodRow} onPress={() => { hTap(); setUpiSheetOpen(true) }}>
+              {upiAppsLoading ? (
+                <View style={s.upiLoadingRow}>
+                  <ActivityIndicator size="small" color={Colors.inkDisabled} />
+                </View>
+              ) : upiApps.length === 0 ? (
+                <View style={s.upiEmptyRow}>
+                  <Text style={s.upiEmptyText}>No UPI apps found on this device</Text>
+                </View>
+              ) : (
+                upiApps.map((app, i) => (
+                  <Pressable
+                    key={app.package_name}
+                    style={[s.methodRow, i < upiApps.length - 1 && s.methodBorder]}
+                    onPress={() => handleUpiApp(app.package_name)}
+                  >
+                    {app.app_icon ? (
+                      <Image
+                        source={{ uri: `data:image/png;base64,${app.app_icon}` }}
+                        style={s.upiAppIcon}
+                      />
+                    ) : (
+                      <View style={[s.dot, { backgroundColor: Colors.elevated }]}>
+                        <Text style={[s.dotText, { fontSize: 13, color: Colors.inkSecondary }]}>
+                          {app.app_name.charAt(0)}
+                        </Text>
+                      </View>
+                    )}
+                    <Text style={s.methodLabel}>{app.app_name}</Text>
+                    <ChevronRight size={18} color={Colors.inkDisabled} strokeWidth={1.8} />
+                  </Pressable>
+                ))
+              )}
+              <Pressable
+                style={[s.methodRow, upiApps.length > 0 && s.methodTopBorder]}
+                onPress={() => { hTap(); setUpiSheetOpen(true) }}
+              >
                 <View style={[s.dot, { backgroundColor: Colors.elevated }]}>
                   <Text style={[s.dotText, { color: Colors.inkSecondary, fontSize: 14 }]}>@</Text>
                 </View>
@@ -543,10 +502,16 @@ const s = StyleSheet.create({
   methodCard: { backgroundColor: Colors.surface, borderRadius: 16, overflow: 'hidden' },
   methodRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingVertical: 14 },
   methodBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.divider },
+  methodTopBorder: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: Colors.divider },
   methodLabel: { flex: 1, fontFamily: FontFamily.bodyMedium, fontSize: 15, color: Colors.inkPrimary },
   methodSub: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary, marginTop: 1 },
   dot: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   dotText: { fontFamily: FontFamily.headingBold, fontSize: 16, color: '#fff' },
+
+  upiAppIcon: { width: 36, height: 36, borderRadius: 10 },
+  upiLoadingRow: { paddingVertical: 20, alignItems: 'center' },
+  upiEmptyRow: { paddingHorizontal: 16, paddingVertical: 14 },
+  upiEmptyText: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkDisabled },
 
   walletOnlyWrap: { gap: 10, marginTop: 8 },
   walletOnlyBtn: { borderRadius: 28, overflow: 'hidden' },
@@ -558,8 +523,6 @@ const s = StyleSheet.create({
   secureText: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, textAlign: 'center' },
 
   payingMsg: { fontFamily: FontFamily.bodyMedium, fontSize: 15, color: Colors.inkSecondary, textAlign: 'center' },
-  cancelBtn: { paddingVertical: 10, paddingHorizontal: 28, marginTop: 8 },
-  cancelBtnText: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.inkSecondary },
 
   sheetBg: { backgroundColor: '#141414' },
   sheetHandle: { backgroundColor: 'rgba(255,255,255,0.18)' },
