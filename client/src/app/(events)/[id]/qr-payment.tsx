@@ -5,7 +5,7 @@ import {
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { captureRef } from 'react-native-view-shot'
-import * as Sharing from 'expo-sharing'
+import RNShare from 'react-native-share'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, withTiming,
@@ -211,11 +211,9 @@ export default function QrPaymentScreen() {
     if (!paymentUrl && !imageUrl) return
     try {
       const uri = await captureRef(qrCardRef, { format: 'png', quality: 1 })
-      await Sharing.shareAsync(uri, {
-        mimeType: 'image/png',
-        UTI: 'public.png',
-        dialogTitle: 'Share QR Code',
-      })
+      const name = eventTitle || 'the event'
+      const message = `Pay ₹${amountInr} for ${name}.\n\nScan using any UPI app — GPay, PhonePe, Paytm, BHIM and more.\n\nValid for 15 minutes.`
+      await RNShare.open({ url: uri, message, type: 'image/png', failOnCancel: false })
     } catch (err: any) {
       if (err?.message && !err.message.includes('cancel')) {
         showPill('Could not share QR code.', 'error')
