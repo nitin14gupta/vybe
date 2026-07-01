@@ -108,6 +108,7 @@ export default function PaymentScreen() {
   const [rzpKey, setRzpKey]         = useState('')
   const [showWalletAnim, setShowWalletAnim] = useState(false)
   const [failedMsg, setFailedMsg]   = useState<string | null>(null)
+  const [qrGenerating, setQrGenerating] = useState(false)
 
   const amountToPay = Math.max(0, total - walletApplied)
 
@@ -388,13 +389,45 @@ export default function PaymentScreen() {
               )}
               <Pressable
                 style={[s.methodRow, s.methodTopBorder]}
-                onPress={() => { hTap(); router.push(`/(events)/${id}/qr-payment?wallet=${walletApplied}` as any) }}
+                onPress={async () => {
+                  if (qrGenerating) return
+                  hTap()
+                  setQrGenerating(true)
+                  try {
+                    const res = await ApiService.createQrPayment(id!, walletApplied)
+                    router.push({
+                      pathname: `/(events)/${id}/qr-payment` as any,
+                      params: {
+                        wallet: String(walletApplied),
+                        qr_id: res.qr_id,
+                        purl: res.payment_url,
+                        iurl: res.image_url,
+                        amount: String(res.amount_inr),
+                        exp: res.expires_at,
+                        etitle: eventTitle ?? '',
+                      },
+                    })
+                  } catch (err: any) {
+                    const detail = err?.detail ?? err?.message ?? ''
+                    if (detail.toLowerCase().includes('unavailable') || detail.toLowerCase().includes('busy') || detail.toLowerCase().includes('try again')) {
+                      showPill('Razorpay is currently busy. Please try again in a few minutes.', 'error')
+                    } else {
+                      showPill(detail || 'Could not generate QR code. Please try again.', 'error')
+                    }
+                  } finally {
+                    setQrGenerating(false)
+                  }
+                }}
+                disabled={qrGenerating}
               >
                 <View style={[s.dot, { backgroundColor: Colors.elevated }]}>
-                  <QrCode size={18} color={Colors.inkSecondary} strokeWidth={2} />
+                  {qrGenerating
+                    ? <ActivityIndicator size="small" color={Colors.brandOrange} />
+                    : <QrCode size={18} color={Colors.inkSecondary} strokeWidth={2} />
+                  }
                 </View>
-                <Text style={s.methodLabel}>Pay via QR Code</Text>
-                <ChevronRight size={18} color={Colors.inkDisabled} strokeWidth={1.8} />
+                <Text style={s.methodLabel}>{qrGenerating ? 'Generating QR…' : 'Pay via QR Code'}</Text>
+                {!qrGenerating && <ChevronRight size={18} color={Colors.inkDisabled} strokeWidth={1.8} />}
               </Pressable>
               <Pressable
                 style={[s.methodRow, s.methodTopBorder]}

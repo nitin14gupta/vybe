@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import {
-  View, Text, StyleSheet, Pressable, Share, Image,
+  View, Text, StyleSheet, Pressable, Image,
   Alert, ActivityIndicator, BackHandler, ScrollView,
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
+import { captureRef } from 'react-native-view-shot'
+import * as Sharing from 'expo-sharing'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, withTiming,
@@ -56,7 +58,14 @@ const po = StyleSheet.create({
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function QrPaymentScreen() {
-  const { id, wallet: walletParam } = useLocalSearchParams<{ id: string; wallet?: string }>()
+  const {
+    id, wallet: walletParam,
+    qr_id: qrIdParam, purl, iurl, amount, exp, etitle,
+  } = useLocalSearchParams<{
+    id: string; wallet?: string
+    qr_id?: string; purl?: string; iurl?: string
+    amount?: string; exp?: string; etitle?: string
+  }>()
   const insets      = useSafeAreaInsets()
   const router      = useRouter()
   const showPill    = usePillStore(s => s.show)
@@ -71,11 +80,13 @@ export default function QrPaymentScreen() {
   const [timeLeft, setTimeLeft]     = useState(0)
   const [verifying, setVerifying]   = useState(false)
   const [imgLoading, setImgLoading] = useState(false)
+  const [eventTitle, setEventTitle] = useState(etitle ?? '')
 
-  const statusRef = useRef<Status>('loading')
+  const statusRef  = useRef<Status>('loading')
   statusRef.current = status
+  const qrCardRef  = useRef<View>(null)
 
-  // ── Load QR on mount ───────────────────────────────────────────────────────
+  // ── Load QR on mount (skip if pre-loaded from params) ─────────────────────
 
   const loadQr = async () => {
     setStatus('loading')
@@ -88,12 +99,30 @@ export default function QrPaymentScreen() {
       setExpiresAt(new Date(res.expires_at))
       setStatus('active')
     } catch (err: any) {
-      showPill(err?.detail ?? 'Could not generate QR. Try again.', 'error')
+      const detail = err?.detail ?? err?.message ?? ''
+      if (detail.toLowerCase().includes('unavailable') || detail.toLowerCase().includes('busy') || detail.toLowerCase().includes('try again')) {
+        showPill('Razorpay is currently busy. Please try again in a few minutes.', 'error')
+      } else {
+        showPill(detail || 'Could not generate QR. Try again.', 'error')
+      }
       setStatus('error')
     }
   }
 
-  useEffect(() => { loadQr() }, [])
+  useEffect(() => {
+    if (qrIdParam) {
+      // Pre-loaded from payment screen — initialize directly without an API call
+      setQrId(qrIdParam)
+      setImageUrl(iurl ?? '')
+      setPaymentUrl(purl ?? '')
+      setAmountInr(parseInt(amount ?? '0', 10) || 0)
+      setExpiresAt(exp ? new Date(exp) : null)
+      setEventTitle(etitle ?? '')
+      setStatus('active')
+    } else {
+      loadQr()
+    }
+  }, [])
 
   // ── Countdown ──────────────────────────────────────────────────────────────
 
@@ -179,16 +208,19 @@ export default function QrPaymentScreen() {
 
   const handleShare = async () => {
     hTap()
-    // Share the UPI deep link if available; otherwise share the hosted image URL
-    const shareValue = paymentUrl || imageUrl
-    if (!shareValue) return
+    if (!paymentUrl && !imageUrl) return
     try {
-      await Share.share({
-        message: paymentUrl || imageUrl,
-        url: imageUrl || undefined,
-        title: 'Pay via UPI',
+      const uri = await captureRef(qrCardRef, { format: 'png', quality: 1 })
+      await Sharing.shareAsync(uri, {
+        mimeType: 'image/png',
+        UTI: 'public.png',
+        dialogTitle: 'Share QR Code',
       })
-    } catch {}
+    } catch (err: any) {
+      if (err?.message && !err.message.includes('cancel')) {
+        showPill('Could not share QR code.', 'error')
+      }
+    }
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -235,8 +267,8 @@ export default function QrPaymentScreen() {
             contentContainerStyle={s.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* QR card */}
-            <View style={s.card}>
+            {/* QR card — ref used to capture image for sharing */}
+            <View style={s.card} ref={qrCardRef}>
               <Text style={s.toPayLabel}>TO PAY</Text>
               <Text style={s.amount}>₹{amountInr}</Text>
 

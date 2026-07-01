@@ -370,34 +370,51 @@ def create_qr(body: CreateQrBody, current_user: dict = Depends(get_current_user)
         raise HTTPException(status_code=400, detail="Use wallet-pay for full wallet payment")
 
     close_by = int(time.time()) + 900  # 15 minutes
-    rz = _get_rz()
-    qr = rz.qrcode.create({
-        "type": "upi_qr",
-        "name": "Vybe",
-        "usage": "single_use",
-        "fixed_amount": True,
-        "payment_amount": charge * 100,
-        "description": f"Ticket — {ev['title']}",
-        "close_by": close_by,
-    })
+    try:
+        rz = _get_rz()
+        qr = rz.qrcode.create({
+            "type": "upi_qr",
+            "name": "Vybe",
+            "usage": "single_use",
+            "fixed_amount": True,
+            "payment_amount": charge * 100,
+            "description": f"Ticket — {ev['title']}",
+            "close_by": close_by,
+        })
 
-    image_url = qr.get("image_url", "")
-    qr_id = qr["id"]
+        image_url = qr.get("image_url", "")
+        qr_id = qr["id"]
 
-    # Razorpay live API doesn't return payment_url — decode the QR image ourselves.
-    # The create response gives a rzp.io short URL which may fail on server DNS.
-    # Fetching by ID from api.razorpay.com returns the direct CDN URL instead.
-    payment_url = qr.get("payment_url") or qr.get("link") or qr.get("short_url") or ""
-    if not payment_url:
-        decode_url = image_url
-        if "rzp.io" in image_url:
-            # Short URL won't resolve on server — get direct CDN URL via API fetch
-            cdn_url = _fetch_qr_image_url(rz, qr_id)
-            if cdn_url and "rzp.io" not in cdn_url:
-                decode_url = cdn_url
-                image_url = cdn_url  # use the direct CDN URL everywhere
-        payment_url = _decode_qr_image(decode_url)
-    print(f"[QR] id={qr_id} image_url={image_url[:60]} payment_url={payment_url[:80] if payment_url else 'EMPTY'}")
+        # Razorpay live API doesn't return payment_url — decode the QR image ourselves.
+        # The create response gives a rzp.io short URL which may fail on server DNS.
+        # Fetching by ID from api.razorpay.com returns the direct CDN URL instead.
+        payment_url = qr.get("payment_url") or qr.get("link") or qr.get("short_url") or ""
+        if not payment_url:
+            decode_url = image_url
+            if "rzp.io" in image_url:
+                # Short URL won't resolve on server — get direct CDN URL via API fetch
+                cdn_url = _fetch_qr_image_url(rz, qr_id)
+                if cdn_url and "rzp.io" not in cdn_url:
+                    decode_url = cdn_url
+                    image_url = cdn_url  # use the direct CDN URL everywhere
+            payment_url = _decode_qr_image(decode_url)
+        print(f"[QR] id={qr_id} image_url={image_url[:60]} payment_url={payment_url[:80] if payment_url else 'EMPTY'}")
+        if not payment_url:
+            raise HTTPException(
+                status_code=503,
+                detail="Payment service is temporarily unavailable. Please try again in a few minutes.",
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        err_msg = str(e).lower()
+        print(f"[QR create error] {e}")
+        if any(x in err_msg for x in ["max retries", "getaddrinfo", "connection", "timeout", "name resolution", "dns"]):
+            raise HTTPException(
+                status_code=503,
+                detail="Payment service is temporarily unavailable. Please try again in a few minutes.",
+            )
+        raise HTTPException(status_code=503, detail="Could not generate QR code. Please try again.")
 
     expires_at = datetime.fromtimestamp(qr["close_by"], tz=timezone.utc)
 
