@@ -4,8 +4,6 @@ import {
   Alert, ActivityIndicator, BackHandler, ScrollView,
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { captureRef } from 'react-native-view-shot'
-import RNShare from 'react-native-share'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, withTiming,
@@ -17,6 +15,7 @@ import { Colors, FontFamily } from '@/constants'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { hTap, hSuccess } from '@/lib/haptics'
+import { useImageShare } from '@/hooks/useImageShare'
 import { PrimaryButton, OutlineButton } from '@/components/ui'
 
 type Status = 'loading' | 'active' | 'paid' | 'expired' | 'error'
@@ -69,6 +68,7 @@ export default function QrPaymentScreen() {
   const insets      = useSafeAreaInsets()
   const router      = useRouter()
   const showPill    = usePillStore(s => s.show)
+  const { shareImage } = useImageShare()
   const walletApplied = parseInt(walletParam ?? '0', 10) || 0
 
   const [status, setStatus]         = useState<Status>('loading')
@@ -209,15 +209,11 @@ export default function QrPaymentScreen() {
   const handleShare = async () => {
     hTap()
     if (!paymentUrl && !imageUrl) return
-    try {
-      const uri = await captureRef(qrCardRef, { format: 'png', quality: 1 })
-      const name = eventTitle || 'the event'
-      const message = `Pay ₹${amountInr} for ${name}.\n\nScan using any UPI app — GPay, PhonePe, Paytm, BHIM and more.\n\nValid for 15 minutes.`
-      await RNShare.open({ url: uri, message, type: 'image/png', failOnCancel: false })
-    } catch (err: any) {
-      if (err?.message && !err.message.includes('cancel')) {
-        showPill('Could not share QR code.', 'error')
-      }
+    const name = eventTitle || 'the event'
+    const message = `Pay ₹${amountInr} for ${name}.\n\nScan using any UPI app — GPay, PhonePe, Paytm, BHIM and more.\n\nValid for 15 minutes.`
+    const result = await shareImage(qrCardRef, { message })
+    if (!result.shared && result.error === 'failed') {
+      showPill('Could not share QR code.', 'error')
     }
   }
 
@@ -266,7 +262,7 @@ export default function QrPaymentScreen() {
             showsVerticalScrollIndicator={false}
           >
             {/* QR card — ref used to capture image for sharing */}
-            <View style={s.card} ref={qrCardRef}>
+            <View style={s.card} ref={qrCardRef} collapsable={false}>
               <Text style={s.toPayLabel}>TO PAY</Text>
               <Text style={s.amount}>₹{amountInr}</Text>
 
