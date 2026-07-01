@@ -334,3 +334,21 @@ ALTER TABLE public.users
   ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
   ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE,
   ADD COLUMN IF NOT EXISTS discoverable BOOLEAN NOT NULL DEFAULT TRUE;
+
+-- ── Saved UPI IDs ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.saved_upi_ids (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  upi_id text NOT NULL,
+  name text,
+  created_at timestamptz DEFAULT now(),
+  CONSTRAINT saved_upi_ids_unique UNIQUE (user_id, upi_id)
+);
+
+-- ── QR payment columns on payment_orders ─────────────────────────────────────
+ALTER TABLE public.payment_orders
+  ADD COLUMN IF NOT EXISTS qr_code_id TEXT UNIQUE,
+  ADD COLUMN IF NOT EXISTS qr_image_url TEXT,
+  ADD COLUMN IF NOT EXISTS qr_expires_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE public.payment_orders
+  ALTER COLUMN razorpay_order_id DROP NOT NULL;

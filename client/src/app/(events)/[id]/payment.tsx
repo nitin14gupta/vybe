@@ -8,12 +8,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import Animated, {
   useSharedValue, useAnimatedStyle,
-  withSpring, withDelay, withTiming, Easing,
+  withSpring, withDelay, withTiming,
 } from 'react-native-reanimated'
 import RazorpayCustomUI from 'react-native-customui'
 import {
-  ArrowLeft, CreditCard, Building2,
-  ChevronRight, Wallet, CheckCircle,
+  ArrowLeft, ChevronRight, Wallet, CheckCircle, QrCode,
 } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 import ApiService from '@/api/apiService'
@@ -343,7 +342,14 @@ export default function PaymentScreen() {
         ) : (
           <>
             {/* UPI */}
-            <Text style={s.sectionLabel}>PAY VIA UPI</Text>
+            <View style={s.upiSectionRow}>
+              <Image
+                source={require('../../../../assets/images/payments/upiLogo.png')}
+                style={s.upiLogoImg}
+                resizeMode="contain"
+              />
+              <Text style={s.sectionLabel}>Pay with UPI</Text>
+            </View>
             <View style={s.methodCard}>
               {upiAppsLoading ? (
                 <View style={s.upiLoadingRow}>
@@ -361,7 +367,13 @@ export default function PaymentScreen() {
                     onPress={() => handleUpiApp(app.package_name)}
                   >
                     {app.app_icon ? (
-                      <Image source={{ uri: `data:image/png;base64,${app.app_icon}` }} style={s.upiAppIcon} />
+                      <Image
+                        source={{ uri: (!app.app_icon.startsWith('/') && !app.app_icon.startsWith('file:'))
+                          ? `data:image/png;base64,${app.app_icon}`
+                          : app.app_icon
+                        }}
+                        style={s.upiAppIcon}
+                      />
                     ) : (
                       <View style={[s.dot, { backgroundColor: Colors.elevated }]}>
                         <Text style={[s.dotText, { fontSize: 13, color: Colors.inkSecondary }]}>
@@ -375,7 +387,17 @@ export default function PaymentScreen() {
                 ))
               )}
               <Pressable
-                style={[s.methodRow, upiApps.length > 0 && s.methodTopBorder]}
+                style={[s.methodRow, s.methodTopBorder]}
+                onPress={() => { hTap(); router.push(`/(events)/${id}/qr-payment?wallet=${walletApplied}` as any) }}
+              >
+                <View style={[s.dot, { backgroundColor: Colors.elevated }]}>
+                  <QrCode size={18} color={Colors.inkSecondary} strokeWidth={2} />
+                </View>
+                <Text style={s.methodLabel}>Pay via QR Code</Text>
+                <ChevronRight size={18} color={Colors.inkDisabled} strokeWidth={1.8} />
+              </Pressable>
+              <Pressable
+                style={[s.methodRow, s.methodTopBorder]}
                 onPress={() => { hTap(); setUpiSheetOpen(true) }}
               >
                 <View style={[s.dot, { backgroundColor: Colors.elevated }]}>
@@ -470,7 +492,9 @@ const s = StyleSheet.create({
   walletBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,107,53,0.08)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,107,53,0.18)', paddingHorizontal: 14, paddingVertical: 10 },
   walletBannerText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.brandOrange, flex: 1 },
 
-  sectionLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 11, letterSpacing: 0.88, color: Colors.inkSecondary, marginLeft: 4, marginTop: 4 },
+  sectionLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 14, letterSpacing: 0.1, color: Colors.inkSecondary, marginLeft: 4 },
+  upiSectionRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 4, marginTop: 4 },
+  upiLogoImg: { height: 28, width: 54 },
 
   methodCard: { backgroundColor: Colors.surface, borderRadius: 16, overflow: 'hidden' },
   methodRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingVertical: 14 },

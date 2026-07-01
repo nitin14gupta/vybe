@@ -1,7 +1,7 @@
 import Constants from 'expo-constants'
 
 export const API_BASE_URL: string =
-  (Constants.expoConfig?.extra?.apiUrl as string | undefined) ?? 'http://192.168.0.104:8000'
+  (Constants.expoConfig?.extra?.apiUrl as string | undefined) ?? 'http://192.168.0.102:8000'
 
 export const ENDPOINTS = {
   // Auth
@@ -97,6 +97,9 @@ export const ENDPOINTS = {
   PAYMENT_CREATE_ORDER: '/payments/create-order',
   PAYMENT_VERIFY: '/payments/verify',
   PAYMENT_WALLET_PAY: '/payments/wallet-pay',
+  PAYMENT_SAVED_UPI: '/payments/saved-upi-id',
+  PAYMENT_CREATE_QR: '/payments/create-qr',
+  PAYMENT_QR_STATUS: '/payments/qr-status/:id',
 
   // Event report
   EVENT_REPORT: '/events/:id/report',

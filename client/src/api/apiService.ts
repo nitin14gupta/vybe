@@ -791,6 +791,28 @@ class ApiService {
     return this.post(ENDPOINTS.PAYMENT_WALLET_PAY, { event_id: eventId })
   }
 
+  static async getSavedUpiId(): Promise<{ upi_id: string; name: string } | null> {
+    try {
+      return await this.get(ENDPOINTS.PAYMENT_SAVED_UPI)
+    } catch {
+      return null
+    }
+  }
+
+  static async saveUpiId(upi_id: string, name: string): Promise<{ ok: boolean }> {
+    return this.post(ENDPOINTS.PAYMENT_SAVED_UPI, { upi_id, name })
+  }
+
+  static async createQrPayment(eventId: string, walletAmount = 0): Promise<{
+    qr_id: string; image_url: string; payment_url: string; amount_inr: number; expires_at: string
+  }> {
+    return this.post(ENDPOINTS.PAYMENT_CREATE_QR, { event_id: eventId, wallet_amount: walletAmount })
+  }
+
+  static async getQrStatus(qrId: string): Promise<{ status: 'pending' | 'paid' | 'expired' }> {
+    return this.get(ENDPOINTS.PAYMENT_QR_STATUS.replace(':id', qrId))
+  }
+
   static async getMyReview(eventId: string): Promise<{ rating: number; body: string | null } | null> {
     try {
       return await this.get(`/events/${eventId}/reviews/me`)
