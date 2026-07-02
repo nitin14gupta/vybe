@@ -112,7 +112,7 @@ function MoreCard({ count, onPress }: { count: number; onPress: () => void }) {
 export default function EventsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { events, loading, error, filters, setFilter, reload, loadInBounds, userLat, userLng } = useEvents();
+  const { events, loading, error, filters, setFilter, reload, loadInBounds, userLat, userLng, userHeading } = useEvents();
   const [viewMode, setViewMode] = useState<"map" | "list">("map");
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [listCount, setListCount] = useState(LIST_PAGE);
@@ -212,6 +212,7 @@ export default function EventsScreen() {
           events={events}
           userLat={userLat}
           userLng={userLng}
+          userHeading={userHeading}
           activeEventId={activeEventId}
           onEventSelect={handleMarkerPress}
           onBoundsChange={loadInBounds}

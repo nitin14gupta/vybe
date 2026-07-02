@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import * as Location from 'expo-location'
 import ApiService, { type EventSummary } from '@/api/apiService'
 import type { MapBounds } from '@/constants'
+import { useLiveLocation } from '@/hooks/useLiveLocation'
 
 export interface EventFilters {
   category?: string
@@ -14,8 +14,7 @@ export function useEvents() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [filters, setFiltersState] = useState<EventFilters>({})
-  const [userLat, setUserLat] = useState<number | undefined>()
-  const [userLng, setUserLng] = useState<number | undefined>()
+  const { lat: userLat, lng: userLng, heading: userHeading, ready: locationReady } = useLiveLocation()
   const didInit = useRef(false)
 
   const load = useCallback(
@@ -63,32 +62,13 @@ export function useEvents() {
     [filters],
   )
 
+  // Fires once the live-location permission flow resolves (granted or denied),
+  // so the initial load uses coords if available without waiting on the GPS watch.
   useEffect(() => {
-    if (didInit.current) return
+    if (!locationReady || didInit.current) return
     didInit.current = true
-
-    ;(async () => {
-      let lat: number | undefined
-      let lng: number | undefined
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync()
-        if (status === 'granted') {
-          const loc = await Location.getLastKnownPositionAsync()
-          if (loc) {
-            lat = loc.coords.latitude
-            lng = loc.coords.longitude
-          } else {
-            const fresh = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
-            lat = fresh.coords.latitude
-            lng = fresh.coords.longitude
-          }
-          setUserLat(lat)
-          setUserLng(lng)
-        }
-      } catch {}
-      load({}, lat, lng)
-    })()
-  }, [load])
+    load({}, userLat, userLng)
+  }, [locationReady, userLat, userLng, load])
 
   const setFilter = useCallback(
     (key: keyof EventFilters, val: any) => {
@@ -103,5 +83,5 @@ export function useEvents() {
     load(filters, userLat, userLng)
   }, [filters, userLat, userLng, load])
 
-  return { events, loading, error, filters, setFilter, reload, loadInBounds, userLat, userLng }
+  return { events, loading, error, filters, setFilter, reload, loadInBounds, userLat, userLng, userHeading }
 }

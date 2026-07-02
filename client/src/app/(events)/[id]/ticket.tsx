@@ -28,6 +28,8 @@ import ApiService, { type TicketInfo } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { ConfettiRain } from '@/components/ui'
 import { useGoBack } from '@/hooks/useGoBack'
+import { EventShareCard } from '@/components/EventShareCard'
+import { useImageShare } from '@/hooks/useImageShare'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -185,7 +187,10 @@ export default function TicketScreen() {
 
   const [ticket, setTicket] = useState<TicketInfo | null>(null)
   const [loading, setLoading] = useState(true)
+  const [coverUrl, setCoverUrl] = useState('')
   const cardRef = useRef<typeof ViewShot>(null)
+  const shareCardRef = useRef<View>(null)
+  const { shareImage } = useImageShare()
 
   useEffect(() => {
     if (!id) return
@@ -193,14 +198,19 @@ export default function TicketScreen() {
       .then(setTicket)
       .catch(() => showPill("Couldn't load your ticket", 'error'))
       .finally(() => setLoading(false))
+    ApiService.getEvent(id)
+      .then(ev => setCoverUrl(ev.cover_photos?.[0]?.url ?? ''))
+      .catch(() => {})
   }, [id])
 
   const handleShare = async () => {
     if (!ticket) return
-    await Share.share({
-      message: `I'm going to "${ticket.event_title}"! 🎉\n${fmtDate(ticket.date_time)}${ticket.location_name ? `\n📍 ${ticket.location_name}` : ''}`,
-      title: ticket.event_title,
-    })
+    const message = `I'm going to "${ticket.event_title}"! 🎉\n${fmtDate(ticket.date_time)}${ticket.location_name ? `\n📍 ${ticket.location_name}` : ''}`
+    if (coverUrl) {
+      const result = await shareImage(shareCardRef, { message, title: ticket.event_title })
+      if (result.shared || result.error === 'cancelled') return
+    }
+    await Share.share({ message, title: ticket.event_title })
   }
 
   const handleSave = async () => {
@@ -301,6 +311,18 @@ export default function TicketScreen() {
           <Share2 size={20} color={Colors.inkPrimary} strokeWidth={1.8} />
         </Pressable>
       </View>
+
+      {/* Off-screen — captured and shared as an image, never shown to the user */}
+      {coverUrl && (
+        <View style={s.shareCardHost} pointerEvents="none">
+          <EventShareCard
+            ref={shareCardRef}
+            imageUrl={coverUrl}
+            title={ticket.event_title}
+            dateTimeLabel={`${fmtDate(ticket.date_time)}${ticket.date_time ? ` · ${fmtTime(ticket.date_time)}` : ''}`}
+          />
+        </View>
+      )}
     </View>
   )
 }
@@ -313,6 +335,7 @@ const QR_BG = '#ECECEC'
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
+  shareCardHost: { position: 'absolute', top: 0, left: -9999 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { flex: 1 },
   content: {

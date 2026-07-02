@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import MapView, { Marker, Polyline } from 'react-native-maps'
+import Svg, { Defs, RadialGradient, Stop, Path } from 'react-native-svg'
 import {
   Map,
   Camera,
   UserLocation,
+  Marker as LibreMarker,
   GeoJSONSource,
   Layer,
 } from '@maplibre/maplibre-react-native'
@@ -59,11 +61,12 @@ interface GoogleProps {
   events: EventSummary[]
   userLat?: number
   userLng?: number
+  userHeading?: number
   activeEventId: string | null
   onEventSelect: (ev: EventSummary, idx: number) => void
 }
 
-function EventsMapGoogle({ events, userLat, userLng, activeEventId, onEventSelect }: GoogleProps) {
+function EventsMapGoogle({ events, userLat, userLng, userHeading, activeEventId, onEventSelect }: GoogleProps) {
   const { mapRef } = useGoogleMaps()
   const activeEvent = activeEventId ? events.find(e => e.id === activeEventId) : null
 
@@ -81,6 +84,17 @@ function EventsMapGoogle({ events, userLat, userLng, activeEventId, onEventSelec
       showsUserLocation
       showsMyLocationButton={false}
     >
+      {/* Direction cone — shows which way the device is facing */}
+      {userLat != null && userLng != null && userHeading != null && (
+        <Marker
+          coordinate={{ latitude: userLat, longitude: userLng }}
+          anchor={{ x: 0.5, y: 0.5 }}
+          tracksViewChanges
+        >
+          <HeadingCone heading={userHeading} />
+        </Marker>
+      )}
+
       {/* Route line from user → selected event */}
       {activeEvent && userLat != null && userLng != null &&
         activeEvent.location_lat != null && activeEvent.location_lng != null && (
@@ -116,12 +130,13 @@ interface LibreProps {
   events: EventSummary[]
   userLat?: number
   userLng?: number
+  userHeading?: number
   activeEventId: string | null
   onEventSelect: (ev: EventSummary, idx: number) => void
   onBoundsChange?: (bounds: MapBounds) => void
 }
 
-function EventsMapLibre({ events, userLat, userLng, activeEventId, onEventSelect, onBoundsChange }: LibreProps) {
+function EventsMapLibre({ events, userLat, userLng, userHeading, activeEventId, onEventSelect, onBoundsChange }: LibreProps) {
   const { mapRef, handleRegionDidChange } = useMapLibre(onBoundsChange)
   const geojson = useMemo(() => eventsToGeoJSON(events), [events])
 
@@ -201,7 +216,16 @@ function EventsMapLibre({ events, userLat, userLng, activeEventId, onEventSelect
           zoom: 11,
         }}
       />
-      <UserLocation visible />
+      <UserLocation visible/>
+
+      {/* Direction cone — custom overlay driven by device compass, avoids the
+          native UserLocation "heading" pipeline which crashes under RN's New
+          Architecture (__next_prime overflow in MLRNLocationModule) */}
+      {userLat != null && userLng != null && userHeading != null && (
+        <LibreMarker lngLat={[userLng, userLat]} anchor="center">
+          <HeadingCone heading={userHeading} />
+        </LibreMarker>
+      )}
 
       {/* Dashed route line from user → selected event */}
       {routeLine && (
@@ -229,6 +253,7 @@ export interface EventsMapViewProps {
   events: EventSummary[]
   userLat?: number
   userLng?: number
+  userHeading?: number
   activeEventId: string | null
   provider?: 'maplibre' | 'google'
   onEventSelect: (ev: EventSummary, idx: number) => void
@@ -240,6 +265,7 @@ export function EventsMapView({
   events,
   userLat,
   userLng,
+  userHeading,
   activeEventId,
   provider = MAP_PROVIDER,
   onEventSelect,
@@ -253,6 +279,7 @@ export function EventsMapView({
           events={events}
           userLat={userLat}
           userLng={userLng}
+          userHeading={userHeading}
           activeEventId={activeEventId}
           onEventSelect={onEventSelect}
         />
@@ -261,6 +288,7 @@ export function EventsMapView({
           events={events}
           userLat={userLat}
           userLng={userLng}
+          userHeading={userHeading}
           activeEventId={activeEventId}
           onEventSelect={onEventSelect}
           onBoundsChange={onBoundsChange}
@@ -269,6 +297,64 @@ export function EventsMapView({
     </View>
   )
 }
+
+// Soft "flashlight beam" pointing toward device heading — apex sits at the
+// coordinate anchor, a feathered radial-gradient fan spreads out in the
+// facing direction (no hard edges, fades to nothing at the rim). Rotated
+// around its own apex by nesting inside a wrapper twice the beam's radius
+// tall, so the apex lands at the wrapper's geometric center (RN rotates
+// around a view's center by default).
+const CONE_RADIUS = 60
+const CONE_ANGLE = 70 // degrees, full spread
+const CONE_VB_W = 90
+const CONE_HALF_RAD = (CONE_ANGLE / 2) * (Math.PI / 180)
+const CONE_APEX = { x: CONE_VB_W / 2, y: CONE_RADIUS }
+const CONE_LEFT = {
+  x: CONE_APEX.x - CONE_RADIUS * Math.sin(CONE_HALF_RAD),
+  y: CONE_APEX.y - CONE_RADIUS * Math.cos(CONE_HALF_RAD),
+}
+const CONE_RIGHT = {
+  x: CONE_APEX.x + CONE_RADIUS * Math.sin(CONE_HALF_RAD),
+  y: CONE_LEFT.y,
+}
+const CONE_PATH = `M ${CONE_APEX.x} ${CONE_APEX.y} L ${CONE_LEFT.x} ${CONE_LEFT.y} A ${CONE_RADIUS} ${CONE_RADIUS} 0 0 1 ${CONE_RIGHT.x} ${CONE_RIGHT.y} Z`
+
+function HeadingCone({ heading }: { heading: number }) {
+  return (
+    <View style={[c.wrap, { transform: [{ rotate: `${heading}deg` }] }]}>
+      <Svg width={CONE_VB_W} height={CONE_RADIUS} viewBox={`0 0 ${CONE_VB_W} ${CONE_RADIUS}`}>
+        <Defs>
+          <RadialGradient
+            id="beam"
+            cx={CONE_APEX.x}
+            cy={CONE_APEX.y}
+            r={CONE_RADIUS}
+            gradientUnits="userSpaceOnUse"
+          >
+            <Stop offset="0" stopColor="#9fc4ff" stopOpacity={0.5} />
+            <Stop offset="0.45" stopColor="#9fc4ff" stopOpacity={0.28} />
+            <Stop offset="0.8" stopColor="#9fc4ff" stopOpacity={0.1} />
+            <Stop offset="1" stopColor="#9fc4ff" stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Path d={CONE_PATH} fill="url(#beam)" />
+      </Svg>
+    </View>
+  )
+}
+
+const c = StyleSheet.create({
+  wrap: {
+    // Wrapper is 2x the beam's height so its geometric center — which is
+    // where RN applies rotation, and where the map anchor is set — lines
+    // up with the beam's apex (the svg's bottom edge, sitting flush against
+    // the wrapper's midline).
+    width: CONE_VB_W,
+    height: CONE_RADIUS * 2,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+})
 
 function EventMapPin({ event, active }: { event: EventSummary; active: boolean }) {
   const emoji = EVENT_EMOJIS[event.event_type] ?? '🔥'

@@ -482,6 +482,10 @@ class ApiService {
     return this.post<{ message: string }>(ENDPOINTS.SET_LOCATION, { city, lat, lng })
   }
 
+  static async updateLiveLocation(lat: number, lng: number): Promise<{ message: string }> {
+    return this.patch<{ message: string }>(ENDPOINTS.UPDATE_LIVE_LOCATION, { lat, lng })
+  }
+
   static async getMe(): Promise<ProfileResponse> {
     return this.get<ProfileResponse>(ENDPOINTS.GET_ME)
   }

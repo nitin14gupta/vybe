@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import {
   View, Text, StyleSheet, Pressable, Image,
-  Alert, ActivityIndicator, BackHandler, ScrollView,
+  ActivityIndicator, BackHandler, ScrollView,
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -16,7 +16,7 @@ import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { hTap, hSuccess } from '@/lib/haptics'
 import { useImageShare } from '@/hooks/useImageShare'
-import { PrimaryButton, OutlineButton } from '@/components/ui'
+import { PrimaryButton, OutlineButton, ConfirmSheet } from '@/components/ui'
 
 type Status = 'loading' | 'active' | 'paid' | 'expired' | 'error'
 
@@ -81,6 +81,7 @@ export default function QrPaymentScreen() {
   const [verifying, setVerifying]   = useState(false)
   const [imgLoading, setImgLoading] = useState(false)
   const [eventTitle, setEventTitle] = useState(etitle ?? '')
+  const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false)
 
   const statusRef  = useRef<Status>('loading')
   statusRef.current = status
@@ -155,14 +156,7 @@ export default function QrPaymentScreen() {
   const confirmBack = () => {
     const s = statusRef.current
     if (s === 'paid' || s === 'loading' || s === 'error') { router.back(); return }
-    Alert.alert(
-      'Leave payment?',
-      'Your QR code is still active. If you leave, the payment may not be tracked.',
-      [
-        { text: 'Stay', style: 'cancel' },
-        { text: 'Leave anyway', style: 'destructive', onPress: () => router.back() },
-      ]
-    )
+    setLeaveConfirmOpen(true)
   }
 
   useEffect(() => {
@@ -354,6 +348,16 @@ export default function QrPaymentScreen() {
           </View>
         </>
       )}
+
+      <ConfirmSheet
+        visible={leaveConfirmOpen}
+        title="Leave payment?"
+        body="Your QR code is still active. If you leave, the payment will fail."
+        confirmLabel="Leave anyway"
+        destructive
+        onConfirm={() => router.back()}
+        onClose={() => setLeaveConfirmOpen(false)}
+      />
     </View>
   )
 }

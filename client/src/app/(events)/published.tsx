@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   Animated,
   Pressable,
@@ -16,6 +16,28 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Colors, FontFamily } from '@/constants'
 import { ConfettiRain } from '@/components/ui'
 import { usePillStore } from '@/store/pillStore'
+import ApiService from '@/api/apiService'
+import { EventShareCard } from '@/components/EventShareCard'
+import { useImageShare } from '@/hooks/useImageShare'
+
+function parseDate(iso: string | null | undefined): Date | null {
+  if (!iso) return null
+  const d = new Date(iso.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'))
+  return isNaN(d.getTime()) ? null : d
+}
+
+function formatDateTime(iso: string | null | undefined) {
+  const d = parseDate(iso)
+  if (!d) return ''
+  return d.toLocaleDateString('en-IN', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
 // ── Social icons ──────────────────────────────────────────────────────────────
 
@@ -93,17 +115,35 @@ export default function PublishedScreen() {
   const showPill = usePillStore(s => s.show)
 
   const eventTitle = decodeURIComponent(title ?? 'your event')
-  const shareText = `Check out "${eventTitle}" on VYBE! 🔥`
 
-  const shareWhatsApp = () => {
+  const [coverUrl, setCoverUrl] = useState('')
+  const [dateTimeLabel, setDateTimeLabel] = useState('')
+  const shareCardRef = useRef<View>(null)
+  const { shareImage } = useImageShare()
+
+  useEffect(() => {
+    if (!id) return
+    ApiService.getEvent(id)
+      .then(ev => {
+        setCoverUrl(ev.cover_photos?.[0]?.url ?? '')
+        setDateTimeLabel(formatDateTime(ev.date_time))
+      })
+      .catch(() => {})
+  }, [id])
+
+  const shareText = `Check out "${eventTitle}" on VYBE! 🔥${dateTimeLabel ? `\n${dateTimeLabel}` : ''}`
+
+  const handleShare = async () => {
     hTap()
-    Share.share({ message: shareText })
+    if (coverUrl) {
+      const result = await shareImage(shareCardRef, { message: shareText, title: eventTitle })
+      if (result.shared || result.error === 'cancelled') return
+    }
+    await Share.share({ message: shareText })
   }
 
-  const shareInstagram = () => {
-    hTap()
-    Share.share({ message: shareText })
-  }
+  const shareWhatsApp = handleShare
+  const shareInstagram = handleShare
 
   const copyLink = () => {
     hTap()
@@ -170,6 +210,18 @@ export default function PublishedScreen() {
           <Text style={s.skipText}>Skip for now</Text>
         </Pressable>
       </View>
+
+      {/* Off-screen — captured and shared as an image, never shown to the user */}
+      {coverUrl && (
+        <View style={s.shareCardHost} pointerEvents="none">
+          <EventShareCard
+            ref={shareCardRef}
+            imageUrl={coverUrl}
+            title={eventTitle}
+            dateTimeLabel={dateTimeLabel}
+          />
+        </View>
+      )}
     </View>
   )
 }
@@ -181,6 +233,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  shareCardHost: { position: 'absolute', top: 0, left: -9999 },
   content: {
     alignItems: 'center',
     paddingHorizontal: 24,

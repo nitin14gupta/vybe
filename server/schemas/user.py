@@ -67,6 +67,11 @@ class LocationUpdate(BaseModel):
     lng: Optional[float] = None
 
 
+class LivePingUpdate(BaseModel):
+    lat: float
+    lng: float
+
+
 class InterestsUpdate(BaseModel):
     interests: List[str]
 

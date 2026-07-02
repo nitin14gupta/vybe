@@ -83,6 +83,9 @@ export default function CreateScreen() {
       } else if (!form.isFree && form.priceInr < minPrice) {
         flag('priceInr', `Minimum ticket price is ₹${minPrice}`, `Minimum ticket price is ₹${minPrice}`)
       }
+      if (form.coverPhotos.length < 1) {
+        flag('coverPhotos', 'At least one event photo is required', 'Please add at least one event photo')
+      }
     }
     setErrors(errs)
     if (firstPill) showPill(firstPill, 'error')

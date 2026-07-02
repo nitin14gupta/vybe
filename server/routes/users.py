@@ -2,7 +2,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, status, Depends
 from pydantic import BaseModel
 from datetime import date, datetime, timezone, timedelta
 from schemas.user import (
-    ProfileCreate, ProfileUpdate, LocationUpdate, InterestsUpdate,
+    ProfileCreate, ProfileUpdate, LocationUpdate, LivePingUpdate, InterestsUpdate,
     UserResponse, ProfileResponse, DEFAULT_BADGES,
 )
 from middleware.auth import get_current_user
@@ -246,6 +246,16 @@ def set_location(body: LocationUpdate, current_user: dict = Depends(get_current_
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return UserResponse(**user)
+
+
+@router.patch("/location/live")
+def update_live_location(body: LivePingUpdate, current_user: dict = Depends(get_current_user)):
+    with get_db() as (cur, _):
+        cur.execute(
+            "UPDATE users SET lat = %s, lng = %s WHERE id = %s",
+            (body.lat, body.lng, current_user["id"]),
+        )
+    return {"message": "ok"}
 
 
 @router.get("/me", response_model=UserResponse)

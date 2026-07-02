@@ -46,6 +46,8 @@ import { useAuthStore } from '@/store/auth'
 import { usePillStore } from '@/store/pillStore'
 import { ConfirmSheet } from '@/components/ui'
 import { ReportEventSheet } from '@/components/ReportEventSheet'
+import { EventShareCard } from '@/components/EventShareCard'
+import { useImageShare } from '@/hooks/useImageShare'
 
 // ── Event options bottom sheet ────────────────────────────────────────────────
 
@@ -193,6 +195,9 @@ export default function EventDetailScreen() {
 
   const [offerSecondsLeft, setOfferSecondsLeft] = useState<number | null>(null)
 
+  const shareCardRef = useRef<View>(null)
+  const { shareImage } = useImageShare()
+
   useFocusEffect(useCallback(() => {
     if (!id) return
     ApiService.getEvent(id)
@@ -299,10 +304,13 @@ export default function EventDetailScreen() {
 
   const handleShare = async () => {
     if (!event) return
-    await Share.share({
-      message: `Check out "${event.title}" on VYBE! 🔥\n${formatDateTime(event.date_time)}${event.location_name ? `\n📍 ${event.location_name}` : ''}`,
-      title: event.title,
-    })
+    const message = `I'm going to "${event.title}"! 🎉\n${formatDateTime(event.date_time)}${event.location_name ? `\n📍 ${event.location_name}` : ''}`
+    const coverUrl = event.cover_photos?.[0]?.url
+    if (coverUrl) {
+      const result = await shareImage(shareCardRef, { message, title: event.title })
+      if (result.shared || result.error === 'cancelled') return
+    }
+    await Share.share({ message, title: event.title })
   }
 
   const handleJoinWaitlist = async () => {
@@ -744,6 +752,18 @@ export default function EventDetailScreen() {
         eventId={id ?? ''}
         onClose={() => setReportOpen(false)}
       />
+
+      {/* Off-screen — captured and shared as an image, never shown to the user */}
+      {event?.cover_photos?.[0]?.url && (
+        <View style={styles.shareCardHost} pointerEvents="none">
+          <EventShareCard
+            ref={shareCardRef}
+            imageUrl={event.cover_photos[0].url}
+            title={event.title}
+            dateTimeLabel={formatDateTime(event.date_time)}
+          />
+        </View>
+      )}
     </View>
   )
 }
@@ -814,6 +834,7 @@ function LockedScreen({
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
   center: { alignItems: 'center', justifyContent: 'center' },
+  shareCardHost: { position: 'absolute', top: 0, left: -9999 },
 
   hero: { height: 340, backgroundColor: Colors.surface },
   heroPlaceholder: { alignItems: 'center', justifyContent: 'center' },

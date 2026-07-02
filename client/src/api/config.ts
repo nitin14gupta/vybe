@@ -1,7 +1,7 @@
 import Constants from 'expo-constants'
 
 export const API_BASE_URL: string =
-  (Constants.expoConfig?.extra?.apiUrl as string | undefined) ?? 'http://192.168.0.102:8000'
+  (Constants.expoConfig?.extra?.apiUrl as string | undefined) ?? 'http://192.168.0.103:8000'
 
 export const ENDPOINTS = {
   // Auth
@@ -15,6 +15,7 @@ export const ENDPOINTS = {
   UPDATE_PROFILE: '/users/profile',
   SET_INTERESTS: '/users/interests',
   SET_LOCATION: '/users/location',
+  UPDATE_LIVE_LOCATION: '/users/location/live',
   GET_ME: '/users/me',
 
   // Upload

@@ -150,7 +150,7 @@ function Inner({ form, set, errors, setErrors, submitError, priceLocked, priceLo
         <PhotoSlotView
           uri={displayUri(0)}
           uploading={slotStates[0] === 'uploading'}
-          onPress={() => pickPhoto(0)}
+          onPress={() => { pickPhoto(0); setErrors(e => ({ ...e, coverPhotos: '' })) }}
           onRemove={() => removePhoto(0)}
           disabled={disabled}
           size="cover"
@@ -161,7 +161,7 @@ function Inner({ form, set, errors, setErrors, submitError, priceLocked, priceLo
               key={i}
               uri={displayUri(i)}
               uploading={slotStates[i] === 'uploading'}
-              onPress={() => pickPhoto(i)}
+              onPress={() => { pickPhoto(i); setErrors(e => ({ ...e, coverPhotos: '' })) }}
               onRemove={() => removePhoto(i)}
               disabled={disabled}
               size="small"
@@ -169,6 +169,7 @@ function Inner({ form, set, errors, setErrors, submitError, priceLocked, priceLo
           ))}
         </View>
       </View>
+      {errors.coverPhotos ? <Text style={ef.errorText}>{errors.coverPhotos}</Text> : null}
 
       {submitError ? (
         <View style={s.submitError}>
