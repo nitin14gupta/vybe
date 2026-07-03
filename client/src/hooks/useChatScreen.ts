@@ -10,7 +10,7 @@ import { usePillStore } from '@/store/pillStore'
 import { useChat } from './useChat'
 import { useImageViewer } from './useImageViewer'
 import { useVoiceRecorder } from './useVoiceRecorder'
-import type { MediaViewType } from '@/components/chat/MediaViewerModal'
+import type { MediaViewType, MediaViewerItem } from '@/components/chat/MediaViewerModal'
 
 const MARGIN = 8
 const MIN_INPUT_HEIGHT = 44
@@ -21,6 +21,12 @@ export type ListItem =
   | Message
   | { type: 'date_sep'; label: string; id: string }
   | { type: 'seen_label'; label: string; id: string }
+  | { type: 'media_group'; id: string; messages: Message[] }
+
+const MEDIA_TYPES = new Set(['image', 'gif', 'video'])
+function isMediaMessage(msg: Message): boolean {
+  return MEDIA_TYPES.has(msg.content_type) && !!msg.metadata?.url
+}
 
 export interface EmojiTarget {
   msgId: string
@@ -53,18 +59,46 @@ function buildListData(
   seenInfo?: { msgId: string; label: string } | null,
 ): ListItem[] {
   const result: ListItem[] = []
-  for (let i = 0; i < messages.length; i++) {
+  let i = 0
+  while (i < messages.length) {
     // Inject seen label BEFORE the seen message so it appears visually below it
     // (in an inverted FlatList, lower array index = lower screen position)
     if (seenInfo && messages[i].id === seenInfo.msgId) {
       result.push({ type: 'seen_label', id: 'seen', label: seenInfo.label })
     }
-    result.push(messages[i])
-    const curr = new Date(messages[i].sent_at).toDateString()
-    const next = i + 1 < messages.length ? new Date(messages[i + 1].sent_at).toDateString() : null
-    if (curr !== next) {
-      result.push({ type: 'date_sep', label: getDateLabel(messages[i].sent_at), id: `sep_${messages[i].id}` })
+
+    const start = messages[i]
+    let end = i
+
+    // Group consecutive media messages from the same sender, same day, into one stack
+    if (isMediaMessage(start)) {
+      const startDay = new Date(start.sent_at).toDateString()
+      while (
+        end + 1 < messages.length &&
+        isMediaMessage(messages[end + 1]) &&
+        messages[end + 1].sender_id === start.sender_id &&
+        new Date(messages[end + 1].sent_at).toDateString() === startDay &&
+        !(seenInfo && messages[end + 1].id === seenInfo.msgId)
+      ) {
+        end++
+      }
     }
+
+    if (end > i) {
+      const group = messages.slice(i, end + 1)
+      result.push({ type: 'media_group', id: `grp_${start.id}`, messages: group })
+    } else {
+      result.push(start)
+    }
+
+    const last = messages[end]
+    const curr = new Date(last.sent_at).toDateString()
+    const next = end + 1 < messages.length ? new Date(messages[end + 1].sent_at).toDateString() : null
+    if (curr !== next) {
+      result.push({ type: 'date_sep', label: getDateLabel(last.sent_at), id: `sep_${last.id}` })
+    }
+
+    i = end + 1
   }
   return result
 }
@@ -113,6 +147,7 @@ export function useChatScreen(convId: string) {
     messages, isPartnerTyping, isPartnerRecording, isPartnerOnline,
     isWsConnected, wsError, loading, partnerSeenAt,
     failedIds, sendMessage, retryMessage, sendTyping, sendVoiceTyping, loadMore, reactToMessage,
+    addOptimisticMedia, sendMediaMessage, markMediaFailed, clearMediaFailed,
   } = useChat(convId)
 
   const { viewingMedia, openMedia, closeMedia } = useImageViewer()
@@ -251,25 +286,49 @@ export function useChatScreen(convId: string) {
     reactToMessage(msgId, next)
   }, [messages, myId, reactToMessage])
 
-  const handleMediaSend = useCallback(async (uri: string, type: 'image' | 'video' | 'gif', width?: number, height?: number) => {
+  // Show the bubble instantly from the local file, upload + transmit in the background —
+  // the user shouldn't wait on the R2 round trip to see that a send even happened.
+  const uploadAndSendMedia = useCallback(async (
+    tempId: string, uri: string, type: 'image' | 'video' | 'gif', width?: number, height?: number,
+  ) => {
     try {
       const { url, media_type } = await ApiService.uploadChatMedia(uri)
       const finalType = type === 'gif' ? 'gif' : media_type
       const meta: Record<string, any> = { url }
       if (width) meta.width = width
       if (height) meta.height = height
-      await sendMessage('', finalType, meta)
+      await sendMediaMessage(tempId, finalType, meta)
     } catch {
+      markMediaFailed(tempId)
       showPill("Media didn't send, try again", 'error')
     }
-  }, [sendMessage, showPill])
+  }, [sendMediaMessage, markMediaFailed, showPill])
+
+  const handleMediaSend = useCallback((uri: string, type: 'image' | 'video' | 'gif', width?: number, height?: number) => {
+    const tempId = addOptimisticMedia(uri, type, width, height)
+    uploadAndSendMedia(tempId, uri, type, width, height)
+  }, [addOptimisticMedia, uploadAndSendMedia])
 
   const handleRetry = useCallback((tempId: string) => {
+    const msg = messages.find(m => m.id === tempId)
+    const isLocalMedia = msg
+      && ['image', 'video', 'gif'].includes(msg.content_type)
+      && !!msg.metadata?.url
+      && !/^https?:\/\//.test(msg.metadata.url)
+    if (isLocalMedia && msg) {
+      clearMediaFailed(tempId)
+      uploadAndSendMedia(tempId, msg.metadata!.url, msg.content_type as 'image' | 'video' | 'gif', msg.metadata?.width, msg.metadata?.height)
+      return
+    }
     retryMessage(tempId)
-  }, [retryMessage])
+  }, [messages, retryMessage, clearMediaFailed, uploadAndSendMedia])
 
   const handleMediaTap = useCallback((url: string, type: MediaViewType) => {
-    openMedia(url, type)
+    openMedia([{ url, type }], 0)
+  }, [openMedia])
+
+  const handleMediaGroupTap = useCallback((items: MediaViewerItem[], index: number) => {
+    openMedia(items, index)
   }, [openMedia])
 
   // ── Derived data ────────────────────────────────────────────────────────────
@@ -312,7 +371,7 @@ export function useChatScreen(convId: string) {
     handleBlock, handleUnblock, handleDeleteChat, handleReport,
     handleDoubleTap, handleLongPress, handleSwipeReply,
     handleEmojiSelect, handleReactionPillPress, handleMediaSend,
-    handleRetry, handleMediaTap,
+    handleRetry, handleMediaTap, handleMediaGroupTap,
     handleCancelReply: () => setReplyingTo(null),
     handleCloseEmojiPicker: () => setEmojiTarget(null),
     loadMore,

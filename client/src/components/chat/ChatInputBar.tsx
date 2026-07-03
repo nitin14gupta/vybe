@@ -102,7 +102,7 @@ export function ChatInputBar({
   const inputRef = useRef<TextInput>(null)
   const sheetRef = useRef<BottomSheetModal>(null)
 
-  const { handleCamera, handleLibrary, pendingMedia, confirmSend, cancelPreview } = useMediaPicker({ onMediaSend })
+  const { handleCamera, handleLibrary, pendingMedia, confirmSend, cancelPreview, removeFromPreview } = useMediaPicker({ onMediaSend })
 
   useEffect(() => {
     if (replyingTo) {
@@ -231,7 +231,7 @@ export function ChatInputBar({
       </View>
 
       <MediaPickerSheet ref={sheetRef} onCamera={handleCamera} onLibrary={handleLibrary} />
-      <MediaPreviewModal media={pendingMedia} onSend={confirmSend} onCancel={cancelPreview} />
+      <MediaPreviewModal media={pendingMedia} onSend={confirmSend} onCancel={cancelPreview} onRemove={removeFromPreview} />
     </>
   )
 }

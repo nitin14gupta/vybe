@@ -18,6 +18,7 @@ export function useChat(conversationId: string) {
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingTempIds = useRef<Set<string>>(new Set())
+  const activeSendTempIdRef = useRef<string | null>(null)
   const noMoreRef = useRef(false)
   const isBackgrounded = useRef(false)
   const myId = useAuthStore.getState().userId
@@ -80,10 +81,17 @@ export function useChat(conversationId: string) {
         if (data.type === 'message') {
           setMessages(prev => {
             if (data.sender_id === myId && pendingTempIds.current.size > 0) {
-              const tempIdx = prev.findIndex(m => m.id.startsWith('_temp_') && m.sender_id === myId)
+              // Reconcile the exact in-flight temp message (not just "any temp for me") —
+              // several optimistic media bubbles can coexist while only one is actually
+              // in-flight over the network at a time.
+              const activeId = activeSendTempIdRef.current
+              const tempIdx = activeId
+                ? prev.findIndex(m => m.id === activeId)
+                : prev.findIndex(m => m.id.startsWith('_temp_') && m.sender_id === myId)
               if (tempIdx !== -1) {
                 const next = [...prev]
                 pendingTempIds.current.delete(prev[tempIdx].id)
+                if (activeSendTempIdRef.current === prev[tempIdx].id) activeSendTempIdRef.current = null
                 next[tempIdx] = data as Message
                 return next
               }
@@ -189,12 +197,14 @@ export function useChat(conversationId: string) {
     }
     pendingTempIds.current.add(tempId)
     setMessages(prev => [optimistic, ...prev])
+    activeSendTempIdRef.current = tempId
 
     const ws = wsRef.current
     if (ws && ws.readyState === WebSocket.OPEN) {
       try {
         ws.send(JSON.stringify({ type: 'message', content, content_type: contentType, metadata }))
       } catch {
+        activeSendTempIdRef.current = null
         pendingTempIds.current.delete(tempId)
         setFailedIds(prev => new Set([...prev, tempId]))
       }
@@ -204,6 +214,7 @@ export function useChat(conversationId: string) {
     // REST fallback
     try {
       const msg = await ApiService.sendMessage(conversationId, content, contentType, metadata)
+      activeSendTempIdRef.current = null
       pendingTempIds.current.delete(tempId)
       setMessages(prev => {
         const idx = prev.findIndex(m => m.id === tempId)
@@ -213,6 +224,7 @@ export function useChat(conversationId: string) {
         return next
       })
     } catch {
+      activeSendTempIdRef.current = null
       pendingTempIds.current.delete(tempId)
       setFailedIds(prev => new Set([...prev, tempId]))
     }
@@ -227,6 +239,76 @@ export function useChat(conversationId: string) {
       await sendMessage(msg.content, msg.content_type, msg.metadata ?? undefined)
     } catch {}
   }, [messages, sendMessage])
+
+  // ── Optimistic media (image/video/gif) send ────────────────────────────────
+  // Media needs to appear instantly from the local file while the R2 upload
+  // happens in the background — unlike text, the "send" call can't fire until
+  // the upload finishes, so we split "show the bubble" from "transmit it".
+
+  const addOptimisticMedia = useCallback((uri: string, type: string, width?: number, height?: number) => {
+    const tempId = `_temp_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+    const metadata: Record<string, any> = { url: uri }
+    if (width) metadata.width = width
+    if (height) metadata.height = height
+    const optimistic: Message = {
+      id: tempId,
+      conversation_id: conversationId,
+      sender_id: myId ?? '',
+      content: '',
+      content_type: type as Message['content_type'],
+      metadata,
+      sent_at: new Date().toISOString(),
+      read_at: null,
+      reactions: null,
+    }
+    pendingTempIds.current.add(tempId)
+    setMessages(prev => [optimistic, ...prev])
+    return tempId
+  }, [conversationId, myId])
+
+  const sendMediaMessage = useCallback(async (tempId: string, contentType: string, metadata: object) => {
+    activeSendTempIdRef.current = tempId
+    const ws = wsRef.current
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      try {
+        ws.send(JSON.stringify({ type: 'message', content: '', content_type: contentType, metadata }))
+      } catch {
+        activeSendTempIdRef.current = null
+        pendingTempIds.current.delete(tempId)
+        setFailedIds(prev => new Set([...prev, tempId]))
+      }
+      return
+    }
+
+    // REST fallback
+    try {
+      const msg = await ApiService.sendMessage(conversationId, '', contentType, metadata)
+      activeSendTempIdRef.current = null
+      pendingTempIds.current.delete(tempId)
+      setMessages(prev => {
+        const idx = prev.findIndex(m => m.id === tempId)
+        if (idx === -1) return prev.some(m => m.id === msg.id) ? prev : [msg, ...prev]
+        const next = [...prev]
+        next[idx] = msg
+        return next
+      })
+    } catch {
+      activeSendTempIdRef.current = null
+      pendingTempIds.current.delete(tempId)
+      setFailedIds(prev => new Set([...prev, tempId]))
+    }
+  }, [conversationId])
+
+  const markMediaFailed = useCallback((tempId: string) => {
+    if (activeSendTempIdRef.current === tempId) activeSendTempIdRef.current = null
+    pendingTempIds.current.delete(tempId)
+    setFailedIds(prev => new Set([...prev, tempId]))
+  }, [])
+
+  const clearMediaFailed = useCallback((tempId: string) => {
+    setFailedIds(prev => { const n = new Set(prev); n.delete(tempId); return n })
+    pendingTempIds.current.add(tempId)
+  }, [])
 
   const sendTyping = useCallback((isTyping: boolean) => {
     const ws = wsRef.current
@@ -281,5 +363,9 @@ export function useChat(conversationId: string) {
     sendVoiceTyping,
     loadMore,
     reactToMessage,
+    addOptimisticMedia,
+    sendMediaMessage,
+    markMediaFailed,
+    clearMediaFailed,
   }
 }

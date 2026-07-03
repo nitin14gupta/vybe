@@ -50,7 +50,7 @@ export const MediaPickerSheet = forwardRef<BottomSheetModal, Props>(
                 <Images size={26} color={Colors.brandOrange} strokeWidth={1.6} />
               </View>
               <Text style={s.tileLabel}>Photos</Text>
-              <Text style={s.tileSub}>From your library</Text>
+              <Text style={s.tileSub}>Select up to 12 from your library</Text>
             </Pressable>
           </View>
 

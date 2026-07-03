@@ -226,7 +226,7 @@ export default function UserProfileScreen() {
               keyExtractor={p => p.id}
               onMomentumScrollEnd={e => setPhotoIdx(Math.round(e.nativeEvent.contentOffset.x / W))}
               renderItem={({ item }) => (
-                <Pressable onLongPress={() => openMedia(item.url, 'image')} delayLongPress={400}>
+                <Pressable onLongPress={() => openMedia([{ url: item.url, type: 'image' }], 0)} delayLongPress={400}>
                   <Image source={{ uri: item.url }} style={{ width: W, height: W * 1.2 }} resizeMode="cover" />
                 </Pressable>
               )}
@@ -451,8 +451,8 @@ export default function UserProfileScreen() {
       {viewingMedia && (
         <MediaViewerModal
           visible={!!viewingMedia}
-          url={viewingMedia.url}
-          type={viewingMedia.type}
+          items={viewingMedia.items}
+          initialIndex={viewingMedia.initialIndex}
           onClose={closeMedia}
         />
       )}

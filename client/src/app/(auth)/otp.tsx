@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { hTap } from '@/lib/haptics'
@@ -56,6 +56,10 @@ export default function OTPScreen() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (isComplete && !loading && !tooManyAttempts) handleVerify()
+  }, [isComplete])
 
   const handleResend = async () => {
     try {

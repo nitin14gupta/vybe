@@ -103,7 +103,7 @@ export default function ProfileScreen() {
           <View style={styles.avatarRow}>
             <View style={styles.avatarRing}>
               {profile?.photos?.[0]?.url ? (
-                <Pressable onLongPress={() => openMedia(profile!.photos[0].url, 'image')} delayLongPress={400}>
+                <Pressable onLongPress={() => openMedia([{ url: profile!.photos[0].url, type: 'image' }], 0)} delayLongPress={400}>
                   <Image source={{ uri: profile.photos[0].url }} style={styles.avatar} />
                 </Pressable>
               ) : (
@@ -222,8 +222,12 @@ export default function ProfileScreen() {
         {/* ── Photo grid ────────────────────────────────────── */}
         {(profile?.photos?.length ?? 0) > 0 && (
           <View style={styles.grid}>
-            {profile!.photos.map(photo => (
-              <Pressable key={photo.id} onLongPress={() => openMedia(photo.url, 'image')} delayLongPress={400}>
+            {profile!.photos.map((photo, i) => (
+              <Pressable
+                key={photo.id}
+                onLongPress={() => openMedia(profile!.photos.map(p => ({ url: p.url, type: 'image' as const })), i)}
+                delayLongPress={400}
+              >
                 <Image
                   source={{ uri: photo.url }}
                   style={styles.gridPhoto}
@@ -240,8 +244,8 @@ export default function ProfileScreen() {
       {viewingMedia && (
         <MediaViewerModal
           visible={!!viewingMedia}
-          url={viewingMedia.url}
-          type={viewingMedia.type}
+          items={viewingMedia.items}
+          initialIndex={viewingMedia.initialIndex}
           onClose={closeMedia}
         />
       )}

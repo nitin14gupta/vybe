@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { View, TextInput, StyleSheet } from 'react-native'
 import Animated, {
   useSharedValue,
@@ -18,8 +18,10 @@ interface Props {
 const BOX_COUNT = 6
 
 export function OTPInput({ value, onChange, error, autoFocus }: Props) {
-  const inputs = useRef<(TextInput | null)[]>(Array(BOX_COUNT).fill(null))
+  const inputRef = useRef<TextInput>(null)
+  const [focused, setFocused] = useState(false)
   const shake = useSharedValue(0)
+  const activeIndex = Math.min(value.length, BOX_COUNT - 1)
 
   const shakeStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: shake.value }],
@@ -39,65 +41,62 @@ export function OTPInput({ value, onChange, error, autoFocus }: Props) {
   }, [error])
 
   useEffect(() => {
-    if (autoFocus) setTimeout(() => inputs.current[0]?.focus(), 100)
+    if (autoFocus) setTimeout(() => inputRef.current?.focus(), 100)
   }, [autoFocus])
 
-  const handleChange = (text: string, index: number) => {
-    const digit = text.replace(/\D/g, '').slice(-1)
-    const chars = value.split('')
-    chars[index] = digit
-    const next = chars.join('')
-    onChange(next)
-
-    if (digit && index < BOX_COUNT - 1) {
-      inputs.current[index + 1]?.focus()
-    }
-  }
-
-  const handleKeyPress = (key: string, index: number) => {
-    if (key === 'Backspace') {
-      if (value[index]) {
-        const chars = value.split('')
-        chars[index] = ''
-        onChange(chars.join(''))
-      } else if (index > 0) {
-        inputs.current[index - 1]?.focus()
-        const chars = value.split('')
-        chars[index - 1] = ''
-        onChange(chars.join(''))
-      }
-    }
+  const handleChange = (text: string) => {
+    onChange(text.replace(/\D/g, '').slice(0, BOX_COUNT))
   }
 
   return (
     <Animated.View style={[styles.row, shakeStyle]}>
-      {Array.from({ length: BOX_COUNT }).map((_, i) => {
-        const filled = !!value[i]
-        return (
-          <TextInput
-            key={i}
-            ref={r => { inputs.current[i] = r }}
-            style={[
-              styles.box,
-              filled && !error && styles.filledBox,
-              error && styles.errorBox,
-            ]}
-            value={value[i] || ''}
-            onChangeText={text => handleChange(text, i)}
-            onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, i)}
-            keyboardType="number-pad"
-            maxLength={1}
-            caretHidden
-            selectTextOnFocus
-          />
-        )
-      })}
+      <TextInput
+        ref={inputRef}
+        style={styles.hiddenInput}
+        value={value}
+        onChangeText={handleChange}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        keyboardType="number-pad"
+        maxLength={BOX_COUNT}
+        textContentType="oneTimeCode"
+        autoComplete="sms-otp"
+        caretHidden
+      />
+      <View style={styles.boxRow} pointerEvents="none">
+        {Array.from({ length: BOX_COUNT }).map((_, i) => {
+          const active = focused && i === activeIndex
+          return (
+            <View
+              key={i}
+              style={[
+                styles.box,
+                active && !error && styles.activeBox,
+                error && styles.errorBox,
+              ]}
+            >
+              <Animated.Text style={styles.boxText}>{value[i] || ''}</Animated.Text>
+            </View>
+          )
+        })}
+      </View>
     </Animated.View>
   )
 }
 
 const styles = StyleSheet.create({
   row: {
+    position: 'relative',
+  },
+  hiddenInput: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    opacity: 0,
+  },
+  boxRow: {
     flexDirection: 'row',
     gap: 8,
   },
@@ -108,12 +107,15 @@ const styles = StyleSheet.create({
     borderRadius: Radius.input,
     borderWidth: 1.5,
     borderColor: Colors.divider,
-    textAlign: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  boxText: {
     fontFamily: FontFamily.headingBold,
     fontSize: 22,
     color: Colors.inkPrimary,
   },
-  filledBox: {
+  activeBox: {
     borderColor: Colors.brandOrange,
     shadowColor: Colors.brandOrange,
     shadowOffset: { width: 0, height: 0 },

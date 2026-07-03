@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { VybeInboxSheet, VybeIcebreakerModal } from '@/components/ui'
 import { usePillStore } from '@/store/pillStore'
 import { useConversations } from '@/hooks/useConversations'
+import { useAuthStore } from '@/store/auth'
 import { Colors, FontFamily } from '@/constants'
 import type { Conversation } from '@/api/apiService'
 
@@ -25,20 +26,32 @@ function formatTime(iso: string | null): string {
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' })
 }
 
-function formatLastMessage(conv: Conversation): string {
+const MEDIA_PREVIEWS: Record<string, string> = {
+  event: 'Shared an event',
+  profile: 'Shared a profile',
+  image: 'Photo',
+  gif: 'GIF',
+  video: 'Video',
+  voice: 'Voice message',
+}
+
+function formatLastMessage(conv: Conversation, currentUserId: string | null): string {
+  const isMine = !!currentUserId && conv.last_sender_id === currentUserId
+  const prefix = isMine ? 'You: ' : ''
+
+  const mediaPreview = conv.last_message_type ? MEDIA_PREVIEWS[conv.last_message_type] : undefined
+  if (mediaPreview) return prefix + mediaPreview
+
   if (!conv.last_message) {
     if (conv.status === 'pending') return 'Sent a vybe...'
     return ''
   }
-  if (conv.last_message_type === 'event') return '📅 Shared an event'
-  if (conv.last_message_type === 'profile') return '👤 Shared a profile'
-  if (conv.last_message_type === 'image') return '📷 Photo'
-  return conv.last_message
+  return prefix + conv.last_message
 }
 
 // ── Conversation row ──────────────────────────────────────────────────────────
 
-function ConvRow({ conv, onPress }: { conv: Conversation; onPress: () => void }) {
+function ConvRow({ conv, onPress, currentUserId }: { conv: Conversation; onPress: () => void; currentUserId: string | null }) {
   const isLocked   = conv.status === 'pending'
   const isDeleted  = conv.partner_is_deleted
   const displayName = conv.partner_name ?? 'User'
@@ -73,7 +86,7 @@ function ConvRow({ conv, onPress }: { conv: Conversation; onPress: () => void })
             style={[s.convPreview, conv.unread_count > 0 && s.convPreviewUnread, isLocked && s.convPreviewLocked]}
             numberOfLines={1}
           >
-            {isLocked ? 'Pending vybe' : formatLastMessage(conv)}
+            {isLocked ? 'Pending vybe' : formatLastMessage(conv, currentUserId)}
           </Text>
           {conv.unread_count > 0 && (
             <View style={s.unreadBadge}>
@@ -96,6 +109,7 @@ export default function ChatScreen() {
   const [pendingAccept, setPendingAccept] = useState<{ vibeId: string; name: string | null } | null>(null)
 
   const showPill = usePillStore(s => s.show)
+  const currentUserId = useAuthStore(s => s.userId)
 
   const {
     activeConversations,
@@ -201,6 +215,7 @@ export default function ChatScreen() {
           renderItem={({ item }) => (
             <ConvRow
               conv={item}
+              currentUserId={currentUserId}
               onPress={() => {
                 if (item.status === 'active') {
                   router.push(`/(chat)/${item.id}` as any)

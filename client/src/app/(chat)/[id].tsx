@@ -11,6 +11,7 @@ import type { Message } from '@/api/apiService'
 import { ChatHeader } from '@/components/chat/ChatHeader'
 import { ChatInputBar } from '@/components/chat/ChatInputBar'
 import { MessageBubble } from '@/components/chat/MessageBubble'
+import { MediaStack } from '@/components/chat/MediaStack'
 import { MediaViewerModal } from '@/components/chat/MediaViewerModal'
 import { DateSeparator } from '@/components/chat/DateSeparator'
 import { TypingIndicator } from '@/components/chat/TypingIndicator'
@@ -21,6 +22,7 @@ type ListItem =
   | Message
   | { type: 'date_sep'; label: string; id: string }
   | { type: 'seen_label'; label: string; id: string }
+  | { type: 'media_group'; id: string; messages: Message[] }
 
 // VoiceIndicator lives here as a micro-component — too small for its own file
 function VoiceIndicator() {
@@ -83,6 +85,15 @@ export default function ChatDetailScreen() {
     if ('type' in item && item.type === 'seen_label') {
       return <Text style={s.seenLabel}>{item.label}</Text>
     }
+    if ('type' in item && item.type === 'media_group') {
+      return (
+        <MediaStack
+          messages={item.messages}
+          isMine={item.messages[0].sender_id === screen.myId}
+          onOpen={screen.handleMediaGroupTap}
+        />
+      )
+    }
     const msg = item as Message
     return (
       <MessageBubble
@@ -99,7 +110,7 @@ export default function ChatDetailScreen() {
         onRetry={screen.handleRetry}
       />
     )
-  }, [screen.myId, screen.failedIds, screen.handleDoubleTap, screen.handleLongPress, screen.handleSwipeReply, screen.handleReactionPillPress, screen.handleMediaTap, screen.handleRetry, handleReplyTap])
+  }, [screen.myId, screen.failedIds, screen.handleDoubleTap, screen.handleLongPress, screen.handleSwipeReply, screen.handleReactionPillPress, screen.handleMediaTap, screen.handleMediaGroupTap, screen.handleRetry, handleReplyTap])
 
   const listHeader = screen.isPartnerRecording
     ? <VoiceIndicator />
@@ -212,8 +223,8 @@ export default function ChatDetailScreen() {
       {screen.viewingMedia && (
         <MediaViewerModal
           visible={!!screen.viewingMedia}
-          url={screen.viewingMedia.url}
-          type={screen.viewingMedia.type}
+          items={screen.viewingMedia.items}
+          initialIndex={screen.viewingMedia.initialIndex}
           onClose={screen.closeMedia}
         />
       )}
