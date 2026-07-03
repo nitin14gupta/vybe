@@ -72,6 +72,11 @@ class SendMessageRequest(BaseModel):
     metadata: Optional[dict] = None
 
 
+class MessageReportRequest(BaseModel):
+    reason: str
+    description: Optional[str] = None
+
+
 # ── Helper: verify conversation participant ───────────────────────────────────
 
 def _get_conversation(cur, conv_id: str, user_id: str) -> dict:
@@ -114,6 +119,7 @@ def list_conversations(current_user: dict = Depends(get_current_user)):
                 m.content_type AS last_message_type,
                 m.sender_id::text AS last_sender_id,
                 m.sent_at AS last_sent_at,
+                (m.unsent_at IS NOT NULL) AS last_unsent,
                 -- Unread count (messages not read by current user sent by partner)
                 (
                     SELECT COUNT(*) FROM messages msg
@@ -147,14 +153,16 @@ def list_conversations(current_user: dict = Depends(get_current_user)):
                 WHERE user_id = c.user2_id ORDER BY position LIMIT 1
             ) p2 ON true
             LEFT JOIN LATERAL (
-                SELECT content, content_type, sender_id, sent_at FROM messages
-                WHERE conversation_id = c.id ORDER BY sent_at DESC LIMIT 1
+                SELECT content, content_type, sender_id, sent_at, unsent_at FROM messages
+                WHERE conversation_id = c.id
+                  AND NOT (%s::uuid = ANY(COALESCE(deleted_for, '{}'::uuid[])))
+                ORDER BY sent_at DESC LIMIT 1
             ) m ON true
             WHERE (c.user1_id = %s::uuid OR c.user2_id = %s::uuid)
               AND NOT (%s::uuid = ANY(COALESCE(c.hidden_by, '{}'::uuid[])))
             ORDER BY COALESCE(c.last_message_at, c.created_at) DESC
             """,
-            (uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid),
+            (uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid),
         )
         rows = cur.fetchall()
 
@@ -178,65 +186,82 @@ async def list_messages(
     limit: int = Query(50, le=100),
     current_user: dict = Depends(get_current_user),
 ):
+    uid = current_user["id"]
     with get_db() as (cur, _):
-        conv = _get_conversation(cur, conv_id, current_user["id"])
+        conv = _get_conversation(cur, conv_id, uid)
         if conv["status"] != "active":
             raise HTTPException(status_code=403, detail="Conversation not yet active")
 
-    # Redis cache for the initial page (no cursor) — TTL 60s
+    # Redis cache for the initial page (no cursor) — TTL 60s. The cache holds the
+    # RAW rows shared across both participants, so "deleted for me" filtering must
+    # happen per-request below, never baked into the cached payload.
     cache_key = f"conv_msgs:{conv_id}:{limit}"
+    cached_result = None
     if not before:
         r = await _get_redis()
         if r:
             try:
                 cached = await r.get(cache_key)
                 if cached:
-                    return json.loads(cached)
+                    cached_result = json.loads(cached)
             except Exception:
                 pass
 
-    with get_db() as (cur, _):
-        if before:
-            cur.execute(
-                """
-                SELECT id::text, conversation_id::text, sender_id::text,
-                       content, content_type, metadata, sent_at, read_at, reactions
-                FROM messages
-                WHERE conversation_id = %s::uuid AND sent_at < %s
-                ORDER BY sent_at DESC
-                LIMIT %s
-                """,
-                (conv_id, before, limit),
-            )
-        else:
-            cur.execute(
-                """
-                SELECT id::text, conversation_id::text, sender_id::text,
-                       content, content_type, metadata, sent_at, read_at, reactions
-                FROM messages
-                WHERE conversation_id = %s::uuid
-                ORDER BY sent_at DESC
-                LIMIT %s
-                """,
-                (conv_id, limit),
-            )
-        rows = cur.fetchall()
+    if cached_result is not None:
+        result = cached_result
+    else:
+        with get_db() as (cur, _):
+            if before:
+                cur.execute(
+                    """
+                    SELECT id::text, conversation_id::text, sender_id::text,
+                           content, content_type, metadata, sent_at, read_at, reactions,
+                           unsent_at, deleted_for
+                    FROM messages
+                    WHERE conversation_id = %s::uuid AND sent_at < %s
+                    ORDER BY sent_at DESC
+                    LIMIT %s
+                    """,
+                    (conv_id, before, limit),
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT id::text, conversation_id::text, sender_id::text,
+                           content, content_type, metadata, sent_at, read_at, reactions,
+                           unsent_at, deleted_for
+                    FROM messages
+                    WHERE conversation_id = %s::uuid
+                    ORDER BY sent_at DESC
+                    LIMIT %s
+                    """,
+                    (conv_id, limit),
+                )
+            rows = cur.fetchall()
 
-    result = []
-    for r_row in rows:
-        d = dict(r_row)
-        if d.get("sent_at"):
-            d["sent_at"] = d["sent_at"].isoformat()
-        result.append(d)
+        result = []
+        for r_row in rows:
+            d = dict(r_row)
+            if d.get("sent_at"):
+                d["sent_at"] = d["sent_at"].isoformat()
+            if d.get("unsent_at"):
+                d["unsent_at"] = d["unsent_at"].isoformat()
+            result.append(d)
 
-    # Cache the initial page
-    if not before:
-        r = await _get_redis()
-        if r:
-            try:
-                await r.set(cache_key, json.dumps(result), ex=60)
-            except Exception:
-                pass
+        # Cache the initial page (raw, unfiltered)
+        if not before:
+            r = await _get_redis()
+            if r:
+                try:
+                    await r.set(cache_key, json.dumps(result), ex=60)
+                except Exception:
+                    pass
+
+    # Per-request filtering: hide messages this user deleted-for-themselves,
+    # and never leak the deleted_for list itself to any client.
+    result = [m for m in result if uid not in (m.get("deleted_for") or [])]
+    for m in result:
+        m.pop("deleted_for", None)
 
     return result
 
@@ -275,6 +300,101 @@ def delete_conversation(conv_id: str, current_user: dict = Depends(get_current_u
               AND NOT (%s::uuid = ANY(COALESCE(hidden_by, '{}'::uuid[])))
             """,
             (uid, conv_id, uid),
+        )
+        conn.commit()
+    return {"ok": True}
+
+
+@router.post("/chat/messages/{msg_id}/report", status_code=200)
+def report_message(
+    msg_id: str,
+    body: MessageReportRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    uid = current_user["id"]
+    with get_db() as (cur, conn):
+        cur.execute(
+            """
+            SELECT m.id::text
+            FROM messages m
+            JOIN conversations c ON c.id = m.conversation_id
+            WHERE m.id = %s::uuid AND (c.user1_id = %s::uuid OR c.user2_id = %s::uuid)
+            """,
+            (msg_id, uid, uid),
+        )
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Message not found")
+        try:
+            cur.execute(
+                """
+                INSERT INTO message_reports (message_id, reporter_id, reason, description)
+                VALUES (%s::uuid, %s::uuid, %s, %s)
+                """,
+                (msg_id, uid, body.reason, body.description),
+            )
+            conn.commit()
+        except Exception:
+            # Already reported by this user (unique constraint) — treat as success
+            conn.rollback()
+    return {"ok": True}
+
+
+@router.post("/chat/messages/{msg_id}/unsend", status_code=200)
+async def unsend_message(msg_id: str, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    with get_db() as (cur, conn):
+        cur.execute(
+            "SELECT id::text, conversation_id::text, sender_id::text FROM messages WHERE id = %s::uuid",
+            (msg_id,),
+        )
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Message not found")
+        row = dict(row)
+        if row["sender_id"] != uid:
+            raise HTTPException(status_code=403, detail="You can only unsend your own messages")
+        conv_id = row["conversation_id"]
+        cur.execute(
+            "UPDATE messages SET content = NULL, metadata = NULL, reactions = NULL, unsent_at = NOW() WHERE id = %s::uuid",
+            (msg_id,),
+        )
+        conn.commit()
+
+    r = await _get_redis()
+    if r:
+        try:
+            await r.delete(f"conv_msgs:{conv_id}:50")
+        except Exception:
+            pass
+    payload = {"type": "message_unsent", "message_id": msg_id, "conversation_id": conv_id}
+    await _broadcast_local(conv_id, payload)
+    await _publish(f"conv:{conv_id}", payload)
+    return {"ok": True}
+
+
+@router.post("/chat/messages/{msg_id}/delete-for-me", status_code=200)
+def delete_message_for_me(msg_id: str, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    with get_db() as (cur, conn):
+        cur.execute(
+            """
+            SELECT m.id::text
+            FROM messages m
+            JOIN conversations c ON c.id = m.conversation_id
+            WHERE m.id = %s::uuid AND (c.user1_id = %s::uuid OR c.user2_id = %s::uuid)
+            """,
+            (msg_id, uid, uid),
+        )
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Message not found")
+        cur.execute(
+            """
+            UPDATE messages
+            SET deleted_for = array_append(COALESCE(deleted_for, '{}'::uuid[]), %s::uuid)
+            WHERE id = %s::uuid
+              AND NOT (%s::uuid = ANY(COALESCE(deleted_for, '{}'::uuid[])))
+            """,
+            (uid, msg_id, uid),
         )
         conn.commit()
     return {"ok": True}

@@ -16,6 +16,7 @@ import { MediaViewerModal } from '@/components/chat/MediaViewerModal'
 import { DateSeparator } from '@/components/chat/DateSeparator'
 import { TypingIndicator } from '@/components/chat/TypingIndicator'
 import { EmojiPickerOverlay } from '@/components/chat/EmojiPickerOverlay'
+import { ReportMessageSheet } from '@/components/chat/ReportMessageSheet'
 import { ChatScrollView } from '@/components/chat/ChatScrollView'
 
 type ListItem =
@@ -200,10 +201,24 @@ export default function ChatDetailScreen() {
           pageY={screen.emojiTarget.pageY}
           isMine={screen.emojiTarget.isMine}
           currentEmoji={screen.emojiTarget.currentEmoji}
+          canCopy={screen.emojiTarget.contentType === 'text' && !!screen.emojiTarget.content}
           onSelect={screen.handleEmojiSelect}
+          onReply={() => screen.handleReplyFromMenu(screen.emojiTarget!.msgId)}
+          onCopy={() => { if (screen.emojiTarget!.content) screen.handleCopyMessage(screen.emojiTarget!.content) }}
+          onReport={() => screen.setReportMsgId(screen.emojiTarget!.msgId)}
+          onDelete={() => {
+            if (screen.emojiTarget!.isMine) screen.handleUnsendMessage(screen.emojiTarget!.msgId)
+            else screen.handleDeleteMessageForMe(screen.emojiTarget!.msgId)
+          }}
           onClose={screen.handleCloseEmojiPicker}
         />
       )}
+
+      <ReportMessageSheet
+        visible={!!screen.reportMsgId}
+        onSubmit={screen.handleReportMessageSubmit}
+        onClose={screen.handleReportSheetClosed}
+      />
 
       <BlockSheet
         visible={screen.menuOpen}

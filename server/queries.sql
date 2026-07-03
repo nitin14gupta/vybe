@@ -352,3 +352,21 @@ ALTER TABLE public.payment_orders
   ADD COLUMN IF NOT EXISTS qr_expires_at TIMESTAMP WITH TIME ZONE;
 ALTER TABLE public.payment_orders
   ALTER COLUMN razorpay_order_id DROP NOT NULL;
+
+-- ── Message actions: unsend, delete-for-me, report ───────────────────────────
+ALTER TABLE public.messages
+  ADD COLUMN IF NOT EXISTS unsent_at TIMESTAMP WITH TIME ZONE,
+  ADD COLUMN IF NOT EXISTS deleted_for uuid[] DEFAULT '{}'::uuid[];
+
+CREATE TABLE IF NOT EXISTS public.message_reports (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  message_id uuid NOT NULL,
+  reporter_id uuid NOT NULL,
+  reason text NOT NULL,
+  description text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT message_reports_pkey PRIMARY KEY (id),
+  CONSTRAINT message_reports_unique UNIQUE (message_id, reporter_id),
+  CONSTRAINT message_reports_message_id_fkey FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
+  CONSTRAINT message_reports_reporter_id_fkey FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE
+);

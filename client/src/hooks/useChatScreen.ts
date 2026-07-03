@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { type LayoutChangeEvent } from 'react-native'
+import * as Clipboard from 'expo-clipboard'
 import { hTap, hSelection } from '@/lib/haptics'
 import { useSharedValue, withTiming } from 'react-native-reanimated'
 import { router } from 'expo-router'
@@ -33,6 +34,8 @@ export interface EmojiTarget {
   pageY: number
   isMine: boolean
   currentEmoji: string | null
+  content: string | null
+  contentType: Message['content_type']
 }
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
@@ -125,6 +128,7 @@ export function useChatScreen(convId: string) {
   const showPill = usePillStore(st => st.show)
 
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const promptBlockAfterReportRef = useRef(false)
 
   // Partner info
   const [partnerName, setPartnerName] = useState<string | null>(null)
@@ -140,6 +144,7 @@ export function useChatScreen(convId: string) {
   const [reportOpen, setReportOpen] = useState(false)
   const [replyingTo, setReplyingTo] = useState<Message | null>(null)
   const [emojiTarget, setEmojiTarget] = useState<EmojiTarget | null>(null)
+  const [reportMsgId, setReportMsgId] = useState<string | null>(null)
 
   const extraContentPadding = useSharedValue(0)
 
@@ -148,6 +153,7 @@ export function useChatScreen(convId: string) {
     isWsConnected, wsError, loading, partnerSeenAt,
     failedIds, sendMessage, retryMessage, sendTyping, sendVoiceTyping, loadMore, reactToMessage,
     addOptimisticMedia, sendMediaMessage, markMediaFailed, clearMediaFailed,
+    applyUnsentLocally, removeMessageLocally,
   } = useChat(convId)
 
   const { viewingMedia, openMedia, closeMedia } = useImageViewer()
@@ -254,6 +260,49 @@ export function useChatScreen(convId: string) {
     catch { showPill('Report not sent, try again', 'error') }
   }, [partnerId, showPill])
 
+  const handleCopyMessage = useCallback(async (content: string) => {
+    hTap()
+    await Clipboard.setStringAsync(content)
+  }, [showPill])
+
+  const handleReportMessageSubmit = useCallback(async (reason: string) => {
+    if (!reportMsgId) return
+    try {
+      await ApiService.reportMessage(reportMsgId, reason)
+      promptBlockAfterReportRef.current = true
+    } catch {
+      showPill('Report not sent, try again', 'error')
+    }
+  }, [reportMsgId, showPill])
+
+  // After a message report finishes closing (its own "done" animation), offer to
+  // block — reporting almost always means "I don't want to hear from this person again."
+  const handleReportSheetClosed = useCallback(() => {
+    setReportMsgId(null)
+    if (promptBlockAfterReportRef.current) {
+      promptBlockAfterReportRef.current = false
+      setMenuOpen(true)
+    }
+  }, [])
+
+  const handleUnsendMessage = useCallback(async (msgId: string) => {
+    applyUnsentLocally(msgId)
+    try {
+      await ApiService.unsendMessage(msgId)
+    } catch {
+      showPill("Couldn't unsend, try again", 'error')
+    }
+  }, [applyUnsentLocally, showPill])
+
+  const handleDeleteMessageForMe = useCallback(async (msgId: string) => {
+    removeMessageLocally(msgId)
+    try {
+      await ApiService.deleteMessageForMe(msgId)
+    } catch {
+      showPill("Couldn't delete, try again", 'error')
+    }
+  }, [removeMessageLocally, showPill])
+
   const handleDoubleTap = useCallback((msgId: string) => {
     const msg = messages.find(m => m.id === msgId)
     if (!msg) return
@@ -264,13 +313,22 @@ export function useChatScreen(convId: string) {
 
   const handleLongPress = useCallback((msgId: string, pageY: number, isMine: boolean) => {
     const msg = messages.find(m => m.id === msgId)
-    const currentEmoji = msg?.reactions?.[myId ?? ''] ?? null
-    setEmojiTarget({ msgId, pageY, isMine, currentEmoji })
+    if (!msg) return
+    const currentEmoji = msg.reactions?.[myId ?? ''] ?? null
+    setEmojiTarget({
+      msgId, pageY, isMine, currentEmoji,
+      content: msg.content, contentType: msg.content_type,
+    })
   }, [messages, myId])
 
   const handleSwipeReply = useCallback((msg: Message) => {
     setReplyingTo(msg)
   }, [])
+
+  const handleReplyFromMenu = useCallback((msgId: string) => {
+    const msg = messages.find(m => m.id === msgId)
+    if (msg) setReplyingTo(msg)
+  }, [messages])
 
   const handleEmojiSelect = useCallback((msgId: string, emoji: string | null) => {
     hSelection()
@@ -359,6 +417,8 @@ export function useChatScreen(convId: string) {
     recordedVoice, replyingTo, emojiTarget,
     // menu
     menuOpen, setMenuOpen, reportOpen, setReportOpen,
+    // message action menu / report
+    reportMsgId, setReportMsgId,
     // scroll
     extraContentPadding, stickyOffset,
     // failed + retry
@@ -369,9 +429,11 @@ export function useChatScreen(convId: string) {
     handleSend, handleTextChange, handleInputLayout,
     handleMicPress, handleRecordStop, handleRecordCancel, handleSendVoice, handleDiscardVoice,
     handleBlock, handleUnblock, handleDeleteChat, handleReport,
-    handleDoubleTap, handleLongPress, handleSwipeReply,
+    handleDoubleTap, handleLongPress, handleSwipeReply, handleReplyFromMenu,
     handleEmojiSelect, handleReactionPillPress, handleMediaSend,
     handleRetry, handleMediaTap, handleMediaGroupTap,
+    handleCopyMessage, handleReportMessageSubmit, handleReportSheetClosed,
+    handleUnsendMessage, handleDeleteMessageForMe,
     handleCancelReply: () => setReplyingTo(null),
     handleCloseEmojiPicker: () => setEmojiTarget(null),
     loadMore,

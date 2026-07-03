@@ -213,6 +213,7 @@ export interface Conversation {
   last_message_type: string | null
   last_sender_id: string | null
   last_sent_at: string | null
+  last_unsent?: boolean
   unread_count: number
   last_message_at: string | null
 }
@@ -239,6 +240,7 @@ export interface Message {
   sent_at: string
   read_at: string | null
   reactions: Record<string, string> | null
+  unsent_at?: string | null
 }
 
 export interface WalletTransaction {
@@ -308,44 +310,80 @@ class ApiService {
     return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timer))
   }
 
+  // Shared mutex — concurrent 401s (e.g. a batch of media uploads firing at once)
+  // share the same in-flight refresh instead of each racing their own.
+  private static async refreshAccessToken(): Promise<string | null> {
+    const store = useAuthStore.getState()
+    if (!store.refreshToken) {
+      store.clearAuth()
+      throw new Error('Session expired. Please sign in again.')
+    }
+
+    if (!_refreshPromise) {
+      _refreshPromise = (async () => {
+        const refreshRes = await fetch(`${API_BASE_URL}${ENDPOINTS.REFRESH_TOKEN}`, {
+          method: 'POST',
+          headers: DEFAULT_HEADERS,
+          body: JSON.stringify({ refresh_token: store.refreshToken }),
+        })
+        if (!refreshRes.ok) throw new Error('refresh failed')
+        const tokens: TokenResponse = await refreshRes.json()
+        useAuthStore.getState().setAuth({
+          userId: tokens.user_id,
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
+          phone: store.phone ?? '',
+          profileComplete: tokens.profile_complete,
+        })
+      })().finally(() => { _refreshPromise = null })
+    }
+
+    try {
+      await _refreshPromise
+    } catch {
+      useAuthStore.getState().clearAuth()
+      throw new Error('Session expired. Please sign in again.')
+    }
+    return useAuthStore.getState().accessToken
+  }
+
+  // uploadAsync (expo-file-system) result shape, reused for the retry-on-401 wrapper
+  private static async fsUpload(
+    url: string, uri: string, mime: string, token: string | null,
+  ): Promise<{ status: number; body: string }> {
+    const result = await FileSystem.uploadAsync(url, uri, {
+      httpMethod: 'POST',
+      uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+      fieldName: 'file',
+      mimeType: mime,
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+    return { status: result.status, body: result.body }
+  }
+
+  private static xhrUpload(
+    url: string, formData: FormData, token: string | null, timeoutMs = 30000,
+  ): Promise<{ status: number; body: string }> {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+      xhr.open('POST', url)
+      if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+      xhr.timeout = timeoutMs
+      xhr.onload = () => resolve({ status: xhr.status, body: xhr.responseText })
+      xhr.onerror = () => reject(new Error('Network error — check server is reachable'))
+      xhr.ontimeout = () => reject(new Error('Upload timed out'))
+      xhr.send(formData)
+    })
+  }
+
   private static async handleResponse<T>(
     response: Response,
     endpoint: string,
     retryFn?: () => Promise<T>,
   ): Promise<T> {
     if (response.status === 401 && retryFn) {
-      const store = useAuthStore.getState()
-      if (!store.refreshToken) {
-        store.clearAuth()
-        throw new Error('Session expired. Please sign in again.')
-      }
-
-      if (!_refreshPromise) {
-        _refreshPromise = (async () => {
-          const refreshRes = await fetch(`${API_BASE_URL}${ENDPOINTS.REFRESH_TOKEN}`, {
-            method: 'POST',
-            headers: DEFAULT_HEADERS,
-            body: JSON.stringify({ refresh_token: store.refreshToken }),
-          })
-          if (!refreshRes.ok) throw new Error('refresh failed')
-          const tokens: TokenResponse = await refreshRes.json()
-          useAuthStore.getState().setAuth({
-            userId: tokens.user_id,
-            accessToken: tokens.access_token,
-            refreshToken: tokens.refresh_token,
-            phone: store.phone ?? '',
-            profileComplete: tokens.profile_complete,
-          })
-        })().finally(() => { _refreshPromise = null })
-      }
-
-      try {
-        await _refreshPromise
-        return retryFn()
-      } catch {
-        useAuthStore.getState().clearAuth()
-        throw new Error('Session expired. Please sign in again.')
-      }
+      await this.refreshAccessToken()
+      return retryFn()
     }
 
     if (!response.ok) {
@@ -628,6 +666,21 @@ class ApiService {
     await this.delete<{ ok: boolean }>(endpoint)
   }
 
+  static async reportMessage(messageId: string, reason: string, description?: string): Promise<void> {
+    const endpoint = ENDPOINTS.MESSAGE_REPORT.replace(':id', messageId)
+    await this.post<{ ok: boolean }>(endpoint, { reason, description: description ?? null })
+  }
+
+  static async unsendMessage(messageId: string): Promise<void> {
+    const endpoint = ENDPOINTS.MESSAGE_UNSEND.replace(':id', messageId)
+    await this.post<{ ok: boolean }>(endpoint, {})
+  }
+
+  static async deleteMessageForMe(messageId: string): Promise<void> {
+    const endpoint = ENDPOINTS.MESSAGE_DELETE_FOR_ME.replace(':id', messageId)
+    await this.post<{ ok: boolean }>(endpoint, {})
+  }
+
   // ── Notifications ──────────────────────────────────────────────────────────
 
   static async getNotifications(before?: string): Promise<AppNotification[]> {
@@ -835,76 +888,61 @@ class ApiService {
 
   // ── Upload ─────────────────────────────────────────────────────────────────
 
-  static uploadPhoto(uri: string, position: number): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const token = useAuthStore.getState().accessToken
-      const filename = uri.split('/').pop() ?? 'photo.jpg'
-      const ext = filename.split('.').pop()?.toLowerCase() ?? 'jpg'
-      const mime = ext === 'png' ? 'image/png' : 'image/jpeg'
+  static async uploadPhoto(uri: string, position: number): Promise<string> {
+    const filename = uri.split('/').pop() ?? 'photo.jpg'
+    const ext = filename.split('.').pop()?.toLowerCase() ?? 'jpg'
+    const mime = ext === 'png' ? 'image/png' : 'image/jpeg'
 
-      const formData = new FormData()
-      formData.append('file', { uri, name: filename, type: mime } as any)
-      formData.append('position', String(position))
+    const formData = new FormData()
+    formData.append('file', { uri, name: filename, type: mime } as any)
+    formData.append('position', String(position))
 
-      const xhr = new XMLHttpRequest()
-      xhr.open('POST', `${API_BASE_URL}${ENDPOINTS.UPLOAD_PHOTO}`)
-      if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
-      xhr.timeout = 30000
+    const url = `${API_BASE_URL}${ENDPOINTS.UPLOAD_PHOTO}`
+    let token = useAuthStore.getState().accessToken
+    let res = await this.xhrUpload(url, formData, token)
+    if (res.status === 401) {
+      token = await this.refreshAccessToken()
+      res = await this.xhrUpload(url, formData, token)
+    }
 
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            resolve(JSON.parse(xhr.responseText).url)
-          } catch {
-            reject(new Error('Invalid server response'))
-          }
-        } else {
-          try {
-            const err = JSON.parse(xhr.responseText)
-            reject(Object.assign(new Error(err.detail ?? `Upload failed (${xhr.status})`), { status: xhr.status }))
-          } catch {
-            reject(Object.assign(new Error(`Upload failed (${xhr.status})`), { status: xhr.status }))
-          }
-        }
-      }
-      xhr.onerror = () => reject(new Error('Network error — check server is reachable'))
-      xhr.ontimeout = () => reject(new Error('Upload timed out'))
-      xhr.send(formData)
-    })
+    if (res.status < 200 || res.status >= 300) {
+      let detail = `Upload failed (${res.status})`
+      try { detail = JSON.parse(res.body)?.detail ?? detail } catch {}
+      throw Object.assign(new Error(detail), { status: res.status })
+    }
+    try {
+      return JSON.parse(res.body).url
+    } catch {
+      throw new Error('Invalid server response')
+    }
   }
 
-  static uploadEventPhoto(uri: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const token = useAuthStore.getState().accessToken
-      const filename = uri.split('/').pop() ?? 'photo.jpg'
-      const ext = filename.split('.').pop()?.toLowerCase() ?? 'jpg'
-      const mime = ext === 'png' ? 'image/png' : 'image/jpeg'
+  static async uploadEventPhoto(uri: string): Promise<string> {
+    const filename = uri.split('/').pop() ?? 'photo.jpg'
+    const ext = filename.split('.').pop()?.toLowerCase() ?? 'jpg'
+    const mime = ext === 'png' ? 'image/png' : 'image/jpeg'
 
-      const formData = new FormData()
-      formData.append('file', { uri, name: filename, type: mime } as any)
+    const formData = new FormData()
+    formData.append('file', { uri, name: filename, type: mime } as any)
 
-      const xhr = new XMLHttpRequest()
-      xhr.open('POST', `${API_BASE_URL}${ENDPOINTS.UPLOAD_EVENT_PHOTO}`)
-      if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
-      xhr.timeout = 30000
+    const url = `${API_BASE_URL}${ENDPOINTS.UPLOAD_EVENT_PHOTO}`
+    let token = useAuthStore.getState().accessToken
+    let res = await this.xhrUpload(url, formData, token)
+    if (res.status === 401) {
+      token = await this.refreshAccessToken()
+      res = await this.xhrUpload(url, formData, token)
+    }
 
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try { resolve(JSON.parse(xhr.responseText).url) }
-          catch { reject(new Error('Invalid server response')) }
-        } else {
-          try {
-            const err = JSON.parse(xhr.responseText)
-            reject(new Error(err.detail ?? `Upload failed (${xhr.status})`))
-          } catch {
-            reject(new Error(`Upload failed (${xhr.status})`))
-          }
-        }
-      }
-      xhr.onerror = () => reject(new Error('Network error'))
-      xhr.ontimeout = () => reject(new Error('Upload timed out'))
-      xhr.send(formData)
-    })
+    if (res.status < 200 || res.status >= 300) {
+      let detail = `Upload failed (${res.status})`
+      try { detail = JSON.parse(res.body)?.detail ?? detail } catch {}
+      throw new Error(detail)
+    }
+    try {
+      return JSON.parse(res.body).url
+    } catch {
+      throw new Error('Invalid server response')
+    }
   }
 
   static async swapPhotos(positionA: number, positionB: number): Promise<void> {
@@ -920,21 +958,16 @@ class ApiService {
   }
 
   static async uploadVoice(uri: string): Promise<string> {
-    const token = useAuthStore.getState().accessToken
     const ext = (uri.split('/').pop() ?? 'voice.m4a').split('.').pop()?.toLowerCase() ?? 'm4a'
     const mime = ext === 'mp4' ? 'audio/mp4' : ext === '3gp' ? 'audio/3gpp' : 'audio/m4a'
 
-    const result = await FileSystem.uploadAsync(
-      `${API_BASE_URL}${ENDPOINTS.UPLOAD_VOICE}`,
-      uri,
-      {
-        httpMethod: 'POST',
-        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-        fieldName: 'file',
-        mimeType: mime,
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      },
-    )
+    const url = `${API_BASE_URL}${ENDPOINTS.UPLOAD_VOICE}`
+    let token = useAuthStore.getState().accessToken
+    let result = await this.fsUpload(url, uri, mime, token)
+    if (result.status === 401) {
+      token = await this.refreshAccessToken()
+      result = await this.fsUpload(url, uri, mime, token)
+    }
 
     if (result.status < 200 || result.status >= 300) {
       let detail = `Upload failed (${result.status})`
@@ -950,21 +983,16 @@ class ApiService {
   }
 
   static async uploadChatVoice(uri: string): Promise<string> {
-    const token = useAuthStore.getState().accessToken
     const ext = (uri.split('/').pop() ?? 'voice.m4a').split('.').pop()?.toLowerCase() ?? 'm4a'
     const mime = ext === 'mp4' ? 'audio/mp4' : ext === '3gp' ? 'audio/3gpp' : 'audio/m4a'
 
-    const result = await FileSystem.uploadAsync(
-      `${API_BASE_URL}${ENDPOINTS.UPLOAD_CHAT_VOICE}`,
-      uri,
-      {
-        httpMethod: 'POST',
-        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-        fieldName: 'file',
-        mimeType: mime,
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      },
-    )
+    const url = `${API_BASE_URL}${ENDPOINTS.UPLOAD_CHAT_VOICE}`
+    let token = useAuthStore.getState().accessToken
+    let result = await this.fsUpload(url, uri, mime, token)
+    if (result.status === 401) {
+      token = await this.refreshAccessToken()
+      result = await this.fsUpload(url, uri, mime, token)
+    }
 
     if (result.status < 200 || result.status >= 300) {
       let detail = `Upload failed (${result.status})`
@@ -980,7 +1008,6 @@ class ApiService {
   }
 
   static async uploadChatMedia(uri: string): Promise<{ url: string; media_type: string }> {
-    const token = useAuthStore.getState().accessToken
     const ext = (uri.split('/').pop() ?? 'image.jpg').split('.').pop()?.toLowerCase() ?? 'jpg'
     const mimeMap: Record<string, string> = {
       jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
@@ -989,17 +1016,13 @@ class ApiService {
     }
     const mime = mimeMap[ext] ?? 'image/jpeg'
 
-    const result = await FileSystem.uploadAsync(
-      `${API_BASE_URL}${ENDPOINTS.UPLOAD_CHAT_MEDIA}`,
-      uri,
-      {
-        httpMethod: 'POST',
-        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-        fieldName: 'file',
-        mimeType: mime,
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      },
-    )
+    const url = `${API_BASE_URL}${ENDPOINTS.UPLOAD_CHAT_MEDIA}`
+    let token = useAuthStore.getState().accessToken
+    let result = await this.fsUpload(url, uri, mime, token)
+    if (result.status === 401) {
+      token = await this.refreshAccessToken()
+      result = await this.fsUpload(url, uri, mime, token)
+    }
 
     if (result.status < 200 || result.status >= 300) {
       let detail = `Upload failed (${result.status})`

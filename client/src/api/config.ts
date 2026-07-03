@@ -72,6 +72,11 @@ export const ENDPOINTS = {
   REPORT_USER: '/users/:id/report',
   BLOCKED_LIST: '/users/blocked',
 
+  // Message actions
+  MESSAGE_REPORT: '/chat/messages/:id/report',
+  MESSAGE_UNSEND: '/chat/messages/:id/unsend',
+  MESSAGE_DELETE_FOR_ME: '/chat/messages/:id/delete-for-me',
+
   // Notifications
   NOTIFICATIONS: '/notifications',
   NOTIFICATIONS_READ_ALL: '/notifications/read-all',

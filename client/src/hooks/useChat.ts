@@ -135,6 +135,12 @@ export function useChat(conversationId: string) {
           }
         } else if (data.type === 'reaction') {
           applyReactionUpdate(data.message_id, data.user_id, data.emoji ?? null)
+        } else if (data.type === 'message_unsent') {
+          setMessages(prev => prev.map(m =>
+            m.id === data.message_id
+              ? { ...m, content: null, metadata: null, unsent_at: new Date().toISOString() }
+              : m,
+          ))
         }
       } catch {}
     }
@@ -347,6 +353,18 @@ export function useChat(conversationId: string) {
     applyReactionUpdate(msgId, myId ?? '', emoji)
   }, [myId, applyReactionUpdate])
 
+  // Local state updates for REST-driven message actions (unsend/delete-for-me).
+  // The other participant learns about an unsend via the "message_unsent" WS event above.
+  const applyUnsentLocally = useCallback((msgId: string) => {
+    setMessages(prev => prev.map(m =>
+      m.id === msgId ? { ...m, content: null, metadata: null, unsent_at: new Date().toISOString() } : m,
+    ))
+  }, [])
+
+  const removeMessageLocally = useCallback((msgId: string) => {
+    setMessages(prev => prev.filter(m => m.id !== msgId))
+  }, [])
+
   return {
     messages,
     isPartnerTyping,
@@ -367,5 +385,7 @@ export function useChat(conversationId: string) {
     sendMediaMessage,
     markMediaFailed,
     clearMediaFailed,
+    applyUnsentLocally,
+    removeMessageLocally,
   }
 }

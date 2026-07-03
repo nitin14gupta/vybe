@@ -37,6 +37,11 @@ const MEDIA_PREVIEWS: Record<string, string> = {
 
 function formatLastMessage(conv: Conversation, currentUserId: string | null): string {
   const isMine = !!currentUserId && conv.last_sender_id === currentUserId
+
+  if (conv.last_unsent) {
+    return isMine ? 'You unsent a message' : 'This message was unsent'
+  }
+
   const prefix = isMine ? 'You: ' : ''
 
   const mediaPreview = conv.last_message_type ? MEDIA_PREVIEWS[conv.last_message_type] : undefined

@@ -424,6 +424,19 @@ export function MessageBubble({
   const timeStr = isPending ? '…' : new Date(msg.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
   const renderBubbleContent = () => {
+    if (msg.unsent_at) {
+      return (
+        <View style={[s.bubbleWrap, isMine ? s.wrapMine : s.wrapTheirs]}>
+          <View style={[s.bubble, s.bubbleUnsent]}>
+            <Text style={s.unsentText}>
+              {isMine ? 'You unsent this message' : 'This message was unsent'}
+            </Text>
+          </View>
+          <Text style={[s.timeBelow, isMine ? s.timeBelowMine : s.timeBelowTheirs]}>{timeStr}</Text>
+        </View>
+      )
+    }
+
     if ((msg.content_type === 'image' || msg.content_type === 'gif') && msg.metadata?.url) {
       return (
         <View style={[s.bubbleWrap, isMine ? s.wrapMine : s.wrapTheirs]}>
@@ -571,6 +584,18 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.brandCoral,
     opacity: 0.85,
+  },
+  bubbleUnsent: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    paddingVertical: 9,
+  },
+  unsentText: {
+    fontFamily: FontFamily.bodyRegular,
+    fontStyle: 'italic',
+    fontSize: 13,
+    color: Colors.inkDisabled,
   },
   text: { fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkPrimary, lineHeight: 21 },
   textMine: { color: Colors.inkPrimary },
