@@ -7,7 +7,7 @@ configureReanimatedLogger({ level: ReanimatedLogLevel.warn, strict: false })
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
-import { Slot, useRouter, useSegments } from 'expo-router'
+import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
 import { useVybeFonts } from '@/lib/fonts'
@@ -19,38 +19,29 @@ import { useNotificationSetup } from '@/hooks/useNotificationSetup'
 
 SplashScreen.preventAutoHideAsync()
 
-// ── Auth guard — redirects based on auth + onboarding state ──────────────────
-
-function AuthGuard({ ready }: { ready: boolean }) {
-  const router = useRouter()
-  const segments = useSegments()
+function RootNavigator() {
   const { isAuthenticated, profileComplete } = useAuthStore()
 
-  useEffect(() => {
-    if (!ready) return
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={!isAuthenticated}>
+        <Stack.Screen name="(auth)" />
+      </Stack.Protected>
 
-    const inAuth       = segments[0] === '(auth)'
-    const inOnboarding = segments[0] === '(onboarding)'
-    const inApp        = segments[0] === '(tabs)'
-                      || segments[0] === '(settings)'
-                      || segments[0] === '(profile)'
-                      || segments[0] === '(events)'
-                      || segments[0] === '(chat)'
-                      || segments[0] === '(search)'
+      <Stack.Protected guard={isAuthenticated && !profileComplete}>
+        <Stack.Screen name="(onboarding)" />
+      </Stack.Protected>
 
-    if (!isAuthenticated) {
-      // Not logged in → welcome screen
-      if (!inAuth) router.replace('/(auth)/welcome')
-    } else if (!profileComplete) {
-      // Logged in but onboarding not done → resume onboarding
-      if (!inOnboarding) router.replace('/(onboarding)/profile')
-    } else {
-      // Fully onboarded → allow tabs + settings + profile screens
-      if (!inApp) router.replace('/(tabs)/')
-    }
-  }, [isAuthenticated, profileComplete, segments, ready])
-
-  return <Slot />
+      <Stack.Protected guard={isAuthenticated && profileComplete}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(events)" />
+        <Stack.Screen name="(chat)" />
+        <Stack.Screen name="(search)" />
+        <Stack.Screen name="(settings)" />
+        <Stack.Screen name="(profile)" />
+      </Stack.Protected>
+    </Stack>
+  )
 }
 
 // ── Root layout — bootstraps stored session before rendering ─────────────────
@@ -104,7 +95,7 @@ export default function RootLayout() {
       <KeyboardProvider>
       <BottomSheetModalProvider>
         <StatusBar style="light" />
-        <AuthGuard ready={authReady && (fontsLoaded || !!fontError)} />
+        <RootNavigator />
         <PillOverlay />
       </BottomSheetModalProvider>
       </KeyboardProvider>

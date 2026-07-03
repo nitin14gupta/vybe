@@ -10,13 +10,11 @@ import { useVoiceEdit } from '@/hooks/useVoiceEdit'
 import { useOnboardingStore } from '@/store/onboarding'
 import { usePillStore } from '@/store/pillStore'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
-import { useHardwareBack } from '@/hooks/useHardwareBack'
 import ApiService from '@/api/apiService'
 
 type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid'
 
 export default function EditProfileScreen() {
-  useHardwareBack()
   const {
     profile, name, setName, username, setUsername, bio, setBio, gender, setGender,
     selectedBadges, availableBadges, toggleBadge,

@@ -410,7 +410,7 @@ export default function PaymentScreen() {
                   } catch (err: any) {
                     const detail = err?.detail ?? err?.message ?? ''
                     if (detail.toLowerCase().includes('unavailable') || detail.toLowerCase().includes('busy') || detail.toLowerCase().includes('try again')) {
-                      showPill('Razorpay is currently busy. Please try again in a few minutes.', 'error')
+                      showPill('Please try again in a few minutes.', 'error')
                     } else {
                       showPill(detail || 'Could not generate QR code. Please try again.', 'error')
                     }

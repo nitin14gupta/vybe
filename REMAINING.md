@@ -146,10 +146,6 @@ npx expo install expo-build-properties expo-edge-to-edge
   - Blank space while images load; `expo-image` supports `placeholder` prop natively
   - Files: all screens with `<Image>` from expo-image
 
-- [ ] **`useHardwareBack` missing on most screens**
-  - Only 2 screens handle Android back button
-  - Files: auth, onboarding, chat, settings screens
-
 - [ ] **No accessibility labels on any interactive element**
   - App is completely inaccessible to screen readers
   - Files: everywhere — start with tab bar + chat actions

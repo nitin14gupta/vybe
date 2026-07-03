@@ -353,6 +353,11 @@ ALTER TABLE public.payment_orders
 ALTER TABLE public.payment_orders
   ALTER COLUMN razorpay_order_id DROP NOT NULL;
 
+-- ── Payment orders: allow 'expired' status for lapsed QR codes ──────────────
+ALTER TABLE public.payment_orders DROP CONSTRAINT IF EXISTS payment_orders_status_check;
+ALTER TABLE public.payment_orders ADD CONSTRAINT payment_orders_status_check
+  CHECK (status IN ('created', 'paid', 'failed', 'expired'));
+
 -- ── Message actions: unsend, delete-for-me, report ───────────────────────────
 ALTER TABLE public.messages
   ADD COLUMN IF NOT EXISTS unsent_at TIMESTAMP WITH TIME ZONE,

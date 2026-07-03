@@ -21,7 +21,7 @@
         "backgroundImage": "./assets/images/android-icon-background.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": true,
+      "predictiveBackGestureEnabled": false,
       "usesCleartextTraffic": true,
       "config": {
         "googleMaps": {

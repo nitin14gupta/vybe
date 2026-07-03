@@ -102,7 +102,7 @@ export default function QrPaymentScreen() {
     } catch (err: any) {
       const detail = err?.detail ?? err?.message ?? ''
       if (detail.toLowerCase().includes('unavailable') || detail.toLowerCase().includes('busy') || detail.toLowerCase().includes('try again')) {
-        showPill('Razorpay is currently busy. Please try again in a few minutes.', 'error')
+        showPill('Please try again in a few minutes.', 'error')
       } else {
         showPill(detail || 'Could not generate QR. Try again.', 'error')
       }
@@ -132,7 +132,13 @@ export default function QrPaymentScreen() {
     const tick = setInterval(() => {
       const left = Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000))
       setTimeLeft(left)
-      if (left === 0) { setStatus('expired'); clearInterval(tick) }
+      if (left === 0) {
+        setStatus('expired')
+        clearInterval(tick)
+        // Tells the server to close the QR on Razorpay's side right away,
+        // instead of waiting for the user to tap "I've Paid".
+        if (qrId) ApiService.getQrStatus(qrId).catch(() => {})
+      }
     }, 1000)
     return () => clearInterval(tick)
   }, [expiresAt, status])

@@ -268,6 +268,19 @@ def _fetch_qr_image_url(rz_client, qr_id: str) -> str:
         return ""
 
 
+def _close_qr(rz_client, qr_id: str) -> None:
+    """Explicitly close a Razorpay QR code so it can no longer accept payments.
+    `close_by` at creation only tells Razorpay when to auto-close it — calling
+    this directly guarantees it's dead the moment we know it's expired, rather
+    than trusting that timer alone. Best-effort: already-closed/paid QRs raise,
+    which we don't care about here.
+    """
+    try:
+        rz_client.qrcode.close(qr_id)
+    except Exception as e:
+        print(f"[QR close error] id={qr_id} err={e}")
+
+
 # ── Internal helper ───────────────────────────────────────────────────────────
 
 def _finalise_rsvp(*, order_id: str, event_id: str, uid: str, payment_id: str, wallet_amount: int):  # noqa: E501
@@ -466,6 +479,14 @@ def get_qr_status(qr_id: str, current_user: dict = Depends(get_current_user)):
     now = datetime.now(timezone.utc)
     expires_at = row["qr_expires_at"]
     if expires_at and now > expires_at:
+        if row["status"] != "expired":
+            _close_qr(_get_rz(), qr_id)
+            with get_db() as (cur, conn):
+                cur.execute(
+                    "UPDATE payment_orders SET status = 'expired' WHERE id = %s::uuid AND status = 'created'",
+                    (row["id"],),
+                )
+                conn.commit()
         return {"status": "expired"}
 
     rz = _get_rz()

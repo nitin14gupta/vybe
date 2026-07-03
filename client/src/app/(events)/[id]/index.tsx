@@ -19,7 +19,6 @@ import { PrimaryButton } from '@/components/ui'
 import { StaticEventMap } from '@/components/maps'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
-import { useHardwareBack } from '@/hooks/useHardwareBack'
 import { useGoBack } from '@/hooks/useGoBack'
 import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -176,7 +175,6 @@ export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const insets = useSafeAreaInsets()
   const router = useRouter()
-  useHardwareBack()
   const goBack = useGoBack()
   const myId = useAuthStore(s => s.userId)
   const [event, setEvent] = useState<EventDetail | null>(null)
@@ -949,8 +947,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
     backgroundColor: 'rgba(17,17,17,0.95)',
-    borderTopWidth: 1,
-    borderTopColor: Colors.divider,
+    // borderTopWidth: 1,
+    // borderTopColor: Colors.divider,
     gap: 16,
   },
   stickyLeft: { flex: 1 },
