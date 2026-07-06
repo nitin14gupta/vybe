@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
-  BackHandler,
   FlatList,
   Pressable,
   StyleSheet,
@@ -9,7 +8,7 @@ import {
   View,
 } from 'react-native'
 import { Image } from 'expo-image'
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, QrCode, Users } from 'lucide-react-native'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
@@ -254,14 +253,6 @@ export default function AttendeesScreen() {
   const [all, setAll] = useState<EventAttendee[]>([])
   const [event, setEvent] = useState<EventDetail | null>(null)
   const [loading, setLoading] = useState(true)
-
-  useFocusEffect(useCallback(() => {
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      router.back()
-      return true
-    })
-    return () => sub.remove()
-  }, [router]))
 
   useEffect(() => {
     if (!id) return

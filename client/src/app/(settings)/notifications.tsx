@@ -67,11 +67,9 @@ function NotifRow({ item, onPress }: { item: AppNotification; onPress: () => voi
 
   return (
     <Pressable
-      style={({ pressed }) => [s.row, unread && s.rowUnread, pressed && s.rowPressed]}
+      style={({ pressed }) => [s.card, unread && s.cardUnread, pressed && s.cardPressed]}
       onPress={() => { hTap(); onPress() }}
     >
-      {unread && <View style={s.unreadBar} />}
-
       <View style={s.avatarWrap}>
         {item.actor_avatar ? (
           <Image source={{ uri: item.actor_avatar }} style={s.avatar} />
@@ -81,7 +79,7 @@ function NotifRow({ item, onPress }: { item: AppNotification; onPress: () => voi
           </View>
         )}
         <View style={[s.typeBadge, { backgroundColor: typeConf.color }]}>
-          <TypeIcon size={9} color="#fff" strokeWidth={2.5} />
+          <TypeIcon size={10} color="#fff" strokeWidth={2.5} />
         </View>
       </View>
 
@@ -90,13 +88,12 @@ function NotifRow({ item, onPress }: { item: AppNotification; onPress: () => voi
           <Text style={[s.title, unread && s.titleUnread]} numberOfLines={2}>
             {item.title}
           </Text>
-          <View style={[s.timePill, unread && s.timePillUnread]}>
-            <Text style={[s.timeText, unread && s.timeTextUnread]}>{timeAgo(item.created_at)}</Text>
-          </View>
+          {unread && <View style={s.unreadDot} />}
         </View>
         {item.body ? (
           <Text style={s.body} numberOfLines={2}>{item.body}</Text>
         ) : null}
+        <Text style={[s.timeText, unread && s.timeTextUnread]}>{timeAgo(item.created_at)}</Text>
       </View>
     </Pressable>
   )
@@ -215,7 +212,6 @@ export default function NotificationsScreen() {
           )}
           contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
           stickySectionHeadersEnabled={false}
-          ItemSeparatorComponent={() => <View style={s.separator} />}
           ListFooterComponent={
             hasMore ? (
               <Pressable style={s.loadMoreBtn} onPress={() => { if (!loadingMore) loadMore() }}>
@@ -279,9 +275,9 @@ const s = StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 10,
     gap: 10,
   },
   sectionLabel: {
@@ -297,39 +293,27 @@ const s = StyleSheet.create({
     backgroundColor: Colors.divider,
   },
 
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: Colors.divider,
-    marginLeft: 80,
-  },
-
-  row: {
+  card: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    gap: 14,
-    position: 'relative',
-  },
-  rowUnread: {
-    backgroundColor: 'rgba(255,107,53,0.05)',
-  },
-  rowPressed: {
     backgroundColor: Colors.surface,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    marginHorizontal: 16,
+    marginBottom: 10,
+    padding: 14,
+    gap: 12,
   },
-  unreadBar: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 3,
-    backgroundColor: Colors.brandOrange,
-    borderTopRightRadius: 2,
-    borderBottomRightRadius: 2,
+  cardUnread: {
+    borderColor: 'rgba(255,107,53,0.3)',
+  },
+  cardPressed: {
+    backgroundColor: Colors.elevated,
   },
 
-  avatarWrap: { position: 'relative', marginTop: 1 },
-  avatar: { width: 46, height: 46, borderRadius: 23 },
+  avatarWrap: { position: 'relative' },
+  avatar: { width: 48, height: 48, borderRadius: 24 },
   avatarFallback: {
     backgroundColor: Colors.elevated,
     alignItems: 'center',
@@ -339,16 +323,16 @@ const s = StyleSheet.create({
     position: 'absolute',
     bottom: -2,
     right: -2,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    width: 19,
+    height: 19,
+    borderRadius: 9.5,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: Colors.background,
+    borderColor: Colors.surface,
   },
 
-  content: { flex: 1, gap: 3 },
+  content: { flex: 1, gap: 4 },
   topRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -365,20 +349,18 @@ const s = StyleSheet.create({
     fontFamily: FontFamily.bodySemiBold,
     color: Colors.inkPrimary,
   },
-  timePill: {
-    backgroundColor: Colors.elevated,
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginTop: 1,
-  },
-  timePillUnread: {
-    backgroundColor: 'rgba(255,107,53,0.15)',
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.brandOrange,
+    marginTop: 6,
   },
   timeText: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 11,
     color: Colors.inkDisabled,
+    marginTop: 2,
   },
   timeTextUnread: {
     color: Colors.brandOrange,

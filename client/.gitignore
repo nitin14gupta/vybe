@@ -41,3 +41,8 @@ example
 # generated native folders
 /ios
 /android
+
+# Firebase credentials — never commit, grants push-send rights
+google-services.json
+GoogleService-Info.plist
+*firebase-adminsdk*.json

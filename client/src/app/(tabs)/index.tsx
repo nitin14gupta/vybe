@@ -19,6 +19,7 @@ import { useCardAudio } from '@/hooks/useCardAudio'
 import type { DiscoverUser } from '@/api/apiService'
 import ApiService from '@/api/apiService'
 import { useNotifStore } from '@/store/notifStore'
+import { usePillStore } from '@/store/pillStore'
 import { Colors, FontFamily, Radius } from '@/constants'
 
 const { width, height } = Dimensions.get('window')
@@ -198,13 +199,13 @@ const SwipeCard = forwardRef<SwipeCardRef, SwipeCardProps>(function SwipeCard(
 
 export default function DiscoverScreen() {
   const [filterOpen, setFilterOpen] = useState(false)
-  const [showExitPill, setShowExitPill] = useState(false)
   const [vybeSentPill, setVybeSentPill] = useState(false)
   const [starPill, setStarPill] = useState(false)
   const lastBackRef = useRef(0)
   const flameScale = useSharedValue(1)
   const flameAnimStyle = useAnimatedStyle(() => ({ transform: [{ scale: flameScale.value }] }))
   const { unreadCount, setUnreadCount } = useNotifStore()
+  const showPill = usePillStore(s => s.show)
 
   const {
     loading, error, hasMore,
@@ -225,7 +226,7 @@ export default function DiscoverScreen() {
     }, [setUnreadCount]),
   )
 
-  // Stop audio when tab loses focus + double-back to exit
+  // Double-back to exit — Discover is the app's home tab / back-stop
   useFocusEffect(
     useCallback(() => {
       const sub = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -235,15 +236,11 @@ export default function DiscoverScreen() {
           return true
         }
         lastBackRef.current = now
-        setShowExitPill(true)
-        setTimeout(() => setShowExitPill(false), 2000)
+        showPill('Press back again to exit')
         return true
       })
-      return () => {
-        sub.remove()
-        setShowExitPill(false)
-      }
-    }, []),
+      return () => sub.remove()
+    }, [showPill]),
   )
 
   const onSwipe = useCallback(
@@ -429,12 +426,6 @@ export default function DiscoverScreen() {
         </Animated.View>
       )}
 
-      {/* Double-back exit hint */}
-      {showExitPill && (
-        <View style={styles.exitPill} pointerEvents="none">
-          <Text style={styles.exitPillText}>Press back again to exit</Text>
-        </View>
-      )}
     </View>
   )
 }
@@ -462,23 +453,6 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 15,
     color: '#111',
-  },
-  exitPill: {
-    position: 'absolute',
-    bottom: 32,
-    alignSelf: 'center',
-    backgroundColor: 'rgba(20,20,20,0.92)',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  exitPillText: {
-    fontFamily: FontFamily.bodyMedium,
-    fontSize: 14,
-    color: '#fff',
-    letterSpacing: 0.1,
   },
   emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.inkPrimary, textAlign: 'center' },
   emptySub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center' },

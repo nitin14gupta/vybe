@@ -59,7 +59,11 @@ export function useNotificationSetup() {
         await ApiService.registerDeviceToken(freshToken, Platform.OS)
         setRegisteredToken(freshToken)
       })
-      .catch(() => {})
+      .catch(err => {
+        // Swallowed before with no trace — surface it so a missing FCM/APNs
+        // config (e.g. no google-services.json on Android) is diagnosable.
+        console.warn('[push] failed to get/register Expo push token:', err)
+      })
 
     listenerRef.current = Notifications.addNotificationResponseReceivedListener(res => {
       const d = res.notification.request.content.data as any
