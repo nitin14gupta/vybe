@@ -1,7 +1,9 @@
+import type { ReactNode } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Image } from 'expo-image'
 import { Colors, FontFamily } from '@/constants'
+import { parseServerDate } from '@/lib/dates'
 import type { EventSummary } from '@/api/apiService'
 
 const EVENT_EMOJIS: Record<string, string> = {
@@ -14,9 +16,8 @@ const EVENT_EMOJIS: Record<string, string> = {
 }
 
 export function formatEventDate(iso: string | null | undefined) {
-  if (!iso) return 'Date TBC'
-  const d = new Date(iso.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'))
-  if (isNaN(d.getTime())) return 'Date TBC'
+  const d = parseServerDate(iso)
+  if (!d) return 'Date TBC'
   return d.toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'short',
@@ -38,9 +39,11 @@ interface Props {
   isPast?: boolean
   /** Show Cancelled badge */
   isCancelled?: boolean
+  /** Optional tappable strip rendered at the bottom of the card (e.g. "View Ticket", "View Reviews") */
+  footer?: ReactNode
 }
 
-export function EventCard({ event, onPress, showHost, isPast, isCancelled }: Props) {
+export function EventCard({ event, onPress, showHost, isPast, isCancelled, footer }: Props) {
   const cover = event.cover_photos?.[0]?.url
   const spotsLow = event.spots_left > 0 && event.spots_left <= 10
 
@@ -110,6 +113,8 @@ export function EventCard({ event, onPress, showHost, isPast, isCancelled }: Pro
           <Text style={s.spotsText}>🔥 Only {event.spots_left} spots left</Text>
         </View>
       )}
+
+      {footer}
     </Pressable>
   )
 }
