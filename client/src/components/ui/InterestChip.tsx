@@ -7,13 +7,19 @@ interface Props {
   emoji: string
   selected: boolean
   onPress: () => void
+  bordered?: boolean
 }
 
-export function InterestChip({ label, emoji, selected, onPress }: Props) {
+export function InterestChip({ label, emoji, selected, bordered, onPress }: Props) {
   return (
     <Pressable
       onPress={() => { hSelection(); onPress() }}
-      style={[styles.chip, selected ? styles.selected : styles.unselected]}
+      style={[
+        styles.chip,
+        selected ? styles.selected : styles.unselected,
+        bordered && styles.bordered,
+        bordered && selected && styles.borderedSelected,
+      ]}
     >
       <Text style={styles.emoji}>{emoji}</Text>
       <Text style={[styles.label, selected ? styles.selectedText : styles.unselectedText]}>
@@ -27,19 +33,23 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 40,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: Radius.pill,
-    borderWidth: 1.5,
-    gap: 6,
+    gap: 4,
   },
   selected: {
     backgroundColor: 'rgba(255,107,53,0.15)',
-    borderColor: Colors.brandOrange,
   },
   unselected: {
     backgroundColor: Colors.elevated,
+  },
+  bordered: {
+    borderWidth: 1.5,
     borderColor: Colors.divider,
+  },
+  borderedSelected: {
+    borderColor: Colors.brandOrange,
   },
   emoji: {
     fontSize: 15,

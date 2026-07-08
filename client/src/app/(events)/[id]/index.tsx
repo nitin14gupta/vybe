@@ -513,7 +513,10 @@ export default function EventDetailScreen() {
 
         {/* Host card */}
         {event.host_name && (
-          <View style={styles.hostCard}>
+          <Pressable 
+            style={styles.hostCard}
+            onPress={() => router.push(`/(profile)/${event.host_id}` as any)}
+          >
             <View style={styles.hostAvatar}>
               {event.host_avatar ? (
                 <Image source={{ uri: event.host_avatar }} style={styles.hostAvatarImg} contentFit="cover" />
@@ -525,7 +528,7 @@ export default function EventDetailScreen() {
               <Text style={styles.hostLabel}>Hosted by</Text>
               <Text style={styles.hostName}>{event.host_id === myId ? 'You' : event.host_name}</Text>
             </View>
-          </View>
+          </Pressable>
         )}
 
         {/* About */}

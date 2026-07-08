@@ -44,6 +44,8 @@ export function useInterests() {
       store.setField('interests', selected.filter(x => x !== label))
     } else if (!atMax) {
       store.setField('interests', [...selected, label])
+    } else {
+      showPill('Deselect one to add another. Max 4')
     }
   }
 

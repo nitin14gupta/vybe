@@ -6,6 +6,7 @@ import { LegalSheet } from '@/components/ui/LegalSheet'
 import type { LegalType } from '@/components/ui/LegalSheet'
 import { useAuth } from '@/hooks/useAuth'
 import { Colors, FontFamily, Spacing } from '@/constants'
+import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function PhoneScreen() {
@@ -33,8 +34,9 @@ export default function PhoneScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <BackButton onPress={() => router.back()} />
-      <KeyboardAvoidingWrapper>
+      <LiquidPlasmaBackground />
+      <BackButton transparent onPress={() => router.back()} />
+      <KeyboardAvoidingWrapper transparent>
         <View style={styles.inner}>
           <View style={styles.header}>
             <Text style={styles.title}>What's your number?</Text>
@@ -75,7 +77,6 @@ export default function PhoneScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   inner: {
     flex: 1,

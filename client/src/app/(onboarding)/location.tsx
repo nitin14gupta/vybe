@@ -5,6 +5,7 @@ import { Search, MapPin, Check } from 'lucide-react-native'
 import { OutlineButton, ProgressBar, Input, PrimaryButton, Screen } from '@/components/ui'
 import { useLocation } from '@/hooks/useLocation'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 
 export default function LocationScreen() {
   const {
@@ -20,7 +21,8 @@ export default function LocationScreen() {
   } = useLocation()
 
   return (
-    <Screen>
+    <Screen transparent>
+      <LiquidPlasmaBackground />
       <ProgressBar step={5} />
 
       <KeyboardAvoidingView

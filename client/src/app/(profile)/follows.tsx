@@ -10,7 +10,7 @@ import {
 import { FlashList } from '@shopify/flash-list'
 import { useLocalSearchParams } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { ArrowUpDown, Search, Users, X as XIcon } from 'lucide-react-native'
+import { ArrowUpDown, ChevronLeft, Search, Users, X as XIcon } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 import { ReportSheet, BlockSheet, SortSheet, DotsSheet, ConfirmSheet } from '@/components/ui'
 import type { SortOption } from '@/components/ui'
@@ -132,7 +132,7 @@ export default function FollowsScreen() {
       {/* ── Header ── */}
       <View style={s.header}>
         <Pressable onPress={goBack} style={s.backBtn} hitSlop={8} android_ripple={null}>
-          <Text style={s.backArrow}>←</Text>
+          <ChevronLeft size={24} color={Colors.inkPrimary} strokeWidth={2} />
         </Pressable>
         <Text style={s.headerName} numberOfLines={1}>{displayName || 'Profile'}</Text>
         <View style={{ width: 36 }} />
@@ -155,10 +155,13 @@ export default function FollowsScreen() {
       </View>
 
       {/* ── Sort row + search ── */}
-      <Pressable style={s.toolbar} onPress={() => setSortSheetOpen(true)} android_ripple={null}>
-        <Text style={s.sortText}>Sorted by <Text style={s.sortBold}>{sortLabel}</Text></Text>
-        <ArrowUpDown size={15} color={Colors.inkSecondary} strokeWidth={1.5} />
-      </Pressable>
+      <View style={s.toolbarWrap}>
+        <Text style={s.sortLabelText}>Sorted by</Text>
+        <Pressable style={s.toolbarAction} onPress={() => setSortSheetOpen(true)} android_ripple={null}>
+          <Text style={s.sortBold}>{sortLabel}</Text>
+          <ArrowUpDown size={16} color={Colors.inkSecondary} strokeWidth={1.5} />
+        </Pressable>
+      </View>
 
       <View style={s.searchWrap}>
         <Search size={15} color={Colors.inkSecondary} strokeWidth={1.5} />
@@ -197,7 +200,7 @@ export default function FollowsScreen() {
           keyExtractor={u => u.id}
           renderItem={renderItem}
           ItemSeparatorComponent={null}
-          estimatedItemSize={72}
+          estimatedItemSize={84}
           onEndReached={active.loadMore}
           onEndReachedThreshold={0.4}
           contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
@@ -292,7 +295,7 @@ const s = StyleSheet.create({
   backArrow: { fontSize: 20, color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold },
   headerName: {
     flex: 1, textAlign: 'center',
-    fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary,
+    fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary,
   },
 
   // Tabs
@@ -311,37 +314,44 @@ const s = StyleSheet.create({
   tabActive: { borderBottomColor: Colors.inkPrimary },
   tabInline: {
     fontFamily: FontFamily.bodyRegular,
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.inkSecondary,
   },
   tabInlineActive: { color: Colors.inkPrimary },
   tabCount: {
     fontFamily: FontFamily.headingBold,
-    fontSize: 14,
+    fontSize: 15,
   },
   tabCountActive: {},
   tabLabel: {
     fontFamily: FontFamily.bodyRegular,
-    fontSize: 14,
+    fontSize: 15,
   },
   tabLabelActive: {},
 
   // Toolbar
-  toolbar: {
+  toolbarWrap: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  sortLabelText: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 14,
+    color: Colors.inkSecondary,
+  },
+  toolbarAction: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 11,
-    paddingBottom: 4,
-  },
-  sortText: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 13,
-    color: Colors.inkSecondary,
+    gap: 6,
+    paddingVertical: 4,
   },
   sortBold: {
     fontFamily: FontFamily.bodySemiBold,
+    fontSize: 14,
     color: Colors.inkPrimary,
   },
 

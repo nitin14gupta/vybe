@@ -3,12 +3,14 @@ import { router } from 'expo-router'
 import { OutlineButton, ProgressBar, InterestChip, PrimaryButton, Screen } from '@/components/ui'
 import { useInterests } from '@/hooks/useInterests'
 import { Colors, FontFamily, Spacing } from '@/constants'
+import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 
 export default function InterestsScreen() {
   const { availableInterests, loadingList, selected, atMax, canProceed, remaining, loading, toggle, handleNext } = useInterests()
 
   return (
-    <Screen>
+    <Screen transparent>
+      <LiquidPlasmaBackground />
       <ProgressBar step={4} />
 
       <View style={styles.header}>
@@ -38,6 +40,7 @@ export default function InterestsScreen() {
         >
           {availableInterests.map(({ name, emoji }) => (
             <InterestChip
+              bordered
               key={name}
               label={name}
               emoji={emoji}

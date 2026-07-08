@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { router } from 'expo-router'
 import { hSuccess, hSelection } from '@/lib/haptics'
 import { Mic, Square, Play, Pause, RotateCcw } from 'lucide-react-native'
-import { BackButton, Input, GenderSelector, InterestChip, PrimaryButton, Screen, RecordingWave, PlaybackWave } from '@/components/ui'
+import { BackButton, Input, InterestChip, PrimaryButton, Screen, RecordingWave, PlaybackWave } from '@/components/ui'
 import { useEditProfile } from '@/hooks/useEditProfile'
 import { useInterests } from '@/hooks/useInterests'
 import { useVoiceEdit } from '@/hooks/useVoiceEdit'
@@ -16,7 +16,7 @@ type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid'
 
 export default function EditProfileScreen() {
   const {
-    profile, name, setName, username, setUsername, bio, setBio, gender, setGender,
+    profile, name, setName, username, setUsername, bio, setBio,
     selectedBadges, availableBadges, toggleBadge,
     isDirty, loading, saving, handleSave,
     originalUsername,
@@ -153,7 +153,18 @@ export default function EditProfileScreen() {
           <View style={styles.bioWrap}>
             <TextInput
               value={bio}
-              onChangeText={v => setBio(v.slice(0, 150))}
+              onChangeText={v => {
+                const lines = v.split('\n')
+                if (lines.length > 5) {
+                  showPill('Maximum 5 lines allowed', 'default')
+                  return
+                }
+                if (v.length > 150) {
+                  showPill('Maximum 150 characters allowed', 'default')
+                  return
+                }
+                setBio(v)
+              }}
               placeholder="A short intro — who are you?"
               placeholderTextColor={Colors.inkDisabled}
               multiline
@@ -164,11 +175,7 @@ export default function EditProfileScreen() {
           </View>
         </View>
 
-        {/* Gender */}
-        <View style={styles.section}>
-          <Text style={styles.label}>GENDER</Text>
-          <GenderSelector value={gender} onChange={setGender} />
-        </View>
+
 
         {/* City */}
         <View style={styles.section}>
@@ -212,6 +219,7 @@ export default function EditProfileScreen() {
           <View style={styles.chips}>
             {availableInterests.map(({ name: n, emoji }) => (
               <InterestChip
+                bordered
                 key={n}
                 label={n}
                 emoji={emoji}
@@ -432,14 +440,15 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: Colors.divider,
     padding: 14,
-    minHeight: 90,
   },
   bioInput: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 15,
     color: Colors.inkPrimary,
     lineHeight: 22,
-    minHeight: 60,
+    minHeight: 66,
+    paddingTop: 0,
+    paddingBottom: 0,
   },
   bioCounter: {
     fontFamily: FontFamily.bodyRegular,

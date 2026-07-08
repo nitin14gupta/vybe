@@ -116,8 +116,8 @@ const styles = StyleSheet.create({
     color: Colors.inkPrimary,
   },
   activeBox: {
-    borderColor: Colors.brandOrange,
-    shadowColor: Colors.brandOrange,
+    borderColor: Colors.inkSecondary,
+    shadowColor: Colors.inkSecondary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.15,
     shadowRadius: 3,

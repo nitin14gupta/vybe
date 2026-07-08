@@ -4,11 +4,12 @@ import { Colors, ComponentSize, Radius, Spacing } from '@/constants'
 
 interface Props {
   onPress: () => void
+  transparent?: boolean
 }
 
-export function BackButton({ onPress }: Props) {
+export function BackButton({ onPress, transparent = false }: Props) {
   return (
-    <Pressable onPress={onPress} style={styles.btn} hitSlop={8}>
+    <Pressable onPress={onPress} style={[styles.btn, transparent && styles.transparentBtn]} hitSlop={8}>
       <ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} />
     </Pressable>
   )
@@ -27,5 +28,9 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
     marginBottom: 4,
     marginLeft: Spacing.screenPadding,
+  },
+  transparentBtn: {
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
   },
 })

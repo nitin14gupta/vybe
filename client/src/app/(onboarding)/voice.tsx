@@ -14,6 +14,7 @@ import Animated, {
 import { OutlineButton, ProgressBar, PrimaryButton, TextLinkButton, Screen, RecordingWave, PlaybackWave } from '@/components/ui'
 import { useVoice } from '@/hooks/useVoice'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 
 
 export default function VoiceScreen() {
@@ -57,7 +58,8 @@ export default function VoiceScreen() {
   const fmt = (s: number) => `0:${String(Math.max(0, s)).padStart(2, '0')}`
 
   return (
-    <Screen>
+    <Screen transparent>
+      <LiquidPlasmaBackground />
       <ProgressBar step={3} />
 
       <View style={styles.header}>

@@ -78,7 +78,7 @@ const s = StyleSheet.create({
   },
   backBtn: { padding: 4, marginRight: 8 },
   center: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  avatar: { width: 38, height: 38, borderRadius: 19, borderWidth: 1.5, borderColor: Colors.brandOrange },
+  avatar: { width: 38, height: 38, borderRadius: 19 },
   avatarFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
   avatarInitial: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },

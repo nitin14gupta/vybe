@@ -8,6 +8,7 @@ import { createProfile } from '@/api/user'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 import { usePillStore } from '@/store/pillStore'
 import { CalendarDays } from 'lucide-react-native'
+import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 
 function BioInput({ value, onChangeText }: { value: string; onChangeText: (t: string) => void }) {
   const [focused, setFocused] = useState(false)
@@ -124,7 +125,8 @@ export default function ProfileScreen() {
   }
 
   return (
-    <Screen>
+    <Screen transparent>
+      <LiquidPlasmaBackground />
       <View style={styles.topSpacer} />
       <ProgressBar step={1} />
       <View style={styles.header}>
@@ -132,7 +134,7 @@ export default function ProfileScreen() {
         <Text style={styles.subtitle}>Tell us a little about yourself</Text>
       </View>
 
-      <KeyboardAvoidingWrapper>
+      <KeyboardAvoidingWrapper transparent>
         <View style={styles.scrollContent}>
           <Input
             label="Full Name"
@@ -229,8 +231,8 @@ const bioStyles = StyleSheet.create({
     minHeight: 90,
   },
   focused: {
-    borderColor: Colors.brandOrange,
-    shadowColor: Colors.brandOrange,
+    borderColor: Colors.inkSecondary,
+    shadowColor: Colors.inkSecondary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.16,
     shadowRadius: 3,

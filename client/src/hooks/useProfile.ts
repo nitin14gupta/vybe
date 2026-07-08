@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useFocusEffect } from 'expo-router'
 import { getMe, getProfile, followUser, unfollowUser } from '@/api/user'
 import type { ProfileResponse } from '@/api/user'
 
@@ -22,7 +23,11 @@ export function useProfile(userId?: string) {
     }
   }, [userId])
 
-  useEffect(() => { fetch() }, [fetch])
+  useFocusEffect(
+    useCallback(() => {
+      fetch()
+    }, [fetch])
+  )
 
   const followToggle = async () => {
     if (!profile || isOwn) return

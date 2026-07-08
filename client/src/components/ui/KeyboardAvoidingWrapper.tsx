@@ -5,16 +5,17 @@ import { Colors } from '@/constants'
 interface Props {
   children: ReactNode
   scrollEnabled?: boolean
+  transparent?: boolean
 }
 
-export function KeyboardAvoidingWrapper({ children, scrollEnabled = true }: Props) {
+export function KeyboardAvoidingWrapper({ children, scrollEnabled = true, transparent = false }: Props) {
   return (
     <KeyboardAvoidingView
-      style={styles.flex}
+      style={[styles.flex, transparent && { backgroundColor: 'transparent' }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
-        style={styles.flex}
+        style={[styles.flex, transparent && { backgroundColor: 'transparent' }]}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         scrollEnabled={scrollEnabled}

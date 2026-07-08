@@ -7,6 +7,7 @@ import { OutlineButton, ProgressBar, PrimaryButton, Screen } from '@/components/
 import { usePhotos } from '@/hooks/usePhotos'
 import type { PhotoItem } from '@/hooks/usePhotos'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const COL_GAP = 10
@@ -100,7 +101,8 @@ export default function PhotosScreen() {
   } = usePhotos()
 
   return (
-    <Screen>
+    <Screen transparent>
+      <LiquidPlasmaBackground />
       <ProgressBar step={2} />
 
       <View style={styles.header}>
@@ -211,13 +213,13 @@ const styles = StyleSheet.create({
   },
 
   uploadOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.42)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   errorOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(192,57,43,0.7)',
     alignItems: 'center',
     justifyContent: 'center',

@@ -4,13 +4,15 @@ import { router } from 'expo-router'
 import { hTap } from '@/lib/haptics'
 import { PrimaryButton, OutlineButton, Screen } from '@/components/ui'
 import { Colors, FontFamily, Spacing } from '@/constants'
+import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 
 export default function AgeGateScreen() {
   const [declined, setDeclined] = useState(false)
 
   if (declined) {
     return (
-      <Screen style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
+      <Screen transparent style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
+        <LiquidPlasmaBackground />
         <Text style={styles.lockEmoji}>🔒</Text>
         <Text style={styles.lockedTitle}>Come back when you're 18!</Text>
         <Text style={styles.lockedBody}>
@@ -24,7 +26,8 @@ export default function AgeGateScreen() {
   }
 
   return (
-    <Screen style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 }}>
+    <Screen transparent style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 }}>
+      <LiquidPlasmaBackground />
       <Text style={styles.emoji}>🎂</Text>
       <Text style={styles.title}>Are you 18 or older?</Text>
       <Text style={styles.body}>

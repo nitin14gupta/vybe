@@ -14,6 +14,7 @@ import { PrimaryButton, Screen } from '@/components/ui'
 import { useOnboardingStore } from '@/store/onboarding'
 import { useAuthStore } from '@/store/auth'
 import { Colors, FontFamily } from '@/constants'
+import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 
 export default function CompleteScreen() {
   const store = useOnboardingStore()
@@ -49,7 +50,8 @@ export default function CompleteScreen() {
   const firstName = store.name.split(' ')[0] || 'there'
 
   return (
-    <Screen style={styles.root}>
+    <Screen transparent style={styles.root}>
+      <LiquidPlasmaBackground />
       {/* Cannon confetti from both bottom corners */}
       <CannonConfetti
         autoplay

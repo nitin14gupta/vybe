@@ -68,7 +68,10 @@ export function useEditProfile() {
   const toggleBadge = (badge: string) => {
     setSelectedBadges(prev => {
       if (prev.includes(badge)) return prev.filter(b => b !== badge)
-      if (prev.length >= 4) return prev
+      if (prev.length >= 4) {
+        showPill('Deselect one to add another. Max 4')
+        return prev
+      }
       return [...prev, badge]
     })
   }
@@ -104,7 +107,7 @@ export function useEditProfile() {
         badges: [...selectedBadges].sort(),
       })
       showPill('Profile updated!', 'default')
-      setTimeout(() => router.back(), 900)
+      router.push('/(tabs)/profile')
     } catch (e: any) {
       const msg = e?.detail || e?.message || 'Failed to save'
       showPill(msg, 'error')

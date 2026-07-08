@@ -11,9 +11,9 @@ import {
   MessageCircle, Ban, Play, Pause, Check, Ghost,
 } from 'lucide-react-native'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
-import { VybeRequestModal, VybeIcebreakerModal, PlaybackWave, ProfileMenuSheet } from '@/components/ui'
+import { VybeRequestModal, VybeIcebreakerModal, PlaybackWave, ProfileMenuSheet, InterestChip } from '@/components/ui'
 import ApiService, { ExtendedProfile, EventSummary } from '@/api/apiService'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, Radius } from '@/constants'
 import { usePillStore } from '@/store/pillStore'
 import { useVybeStore } from '@/store/vybeStore'
 import { useImageViewer } from '@/hooks/useImageViewer'
@@ -121,7 +121,7 @@ export default function UserProfileScreen() {
     if (!profile?.vybe_id) return
     setAcceptModalOpen(false)
     try {
-      const result = await ApiService.respondToVybe(profile.vybe_id, 'accept', icebreaker)
+      const result = await ApiService.respondToVibe(profile.vybe_id, 'accept', icebreaker)
       if (result.conversation_id) {
         router.replace(`/(chat)/${result.conversation_id}` as any)
       }
@@ -200,7 +200,7 @@ export default function UserProfileScreen() {
   const theySentVybe = profile.vybe_status === 'pending' && !profile.vybe_sent_by_me && !vybeSent
   const age = profile.dob
     ? Math.floor((Date.now() - new Date(profile.dob).getTime()) / 3.156e10)
-    : profile.age
+    : null
 
   return (
     <View style={[s.root, { paddingBottom: insets.bottom }]}>
@@ -314,13 +314,16 @@ export default function UserProfileScreen() {
             <Text style={s.bio}>{profile.bio}</Text>
           ) : null}
 
-          {/* Interests */}
-          {!blockedByMe && profile.interests?.length > 0 && (
+          {/* Details (Badges & Interests) */}
+          {!blockedByMe && ((profile.badges?.length ?? 0) > 0 || (profile.interests?.length ?? 0) > 0) && (
             <View style={s.chipsRow}>
-              {profile.interests.map(tag => (
-                <View key={tag} style={s.chip}>
-                  <Text style={s.chipText}>{tag}</Text>
+              {profile.badges?.map(badge => (
+                <View key={badge} style={s.badgeChip}>
+                  <Text style={s.badgeText}>{badge}</Text>
                 </View>
+              ))}
+              {profile.interests?.map(tag => (
+                <InterestChip key={tag} label={tag} emoji="" selected onPress={() => {}} />
               ))}
             </View>
           )}
@@ -416,7 +419,6 @@ export default function UserProfileScreen() {
           id: profile.id,
           name: profile.name,
           username: profile.username ?? null,
-          age: profile.age,
           gender: profile.gender,
           bio: profile.bio,
           city: profile.city,
@@ -561,12 +563,17 @@ const s = StyleSheet.create({
 
   // Chips
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
-    paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+  badgeChip: {
+    backgroundColor: 'rgba(255,184,48,0.12)',
+    borderRadius: Radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
-  chipText: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkPrimary },
+  badgeText: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 13,
+    color: Colors.accentGold,
+  },
 
   // Voice
   voiceWrap: { marginTop: 4, flexDirection: 'row', alignItems: 'center', gap: 12 },

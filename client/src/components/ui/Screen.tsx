@@ -10,9 +10,11 @@ interface Props {
   top?: boolean
   /** Apply bottom safe-area padding. Default true. */
   bottom?: boolean
+  /** Make background transparent */
+  transparent?: boolean
 }
 
-export function Screen({ children, style, top = true, bottom = true }: Props) {
+export function Screen({ children, style, top = true, bottom = true, transparent = false }: Props) {
   const insets = useSafeAreaInsets()
   return (
     <View
@@ -20,6 +22,7 @@ export function Screen({ children, style, top = true, bottom = true }: Props) {
         styles.base,
         top && { paddingTop: insets.top },
         bottom && { paddingBottom: insets.bottom },
+        transparent && { backgroundColor: 'transparent' },
         style,
       ]}
     >

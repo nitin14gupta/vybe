@@ -86,8 +86,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   focused: {
-    borderColor: Colors.brandOrange,
-    shadowColor: Colors.brandOrange,
+    borderColor: Colors.inkSecondary,
+    shadowColor: Colors.inkSecondary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.16,
     shadowRadius: 3,

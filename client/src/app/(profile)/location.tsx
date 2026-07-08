@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, Pressable, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native'
 import { router } from 'expo-router'
 import { hTap, hSuccess, hSelection } from '@/lib/haptics'
-import { Search, MapPin, Check, ArrowLeft } from 'lucide-react-native'
-import { Input, Screen, ToastBanner } from '@/components/ui'
+import { Search, MapPin, Check, ChevronLeft } from 'lucide-react-native'
+import { Input, Screen } from '@/components/ui'
 import { useLocation } from '@/hooks/useLocation'
 import { setLocation } from '@/api/user'
 import { useOnboardingStore } from '@/store/onboarding'
@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function ProfileLocationScreen() {
   const insets = useSafeAreaInsets()
-  const { filtered, query, setQuery, selectedCity, detecting, toast, selectCity, detectLocation } = useLocation()
+  const { filtered, query, setQuery, selectedCity, detecting, selectCity, detectLocation } = useLocation()
   const store = useOnboardingStore()
   const [saving, setSaving] = useState(false)
 
@@ -30,9 +30,9 @@ export default function ProfileLocationScreen() {
   return (
     <Screen>
       {/* Header */}
-      <View style={[s.header, { paddingTop: insets.top > 0 ? 0 : 8 }]}>
+      <View style={s.header}>
         <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8} android_ripple={null}>
-          <ArrowLeft size={22} color={Colors.inkPrimary} strokeWidth={1.8} />
+          <ChevronLeft size={24} color={Colors.inkPrimary} strokeWidth={2} />
         </Pressable>
         <Text style={s.title}>Change City</Text>
         <Pressable onPress={() => { hSuccess(); handleSave() }} disabled={!selectedCity || saving} hitSlop={8} style={s.saveArea} android_ripple={null}>
@@ -93,8 +93,6 @@ export default function ProfileLocationScreen() {
           contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
         />
       </KeyboardAvoidingView>
-
-      {toast && <ToastBanner key={toast.key} message={toast.message} type={toast.type} />}
     </Screen>
   )
 }
@@ -105,8 +103,8 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingBottom: 10,
-    paddingTop: 4,
+    paddingBottom: 16,
+    paddingTop: 12,
   },
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   title: {
@@ -155,19 +153,19 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
+    paddingVertical: 18,
     paddingHorizontal: Spacing.screenPadding,
   },
   cityName: {
     fontFamily: FontFamily.bodySemiBold,
-    fontSize: 15,
+    fontSize: 16,
     color: Colors.inkPrimary,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   cityNameSelected: { color: Colors.brandOrange },
   cityState: {
     fontFamily: FontFamily.bodyRegular,
-    fontSize: 12,
+    fontSize: 14,
     color: Colors.inkSecondary,
   },
   sep: {

@@ -8,13 +8,14 @@ interface Props {
   title?: string
   leftAction?: ReactNode
   rightAction?: ReactNode
+  transparent?: boolean
 }
 
-export function AppHeader({ showLogo = false, title, leftAction, rightAction }: Props) {
+export function AppHeader({ showLogo = false, title, leftAction, rightAction, transparent = false }: Props) {
   const insets = useSafeAreaInsets()
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
+    <View style={[styles.root, transparent && styles.rootTransparent, { paddingTop: insets.top }]}>
       <View style={styles.bar}>
         <View style={styles.side}>{leftAction ?? <View />}</View>
 
@@ -54,6 +55,9 @@ const styles = StyleSheet.create({
   root: {
     backgroundColor: Colors.background,
     zIndex: 10,
+  },
+  rootTransparent: {
+    backgroundColor: 'transparent',
   },
   bar: {
     height: 52,
