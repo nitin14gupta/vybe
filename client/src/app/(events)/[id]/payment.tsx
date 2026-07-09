@@ -369,9 +369,9 @@ export default function PaymentScreen() {
                   >
                     {app.app_icon ? (
                       <Image
-                        source={{ uri: (!app.app_icon.startsWith('/') && !app.app_icon.startsWith('file:'))
-                          ? `data:image/png;base64,${app.app_icon}`
-                          : app.app_icon
+                        source={{ uri: (app.app_icon.startsWith('http') || app.app_icon.startsWith('file:') || app.app_icon.startsWith('/'))
+                          ? app.app_icon
+                          : `data:image/png;base64,${app.app_icon}`
                         }}
                         style={s.upiAppIcon}
                       />

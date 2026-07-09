@@ -451,8 +451,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   photoMiniSlot: {
-    width: 60,
-    height: 80,
+    width: 100,
+    height: 100,
     borderRadius: Radius.sm,
     backgroundColor: 'rgba(255,255,255,0.04)',
     borderWidth: 1,

@@ -18,3 +18,4 @@ twilio
 opencv-python-headless
 redis[asyncio]
 razorpay
+pillow-heif

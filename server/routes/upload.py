@@ -4,12 +4,13 @@ from pydantic import BaseModel
 from middleware.auth import get_current_user
 from utils.r2_client import r2_client
 from utils.face_detect import has_face
+from utils.image_utils import convert_to_webp
 from db.config import get_db
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
 ALLOWED_IMAGE_TYPES = {
-    "image/jpeg", "image/jpg", "image/png", "image/webp",
+    "image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic", "image/heif",
     # React Native / Android sometimes sends these
     "application/octet-stream",
 }
@@ -39,7 +40,8 @@ async def upload_photo(
         raise HTTPException(status_code=400, detail=f"Unsupported image type: {file.content_type}")
 
     contents = await file.read()
-    print(f"[UPLOAD] read {len(contents)} bytes", flush=True)
+    contents = convert_to_webp(contents, force_square=True)
+    print(f"[UPLOAD] read {len(contents)} bytes (converted to webp)", flush=True)
 
     if len(contents) > MAX_PHOTO_SIZE:
         raise HTTPException(status_code=400, detail="Photo must be under 10 MB")
@@ -47,8 +49,6 @@ async def upload_photo(
     if len(contents) == 0:
         raise HTTPException(status_code=400, detail="Empty file received")
 
-    if len(contents) < 20 * 1024:
-        raise HTTPException(status_code=400, detail="Image is too small — please choose a full-size photo.")
 
     if position == 0 and not has_face(contents):
         raise HTTPException(
@@ -57,9 +57,10 @@ async def upload_photo(
         )
 
     try:
+        filename = (file.filename or f"photo_{position}").rsplit(".", 1)[0] + ".webp"
         result = r2_client.upload_file(
             io.BytesIO(contents),
-            file.filename or f"photo_{position}.jpg",
+            filename,
             folder=f"users/{current_user['id']}/photos",
         )
         print(f"[UPLOAD] R2 success → {result['url']}", flush=True)
@@ -96,15 +97,17 @@ async def upload_event_photo(
         raise HTTPException(status_code=400, detail=f"Unsupported image type: {file.content_type}")
 
     contents = await file.read()
+    contents = convert_to_webp(contents)
     if len(contents) > MAX_PHOTO_SIZE:
         raise HTTPException(status_code=400, detail="Photo must be under 10 MB")
     if len(contents) == 0:
         raise HTTPException(status_code=400, detail="Empty file received")
 
     try:
+        filename = (file.filename or "cover").rsplit(".", 1)[0] + ".webp"
         result = r2_client.upload_file(
             io.BytesIO(contents),
-            file.filename or "cover.jpg",
+            filename,
             folder=f"events/{current_user['id']}/covers",
         )
     except Exception as e:
@@ -176,7 +179,7 @@ async def upload_chat_voice(
 MAX_MEDIA_SIZE = 50 * 1024 * 1024  # 50 MB (videos)
 
 ALLOWED_MEDIA_CONTENT_TYPES = {
-    "image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif",
+    "image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif",
     "video/mp4", "video/quicktime", "video/x-m4v", "video/3gpp",
     "application/octet-stream",
 }
@@ -194,6 +197,8 @@ async def upload_chat_media(
 
     max_size = MAX_MEDIA_SIZE if is_video else MAX_PHOTO_SIZE
     contents = await file.read()
+    if not is_video and not is_gif:
+        contents = convert_to_webp(contents)
 
     if len(contents) == 0:
         raise HTTPException(status_code=400, detail="Empty file received")
@@ -201,9 +206,16 @@ async def upload_chat_media(
         raise HTTPException(status_code=400, detail="File too large")
 
     try:
+        if is_video:
+            filename = file.filename or "video.mp4"
+        elif is_gif:
+            filename = file.filename or "image.gif"
+        else:
+            filename = (file.filename or "image").rsplit(".", 1)[0] + ".webp"
+            
         result = r2_client.upload_file(
             io.BytesIO(contents),
-            file.filename or ("video.mp4" if is_video else "image.jpg"),
+            filename,
             folder="chat/media",
         )
     except Exception as e:

@@ -151,10 +151,18 @@ export function MediaPreviewModal({ media, onSend, onCancel, onRemove, onUpdate,
       <ImageCropperModal
         visible={!!cropTarget}
         uri={cropTarget?.uri ?? ''}
+        originalWidth={cropTarget ? media[cropTarget.index]?.width : undefined}
+        originalHeight={cropTarget ? media[cropTarget.index]?.height : undefined}
         onCancel={() => setCropTarget(null)}
         onCrop={(newUri) => {
           if (cropTarget && onUpdate) {
-            onUpdate(cropTarget.index, { ...media[cropTarget.index], uri: newUri })
+            onUpdate(cropTarget.index, { 
+              ...media[cropTarget.index], 
+              uri: newUri,
+              // Strip width/height since it's now cropped to a square (size x size)
+              width: undefined,
+              height: undefined
+            })
           }
           setCropTarget(null)
         }}

@@ -76,15 +76,22 @@ export function useEditPhotos() {
   const updateItem = (id: string, patch: Partial<PhotoItem>) =>
     setItems(prev => prev.map(item => (item.id === id ? { ...item, ...patch } : item)))
 
+  const replaceIndexRef = useRef<number | null>(null)
+
   const onSlotPress = (id: string) => {
     const current = itemsRef.current
     const idx = current.findIndex(i => i.id === id)
     const item = current[idx]
     if (!item) return
-    if (!item.uri) pickPhoto(idx)
+    if (item.uri) {
+      replaceIndexRef.current = idx
+    } else {
+      replaceIndexRef.current = null
+    }
+    pickPhoto(idx, !!item.uri)
   }
 
-  const pickPhoto = async (fromIndex: number) => {
+  const pickPhoto = async (fromIndex: number, isReplace: boolean = false) => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync()
     if (!perm.granted) {
       showPill('Allow photo access to add photos', 'error')
@@ -96,8 +103,8 @@ export function useEditPhotos() {
     }
 
     const currentItems = itemsRef.current
-    const emptyCount = currentItems.slice(fromIndex).filter(i => !i.uri).length
-    const selectionLimit = Math.max(1, emptyCount)
+    const emptyCount = currentItems.filter(i => !i.uri).length
+    const selectionLimit = isReplace ? 1 : Math.max(1, emptyCount)
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images' as ImagePicker.MediaType,
@@ -105,51 +112,69 @@ export function useEditPhotos() {
       allowsMultipleSelection: selectionLimit > 1,
       selectionLimit,
     })
-    if (result.canceled || !result.assets.length) return
+    
+    if (result.canceled || !result.assets.length) {
+      replaceIndexRef.current = null
+      return
+    }
 
     const validAssets = result.assets
     if (!validAssets.length) return
 
     const latestItems = itemsRef.current
     const existingUris = latestItems.map(i => i.uri)
-    const fresh = validAssets.map(a => a.uri).filter(uri => !existingUris.includes(uri))
+    const fresh = validAssets.filter(asset => !existingUris.includes(asset.uri))
     if (!fresh.length) return
 
-    const uploads: PendingMedia[] = []
-    let slot = fromIndex
-
-    for (const uri of fresh) {
-      while (slot < PHOTO_SLOTS && latestItems[slot]?.uri) slot++
-      if (slot >= PHOTO_SLOTS) break
-      uploads.push({ uri, type: 'image' })
-      slot++
-    }
-    if (!uploads.length) return
-
+    const uploads: PendingMedia[] = fresh.map(asset => ({ 
+      uri: asset.uri, 
+      type: 'image',
+      width: asset.width,
+      height: asset.height
+    }))
     setPendingMedia(uploads)
   }
 
   const confirmPendingPhotos = () => {
-    if (!pendingMedia.length) return
-    
-    setItems(prev => {
-      const next = [...prev]
-      let pendingIndex = 0
-      for (let i = 0; i < next.length; i++) {
-        if (!next[i].uri && pendingIndex < pendingMedia.length) {
-          next[i] = {
-            ...next[i],
-            uri: pendingMedia[pendingIndex].uri,
-            state: 'idle',
-            serverUrl: null,
-            remoteId: undefined,
-          }
-          pendingIndex++
-        }
-      }
-      return next
-    })
+    const mediaToKeep = [...pendingMedia]
     setPendingMedia([])
+    if (!mediaToKeep.length) {
+      replaceIndexRef.current = null
+      return
+    }
+
+    const currentItems = itemsRef.current
+    
+    // Find slots to fill
+    const targetIndices: number[] = []
+    
+    if (replaceIndexRef.current !== null) {
+      const idx = replaceIndexRef.current
+      targetIndices.push(idx)
+      
+      // Mark old remote photo for deletion if replacing
+      const oldItem = currentItems[idx]
+      if (oldItem?.remoteId) {
+        setDeletedRemoteIds(prev => [...prev, oldItem.remoteId!])
+      }
+      
+      replaceIndexRef.current = null
+    }
+
+    // Fill remaining from empty slots
+    currentItems.forEach((item, idx) => {
+      if (!item.uri && !targetIndices.includes(idx)) {
+        targetIndices.push(idx)
+      }
+    })
+
+    mediaToKeep.forEach((media, i) => {
+      if (i < targetIndices.length) {
+        const targetIdx = targetIndices[i]
+        const id = `photo-${targetIdx}`
+        updateItem(id, { uri: media.uri, state: 'idle', serverUrl: null, remoteId: undefined })
+      }
+    })
   }
 
   const cancelPendingPhotos = () => setPendingMedia([])

@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
-import { View, Text, StyleSheet, Modal, Dimensions, ScrollView, Pressable, ActivityIndicator, Image as RNImage } from 'react-native'
+import { useState, useEffect } from 'react'
+import { View, Text, StyleSheet, Modal, Dimensions, Pressable, ActivityIndicator, Image as RNImage } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator'
 import { Image } from 'expo-image'
@@ -7,74 +7,134 @@ import { X, Check } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 import { hTap, hSuccess, hError } from '@/lib/haptics'
 
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler'
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  runOnJS
+} from 'react-native-reanimated'
+
+const AnimatedImage = Animated.createAnimatedComponent(Image)
 const SW = Dimensions.get('window').width
 
 interface Props {
   visible: boolean
   uri: string
+  originalWidth?: number
+  originalHeight?: number
   onCrop: (croppedUri: string) => void
   onCancel: () => void
 }
 
-export function ImageCropperModal({ visible, uri, onCrop, onCancel }: Props) {
+export function ImageCropperModal({ visible, uri, originalWidth, originalHeight, onCrop, onCancel }: Props) {
   const insets = useSafeAreaInsets()
   const [dimensions, setDimensions] = useState<{ w: number; h: number } | null>(null)
   const [processing, setProcessing] = useState(false)
 
-  const offsetRef = useRef({ x: 0, y: 0 })
-  const zoomRef = useRef(1)
+  // Reanimated Shared Values
+  const scale = useSharedValue(1)
+  const savedScale = useSharedValue(1)
+  const translateX = useSharedValue(0)
+  const translateY = useSharedValue(0)
+  const savedTranslateX = useSharedValue(0)
+  const savedTranslateY = useSharedValue(0)
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { scale: scale.value }
+    ]
+  }))
 
   useEffect(() => {
     if (visible && uri) {
-      setDimensions(null)
-      offsetRef.current = { x: 0, y: 0 }
-      zoomRef.current = 1
-      RNImage.getSize(
-        uri,
-        (w, h) => setDimensions({ w, h }),
-        () => hError()
-      )
+      if (originalWidth && originalHeight) {
+        setDimensions({ w: originalWidth, h: originalHeight })
+      } else {
+        setDimensions(null)
+        RNImage.getSize(
+          uri,
+          (w, h) => setDimensions({ w, h }),
+          () => hError()
+        )
+      }
+      scale.value = 1
+      savedScale.value = 1
+      translateX.value = 0
+      translateY.value = 0
+      savedTranslateX.value = 0
+      savedTranslateY.value = 0
     }
-  }, [visible, uri])
+  }, [visible, uri, originalWidth, originalHeight])
 
   if (!visible) return null
 
   const size = SW // 1:1 viewport size
-  let imageW = size
-  let imageH = size
-  let scale = 1
+  let baseImageW = size
+  let baseImageH = size
+  let fitScale = 1
 
   if (dimensions) {
-    scale = Math.max(size / dimensions.w, size / dimensions.h)
-    imageW = dimensions.w * scale
-    imageH = dimensions.h * scale
+    fitScale = Math.max(size / dimensions.w, size / dimensions.h)
+    baseImageW = dimensions.w * fitScale
+    baseImageH = dimensions.h * fitScale
   }
 
-  const initialOffsetX = Math.max(0, (imageW - size) / 2)
-  const initialOffsetY = Math.max(0, (imageH - size) / 2)
-
-  // Wait until we have dimensions to render the cropper
   const ready = !!dimensions
 
-  const handleScroll = (e: any) => {
-    offsetRef.current = e.nativeEvent.contentOffset
-    if (e.nativeEvent.zoomScale !== undefined) {
-      zoomRef.current = e.nativeEvent.zoomScale
-    }
+  // Helper worklet to clamp pan based on current scale
+  const clamp = (value: number, min: number, max: number) => {
+    'worklet';
+    return Math.max(min, Math.min(value, max))
   }
+
+  const panGesture = Gesture.Pan()
+    .onUpdate((e) => {
+      const maxX = Math.max(0, (baseImageW * scale.value - size) / 2)
+      const maxY = Math.max(0, (baseImageH * scale.value - size) / 2)
+
+      translateX.value = clamp(savedTranslateX.value + e.translationX, -maxX, maxX)
+      translateY.value = clamp(savedTranslateY.value + e.translationY, -maxY, maxY)
+    })
+    .onEnd(() => {
+      savedTranslateX.value = translateX.value
+      savedTranslateY.value = translateY.value
+    })
+
+  const pinchGesture = Gesture.Pinch()
+    .onUpdate((e) => {
+      scale.value = clamp(savedScale.value * e.scale, 1, 3)
+
+      // Also clamp translations so zooming out doesn't leave the image out of bounds
+      const maxX = Math.max(0, (baseImageW * scale.value - size) / 2)
+      const maxY = Math.max(0, (baseImageH * scale.value - size) / 2)
+
+      translateX.value = clamp(translateX.value, -maxX, maxX)
+      translateY.value = clamp(translateY.value, -maxY, maxY)
+    })
+    .onEnd(() => {
+      savedScale.value = scale.value
+      savedTranslateX.value = translateX.value
+      savedTranslateY.value = translateY.value
+    })
+
+  const composedGesture = Gesture.Simultaneous(panGesture, pinchGesture)
 
   const handleCrop = async () => {
     if (!dimensions || processing) return
     hTap()
     setProcessing(true)
     try {
-      const z = zoomRef.current
-      const cropX = offsetRef.current.x / (scale * z)
-      const cropY = offsetRef.current.y / (scale * z)
-      const cropW = size / (scale * z)
-      const cropH = size / (scale * z)
+      const currentScale = scale.value
+      const totalScale = fitScale * currentScale
 
-      // Ensure we don't go out of bounds due to floating point rounding
+      // Calculate crop rect in original image coordinates
+      const cropX = ((baseImageW * currentScale - size) / 2 - translateX.value) / totalScale
+      const cropY = ((baseImageH * currentScale - size) / 2 - translateY.value) / totalScale
+      const cropW = size / totalScale
+      const cropH = size / totalScale
+
       const safeX = Math.max(0, Math.min(cropX, dimensions.w))
       const safeY = Math.max(0, Math.min(cropY, dimensions.h))
       const safeW = Math.min(cropW, dimensions.w - safeX)
@@ -97,57 +157,51 @@ export function ImageCropperModal({ visible, uri, onCrop, onCancel }: Props) {
 
   return (
     <Modal visible animationType="slide" transparent>
-      <View style={[s.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <View style={s.header}>
-          <Pressable onPress={onCancel} style={s.iconBtn} hitSlop={10}>
-            <X size={24} color="#fff" strokeWidth={2.5} />
-          </Pressable>
-          <Text style={s.title}>Crop Photo</Text>
-          <View style={s.iconBtn} />
-        </View>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View style={[s.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+          <View style={s.header}>
+            <Pressable onPress={onCancel} style={s.iconBtn} hitSlop={10}>
+              <X size={24} color="#fff" strokeWidth={2.5} />
+            </Pressable>
+            <Text style={s.title}>Crop Photo</Text>
+            <View style={s.iconBtn} />
+          </View>
 
-        <View style={s.center}>
-          {!ready ? (
-            <ActivityIndicator color={Colors.brandOrange} />
-          ) : (
-            <View style={s.cropBox}>
-              <ScrollView
-                bounces={false}
-                showsHorizontalScrollIndicator={false}
-                showsVerticalScrollIndicator={false}
-                maximumZoomScale={3}
-                minimumZoomScale={1}
-                contentOffset={{ x: initialOffsetX, y: initialOffsetY }}
-                onScroll={handleScroll}
-                scrollEventThrottle={16}
-                style={s.scrollView}
-                contentContainerStyle={{ width: imageW, height: imageH }}
-              >
-                <Image
-                  source={{ uri }}
-                  style={{ width: imageW, height: imageH }}
-                  contentFit="fill"
-                />
-              </ScrollView>
-              {/* Overlay lines or mask could go here, but a clean box is fine */}
-              <View style={s.overlay} pointerEvents="none" />
-            </View>
-          )}
-        </View>
-
-        <View style={s.footer}>
-          <Pressable style={s.cropBtn} onPress={handleCrop} disabled={!ready || processing}>
-            {processing ? (
-              <ActivityIndicator color="#111" />
+          <View style={s.center}>
+            {!ready ? (
+              <ActivityIndicator color={Colors.brandOrange} />
             ) : (
-              <>
-                <Check size={20} color="#111" strokeWidth={3} />
-                <Text style={s.cropBtnText}>Apply Crop</Text>
-              </>
+              <View style={s.cropBox}>
+                <GestureDetector gesture={composedGesture}>
+                  <Animated.View style={s.gestureContainer}>
+                    <AnimatedImage
+                      source={{ uri }}
+                      style={[{ width: baseImageW, height: baseImageH }, animatedStyle]}
+                      contentFit="fill"
+                    />
+                  </Animated.View>
+                </GestureDetector>
+                <View style={s.overlay} pointerEvents="none" />
+              </View>
             )}
-          </Pressable>
+          </View>
+
+          <View style={s.footer}>
+            <Text style={s.hintText}>Pinch to zoom and drag to adjust</Text>
+
+            <Pressable style={s.cropBtn} onPress={handleCrop} disabled={!ready || processing}>
+              {processing ? (
+                <ActivityIndicator color="#111" />
+              ) : (
+                <>
+                  <Check size={20} color="#111" strokeWidth={3} />
+                  <Text style={s.cropBtnText}>Apply Crop</Text>
+                </>
+              )}
+            </Pressable>
+          </View>
         </View>
-      </View>
+      </GestureHandlerRootView>
     </Modal>
   )
 }
@@ -165,14 +219,28 @@ const s = StyleSheet.create({
     width: SW, height: SW,
     backgroundColor: '#111',
     overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  scrollView: { flex: 1 },
+  gestureContainer: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   overlay: {
     ...StyleSheet.absoluteFill,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',
   },
   footer: { padding: 24, paddingBottom: 40 },
+  hintText: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.7)',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
   cropBtn: {
     backgroundColor: '#fff',
     height: 52, borderRadius: 26,

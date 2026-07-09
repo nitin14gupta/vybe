@@ -97,7 +97,7 @@ export function PhotoSlot({
 const styles = StyleSheet.create({
   slot: {
     width: ITEM_SIZE,
-    height: ITEM_SIZE * 1.3,
+    height: ITEM_SIZE,
     backgroundColor: 'rgba(255,255,255,0.03)',
     borderRadius: Radius.card,
     borderWidth: 1.5,
