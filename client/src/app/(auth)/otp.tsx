@@ -11,12 +11,12 @@ import { Colors, FontFamily, Spacing } from '@/constants'
 
 export default function OTPScreen() {
   const { phone } = useLocalSearchParams<{ phone: string }>()
-  const [code, setCode]               = useState('')
-  const [loading, setLoading]         = useState(false)
-  const [error, setError]             = useState(false)
-  const [errorMsg, setErrorMsg]       = useState('')
-  const [attempts, setAttempts]       = useState(0)
-  const [deletedOn, setDeletedOn]     = useState<string | null>(null)
+  const [code, setCode] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [attempts, setAttempts] = useState(0)
+  const [deletedOn, setDeletedOn] = useState<string | null>(null)
   const tooManyAttempts = attempts >= 3
   const { handleVerifyOTP, handleSendOTP } = useAuth()
   const { seconds, isExpired, reset } = useCountdown(45)
@@ -29,14 +29,8 @@ export default function OTPScreen() {
     setError(false)
     setErrorMsg('')
     try {
-      const result = await handleVerifyOTP(phone, code)
-      if (result.profileComplete) {
-        router.replace('/(tabs)/')
-      } else {
-        router.replace('/(auth)/age-gate')
-      }
+      await handleVerifyOTP(phone, code)
     } catch (e: any) {
-      // Soft-deleted account: backend returns 410 with "ACCOUNT_DELETED:DD Mon YYYY"
       const msg: string = e?.message ?? ''
       if (msg.startsWith('ACCOUNT_DELETED:')) {
         setDeletedOn(msg.replace('ACCOUNT_DELETED:', ''))
