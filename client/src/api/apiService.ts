@@ -349,31 +349,17 @@ class ApiService {
 
   // uploadAsync (expo-file-system) result shape, reused for the retry-on-401 wrapper
   private static async fsUpload(
-    url: string, uri: string, mime: string, token: string | null,
+    url: string, uri: string, mime: string, token: string | null, parameters?: Record<string, string>
   ): Promise<{ status: number; body: string }> {
     const result = await FileSystem.uploadAsync(url, uri, {
       httpMethod: 'POST',
       uploadType: FileSystem.FileSystemUploadType.MULTIPART,
       fieldName: 'file',
       mimeType: mime,
+      parameters,
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
     return { status: result.status, body: result.body }
-  }
-
-  private static xhrUpload(
-    url: string, formData: FormData, token: string | null, timeoutMs = 30000,
-  ): Promise<{ status: number; body: string }> {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest()
-      xhr.open('POST', url)
-      if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
-      xhr.timeout = timeoutMs
-      xhr.onload = () => resolve({ status: xhr.status, body: xhr.responseText })
-      xhr.onerror = () => reject(new Error('Network error — check server is reachable'))
-      xhr.ontimeout = () => reject(new Error('Upload timed out'))
-      xhr.send(formData)
-    })
   }
 
   private static async handleResponse<T>(
@@ -893,16 +879,12 @@ class ApiService {
     const ext = filename.split('.').pop()?.toLowerCase() ?? 'jpg'
     const mime = ext === 'png' ? 'image/png' : 'image/jpeg'
 
-    const formData = new FormData()
-    formData.append('file', { uri, name: filename, type: mime } as any)
-    formData.append('position', String(position))
-
     const url = `${API_BASE_URL}${ENDPOINTS.UPLOAD_PHOTO}`
     let token = useAuthStore.getState().accessToken
-    let res = await this.xhrUpload(url, formData, token)
+    let res = await this.fsUpload(url, uri, mime, token, { position: String(position) })
     if (res.status === 401) {
       token = await this.refreshAccessToken()
-      res = await this.xhrUpload(url, formData, token)
+      res = await this.fsUpload(url, uri, mime, token, { position: String(position) })
     }
 
     if (res.status < 200 || res.status >= 300) {
@@ -922,15 +904,12 @@ class ApiService {
     const ext = filename.split('.').pop()?.toLowerCase() ?? 'jpg'
     const mime = ext === 'png' ? 'image/png' : 'image/jpeg'
 
-    const formData = new FormData()
-    formData.append('file', { uri, name: filename, type: mime } as any)
-
     const url = `${API_BASE_URL}${ENDPOINTS.UPLOAD_EVENT_PHOTO}`
     let token = useAuthStore.getState().accessToken
-    let res = await this.xhrUpload(url, formData, token)
+    let res = await this.fsUpload(url, uri, mime, token)
     if (res.status === 401) {
       token = await this.refreshAccessToken()
-      res = await this.xhrUpload(url, formData, token)
+      res = await this.fsUpload(url, uri, mime, token)
     }
 
     if (res.status < 200 || res.status >= 300) {
@@ -950,6 +929,10 @@ class ApiService {
       position_a: positionA,
       position_b: positionB,
     })
+  }
+
+  static async reorderPhotos(updates: { id: string; position: number }[]): Promise<void> {
+    await this.post<{ ok: boolean }>(ENDPOINTS.REORDER_PHOTOS, { updates })
   }
 
   static async deletePhoto(photoId: string): Promise<void> {

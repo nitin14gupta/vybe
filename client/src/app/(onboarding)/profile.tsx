@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react'
 import { View, Text, StyleSheet, TextInput, Pressable, BackHandler } from 'react-native'
 import { router } from 'expo-router'
 import { useFocusEffect } from 'expo-router'
-import { Input, GenderSelector, ProgressBar, PrimaryButton, Screen, KeyboardAvoidingWrapper, DateTimePickerSheet, useDateTimePicker } from '@/components/ui'
+import { Input, GenderSelector, ProgressBar, PrimaryButton, Screen, KeyboardAvoidingWrapper, DateTimePickerSheet, useDateTimePicker, BioInput } from '@/components/ui'
 import { useOnboardingStore } from '@/store/onboarding'
 import { createProfile } from '@/api/user'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
@@ -10,31 +10,6 @@ import { usePillStore } from '@/store/pillStore'
 import { CalendarDays } from 'lucide-react-native'
 import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 
-function BioInput({ value, onChangeText }: { value: string; onChangeText: (t: string) => void }) {
-  const [focused, setFocused] = useState(false)
-  const inputRef = useRef<TextInput>(null)
-  return (
-    <Pressable
-      onPress={() => inputRef.current?.focus()}
-      style={[bioStyles.wrap, focused && bioStyles.focused]}
-    >
-      <TextInput
-        ref={inputRef}
-        value={value}
-        onChangeText={v => onChangeText(v.slice(0, 150))}
-        placeholder="A short intro — who are you?"
-        placeholderTextColor={Colors.inkDisabled}
-        multiline
-        textAlignVertical="top"
-        style={bioStyles.input}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        showSoftInputOnFocus
-      />
-      <Text style={bioStyles.counter}>{value.length}/150</Text>
-    </Pressable>
-  )
-}
 
 const MIN_DOB_DATE = new Date(new Date().setFullYear(new Date().getFullYear() - 100))
 const MAX_DOB_DATE = new Date(new Date().setFullYear(new Date().getFullYear() - 18))
@@ -221,34 +196,3 @@ const styles = StyleSheet.create({
   footer: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 16 },
 })
 
-const bioStyles = StyleSheet.create({
-  wrap: {
-    backgroundColor: Colors.elevated,
-    borderRadius: Radius.input,
-    borderWidth: 1.5,
-    borderColor: Colors.divider,
-    padding: 14,
-    minHeight: 90,
-  },
-  focused: {
-    borderColor: Colors.inkSecondary,
-    shadowColor: Colors.inkSecondary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.16,
-    shadowRadius: 3,
-  },
-  input: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 15,
-    color: Colors.inkPrimary,
-    lineHeight: 22,
-    minHeight: 60,
-  },
-  counter: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 11,
-    color: Colors.inkDisabled,
-    textAlign: 'right',
-    marginTop: 6,
-  },
-})

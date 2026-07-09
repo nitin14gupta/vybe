@@ -22,6 +22,7 @@ export const ENDPOINTS = {
   UPLOAD_PHOTO: '/upload/photo',
   UPLOAD_EVENT_PHOTO: '/upload/event-photo',
   SWAP_PHOTOS: '/upload/photo/swap',
+  REORDER_PHOTOS: '/upload/photo/reorder',
   DELETE_PHOTO: '/upload/photo/{id}',
   UPLOAD_VOICE: '/upload/voice',
   UPLOAD_CHAT_VOICE: '/upload/chat-voice',

@@ -222,7 +222,7 @@ export default function DiscoverScreen() {
     useCallback(() => {
       ApiService.getUnreadNotificationCount()
         .then(setUnreadCount)
-        .catch(() => {})
+        .catch(() => { })
     }, [setUnreadCount]),
   )
 
@@ -255,11 +255,6 @@ export default function DiscoverScreen() {
   const onVybePress = useCallback(() => {
     if (!activeUser) return
     hMedium()
-    // Bounce the flame button
-    flameScale.value = withSequence(
-      withSpring(1.18, { damping: 10, stiffness: 380 }),
-      withSpring(1, { damping: 14, stiffness: 280 }),
-    )
     handleVybe(activeUser)
   }, [activeUser, handleVybe, flameScale])
 

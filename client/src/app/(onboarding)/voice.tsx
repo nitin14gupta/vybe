@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
 import { hHeavy, hTap } from '@/lib/haptics'
-import { Mic, Square, Play, Pause } from 'lucide-react-native'
+import { Play, Pause } from 'lucide-react-native'
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -11,7 +11,7 @@ import Animated, {
   withTiming,
   cancelAnimation,
 } from 'react-native-reanimated'
-import { OutlineButton, ProgressBar, PrimaryButton, TextLinkButton, Screen, RecordingWave, PlaybackWave } from '@/components/ui'
+import { OutlineButton, ProgressBar, PrimaryButton, TextLinkButton, Screen, RecordingWave, PlaybackWave, Orb } from '@/components/ui'
 import { useVoice } from '@/hooks/useVoice'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
@@ -31,6 +31,7 @@ export default function VoiceScreen() {
     handleRetake,
     handleUse,
     handleSkip,
+    intensity,
   } = useVoice()
 
   const ripple = useSharedValue(1)
@@ -69,15 +70,19 @@ export default function VoiceScreen() {
 
       <View style={styles.center}>
         <View style={styles.recordWrap}>
-          <Animated.View style={[styles.ripple, rippleStyle]} />
           <Pressable
             onPress={() => { hHeavy(); tapRecord() }}
-            style={[styles.recordBtn, isRecording && styles.recordBtnActive]}
+            style={{ width: 280, height: 280, alignItems: 'center', justifyContent: 'center' }}
           >
-            {isRecording
-              ? <Square size={40} color={Colors.brandCoral} strokeWidth={1.5} />
-              : <Mic size={40} color={Colors.inkPrimary} strokeWidth={1.5} />
-            }
+            <Orb 
+              width={280} 
+              height={280} 
+              intensity={intensity} 
+              hue={280} 
+              hueByIntensity 
+              autoRotate 
+              isActive={isRecording}
+            />
           </Pressable>
         </View>
 
@@ -114,7 +119,7 @@ export default function VoiceScreen() {
         )}
 
         {!isRecording && !recorded && (
-          <Text style={styles.hint}>Tap the mic to start recording</Text>
+          <Text style={styles.hint}>Tap the orb to start recording</Text>
         )}
       </View>
 
@@ -156,30 +161,8 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    width: 148,
-    height: 148,
-  },
-  ripple: {
-    position: 'absolute',
-    width: 148,
-    height: 148,
-    borderRadius: 74,
-    borderWidth: 2,
-    borderColor: Colors.brandOrange,
-  },
-  recordBtn: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: Colors.surface,
-    borderWidth: 2.5,
-    borderColor: Colors.divider,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  recordBtnActive: {
-    backgroundColor: 'rgba(255,107,53,0.1)',
-    borderColor: Colors.brandOrange,
+    width: 280,
+    height: 280,
   },
   timer: {
     fontFamily: FontFamily.headingBold,

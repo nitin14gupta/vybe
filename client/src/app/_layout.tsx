@@ -14,7 +14,7 @@ import { useVybeFonts } from '@/lib/fonts'
 import { useAuthStore } from '@/store/auth'
 import { tokenStorage } from '@/lib/tokenStorage'
 import ApiService from '@/api/apiService'
-import { PillOverlay } from '@/components/ui'
+import { PillOverlay, PermissionSheetOverlay } from '@/components/ui'
 import { useNotificationSetup } from '@/hooks/useNotificationSetup'
 
 SplashScreen.preventAutoHideAsync()
@@ -97,6 +97,7 @@ export default function RootLayout() {
         <StatusBar style="light" />
         <RootNavigator />
         <PillOverlay />
+        <PermissionSheetOverlay />
       </BottomSheetModalProvider>
       </KeyboardProvider>
     </GestureHandlerRootView>

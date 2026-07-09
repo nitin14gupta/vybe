@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { router } from 'expo-router'
 import { getMe, updateProfile, setInterests as apiSetInterests, setLocation as apiSetLocation, getBadges } from '@/api/user'
 import { useOnboardingStore } from '@/store/onboarding'
@@ -76,6 +76,15 @@ export function useEditProfile() {
     })
   }
 
+  const refreshPhotos = useCallback(async () => {
+    try {
+      const p = await getMe()
+      setProfile(prev => prev ? { ...prev, photos: p.photos } : p)
+    } catch (e) {
+      // ignore
+    }
+  }, [])
+
   const handleSave = async () => {
     if (!name.trim()) {
       showPill('Name cannot be empty', 'error')
@@ -130,5 +139,6 @@ export function useEditProfile() {
     loading,
     saving,
     handleSave,
+    refreshPhotos,
   }
 }

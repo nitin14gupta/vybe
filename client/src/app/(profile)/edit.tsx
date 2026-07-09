@@ -1,9 +1,10 @@
 import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, TextInput } from 'react-native'
-import { useState, useEffect } from 'react'
-import { router } from 'expo-router'
+import { useState, useEffect, useCallback } from 'react'
+import { router, useFocusEffect } from 'expo-router'
+import { Image } from 'expo-image'
 import { hSuccess, hSelection } from '@/lib/haptics'
-import { Mic, Square, Play, Pause, RotateCcw } from 'lucide-react-native'
-import { BackButton, Input, InterestChip, PrimaryButton, Screen, RecordingWave, PlaybackWave } from '@/components/ui'
+import { Mic, Square, Play, Pause, RotateCcw, Plus } from 'lucide-react-native'
+import { BackButton, Input, InterestChip, PrimaryButton, Screen, RecordingWave, PlaybackWave, BioInput } from '@/components/ui'
 import { useEditProfile } from '@/hooks/useEditProfile'
 import { useInterests } from '@/hooks/useInterests'
 import { useVoiceEdit } from '@/hooks/useVoiceEdit'
@@ -20,6 +21,7 @@ export default function EditProfileScreen() {
     selectedBadges, availableBadges, toggleBadge,
     isDirty, loading, saving, handleSave,
     originalUsername,
+    refreshPhotos,
   } = useEditProfile()
 
   const { availableInterests, selected: selectedInterests, atMax: interestsAtMax, toggle: toggleInterest } = useInterests()
@@ -28,6 +30,12 @@ export default function EditProfileScreen() {
   const showPill = usePillStore(s => s.show)
 
   const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle')
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshPhotos()
+    }, [refreshPhotos])
+  )
 
   // Debounced username availability check
   useEffect(() => {
@@ -101,6 +109,30 @@ export default function EditProfileScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
 
+        {/* Photos */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.label, { marginBottom: 0 }]}>PHOTOS</Text>
+            <Pressable onPress={() => router.push('/(profile)/edit-photos')} hitSlop={8}>
+              <Text style={styles.changeBtnText}>Manage</Text>
+            </Pressable>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            {Array.from({ length: 6 }).map((_, i) => {
+              const photo = profile?.photos?.find(p => p.position === i) || profile?.photos?.[i]
+              return (
+                <Pressable key={i} onPress={() => router.push('/(profile)/edit-photos')} style={styles.photoMiniSlot}>
+                  {photo ? (
+                    <Image source={photo.url} style={StyleSheet.absoluteFill} contentFit="cover" transition={120} />
+                  ) : (
+                    <Plus size={16} color={Colors.inkDisabled} />
+                  )}
+                </Pressable>
+              )
+            })}
+          </ScrollView>
+        </View>
+
         {/* Name */}
         <View style={styles.section}>
           <Text style={styles.label}>NAME</Text>
@@ -150,29 +182,7 @@ export default function EditProfileScreen() {
         {/* Bio */}
         <View style={styles.section}>
           <Text style={styles.label}>BIO</Text>
-          <View style={styles.bioWrap}>
-            <TextInput
-              value={bio}
-              onChangeText={v => {
-                const lines = v.split('\n')
-                if (lines.length > 5) {
-                  showPill('Maximum 5 lines allowed', 'default')
-                  return
-                }
-                if (v.length > 150) {
-                  showPill('Maximum 150 characters allowed', 'default')
-                  return
-                }
-                setBio(v)
-              }}
-              placeholder="A short intro — who are you?"
-              placeholderTextColor={Colors.inkDisabled}
-              multiline
-              textAlignVertical="top"
-              style={styles.bioInput}
-            />
-            <Text style={styles.bioCounter}>{bio.length}/150</Text>
-          </View>
+          <BioInput value={bio} onChangeText={setBio} />
         </View>
 
 
@@ -278,7 +288,7 @@ function VoiceSection({
           <Pressable onPress={handlePlayPause} style={styles.voicePlayBtn}>
             {playing
               ? <Pause size={16} color={Colors.background} strokeWidth={2.5} />
-              : <Play  size={16} color={Colors.background} strokeWidth={2.5} />
+              : <Play size={16} color={Colors.background} strokeWidth={2.5} />
             }
           </Pressable>
           <View style={styles.voiceWaveWrap}>
@@ -300,7 +310,7 @@ function VoiceSection({
           <Pressable onPress={handlePlayPause} style={styles.voicePlayBtn}>
             {playing
               ? <Pause size={16} color={Colors.background} strokeWidth={2.5} />
-              : <Play  size={16} color={Colors.background} strokeWidth={2.5} />
+              : <Play size={16} color={Colors.background} strokeWidth={2.5} />
             }
           </Pressable>
           <View style={styles.voiceWaveWrap}>
@@ -433,29 +443,23 @@ const styles = StyleSheet.create({
     marginTop: -4,
   },
 
-  // Bio
-  bioWrap: {
-    backgroundColor: Colors.elevated,
-    borderRadius: Radius.input,
-    borderWidth: 1.5,
-    borderColor: Colors.divider,
-    padding: 14,
+  // Photos
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
-  bioInput: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 15,
-    color: Colors.inkPrimary,
-    lineHeight: 22,
-    minHeight: 66,
-    paddingTop: 0,
-    paddingBottom: 0,
-  },
-  bioCounter: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 11,
-    color: Colors.inkDisabled,
-    textAlign: 'right',
-    marginTop: 6,
+  photoMiniSlot: {
+    width: 60,
+    height: 80,
+    borderRadius: Radius.sm,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
 
   // City

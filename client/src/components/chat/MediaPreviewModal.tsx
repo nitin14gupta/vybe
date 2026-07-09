@@ -3,8 +3,9 @@ import { View, Text, Pressable, StyleSheet, Dimensions, Modal, FlatList } from '
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Image } from 'expo-image'
 import { VideoView, useVideoPlayer } from 'expo-video'
-import { X, Send, Play } from 'lucide-react-native'
+import { X, Send, Play, Check, Crop } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
+import { ImageCropperModal } from '@/components/ui/ImageCropperModal'
 import type { PendingMedia } from '@/hooks/useMediaPicker'
 
 const { width: SW } = Dimensions.get('window')
@@ -24,9 +25,12 @@ interface Props {
   onSend: () => void
   onCancel: () => void
   onRemove: (index: number) => void
+  onUpdate?: (index: number, updated: PendingMedia) => void
+  actionLabel?: string
+  titleLabel?: string
 }
 
-export function MediaPreviewModal({ media, onSend, onCancel, onRemove }: Props) {
+export function MediaPreviewModal({ media, onSend, onCancel, onRemove, onUpdate, actionLabel = 'Send', titleLabel = 'Ready to send?' }: Props) {
   const insets = useSafeAreaInsets()
   const [activeIndex, setActiveIndex] = useState(0)
   const mainListRef = useRef<FlatList>(null)
@@ -44,6 +48,8 @@ export function MediaPreviewModal({ media, onSend, onCancel, onRemove }: Props) 
     setActiveIndex(index)
     mainListRef.current?.scrollToIndex({ index, animated: true })
   }, [])
+
+  const [cropTarget, setCropTarget] = useState<{ uri: string; index: number } | null>(null)
 
   if (media.length === 0) return null
 
@@ -76,7 +82,16 @@ export function MediaPreviewModal({ media, onSend, onCancel, onRemove }: Props) 
             <View style={mp.mediaWrap}>
               {item.type === 'video'
                 ? <VideoPreview uri={item.uri} active={index === activeIndex} />
-                : <Image source={{ uri: item.uri }} style={mp.media} contentFit="contain" />
+                : (
+                  <>
+                    <Image source={{ uri: item.uri }} style={mp.media} contentFit="contain" />
+                    {onUpdate && index === activeIndex && (
+                      <Pressable style={mp.cropOverlayBtn} onPress={() => setCropTarget({ uri: item.uri, index })}>
+                        <Crop size={24} color="#fff" strokeWidth={2.5} />
+                      </Pressable>
+                    )}
+                  </>
+                )
               }
             </View>
           )}
@@ -120,14 +135,30 @@ export function MediaPreviewModal({ media, onSend, onCancel, onRemove }: Props) 
 
         <View style={mp.footer}>
           <Text style={mp.hint}>
-            {multi ? `${media.length} selected` : 'Ready to send?'}
+            {multi ? `${media.length} selected` : titleLabel}
           </Text>
           <Pressable style={mp.sendBtn} onPress={onSend}>
-            <Send size={19} color="#111" strokeWidth={2.5} fill="#111" />
-            <Text style={mp.sendLabel}>Send{multi ? ` ${media.length}` : ''}</Text>
+            {actionLabel === 'Add' ? (
+              <Check size={19} color="#111" strokeWidth={2.5} />
+            ) : (
+              <Send size={19} color="#111" strokeWidth={2.5} fill="#111" />
+            )}
+            <Text style={mp.sendLabel}>{actionLabel}{multi ? ` ${media.length}` : ''}</Text>
           </Pressable>
         </View>
       </View>
+
+      <ImageCropperModal
+        visible={!!cropTarget}
+        uri={cropTarget?.uri ?? ''}
+        onCancel={() => setCropTarget(null)}
+        onCrop={(newUri) => {
+          if (cropTarget && onUpdate) {
+            onUpdate(cropTarget.index, { ...media[cropTarget.index], uri: newUri })
+          }
+          setCropTarget(null)
+        }}
+      />
     </Modal>
   )
 }
@@ -146,6 +177,14 @@ const mp = StyleSheet.create({
   },
   iconBtn: {
     width: 40, height: 40, borderRadius: 20,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  cropOverlayBtn: {
+    position: 'absolute',
+    right: 20,
+    bottom: 20,
+    width: 50, height: 50, borderRadius: 25,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center', justifyContent: 'center',
   },
   headerTitle: {

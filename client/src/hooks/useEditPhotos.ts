@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
-import { router } from 'expo-router'
 import * as ImagePicker from 'expo-image-picker'
-import { uploadPhoto } from '@/api/user'
+import { router } from 'expo-router'
+import { getMe, uploadPhoto, deletePhoto, reorderPhotos } from '@/api/user'
 import type { PendingMedia } from '@/hooks/useMediaPicker'
-import { useOnboardingStore } from '@/store/onboarding'
 import { usePillStore } from '@/store/pillStore'
 import { usePermissionSheetStore } from '@/store/permissionSheetStore'
+import { hSuccess } from '@/lib/haptics'
 
 export type SlotState = 'idle' | 'uploading' | 'done' | 'error'
 
@@ -14,15 +14,18 @@ export interface PhotoItem {
   uri: string | null
   state: SlotState
   serverUrl: string | null
+  remoteId?: string
 }
 
 export const PHOTO_SLOTS = 6
 
-export function usePhotos() {
-  const store = useOnboardingStore()
+export function useEditPhotos() {
   const showPill = usePillStore.getState().show
   const showPermissionSheet = usePermissionSheetStore.getState().show
 
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  
   const [items, setItems] = useState<PhotoItem[]>(() =>
     Array.from({ length: PHOTO_SLOTS }, (_, i) => ({
       id: `photo-${i}`,
@@ -32,17 +35,43 @@ export function usePhotos() {
     }))
   )
   const [pendingMedia, setPendingMedia] = useState<PendingMedia[]>([])
-  const [nextLoading, setNextLoading] = useState(false)
+  const [initialItems, setInitialItems] = useState<PhotoItem[]>([])
+  const [deletedRemoteIds, setDeletedRemoteIds] = useState<string[]>([])
 
   const itemsRef = useRef(items)
   itemsRef.current = items
 
-  // Request permission on enter so the picker opens instantly on first tap
   useEffect(() => {
     ImagePicker.requestMediaLibraryPermissionsAsync()
-  }, [])
 
-  const hasAnyPhoto = items.some(item => !!item.uri)
+    // Load existing photos
+    getMe().then((profile) => {
+      if (profile.photos && profile.photos.length > 0) {
+        setItems(prev => {
+          const next = [...prev]
+          profile.photos.forEach(photo => {
+            if (photo.position >= 0 && photo.position < PHOTO_SLOTS) {
+              next[photo.position] = {
+                id: `photo-${photo.position}`,
+                uri: photo.url,
+                state: 'done',
+                serverUrl: photo.url,
+                remoteId: photo.id,
+              }
+            }
+          })
+          setInitialItems(next)
+          return next
+        })
+      } else {
+        setInitialItems([...itemsRef.current])
+      }
+    }).catch(() => {
+      showPill('Failed to load photos', 'error')
+    }).finally(() => {
+      setLoading(false)
+    })
+  }, [])
 
   const updateItem = (id: string, patch: Partial<PhotoItem>) =>
     setItems(prev => prev.map(item => (item.id === id ? { ...item, ...patch } : item)))
@@ -102,7 +131,7 @@ export function usePhotos() {
 
   const confirmPendingPhotos = () => {
     if (!pendingMedia.length) return
-
+    
     setItems(prev => {
       const next = [...prev]
       let pendingIndex = 0
@@ -111,8 +140,9 @@ export function usePhotos() {
           next[i] = {
             ...next[i],
             uri: pendingMedia[pendingIndex].uri,
-            state: 'done',
+            state: 'idle',
             serverUrl: null,
+            remoteId: undefined,
           }
           pendingIndex++
         }
@@ -140,6 +170,10 @@ export function usePhotos() {
     const item = itemsRef.current.find(i => i.id === id)
     if (!item?.uri) return
 
+    if (item.remoteId) {
+      setDeletedRemoteIds(prev => [...prev, item.remoteId!])
+    }
+
     setItems(prev => {
       const validPhotos = prev.filter(i => i.id !== id && i.uri !== null)
       return Array.from({ length: PHOTO_SLOTS }, (_, index) => {
@@ -151,68 +185,74 @@ export function usePhotos() {
           uri: null,
           state: 'idle' as SlotState,
           serverUrl: null,
+          remoteId: undefined,
         }
       })
     })
   }
 
-  const handleNext = async () => {
-    if (!hasAnyPhoto) return
-    setNextLoading(true)
-    
-    try {
-      // Mark all slots with a URI as uploading
-      setItems(prev => prev.map(item => item.uri ? { ...item, state: 'uploading' } : item))
+  const handleSave = async () => {
+    setSaving(true)
 
+    try {
+      // 1. Delete removed photos first
+      const deletes = await Promise.allSettled(deletedRemoteIds.map(id => deletePhoto(id)))
+      
       const compactedItems = itemsRef.current.filter(i => i.uri !== null)
 
+      // 2. Upload new photos (those with a URI but no remoteId) using their compacted index
       const uploads = await Promise.allSettled(
-        compactedItems.map((item, index) => uploadPhoto(item.uri!, index))
+        compactedItems.map((item, index) => {
+          if (!item.remoteId) {
+            return uploadPhoto(item.uri!, index)
+          }
+          return Promise.resolve()
+        })
       )
 
-      let failed = false
-      setItems(prev => {
-        let uploadIndex = 0
-        return prev.map(item => {
-          if (!item.uri) return item
-          const res = uploads[uploadIndex++]
-          if (res.status === 'fulfilled' && res.value !== null) {
-            return { ...item, state: 'done', serverUrl: res.value }
-          } else if (res.status === 'rejected') {
-            failed = true
-            return { ...item, state: 'error' }
-          }
-          return item
-        })
-      })
-
-      if (failed) {
-        showPill('Some photos failed to upload', 'error')
-        return
+      // 3. Reorder existing photos whose compacted positions changed
+      const reorderUpdates = compactedItems
+        .map((item, index) => ({ item, index }))
+        .filter(({ item }) => item.remoteId)
+        .map(({ item, index }) => ({ id: item.remoteId!, position: index }))
+      
+      if (reorderUpdates.length > 0) {
+        await reorderPhotos(reorderUpdates)
       }
 
-      // All good, navigate
-      const urls = uploads
-        .filter(r => r.status === 'fulfilled' && r.value !== null)
-        .map(r => (r as PromiseFulfilledResult<string>).value)
-      
-      store.setField('photoUris', urls)
-      router.push('/(onboarding)/voice')
+      const deleteErrors = deletes.filter(r => r.status === 'rejected')
+      const uploadErrors = uploads.filter(r => r.status === 'rejected')
+
+      if (deleteErrors.length > 0 || uploadErrors.length > 0) {
+        showPill('Some photos failed to sync', 'error')
+      } else {
+        hSuccess()
+      }
+
+      router.back()
     } catch (e: any) {
-      showPill(e.message || 'Upload failed', 'error')
+      showPill(e.message || 'Failed to save changes', 'error')
     } finally {
-      setNextLoading(false)
+      setSaving(false)
     }
   }
 
+  const hasChanges = deletedRemoteIds.length > 0 || items.some((item, i) => {
+    const orig = initialItems[i]
+    return item.uri !== orig?.uri
+  })
+
+  const validPhotoCount = items.filter(i => !!i.uri).length
+  const canSave = hasChanges && validPhotoCount > 0 && !saving
+
   return {
+    loading,
+    saving,
     items,
-    nextLoading,
-    hasAnyPhoto,
+    canSave,
     onSlotPress,
-    retryUpload: () => {}, // No-op now since we do batch upload
     removePhoto,
-    handleNext,
+    handleSave,
     pendingMedia,
     confirmPendingPhotos,
     cancelPendingPhotos,

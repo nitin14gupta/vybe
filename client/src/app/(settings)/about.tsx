@@ -20,7 +20,7 @@ export default function AboutScreen() {
         {/* Logo block */}
         <View style={styles.logoBlock}>
           <Text style={styles.wordmark}>VYBE</Text>
-          <Text style={styles.tagline}>Meet. Vibe. Connect.</Text>
+          <Text style={styles.tagline}>Meet. Vybe. Connect.</Text>
           <Text style={styles.version}>Version {version} ({buildNumber})</Text>
         </View>
 

@@ -23,6 +23,9 @@ export const deletePhoto = (id: string) => ApiService.deletePhoto(id)
 export const swapPhotos = (positionA: number, positionB: number) =>
   ApiService.swapPhotos(positionA, positionB)
 
+export const reorderPhotos = (updates: { id: string; position: number }[]) =>
+  ApiService.reorderPhotos(updates)
+
 export const uploadVoice = (uri: string) => ApiService.uploadVoice(uri)
 
 export const getCities = () => ApiService.getCities()

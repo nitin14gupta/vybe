@@ -50,7 +50,7 @@ async def upload_photo(
     if len(contents) < 20 * 1024:
         raise HTTPException(status_code=400, detail="Image is too small — please choose a full-size photo.")
 
-    if not has_face(contents):
+    if position == 0 and not has_face(contents):
         raise HTTPException(
             status_code=400,
             detail="Please upload a photo with your face visible so people can find you!",
@@ -213,10 +213,38 @@ async def upload_chat_media(
     return {"url": result["url"], "media_type": media_type}
 
 
+class ReorderItem(BaseModel):
+    id: str
+    position: int
+
+class ReorderRequest(BaseModel):
+    updates: list[ReorderItem]
+
+@router.post("/photo/reorder")
+def reorder_photos(
+    body: ReorderRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    user_id = current_user["id"]
+    with get_db() as (cur, conn):
+        # Temp shift to avoid unique constraint conflicts
+        for item in body.updates:
+            cur.execute(
+                "UPDATE user_photos SET position = position + 100 WHERE id = %s AND user_id = %s",
+                (item.id, user_id),
+            )
+        # Apply new positions
+        for item in body.updates:
+            cur.execute(
+                "UPDATE user_photos SET position = %s WHERE id = %s AND user_id = %s",
+                (item.position, item.id, user_id),
+            )
+        conn.commit()
+    return {"ok": True}
+
 class SwapRequest(BaseModel):
     position_a: int
     position_b: int
-
 
 @router.post("/photo/swap")
 def swap_photo_positions(

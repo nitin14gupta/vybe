@@ -37,7 +37,7 @@ export function PrimaryButton({ label, onPress, disabled, loading, style }: Prop
       disabled={disabled || loading}
     >
       <Animated.View style={[animStyle, style]}>
-        {disabled ? (
+        {disabled && !loading ? (
           <Animated.View style={styles.disabled}>
             <Text style={styles.disabledText}>{label}</Text>
           </Animated.View>
