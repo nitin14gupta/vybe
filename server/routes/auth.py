@@ -67,6 +67,11 @@ def verify_otp_route(body: OTPVerifyRequest):
     refresh_token = create_refresh_token(user_id)
 
     with get_db() as (cur, _):
+        # Enforce single session: log out of all other devices by clearing old refresh tokens
+        cur.execute("DELETE FROM refresh_tokens WHERE user_id = %s", (user_id,))
+        # Also clear any old push tokens associated with this user
+        cur.execute("DELETE FROM device_tokens WHERE user_id = %s", (user_id,))
+
         cur.execute(
             "INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES (%s, %s, %s)",
             (user_id, hash_token(refresh_token), refresh_token_expires_at()),

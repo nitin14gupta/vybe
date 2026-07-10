@@ -14,7 +14,7 @@ export function useEvents() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [filters, setFiltersState] = useState<EventFilters>({})
-  const { lat: userLat, lng: userLng, heading: userHeading, ready: locationReady } = useLiveLocation()
+  const { lat: userLat, lng: userLng, heading: userHeading, ready: locationReady, status: locationStatus } = useLiveLocation()
   const didInit = useRef(false)
 
   const load = useCallback(
@@ -83,5 +83,5 @@ export function useEvents() {
     load(filters, userLat, userLng)
   }, [filters, userLat, userLng, load])
 
-  return { events, loading, error, filters, setFilter, reload, loadInBounds, userLat, userLng, userHeading }
+  return { events, loading, error, filters, setFilter, reload, loadInBounds, userLat, userLng, userHeading, locationStatus }
 }

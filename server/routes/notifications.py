@@ -59,7 +59,7 @@ def notify_waitlist_promoted(cur, user_id: str, event_id: str, event_title: str)
     _insert_notification(
         cur, user_id, "waitlist_promoted",
         title="A spot opened up!",
-        body=f"You have 24 hours to confirm your spot at {event_title}.",
+        body=f"You have 1 hours to confirm your spot at {event_title}.",
         entity_id=event_id,
         entity_type="event",
     )

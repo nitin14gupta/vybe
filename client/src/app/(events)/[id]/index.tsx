@@ -40,10 +40,10 @@ import {
   X as XIcon,
 } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
-import ApiService, { type EventDetail, type EventAttendee } from '@/api/apiService'
+import ApiService, { type EventDetail, type EventAttendee, type EventGuest } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
 import { usePillStore } from '@/store/pillStore'
-import { ConfirmSheet } from '@/components/ui'
+import { ConfirmSheet, GuestListSheet } from '@/components/ui'
 import { ReportEventSheet } from '@/components/ReportEventSheet'
 import { EventShareCard } from '@/components/EventShareCard'
 import { useImageShare } from '@/hooks/useImageShare'
@@ -190,6 +190,10 @@ export default function EventDetailScreen() {
   const showPill = usePillStore(s => s.show)
   const [attendees, setAttendees] = useState<EventAttendee[]>([])
   const [attendeesLoading, setAttendeesLoading] = useState(false)
+  const [guests, setGuests] = useState<EventGuest[]>([])
+  const [guestTotal, setGuestTotal] = useState(0)
+  const [guestWaitlist, setGuestWaitlist] = useState<EventGuest[]>([])
+  const [guestSheetOpen, setGuestSheetOpen] = useState(false)
 
   const [offerSecondsLeft, setOfferSecondsLeft] = useState<number | null>(null)
 
@@ -211,6 +215,9 @@ export default function EventDetailScreen() {
             .catch(() => {})
             .finally(() => setAttendeesLoading(false))
         }
+        ApiService.getEventGuests(id)
+          .then(r => { setGuests(r.guests); setGuestTotal(r.total); setGuestWaitlist(r.waitlist) })
+          .catch(() => {})
       })
       .catch(() => showPill("Couldn't load this event", 'error'))
       .finally(() => setLoading(false))
@@ -434,22 +441,29 @@ export default function EventDetailScreen() {
           </LinearGradient>
         )}
 
+        {/* Scrim — keeps overlay icons legible over any photo, without per-icon circles */}
+        <LinearGradient
+          colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0)']}
+          style={[styles.heroScrim, { height: insets.top + 72 }]}
+          pointerEvents="none"
+        />
+
         {/* Overlay buttons */}
         <View style={[styles.heroOverlay, { top: insets.top + 8 }]}>
-          <Pressable style={styles.heroCircleBtn} onPress={goBack}>
-            <ArrowLeft size={20} color="#fff" />
+          <Pressable style={styles.heroIconBtn} onPress={goBack} hitSlop={10}>
+            <ArrowLeft size={22} color="#fff" strokeWidth={2} />
           </Pressable>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Pressable style={styles.heroCircleBtn} onPress={() => { hTap(); handleShare() }}>
-              <Share2 size={20} color="#fff" />
+          <View style={{ flexDirection: 'row', gap: 4 }}>
+            <Pressable style={styles.heroIconBtn} onPress={() => { hTap(); handleShare() }} hitSlop={10}>
+              <Share2 size={20} color="#fff" strokeWidth={2} />
             </Pressable>
             {event?.host_id === myId ? (
-              <Pressable style={styles.heroCircleBtn} onPress={() => { hTap(); setOptionsOpen(true) }}>
-                <MoreVertical size={20} color="#fff" />
+              <Pressable style={styles.heroIconBtn} onPress={() => { hTap(); setOptionsOpen(true) }} hitSlop={10}>
+                <MoreVertical size={20} color="#fff" strokeWidth={2} />
               </Pressable>
             ) : (
-              <Pressable style={styles.heroCircleBtn} onPress={() => { hTap(); setReportOpen(true) }}>
-                <Flag size={20} color="#fff" strokeWidth={1.8} />
+              <Pressable style={styles.heroIconBtn} onPress={() => { hTap(); setReportOpen(true) }} hitSlop={10}>
+                <Flag size={20} color="#fff" strokeWidth={2} />
               </Pressable>
             )}
           </View>
@@ -457,13 +471,15 @@ export default function EventDetailScreen() {
 
       </View>
 
-      {/* Scrollable content */}
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.brandOrange} colors={[Colors.brandOrange]} />}
-      >
+      {/* Scrollable content — overlaps the hero photo with rounded top corners */}
+      <View style={styles.sheet}>
+        <View style={styles.sheetHandle} />
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.brandOrange} colors={[Colors.brandOrange]} />}
+        >
         {/* Category + title */}
         <View style={styles.categoryRow}>
           <Text style={styles.categoryChip}>{EVENT_EMOJIS[event.event_type]} {event.event_type.replace('_', ' ')}</Text>
@@ -531,6 +547,43 @@ export default function EventDetailScreen() {
           </Pressable>
         )}
 
+        {/* Guest List */}
+        {guestTotal > 0 && (
+          <Pressable
+            style={styles.guestCard}
+            onPress={() => { hTap(); setGuestSheetOpen(true) }}
+          >
+            <View style={styles.guestCardTop}>
+              <Text style={styles.guestCardTitle}>Guest List</Text>
+              <View style={styles.viewAllPill}>
+                <Text style={styles.viewAllText}>View all</Text>
+                <ChevronRight size={14} color={Colors.brandOrange} strokeWidth={2} />
+              </View>
+            </View>
+            <View style={styles.guestCardBottom}>
+              <View style={styles.guestStack}>
+                {guests.slice(0, 5).map((g, i) => (
+                  <View key={g.id} style={[styles.guestStackAvatar, { marginLeft: i === 0 ? 0 : -12, zIndex: 5 - i }]}>
+                    {g.avatar ? (
+                      <Image source={{ uri: g.avatar }} style={styles.guestStackImg} contentFit="cover" />
+                    ) : (
+                      <View style={[styles.guestStackImg, styles.guestStackFallback]}>
+                        <Text style={styles.guestStackInitial}>{(g.name ?? '?').charAt(0).toUpperCase()}</Text>
+                      </View>
+                    )}
+                  </View>
+                ))}
+                {guestTotal > 5 && (
+                  <View style={[styles.guestStackAvatar, styles.guestStackMore, { marginLeft: -12 }]}>
+                    <Text style={styles.guestStackMoreText}>+{guestTotal - 5}</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={styles.guestCardCount}>{guestTotal} going</Text>
+            </View>
+          </Pressable>
+        )}
+
         {/* About */}
         {event.description ? (
           <View style={styles.section}>
@@ -567,7 +620,8 @@ export default function EventDetailScreen() {
             />
           </View>
         )}
-      </ScrollView>
+        </ScrollView>
+      </View>
 
       {/* Sticky bottom bar */}
       <View style={[styles.stickyBar, { paddingBottom: insets.bottom + 12 }]}>
@@ -753,6 +807,14 @@ export default function EventDetailScreen() {
         eventId={id ?? ''}
         onClose={() => setReportOpen(false)}
       />
+      <GuestListSheet
+        visible={guestSheetOpen}
+        eventId={id ?? ''}
+        guests={guests}
+        total={guestTotal}
+        waitlist={guestWaitlist}
+        onClose={() => setGuestSheetOpen(false)}
+      />
 
       {/* Off-screen — captured and shared as an image, never shown to the user */}
       {event?.cover_photos?.[0]?.url && (
@@ -840,6 +902,10 @@ const styles = StyleSheet.create({
   hero: { height: 340, backgroundColor: Colors.surface },
   heroPlaceholder: { alignItems: 'center', justifyContent: 'center' },
   heroEmoji: { fontSize: 72 },
+  heroScrim: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0,
+  },
   heroOverlay: {
     position: 'absolute',
     left: 0,
@@ -848,11 +914,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
   },
-  heroCircleBtn: {
+  heroIconBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -868,8 +932,24 @@ const styles = StyleSheet.create({
   photoDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.4)' },
   photoDotActive: { backgroundColor: '#fff', width: 18 },
 
+  sheet: {
+    flex: 1,
+    marginTop: -24,
+    backgroundColor: Colors.background,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    overflow: 'hidden',
+  },
+  sheetHandle: {
+    alignSelf: 'center',
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    marginTop: 10,
+  },
   scroll: { flex: 1 },
-  scrollContent: { padding: 20 },
+  scrollContent: { padding: 20, paddingTop: 14 },
 
   categoryRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   categoryChip: {
@@ -926,6 +1006,41 @@ const styles = StyleSheet.create({
   hostInfo: { flex: 1 },
   hostLabel: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, marginBottom: 2 },
   hostName: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
+
+  guestCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.divider,
+    padding: 16,
+    marginBottom: 16,
+    gap: 14,
+  },
+  guestCardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  guestCardTitle: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
+  viewAllPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 2,
+    backgroundColor: 'rgba(255,107,53,0.1)',
+    paddingHorizontal: 12, paddingVertical: 6,
+    borderRadius: 999,
+  },
+  viewAllText: { fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: Colors.brandOrange },
+  guestCardBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  guestStack: { flexDirection: 'row', alignItems: 'center' },
+  guestStackAvatar: {
+    width: 40, height: 40, borderRadius: 20,
+    borderWidth: 2, borderColor: Colors.surface,
+    overflow: 'hidden',
+  },
+  guestStackImg: { width: '100%', height: '100%' },
+  guestStackFallback: { backgroundColor: Colors.elevated, alignItems: 'center', justifyContent: 'center' },
+  guestStackInitial: { fontFamily: FontFamily.headingBold, fontSize: 14, color: Colors.inkPrimary },
+  guestStackMore: {
+    backgroundColor: Colors.elevated,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  guestStackMoreText: { fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: Colors.inkSecondary },
+  guestCardCount: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.inkSecondary },
 
   section: { marginBottom: 20 },
   sectionTitle: { fontFamily: FontFamily.headingBold, fontSize: 17, color: Colors.inkPrimary, marginBottom: 8 },

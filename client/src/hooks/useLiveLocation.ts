@@ -16,6 +16,7 @@ export function useLiveLocation() {
   const [lng, setLng] = useState<number | undefined>()
   const [heading, setHeading] = useState<number | undefined>()
   const [ready, setReady] = useState(false)
+  const [status, setStatus] = useState<Location.PermissionStatus | undefined>()
   const subRef = useRef<Location.LocationSubscription | null>(null)
   const headingSubRef = useRef<Location.LocationSubscription | null>(null)
   const smoothedHeadingRef = useRef<number | null>(null)
@@ -26,10 +27,16 @@ export function useLiveLocation() {
 
     ;(async () => {
       try {
-        const { status } = await Location.requestForegroundPermissionsAsync()
-        if (status !== 'granted' || cancelled) {
-          if (!cancelled) setReady(true)
-          return
+        const perm = await Location.getForegroundPermissionsAsync()
+        if (perm.status !== 'granted') {
+          const req = await Location.requestForegroundPermissionsAsync()
+          if (!cancelled) setStatus(req.status)
+          if (req.status !== 'granted' || cancelled) {
+            if (!cancelled) setReady(true)
+            return
+          }
+        } else {
+          if (!cancelled) setStatus(perm.status)
         }
 
         const last = await Location.getLastKnownPositionAsync()
@@ -97,5 +104,5 @@ export function useLiveLocation() {
     }
   }, [])
 
-  return { lat, lng, heading, ready }
+  return { lat, lng, heading, ready, status }
 }

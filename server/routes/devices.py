@@ -18,14 +18,17 @@ def register_token(payload: TokenPayload, current_user: dict = Depends(get_curre
     with get_db() as (cur, conn):
         # Dissociate token from any other user (device hand-off between accounts)
         cur.execute(
-            "DELETE FROM device_tokens WHERE expo_token = %s AND user_id != %s::uuid",
-            (payload.expo_token, uid),
+            "DELETE FROM device_tokens WHERE expo_token = %s",
+            (payload.expo_token,),
         )
+        # Enforce single device per user: UPSERT based on user_id
         cur.execute(
             """
             INSERT INTO device_tokens (user_id, expo_token, platform)
             VALUES (%s::uuid, %s, %s)
-            ON CONFLICT (user_id, expo_token) DO NOTHING
+            ON CONFLICT (user_id) DO UPDATE SET 
+                expo_token = EXCLUDED.expo_token,
+                platform = EXCLUDED.platform
             """,
             (uid, payload.expo_token, payload.platform),
         )

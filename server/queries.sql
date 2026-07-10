@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS public.device_tokens (
   platform text,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT device_tokens_pkey PRIMARY KEY (id),
-  CONSTRAINT device_tokens_user_id_expo_token_key UNIQUE (user_id, expo_token)
+  CONSTRAINT device_tokens_user_id_key UNIQUE (user_id)
 );
 
 CREATE TABLE IF NOT EXISTS public.event_attendees (

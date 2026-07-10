@@ -88,7 +88,7 @@ function WaitlistInfoCard() {
         <Clock size={15} color={Colors.accentGold} strokeWidth={1.8} />
         <Text style={info.text}>
           You have{' '}
-          <Text style={info.highlight}>24 hours</Text>
+          <Text style={info.highlight}>1 hour</Text>
           {' '}to confirm once a spot opens for you
         </Text>
       </View>

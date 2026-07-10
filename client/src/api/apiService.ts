@@ -230,6 +230,14 @@ export interface EventAttendee {
   ticket_token: string | null
 }
 
+export interface EventGuest {
+  id: string
+  name: string | null
+  username: string | null
+  avatar: string | null
+  is_following: boolean
+}
+
 export interface Message {
   id: string
   conversation_id: string
@@ -756,6 +764,12 @@ class ApiService {
   static async getEventAttendees(id: string): Promise<{ attendees: EventAttendee[]; total: number }> {
     return this.get<{ attendees: EventAttendee[]; total: number }>(
       ENDPOINTS.EVENT_ATTENDEES.replace(':id', id),
+    )
+  }
+
+  static async getEventGuests(id: string): Promise<{ guests: EventGuest[]; total: number; waitlist: EventGuest[] }> {
+    return this.get<{ guests: EventGuest[]; total: number; waitlist: EventGuest[] }>(
+      ENDPOINTS.EVENT_GUESTS.replace(':id', id),
     )
   }
 

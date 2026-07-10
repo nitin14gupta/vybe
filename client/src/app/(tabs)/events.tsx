@@ -9,6 +9,8 @@ import {
   StyleSheet,
   Text,
   View,
+  Alert,
+  Linking,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { EventsMapView } from "@/components/maps";
@@ -21,6 +23,8 @@ import { Colors, FontFamily } from "@/constants";
 import { useEvents } from "@/hooks/useEvents";
 import type { EventSummary } from "@/api/apiService";
 import { EventCard, formatEventDate } from "@/components/EventCard";
+import { LocationWarning } from "@/components/ui";
+import { usePermissionSheetStore } from "@/store/permissionSheetStore";
 
 const { width: W } = Dimensions.get("window");
 const CARD_W = 268;
@@ -112,7 +116,7 @@ function MoreCard({ count, onPress }: { count: number; onPress: () => void }) {
 export default function EventsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { events, loading, error, filters, setFilter, reload, loadInBounds, userLat, userLng, userHeading } = useEvents();
+  const { events, loading, error, filters, setFilter, reload, loadInBounds, userLat, userLng, userHeading, locationStatus } = useEvents();
   const [viewMode, setViewMode] = useState<"map" | "list">("map");
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [listCount, setListCount] = useState(LIST_PAGE);
@@ -127,6 +131,19 @@ export default function EventsScreen() {
       });
       return () => sub.remove();
     }, []),
+  );
+
+  const permissionSheet = usePermissionSheetStore();
+
+  useFocusEffect(
+    useCallback(() => {
+      if (locationStatus === 'denied') {
+        permissionSheet.show(
+          "Location Required",
+          "We need your location to show events happening nearby. Please enable it in Settings."
+        );
+      }
+    }, [locationStatus])
   );
 
   const hasError = !loading && !!error;
@@ -226,6 +243,8 @@ export default function EventsScreen() {
           pointerEvents="none"
         />
 
+        <LocationWarning />
+
         {/* Floating header */}
         <View style={[styles.floatHeader, { paddingTop: insets.top + 6 }]} pointerEvents="box-none">
           <Text style={styles.floatTitle}>Events</Text>
@@ -286,7 +305,7 @@ export default function EventsScreen() {
               snapToInterval={CARD_W + CARD_MARGIN}
               decelerationRate="fast"
               contentContainerStyle={{ paddingHorizontal: 14, gap: CARD_MARGIN }}
-              onScrollToIndexFailed={() => {}}
+              onScrollToIndexFailed={() => { }}
               ListFooterComponent={
                 extraCount > 0 ? (
                   <MoreCard count={extraCount} onPress={() => setViewMode("list")} />
@@ -327,6 +346,8 @@ export default function EventsScreen() {
           </Pressable>
         </View>
       </View>
+
+      <LocationWarning />
 
       {/* Filter chips */}
       <ScrollView

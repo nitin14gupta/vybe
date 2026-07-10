@@ -71,21 +71,36 @@ export const ef = StyleSheet.create({
   typeChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingRight: 16,
     backgroundColor: Colors.surface,
-    borderRadius: 12,
+    borderRadius: 999,
     borderWidth: 1,
     borderColor: Colors.divider,
   },
   typeChipActive: {
-    backgroundColor: 'rgba(255,107,53,0.15)',
-    borderColor: Colors.brandOrange,
+    borderColor: 'transparent',
+    backgroundColor: 'rgba(255,107,53,0.12)',
+    shadowColor: Colors.brandOrange,
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
+  typeEmojiBadge: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: Colors.elevated,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  typeEmojiBadgeActive: {
+    width: 32, height: 32, borderRadius: 16,
+    alignItems: 'center', justifyContent: 'center',
   },
   typeEmoji: { fontSize: 16 },
   typeLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.inkSecondary },
-  typeLabelActive: { color: Colors.brandOrange },
+  typeLabelActive: { color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold },
 
   // Date/time picker row
   pickerRow: {

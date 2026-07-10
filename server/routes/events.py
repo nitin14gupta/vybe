@@ -30,7 +30,7 @@ def _promote_next_waitlist(cur, event_id: str) -> dict | None:
     if not next_row:
         return None
     cur.execute(
-        "UPDATE event_attendees SET offer_expires_at = NOW() + INTERVAL '24 hours' WHERE id = %s",
+        "UPDATE event_attendees SET offer_expires_at = NOW() + INTERVAL '1 hour' WHERE id = %s",
         (next_row["id"],),
     )
     cur.execute(
@@ -650,7 +650,7 @@ def update_event(event_id: str, body: CreateEventBody, background_tasks: Backgro
         for p in promoted_users:
             background_tasks.add_task(
                 send_push, p["user_id"], "A spot opened up!",
-                "You have 24 hours to confirm your spot.",
+                "You have 1 hour to confirm your spot.",
                 {"type": "event", "event_id": event_id},
             )
 
@@ -670,7 +670,7 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
 
         # Fetch event + user dob for age check
         cur.execute(
-            "SELECT capacity, spots_left, age_restriction, date_time, end_time, title FROM events WHERE id = %s AND is_cancelled = FALSE",
+            "SELECT capacity, spots_left, age_restriction, date_time, end_time, title, price_inr FROM events WHERE id = %s AND is_cancelled = FALSE",
             (event_id,),
         )
         ev = cur.fetchone()
@@ -823,6 +823,10 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
             prev_status = existing["status"]
             had_offer = existing["offer_expires_at"] is not None
 
+            if prev_status == "going" and ev["price_inr"] > 0:
+                conn.commit()
+                raise HTTPException(status_code=400, detail="Tickets for paid events cannot be cancelled.")
+
             cur.execute(
                 "UPDATE event_attendees SET status = 'cancelled', offer_expires_at = NULL WHERE event_id = %s AND user_id = %s",
                 (event_id, current_user["id"]),
@@ -875,7 +879,7 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
                     conn2.commit()
                 background_tasks.add_task(
                     send_push, promoted["user_id"], "A spot opened up!",
-                    f"You have 24 hours to confirm your spot at {event_title_cancel}.",
+                    f"You have 1 hour to confirm your spot at {event_title_cancel}.",
                     {"type": "event", "event_id": event_id},
                 )
 
@@ -1034,7 +1038,7 @@ def admit_from_waitlist(event_id: str, background_tasks: BackgroundTasks, curren
     if promoted:
         background_tasks.add_task(
             send_push, promoted["user_id"], "A spot opened up!",
-            f"You have 24 hours to confirm your spot at {ev['title']}.",
+            f"You have 1 hour to confirm your spot at {ev['title']}.",
             {"type": "event", "event_id": event_id},
         )
 
@@ -1115,6 +1119,61 @@ def get_attendees(event_id: str, current_user: dict = Depends(get_current_user))
         )
         rows = [dict(r) for r in cur.fetchall()]
     return {"attendees": rows, "total": len(rows)}
+
+
+# ── GET /events/{id}/guests ───────────────────────────────────────────────────
+# Public guest list — anyone can see who's going, just name/avatar (no PII like
+# check-in time or ticket tokens, unlike the host-only /attendees endpoint above).
+
+@router.get("/{event_id}/guests")
+def get_guests(event_id: str, current_user: dict = Depends(get_current_user)):
+    with get_db() as (cur, _):
+        cur.execute("SELECT id FROM events WHERE id = %s", (event_id,))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Event not found")
+
+        cur.execute(
+            """
+            SELECT
+                u.id::text,
+                u.name,
+                u.username,
+                (SELECT url FROM user_photos WHERE user_id = u.id ORDER BY position LIMIT 1) AS avatar,
+                EXISTS(
+                    SELECT 1 FROM follows f
+                    WHERE f.follower_id = %s AND f.following_id = u.id
+                ) AS is_following
+            FROM event_attendees ea
+            JOIN users u ON u.id = ea.user_id
+            WHERE ea.event_id = %s AND ea.status = 'going'
+            ORDER BY ea.joined_at ASC
+            LIMIT 200
+            """,
+            (current_user["id"], event_id),
+        )
+        rows = [dict(r) for r in cur.fetchall()]
+
+        cur.execute(
+            """
+            SELECT
+                u.id::text,
+                u.name,
+                u.username,
+                (SELECT url FROM user_photos WHERE user_id = u.id ORDER BY position LIMIT 1) AS avatar,
+                EXISTS(
+                    SELECT 1 FROM follows f
+                    WHERE f.follower_id = %s AND f.following_id = u.id
+                ) AS is_following
+            FROM event_attendees ea
+            JOIN users u ON u.id = ea.user_id
+            WHERE ea.event_id = %s AND ea.status = 'waitlist'
+            ORDER BY ea.joined_at ASC
+            LIMIT 200
+            """,
+            (current_user["id"], event_id),
+        )
+        waitlist_rows = [dict(r) for r in cur.fetchall()]
+    return {"guests": rows, "total": len(rows), "waitlist": waitlist_rows}
 
 
 # ── GET /events/{id}/ticket ───────────────────────────────────────────────────

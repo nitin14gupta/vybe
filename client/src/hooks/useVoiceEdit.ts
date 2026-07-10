@@ -5,6 +5,7 @@ import {
   AudioModule, RecordingPresets, setAudioModeAsync,
 } from 'expo-audio'
 import { uploadVoice } from '@/api/user'
+import { usePermissionSheetStore } from '@/store/permissionSheetStore'
 
 const MAX_SECONDS = 30
 
@@ -46,6 +47,15 @@ export function useVoiceEdit(existingUrl?: string | null) {
     if (isRecording) {
       await stopRecording()
     } else {
+      const perm = await AudioModule.requestRecordingPermissionsAsync()
+      if (!perm.granted) {
+        usePermissionSheetStore.getState().show(
+          'Microphone Permission Required',
+          'You need to allow microphone access in your device settings to record a voice intro.'
+        )
+        return
+      }
+
       setRecorded(false)
       setLocalUri(null)
       if (existingUrl) player.replace({ uri: existingUrl })

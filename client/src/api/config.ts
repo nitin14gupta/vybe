@@ -1,7 +1,7 @@
 import Constants from 'expo-constants'
 
 export const API_BASE_URL: string =
-  (Constants.expoConfig?.extra?.apiUrl as string | undefined) ?? 'http://192.168.0.102:8000'
+  (Constants.expoConfig?.extra?.apiUrl as string | undefined) ?? 'http://192.168.0.101:8000'
 
 export const ENDPOINTS = {
   // Auth
@@ -56,6 +56,7 @@ export const ENDPOINTS = {
   EVENT_RSVP: '/events/:id/rsvp',
   EVENT_UPDATE: '/events/:id',
   EVENT_ATTENDEES: '/events/:id/attendees',
+  EVENT_GUESTS: '/events/:id/guests',
   EVENT_TICKET: '/events/:id/ticket',
   EVENT_CHECKIN: '/events/:id/checkin',
   EVENT_REVIEWS: '/events/:id/reviews',
