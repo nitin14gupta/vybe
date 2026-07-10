@@ -44,7 +44,7 @@ function PickerRow({
           {value || placeholder || 'Tap to select'}
         </Text>
       </View>
-      <ChevronRight size={16} color={Colors.inkDisabled} />
+      <ChevronRight size={16} color={Colors.glassTextDisabled} />
     </Pressable>
   )
 }
@@ -92,11 +92,11 @@ function Inner({ form, set, errors, setErrors, openDate, openStartTime, openEndD
           style={[ef.stepperBtn, form.capacity <= minCapacity && { opacity: 0.35 }]}
           onPress={() => !disabled && set('capacity', Math.max(minCapacity, form.capacity - 5))}
         >
-          <Minus size={18} color={Colors.inkPrimary} />
+          <Minus size={18} color="#fff" />
         </Pressable>
         <Text style={ef.stepperValue}>{form.capacity}</Text>
         <Pressable style={ef.stepperBtn} onPress={() => (!disabled || capacityUnlocked) && set('capacity', Math.min(200, form.capacity + 5))}>
-          <Plus size={18} color={Colors.inkPrimary} />
+          <Plus size={18} color="#fff" />
         </Pressable>
       </View>
       {capacityNote ? <Text style={ef.fieldLockNote}>{capacityNote}</Text> : null}

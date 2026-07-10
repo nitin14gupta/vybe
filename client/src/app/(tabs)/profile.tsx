@@ -200,6 +200,7 @@ export default function ProfileScreen() {
             {profile!.photos.map((photo, i) => (
               <Pressable
                 key={photo.id}
+                onPress={() => openMedia(profile!.photos.map(p => ({ url: p.url, type: 'image' as const })), i)}
                 onLongPress={() => openMedia(profile!.photos.map(p => ({ url: p.url, type: 'image' as const })), i)}
                 delayLongPress={400}
               >

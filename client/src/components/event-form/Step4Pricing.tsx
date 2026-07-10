@@ -24,61 +24,8 @@ interface Props {
   resetsOn?: string
 }
 
-function PhotoSlotView({
-  uri, uploading, onPress, onRemove, disabled, size,
-}: {
-  uri: string | null
-  uploading: boolean
-  onPress: () => void
-  onRemove: () => void
-  disabled?: boolean
-  size: 'cover' | 'small'
-}) {
-  const isCover = size === 'cover'
-  const slotStyle = isCover ? ef.photoCoverSlot : ef.photoSmallSlot
-  const filled = !!uri
-
-  return (
-    <Pressable
-      style={[slotStyle, filled && ef.photoSlotFilled]}
-      onPress={!disabled && !uploading ? onPress : undefined}
-    >
-      {uri ? (
-        <>
-          <Image
-            source={{ uri }}
-            contentFit="cover"
-            style={StyleSheet.absoluteFill}
-          />
-          {uploading && (
-            <View style={s.uploadOverlay}>
-              <ActivityIndicator size="small" color="#fff" />
-            </View>
-          )}
-          {!disabled && !uploading && (
-            <Pressable style={ef.photoRemove} onPress={onRemove} hitSlop={8}>
-              <X size={isCover ? 12 : 10} color="#fff" />
-            </Pressable>
-          )}
-        </>
-      ) : uploading ? (
-        <View style={s.uploadOverlay}>
-          <ActivityIndicator size="small" color={Colors.brandOrange} />
-        </View>
-      ) : isCover ? (
-        <View style={ef.photoPlaceholder}>
-          <Plus size={24} color={Colors.inkDisabled} />
-          <Text style={ef.photoPlaceholderText}>Cover</Text>
-        </View>
-      ) : (
-        <Plus size={18} color={Colors.inkDisabled} />
-      )}
-    </Pressable>
-  )
-}
 
 function Inner({ form, set, errors, setErrors, submitError, priceLocked, priceLockNote, disabled, freeUsed = 0, resetsOn = '' }: Omit<Props, 'scrollable'>) {
-  const { slotStates, pickPhoto, removePhoto, displayUri } = useEventPhotos(form.coverPhotos, set)
   const showPill = usePillStore.getState().show
   const effectivelyLocked = disabled || priceLocked
   const slotsExhausted = freeUsed >= 2
@@ -135,7 +82,7 @@ function Inner({ form, set, errors, setErrors, submitError, priceLocked, priceLo
               value={form.priceInr > 0 ? String(form.priceInr) : ''}
               onChangeText={v => { const n = parseInt(v, 10); set('priceInr', isNaN(n) ? 0 : n); setErrors(e => ({ ...e, priceInr: '' })) }}
               placeholder="Ticket price"
-              placeholderTextColor={Colors.inkDisabled}
+              placeholderTextColor={Colors.glassTextDisabled}
               keyboardType="numeric"
               editable={!effectivelyLocked}
             />
@@ -144,32 +91,6 @@ function Inner({ form, set, errors, setErrors, submitError, priceLocked, priceLo
         {errors.priceInr ? <Text style={ef.errorText}>{errors.priceInr}</Text> : null}
       </View>
 
-      {/* Photos grid */}
-      <Text style={[ef.fieldLabel, { marginTop: 24 }]}>Event Photos (up to 5)</Text>
-      <View style={ef.photosGrid}>
-        <PhotoSlotView
-          uri={displayUri(0)}
-          uploading={slotStates[0] === 'uploading'}
-          onPress={() => { pickPhoto(0); setErrors(e => ({ ...e, coverPhotos: '' })) }}
-          onRemove={() => removePhoto(0)}
-          disabled={disabled}
-          size="cover"
-        />
-        <View style={ef.photoSmallGrid}>
-          {[1, 2, 3, 4].map(i => (
-            <PhotoSlotView
-              key={i}
-              uri={displayUri(i)}
-              uploading={slotStates[i] === 'uploading'}
-              onPress={() => { pickPhoto(i); setErrors(e => ({ ...e, coverPhotos: '' })) }}
-              onRemove={() => removePhoto(i)}
-              disabled={disabled}
-              size="small"
-            />
-          ))}
-        </View>
-      </View>
-      {errors.coverPhotos ? <Text style={ef.errorText}>{errors.coverPhotos}</Text> : null}
 
       {submitError ? (
         <View style={s.submitError}>
@@ -186,8 +107,8 @@ export function Step4Pricing({ scrollable = true, ...props }: Props) {
   }
   return (
     <ScrollView style={ef.stepScroll} contentContainerStyle={ef.stepContent} keyboardShouldPersistTaps="handled">
-      <Text style={ef.stepTitle}>Pricing &amp; Photos</Text>
-      <Text style={ef.stepSub}>Set the entry fee and add some photos</Text>
+      <Text style={ef.stepTitle}>Pricing</Text>
+      <Text style={ef.stepSub}>Set a ticket price or keep it free</Text>
       <Inner {...props} />
     </ScrollView>
   )
@@ -196,7 +117,7 @@ export function Step4Pricing({ scrollable = true, ...props }: Props) {
 const s = StyleSheet.create({
   lockedSection: { opacity: 0.45 },
   uploadOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center',
     justifyContent: 'center',

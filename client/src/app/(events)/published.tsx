@@ -19,6 +19,8 @@ import { usePillStore } from '@/store/pillStore'
 import ApiService from '@/api/apiService'
 import { EventShareCard } from '@/components/EventShareCard'
 import { useImageShare } from '@/hooks/useImageShare'
+import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
+import { BlurView } from 'expo-blur'
 
 function parseDate(iso: string | null | undefined): Date | null {
   if (!iso) return null
@@ -68,23 +70,22 @@ function InstagramIcon() {
 // ── Pulsing rocket icon ───────────────────────────────────────────────────────
 
 function RocketIcon() {
-  const pulse = useRef(new Animated.Value(1)).current
+  const floatAnim = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.07, duration: 900, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true }),
+        Animated.timing(floatAnim, { toValue: -8, duration: 2000, useNativeDriver: true }),
+        Animated.timing(floatAnim, { toValue: 0, duration: 2000, useNativeDriver: true }),
       ])
     ).start()
   }, [])
 
   return (
-    <Animated.View style={[s.rocketWrap, { transform: [{ scale: pulse }] }]}>
-      <View style={s.rocketGlow} />
-      <View style={s.rocketCircle}>
+    <Animated.View style={[s.rocketWrap, { transform: [{ translateY: floatAnim }] }]}>
+      <BlurView intensity={40} tint="light" style={s.rocketCircle}>
         <Text style={s.rocketEmoji}>🚀</Text>
-      </View>
+      </BlurView>
     </Animated.View>
   )
 }
@@ -128,7 +129,7 @@ export default function PublishedScreen() {
         setCoverUrl(ev.cover_photos?.[0]?.url ?? '')
         setDateTimeLabel(formatDateTime(ev.date_time))
       })
-      .catch(() => {})
+      .catch(() => { })
   }, [id])
 
   const shareText = `Check out "${eventTitle}" on VYBE! 🔥${dateTimeLabel ? `\n${dateTimeLabel}` : ''}`
@@ -148,7 +149,6 @@ export default function PublishedScreen() {
   const copyLink = () => {
     hTap()
     Share.share({ message: `vybe://events/${id}` }).then(() => {
-      showPill('Link shared!', 'success')
     })
   }
 
@@ -164,6 +164,7 @@ export default function PublishedScreen() {
 
   return (
     <View style={[s.root, { paddingBottom: insets.bottom + 16 }]}>
+      <LiquidPlasmaBackground colors={['#1a1605', '#d41b81']} />
       <ConfettiRain />
 
       <View style={s.content}>
@@ -173,7 +174,7 @@ export default function PublishedScreen() {
         <Text style={s.sub}>Share to get your first guests and start building the vybe.</Text>
 
         {/* Share card */}
-        <View style={s.shareCard}>
+        <BlurView intensity={20} tint="dark" style={s.shareCard}>
           <Text style={s.shareCardLabel}>SHARE WITH FRIENDS</Text>
           <View style={s.shareRow}>
             <ShareBtn
@@ -187,12 +188,12 @@ export default function PublishedScreen() {
               onPress={shareInstagram}
             />
             <ShareBtn
-              icon={<View style={[s.shareBtnIconInner, { backgroundColor: '#333' }]}><Link2 size={22} color="#fff" strokeWidth={1.8} /></View>}
+              icon={<View style={[s.shareBtnIconInner, { backgroundColor: 'rgba(255,255,255,0.1)' }]}><Link2 size={22} color="#fff" strokeWidth={1.8} /></View>}
               label="Copy Link"
               onPress={copyLink}
             />
           </View>
-        </View>
+        </BlurView>
 
         {/* Primary CTA */}
         <Pressable style={s.primaryBtn} onPress={goToMyEvents}>
@@ -229,7 +230,7 @@ export default function PublishedScreen() {
 const s = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: '#0a0a0a',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -242,21 +243,15 @@ const s = StyleSheet.create({
   },
 
   // Rocket
-  rocketWrap: { marginBottom: 24, alignItems: 'center', justifyContent: 'center' },
-  rocketGlow: {
-    position: 'absolute',
-    width: 120, height: 120, borderRadius: 60,
-    backgroundColor: 'rgba(255,107,53,0.18)',
-  },
+  rocketWrap: { marginBottom: 32, alignItems: 'center', justifyContent: 'center' },
   rocketCircle: {
-    width: 88, height: 88, borderRadius: 44,
-    backgroundColor: Colors.surface,
-    borderWidth: 2, borderColor: Colors.brandOrange,
+    width: 100, height: 100, borderRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)',
     alignItems: 'center', justifyContent: 'center',
-    shadowColor: Colors.brandOrange, shadowOpacity: 0.35, shadowRadius: 16, shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
+    overflow: 'hidden',
   },
-  rocketEmoji: { fontSize: 40 },
+  rocketEmoji: { fontSize: 44 },
 
   // Text
   headline: {
@@ -280,12 +275,13 @@ const s = StyleSheet.create({
   // Share card
   shareCard: {
     width: '100%',
-    backgroundColor: 'rgba(32,31,31,0.92)',
-    borderRadius: 20,
+    backgroundColor: 'rgba(20,20,20,0.4)',
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    padding: 20,
-    marginBottom: 24,
+    borderColor: 'rgba(255,255,255,0.12)',
+    padding: 24,
+    marginBottom: 32,
+    overflow: 'hidden',
   },
   shareCardLabel: {
     fontFamily: FontFamily.bodySemiBold,

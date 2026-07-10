@@ -159,25 +159,15 @@ export default function EventsScreen() {
 
   const handleChip = (key: string) => {
     if (key === "all") {
-      setFilter("category", undefined);
-      setFilter("is_free", undefined);
-      setFilter("date_range", undefined);
+      setFilter({ category: undefined, is_free: undefined, date_range: undefined });
     } else if (key === "free") {
-      setFilter("is_free", true);
-      setFilter("category", undefined);
-      setFilter("date_range", undefined);
+      setFilter({ is_free: true, category: undefined, date_range: undefined });
     } else if (key === "tonight") {
-      setFilter("date_range", "tonight");
-      setFilter("category", undefined);
-      setFilter("is_free", undefined);
+      setFilter({ date_range: "tonight", category: undefined, is_free: undefined });
     } else if (key === "weekend") {
-      setFilter("date_range", "weekend");
-      setFilter("category", undefined);
-      setFilter("is_free", undefined);
+      setFilter({ date_range: "weekend", category: undefined, is_free: undefined });
     } else {
-      setFilter("category", key);
-      setFilter("is_free", undefined);
-      setFilter("date_range", undefined);
+      setFilter({ category: key, is_free: undefined, date_range: undefined });
     }
   };
 
@@ -252,7 +242,7 @@ export default function EventsScreen() {
             {togglePill}
             <Pressable
               style={styles.addBtn}
-              onPress={() => router.push("/(tabs)/create" as any)}
+              onPress={() => router.push("/(events)/create" as any)}
               hitSlop={8}
             >
               <Plus size={18} color="#fff" strokeWidth={2.5} />
@@ -279,7 +269,7 @@ export default function EventsScreen() {
               <Flame size={28} color={Colors.brandOrange} strokeWidth={1.5} />
               <Text style={styles.mapEmptyTitle}>No events nearby</Text>
               <Pressable
-                onPress={() => router.push("/(tabs)/create" as any)}
+                onPress={() => router.push("/(events)/create" as any)}
                 style={styles.mapEmptyCta}
               >
                 <Text style={styles.mapEmptyCtaText}>Create one</Text>
@@ -339,7 +329,7 @@ export default function EventsScreen() {
           {togglePill}
           <Pressable
             style={styles.addBtn}
-            onPress={() => router.push("/(tabs)/create" as any)}
+            onPress={() => router.push("/(events)/create" as any)}
             hitSlop={8}
           >
             <Plus size={18} color="#fff" strokeWidth={2.5} />
@@ -386,7 +376,7 @@ export default function EventsScreen() {
           <Text style={styles.listEmptyTitle}>No events nearby yet</Text>
           <Text style={styles.listEmptySub}>Be the first to host one</Text>
           <Pressable
-            onPress={() => router.push("/(tabs)/create" as any)}
+            onPress={() => router.push("/(events)/create" as any)}
             style={styles.listEmptyCta}
           >
             <Plus size={16} color={Colors.brandOrange} />

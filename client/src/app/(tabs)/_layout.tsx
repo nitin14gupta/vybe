@@ -12,14 +12,13 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: [styles.tabBar, {
-          height: ComponentSize.navBar + insets.bottom,
-          paddingBottom: insets.bottom + 8,
+          height: ComponentSize.navBar,
+          paddingBottom: insets.bottom,
         }],
         tabBarActiveTintColor: Colors.brandOrange,
         tabBarInactiveTintColor: Colors.inkSecondary,
         tabBarLabelStyle: styles.label,
         tabBarShowLabel: true,
-        tabBarPressColor: 'transparent',
       }}
     >
       <Tabs.Screen
@@ -67,8 +66,6 @@ export default function TabsLayout() {
           ),
         }}
       />
-      {/* Create is accessible via + button on Events tab, hidden from tab bar */}
-      <Tabs.Screen name="create" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -390,7 +390,7 @@ class ApiService {
         } else {
           detail = String(err.detail ?? err.message ?? detail)
         }
-      } catch {}
+      } catch { }
       throw Object.assign(new Error(detail), { status: response.status })
     }
 
@@ -903,7 +903,7 @@ class ApiService {
 
     if (res.status < 200 || res.status >= 300) {
       let detail = `Upload failed (${res.status})`
-      try { detail = JSON.parse(res.body)?.detail ?? detail } catch {}
+      try { detail = JSON.parse(res.body)?.detail ?? detail } catch { }
       throw Object.assign(new Error(detail), { status: res.status })
     }
     try {
@@ -913,22 +913,22 @@ class ApiService {
     }
   }
 
-  static async uploadEventPhoto(uri: string): Promise<string> {
+  static async uploadEventPhoto(uri: string, position: number = 0): Promise<string> {
     const filename = uri.split('/').pop() ?? 'photo.jpg'
     const ext = filename.split('.').pop()?.toLowerCase() ?? 'jpg'
     const mime = ext === 'png' ? 'image/png' : 'image/jpeg'
 
     const url = `${API_BASE_URL}${ENDPOINTS.UPLOAD_EVENT_PHOTO}`
     let token = useAuthStore.getState().accessToken
-    let res = await this.fsUpload(url, uri, mime, token)
+    let res = await this.fsUpload(url, uri, mime, token, { position: String(position) })
     if (res.status === 401) {
       token = await this.refreshAccessToken()
-      res = await this.fsUpload(url, uri, mime, token)
+      res = await this.fsUpload(url, uri, mime, token, { position: String(position) })
     }
 
     if (res.status < 200 || res.status >= 300) {
       let detail = `Upload failed (${res.status})`
-      try { detail = JSON.parse(res.body)?.detail ?? detail } catch {}
+      try { detail = JSON.parse(res.body)?.detail ?? detail } catch { }
       throw new Error(detail)
     }
     try {
@@ -968,7 +968,7 @@ class ApiService {
 
     if (result.status < 200 || result.status >= 300) {
       let detail = `Upload failed (${result.status})`
-      try { detail = JSON.parse(result.body)?.detail ?? detail } catch {}
+      try { detail = JSON.parse(result.body)?.detail ?? detail } catch { }
       throw new Error(detail)
     }
 
@@ -993,7 +993,7 @@ class ApiService {
 
     if (result.status < 200 || result.status >= 300) {
       let detail = `Upload failed (${result.status})`
-      try { detail = JSON.parse(result.body)?.detail ?? detail } catch {}
+      try { detail = JSON.parse(result.body)?.detail ?? detail } catch { }
       throw new Error(detail)
     }
 
@@ -1023,7 +1023,7 @@ class ApiService {
 
     if (result.status < 200 || result.status >= 300) {
       let detail = `Upload failed (${result.status})`
-      try { detail = JSON.parse(result.body)?.detail ?? detail } catch {}
+      try { detail = JSON.parse(result.body)?.detail ?? detail } catch { }
       throw new Error(detail)
     }
 

@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useEffect } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated'
 import MapView, { Marker, Polyline } from 'react-native-maps'
 import Svg, { Defs, RadialGradient, Stop, Path } from 'react-native-svg'
 import {
@@ -98,16 +99,16 @@ function EventsMapGoogle({ events, userLat, userLng, userHeading, activeEventId,
       {/* Route line from user → selected event */}
       {activeEvent && userLat != null && userLng != null &&
         activeEvent.location_lat != null && activeEvent.location_lng != null && (
-        <Polyline
-          coordinates={[
-            { latitude: userLat, longitude: userLng },
-            { latitude: activeEvent.location_lat, longitude: activeEvent.location_lng },
-          ]}
-          strokeColor={Colors.brandCoral}
-          strokeWidth={2.5}
-          lineDashPattern={[8, 5]}
-        />
-      )}
+          <Polyline
+            coordinates={[
+              { latitude: userLat, longitude: userLng },
+              { latitude: activeEvent.location_lat, longitude: activeEvent.location_lng },
+            ]}
+            strokeColor={Colors.brandCoral}
+            strokeWidth={2.5}
+            lineDashPattern={[8, 5]}
+          />
+        )}
       {events.map((ev, idx) =>
         ev.location_lat != null && ev.location_lng != null ? (
           <Marker
@@ -166,12 +167,12 @@ function EventsMapLibre({ events, userLat, userLng, userHeading, activeEventId, 
     'heatmap-intensity': 1.5,
     'heatmap-color': [
       'interpolate', ['linear'], ['heatmap-density'],
-      0,    'rgba(0,0,0,0)',
+      0, 'rgba(0,0,0,0)',
       0.15, 'rgba(29,233,182,0.25)',
       0.35, 'rgba(79,195,247,0.55)',
       0.60, 'rgba(206,147,216,0.75)',
       0.82, 'rgba(255,82,82,0.85)',
-      1.0,  'rgba(255,107,53,0.95)',
+      1.0, 'rgba(255,107,53,0.95)',
     ] as any,
     'heatmap-opacity': 0.85,
   }
@@ -216,14 +217,12 @@ function EventsMapLibre({ events, userLat, userLng, userHeading, activeEventId, 
           zoom: 11,
         }}
       />
-      <UserLocation visible/>
-
-      {/* Direction cone — custom overlay driven by device compass, avoids the
-          native UserLocation "heading" pipeline which crashes under RN's New
-          Architecture (__next_prime overflow in MLRNLocationModule) */}
-      {userLat != null && userLng != null && userHeading != null && (
+      {userLat != null && userLng != null && (
         <LibreMarker lngLat={[userLng, userLat]} anchor="center">
-          <HeadingCone heading={userHeading} />
+          <View>
+            {userHeading != null && <HeadingCone heading={userHeading} />}
+            <PulsatingDot />
+          </View>
         </LibreMarker>
       )}
 
@@ -343,12 +342,62 @@ function HeadingCone({ heading }: { heading: number }) {
   )
 }
 
+function PulsatingDot() {
+  const anim = useSharedValue(0)
+
+  useEffect(() => {
+    anim.value = withRepeat(
+      withTiming(1, { duration: 2500, easing: Easing.out(Easing.ease) }),
+      -1,
+      false
+    )
+  }, [])
+
+  const rStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: 1 + anim.value * 2.5 }],
+      opacity: 1 - anim.value,
+    }
+  })
+
+  return (
+    <>
+      <Animated.View style={[c.pulseRing, rStyle]} />
+      <View style={c.userDot} />
+    </>
+  )
+}
+
 const c = StyleSheet.create({
+  userDot: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#007AFF',
+    borderWidth: 2.5,
+    borderColor: '#fff',
+    marginTop: -8,
+    marginLeft: -8,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+  },
+  pulseRing: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 122, 255, 0.4)',
+    marginTop: -16,
+    marginLeft: -16,
+  },
   wrap: {
-    // Wrapper is 2x the beam's height so its geometric center — which is
-    // where RN applies rotation, and where the map anchor is set — lines
-    // up with the beam's apex (the svg's bottom edge, sitting flush against
-    // the wrapper's midline).
     width: CONE_VB_W,
     height: CONE_RADIUS * 2,
     alignItems: 'center',

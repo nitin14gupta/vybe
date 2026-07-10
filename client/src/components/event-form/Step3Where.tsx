@@ -1,8 +1,10 @@
 import React from 'react'
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native'
 import { MapPin } from 'lucide-react-native'
 import { Colors } from '@/constants'
 import { LocationPickerMap } from '@/components/maps'
+import { useLocationSearch } from '@/hooks/useLocationSearch'
+import { LocationSearchModal } from './LocationSearchModal'
 import type { CreateEventForm } from '@/hooks/useCreateEvent'
 import { ef } from './styles'
 
@@ -21,6 +23,8 @@ interface Props {
 }
 
 export function Step3Where({ form, set, errors, setErrors, disabled, inline = false }: Props) {
+  const search = useLocationSearch(form.locationLat, form.locationLng)
+  
   const isOutsideIndia =
     form.locationLat != null &&
     form.locationLng != null &&
@@ -29,17 +33,15 @@ export function Step3Where({ form, set, errors, setErrors, disabled, inline = fa
   const addressField = (
     <>
       <Text style={ef.fieldLabel}>Address *</Text>
-      <View style={[ef.inputWrap, errors.locationName && ef.inputWrapError]}>
+      <Pressable 
+        style={[ef.inputWrap, errors.locationName && ef.inputWrapError]}
+        onPress={() => { if (!disabled) search.setSearchOpen(true) }}
+      >
         <MapPin size={16} color={Colors.brandOrange} style={{ marginRight: 8 }} />
-        <TextInput
-          style={[ef.textInput, { flex: 1 }]}
-          value={form.locationName}
-          onChangeText={v => { set('locationName', v); setErrors(e => ({ ...e, locationName: '' })) }}
-          placeholder="e.g. 142 Carter Rd, Bandra West"
-          placeholderTextColor={Colors.inkDisabled}
-          editable={!disabled}
-        />
-      </View>
+        <Text style={[ef.textInput, { flex: 1, color: form.locationName ? '#fff' : Colors.glassTextDisabled }]}>
+          {form.locationName || "e.g. 142 Carter Rd, Bandra West"}
+        </Text>
+      </Pressable>
       {errors.locationName ? <Text style={ef.errorText}>{errors.locationName}</Text> : null}
       <Text style={ef.locationNote}>📍 Exact address is only shown to confirmed guests</Text>
       {isOutsideIndia && (
@@ -71,19 +73,54 @@ export function Step3Where({ form, set, errors, setErrors, disabled, inline = fa
       <View>
         {addressField}
         {mapBlock}
+        <LocationSearchModal
+          visible={search.searchOpen}
+          onClose={() => search.setSearchOpen(false)}
+          query={search.query}
+          setQuery={search.setQuery}
+          results={search.results}
+          loading={search.loading}
+          onSelect={(item) => {
+            set('locationName', item.display_name)
+            if (item.lat && item.lon) {
+              set('locationLat', parseFloat(item.lat))
+              set('locationLng', parseFloat(item.lon))
+            }
+            setErrors(e => ({ ...e, locationName: '' }))
+            search.setSearchOpen(false)
+          }}
+        />
       </View>
     )
   }
 
-  // Step 3 wizard layout: address fields scroll on top, map pinned at bottom
+  // Step 3 wizard layout: address fields and map scroll together
   return (
     <View style={ef.step3Container}>
-      <ScrollView style={ef.stepScroll} contentContainerStyle={[ef.stepContent, { paddingBottom: 0 }]}>
+      <ScrollView style={ef.stepScroll} contentContainerStyle={ef.stepContent}>
         <Text style={ef.stepTitle}>Where's the VYBE?</Text>
         <Text style={ef.stepSub}>Set your event location</Text>
         {addressField}
+        {mapBlock}
       </ScrollView>
-      {mapBlock}
+
+      <LocationSearchModal
+        visible={search.searchOpen}
+        onClose={() => search.setSearchOpen(false)}
+        query={search.query}
+        setQuery={search.setQuery}
+        results={search.results}
+        loading={search.loading}
+        onSelect={(item) => {
+          set('locationName', item.display_name)
+          if (item.lat && item.lon) {
+            set('locationLat', parseFloat(item.lat))
+            set('locationLng', parseFloat(item.lon))
+          }
+          setErrors(e => ({ ...e, locationName: '' }))
+          search.setSearchOpen(false)
+        }}
+      />
     </View>
   )
 }

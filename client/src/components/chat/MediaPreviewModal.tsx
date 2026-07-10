@@ -28,9 +28,10 @@ interface Props {
   onUpdate?: (index: number, updated: PendingMedia) => void
   actionLabel?: string
   titleLabel?: string
+  cropAspectRatio?: number
 }
 
-export function MediaPreviewModal({ media, onSend, onCancel, onRemove, onUpdate, actionLabel = 'Send', titleLabel = 'Ready to send?' }: Props) {
+export function MediaPreviewModal({ media, onSend, onCancel, onRemove, onUpdate, actionLabel = 'Send', titleLabel = 'Ready to send?', cropAspectRatio = 1 }: Props) {
   const insets = useSafeAreaInsets()
   const [activeIndex, setActiveIndex] = useState(0)
   const mainListRef = useRef<FlatList>(null)
@@ -153,6 +154,7 @@ export function MediaPreviewModal({ media, onSend, onCancel, onRemove, onUpdate,
         uri={cropTarget?.uri ?? ''}
         originalWidth={cropTarget ? media[cropTarget.index]?.width : undefined}
         originalHeight={cropTarget ? media[cropTarget.index]?.height : undefined}
+        aspectRatio={cropAspectRatio}
         onCancel={() => setCropTarget(null)}
         onCrop={(newUri) => {
           if (cropTarget && onUpdate) {

@@ -193,7 +193,7 @@ export default function PaymentScreen() {
       const data: any = await RazorpayCustomUI.open({
         key_id: order.razorpay_key,
         order_id: order.order_id,
-        amount: String(order.amount * 100),
+        amount: String((order.amount ?? 0) * 100),
         currency: 'INR',
         name: 'Vybe',
         description: eventTitle,
@@ -224,7 +224,7 @@ export default function PaymentScreen() {
       const data: any = await RazorpayCustomUI.open({
         key_id: order.razorpay_key,
         order_id: order.order_id,
-        amount: String(order.amount * 100),
+        amount: String((order.amount ?? 0) * 100),
         currency: 'INR',
         name: 'Vybe',
         description: eventTitle,

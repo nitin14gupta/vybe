@@ -24,7 +24,7 @@ function Inner({ form, set, errors, setErrors, disabled }: Omit<Props, 'scrollab
           value={form.title}
           onChangeText={v => { set('title', v.slice(0, 60)); setErrors(e => ({ ...e, title: '' })) }}
           placeholder="What's the vibe called?"
-          placeholderTextColor={Colors.inkDisabled}
+          placeholderTextColor={Colors.glassTextDisabled}
           maxLength={60}
           editable={!disabled}
         />
@@ -54,7 +54,7 @@ function Inner({ form, set, errors, setErrors, disabled }: Omit<Props, 'scrollab
           value={form.description}
           onChangeText={v => set('description', v.slice(0, 500))}
           placeholder="Tell people about the vibe..."
-          placeholderTextColor={Colors.inkDisabled}
+          placeholderTextColor={Colors.glassTextDisabled}
           multiline
           maxLength={500}
           editable={!disabled}
@@ -69,7 +69,7 @@ function Inner({ form, set, errors, setErrors, disabled }: Omit<Props, 'scrollab
           value={form.rules}
           onChangeText={v => set('rules', v.slice(0, 200))}
           placeholder="No shoes inside, BYO food..."
-          placeholderTextColor={Colors.inkDisabled}
+          placeholderTextColor={Colors.glassTextDisabled}
           multiline
           maxLength={200}
           editable={!disabled}

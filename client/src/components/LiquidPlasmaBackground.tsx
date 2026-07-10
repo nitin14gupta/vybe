@@ -8,6 +8,8 @@ const { width, height } = Dimensions.get('window')
 const source = Skia.RuntimeEffect.Make(`
   uniform float iTime;
   uniform vec2 iResolution;
+  uniform vec3 color1;
+  uniform vec3 color2;
 
   half4 main(vec2 fragCoord) {
     vec2 uv = fragCoord / iResolution.xy;
@@ -19,25 +21,46 @@ const source = Skia.RuntimeEffect.Make(`
         p.y += 0.3 / float(i) * cos(float(i) * 3.0 * p.x + speed);
     }
 
-    // Brand palette: near-black base to brand orange/coral
-    vec3 col1 = vec3(0.067, 0.067, 0.067); // #111111 — app background
-    vec3 col2 = vec3(1.0, 0.22, 0.39);    // #FF3864 — brand coral
-
     float f = 0.5 + 0.5 * sin(p.x + p.y);
-    vec3 finalColor = mix(col1, col2, f);
+    vec3 finalColor = mix(color1, color2, f);
 
     return half4(finalColor * 0.5, 1.0);
   }
 `)!
 
-// speed = iTime * 0.4 feeds sin/cos, so the loop must cover a range where
-// 0.4 * range is an exact multiple of 2π — otherwise the value snaps back
-// to a different phase than it started at and the motion visibly "restarts".
-const LOOP_RANGE = 10 * Math.PI // 0.4 * 10π = 4π (2 full cycles)
-const LOOP_DURATION = 15708 // keeps the same on-screen speed as before
+const LOOP_RANGE = 10 * Math.PI
+const LOOP_DURATION = 15708
 
-export default function LiquidPlasmaBackground() {
+function hexToRgb(hex: string): [number, number, number] {
+  let cleanHex = hex.replace(/^#/, '')
+  if (cleanHex.length === 3 || cleanHex.length === 4) {
+    cleanHex = cleanHex.split('').map(c => c + c).join('')
+  }
+  const result = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})/i.exec(cleanHex)
+  return result ? [
+    parseInt(result[1], 16) / 255,
+    parseInt(result[2], 16) / 255,
+    parseInt(result[3], 16) / 255
+  ] : [0, 0, 0]
+}
+
+interface Props {
+  colors?: [string, string]
+}
+
+export default function LiquidPlasmaBackground({ colors }: Props = {}) {
   const time = useSharedValue(0)
+  
+  const targetC1 = colors ? hexToRgb(colors[0]) : hexToRgb('#111111')
+  const targetC2 = colors ? hexToRgb(colors[1]) : hexToRgb('#FF3864')
+
+  const c1 = useSharedValue(targetC1)
+  const c2 = useSharedValue(targetC2)
+
+  useEffect(() => {
+    c1.value = withTiming(targetC1, { duration: 800 })
+    c2.value = withTiming(targetC2, { duration: 800 })
+  }, [colors])
 
   useEffect(() => {
     time.value = withRepeat(
@@ -50,6 +73,8 @@ export default function LiquidPlasmaBackground() {
   const uniforms = useDerivedValue(() => ({
     iTime: time.value,
     iResolution: [width, height],
+    color1: c1.value,
+    color2: c2.value,
   }))
 
   return (
@@ -62,3 +87,4 @@ export default function LiquidPlasmaBackground() {
     </View>
   )
 }
+

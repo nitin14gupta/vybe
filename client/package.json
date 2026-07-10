@@ -58,6 +58,7 @@
     "react-native-gesture-handler": "~2.31.1",
     "react-native-keyboard-controller": "^1.21.12",
     "react-native-maps": "1.27.2",
+    "react-native-qrcode-styled": "^0.4.0",
     "react-native-qrcode-svg": "^6.3.21",
     "react-native-razorpay": "^3.0.0",
     "react-native-reanimated": "~4.3.1",

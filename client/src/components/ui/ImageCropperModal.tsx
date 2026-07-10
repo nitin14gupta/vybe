@@ -22,11 +22,12 @@ interface Props {
   uri: string
   originalWidth?: number
   originalHeight?: number
+  aspectRatio?: number
   onCrop: (croppedUri: string) => void
   onCancel: () => void
 }
 
-export function ImageCropperModal({ visible, uri, originalWidth, originalHeight, onCrop, onCancel }: Props) {
+export function ImageCropperModal({ visible, uri, originalWidth, originalHeight, aspectRatio = 1, onCrop, onCancel }: Props) {
   const insets = useSafeAreaInsets()
   const [dimensions, setDimensions] = useState<{ w: number; h: number } | null>(null)
   const [processing, setProcessing] = useState(false)
@@ -70,13 +71,15 @@ export function ImageCropperModal({ visible, uri, originalWidth, originalHeight,
 
   if (!visible) return null
 
-  const size = SW // 1:1 viewport size
-  let baseImageW = size
-  let baseImageH = size
+  const cropBoxW = SW
+  const cropBoxH = SW / (aspectRatio || 1)
+  
+  let baseImageW = cropBoxW
+  let baseImageH = cropBoxH
   let fitScale = 1
 
   if (dimensions) {
-    fitScale = Math.max(size / dimensions.w, size / dimensions.h)
+    fitScale = Math.max(cropBoxW / dimensions.w, cropBoxH / dimensions.h)
     baseImageW = dimensions.w * fitScale
     baseImageH = dimensions.h * fitScale
   }
@@ -91,8 +94,8 @@ export function ImageCropperModal({ visible, uri, originalWidth, originalHeight,
 
   const panGesture = Gesture.Pan()
     .onUpdate((e) => {
-      const maxX = Math.max(0, (baseImageW * scale.value - size) / 2)
-      const maxY = Math.max(0, (baseImageH * scale.value - size) / 2)
+      const maxX = Math.max(0, (baseImageW * scale.value - cropBoxW) / 2)
+      const maxY = Math.max(0, (baseImageH * scale.value - cropBoxH) / 2)
 
       translateX.value = clamp(savedTranslateX.value + e.translationX, -maxX, maxX)
       translateY.value = clamp(savedTranslateY.value + e.translationY, -maxY, maxY)
@@ -107,8 +110,8 @@ export function ImageCropperModal({ visible, uri, originalWidth, originalHeight,
       scale.value = clamp(savedScale.value * e.scale, 1, 3)
 
       // Also clamp translations so zooming out doesn't leave the image out of bounds
-      const maxX = Math.max(0, (baseImageW * scale.value - size) / 2)
-      const maxY = Math.max(0, (baseImageH * scale.value - size) / 2)
+      const maxX = Math.max(0, (baseImageW * scale.value - cropBoxW) / 2)
+      const maxY = Math.max(0, (baseImageH * scale.value - cropBoxH) / 2)
 
       translateX.value = clamp(translateX.value, -maxX, maxX)
       translateY.value = clamp(translateY.value, -maxY, maxY)
@@ -130,10 +133,10 @@ export function ImageCropperModal({ visible, uri, originalWidth, originalHeight,
       const totalScale = fitScale * currentScale
 
       // Calculate crop rect in original image coordinates
-      const cropX = ((baseImageW * currentScale - size) / 2 - translateX.value) / totalScale
-      const cropY = ((baseImageH * currentScale - size) / 2 - translateY.value) / totalScale
-      const cropW = size / totalScale
-      const cropH = size / totalScale
+      const cropX = ((baseImageW * currentScale - cropBoxW) / 2 - translateX.value) / totalScale
+      const cropY = ((baseImageH * currentScale - cropBoxH) / 2 - translateY.value) / totalScale
+      const cropW = cropBoxW / totalScale
+      const cropH = cropBoxH / totalScale
 
       const safeX = Math.max(0, Math.min(cropX, dimensions.w))
       const safeY = Math.max(0, Math.min(cropY, dimensions.h))
@@ -171,7 +174,7 @@ export function ImageCropperModal({ visible, uri, originalWidth, originalHeight,
             {!ready ? (
               <ActivityIndicator color={Colors.brandOrange} />
             ) : (
-              <View style={s.cropBox}>
+              <View style={[s.cropBox, { height: cropBoxH }]}>
                 <GestureDetector gesture={composedGesture}>
                   <Animated.View style={s.gestureContainer}>
                     <AnimatedImage
@@ -216,7 +219,7 @@ const s = StyleSheet.create({
   title: { color: '#fff', fontSize: 18, fontFamily: FontFamily.bodySemiBold },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   cropBox: {
-    width: SW, height: SW,
+    width: SW,
     backgroundColor: '#111',
     overflow: 'hidden',
     alignItems: 'center',

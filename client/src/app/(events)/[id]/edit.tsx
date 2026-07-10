@@ -16,7 +16,7 @@ import { ArrowLeft } from 'lucide-react-native'
 import { hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import { DateTimePickerSheet } from '@/components/ui'
-import { Step1Basics, Step2When, Step3Where, Step4Pricing } from '@/components/event-form'
+import { Step1Basics, Step2When, Step3Where, Step4Pricing, Step5Photos } from '@/components/event-form'
 import { useCreateEvent, type CreateEventForm } from '@/hooks/useCreateEvent'
 import { useEventDateTimePickers } from '@/hooks/useEventDateTimePickers'
 import ApiService, { type EventDetail } from '@/api/apiService'
@@ -54,18 +54,18 @@ export default function EditEventScreen() {
     ApiService.getEvent(id)
       .then((ev: EventDetail) => {
         // Populate shared form from existing event data
-        set('title',         ev.title)
-        set('eventType',     ev.event_type)
-        set('description',   ev.description ?? '')
-        set('rules',         ev.rules ?? '')
-        set('capacity',      ev.capacity)
+        set('title', ev.title)
+        set('eventType', ev.event_type)
+        set('description', ev.description ?? '')
+        set('rules', ev.rules ?? '')
+        set('capacity', ev.capacity)
         set('ageRestriction', (ev.age_restriction as 18 | 21 | 25) ?? 18)
-        set('locationName',  ev.location_name ?? '')
-        set('locationLat',   ev.location_lat)
-        set('locationLng',   ev.location_lng)
-        set('isFree',        ev.is_free)
-        set('priceInr',      ev.price_inr)
-        set('coverPhotos',   ev.cover_photos?.map((p: { url: string }) => p.url) ?? [])
+        set('locationName', ev.location_name ?? '')
+        set('locationLat', ev.location_lat)
+        set('locationLng', ev.location_lng)
+        set('isFree', ev.is_free)
+        set('priceInr', ev.price_inr)
+        set('coverPhotos', ev.cover_photos?.map((p: { url: string }) => p.url) ?? [])
 
         const parseTs = (s: string) => new Date(s.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'))
         const dt = parseTs(ev.date_time)
@@ -76,24 +76,24 @@ export default function EditEventScreen() {
         if (new Date() > editDeadline) setLocked(true)
         const capDeadline = new Date(parseTs(ev.date_time).getTime() - 2 * 60 * 60 * 1000)
         if (new Date() > capDeadline) setCapacityLocked(true)
-        if (ev.attendee_count > 0)     setHasAttendees(true)
+        if (ev.attendee_count > 0) setHasAttendees(true)
         setBookedCount(ev.attendee_count)
 
         originalRef.current = {
-          title:          ev.title,
-          eventType:      ev.event_type,
-          description:    ev.description ?? '',
-          rules:          ev.rules ?? '',
-          capacity:       ev.capacity,
+          title: ev.title,
+          eventType: ev.event_type,
+          description: ev.description ?? '',
+          rules: ev.rules ?? '',
+          capacity: ev.capacity,
           ageRestriction: (ev.age_restriction as number) ?? 18,
-          locationName:   ev.location_name ?? '',
-          locationLat:    ev.location_lat,
-          locationLng:    ev.location_lng,
-          isFree:         ev.is_free,
-          priceInr:       ev.price_inr,
-          coverPhotos:    JSON.stringify(ev.cover_photos?.map((p: { url: string }) => p.url) ?? []),
-          dateTime:       parseTs(ev.date_time).getTime(),
-          endTime:        ev.end_time ? parseTs(ev.end_time).getTime() : null,
+          locationName: ev.location_name ?? '',
+          locationLat: ev.location_lat,
+          locationLng: ev.location_lng,
+          isFree: ev.is_free,
+          priceInr: ev.price_inr,
+          coverPhotos: JSON.stringify(ev.cover_photos?.map((p: { url: string }) => p.url) ?? []),
+          dateTime: parseTs(ev.date_time).getTime(),
+          endTime: ev.end_time ? parseTs(ev.end_time).getTime() : null,
         }
       })
       .catch(() => showPill("Couldn't load this event", 'error'))
@@ -111,12 +111,22 @@ export default function EditEventScreen() {
       return
     }
 
+    if (!form.coverPhotos[0]) {
+      showPill('Cover photo is required', 'error')
+      return
+    }
+    const hasGallery = form.coverPhotos.slice(1).some(uri => !!uri)
+    if (!hasGallery) {
+      showPill('At least one gallery photo is required', 'error')
+      return
+    }
+
     const start = form.dateTime ? new Date(form.dateTime) : new Date()
-    const end   = form.endTime  ? new Date(form.endTime)  : null
-    const o     = originalRef.current
+    const end = form.endTime ? new Date(form.endTime) : null
+    const o = originalRef.current
 
     const startChanged = o ? start.getTime() !== o.dateTime : false
-    const endChanged   = o ? (end?.getTime() ?? null) !== o.endTime : false
+    const endChanged = o ? (end?.getTime() ?? null) !== o.endTime : false
 
     if (startChanged) {
       const twoHoursFromNow = new Date(Date.now() + 2 * 60 * 60 * 1000)
@@ -144,20 +154,28 @@ export default function EditEventScreen() {
     setLargeDateShiftPending(false)
     setSaving(true)
     try {
+      const uploadedUrls = (await Promise.all(
+        form.coverPhotos.map(async (uri, index) => {
+          if (!uri) return null
+          if (uri.startsWith('http')) return uri
+          return await ApiService.uploadEventPhoto(uri, index)
+        })
+      )).filter(Boolean) as string[]
+
       await ApiService.updateEvent(id!, {
-        title:          form.title.trim(),
-        event_type:     form.eventType,
-        description:    form.description.trim() || undefined,
-        rules:          form.rules.trim() || undefined,
-        date_time:      start.toISOString(),
-        end_time:       end ? end.toISOString() : undefined,
-        capacity:       form.capacity,
+        title: form.title.trim(),
+        event_type: form.eventType,
+        description: form.description.trim() || undefined,
+        rules: form.rules.trim() || undefined,
+        date_time: start.toISOString(),
+        end_time: end ? end.toISOString() : undefined,
+        capacity: form.capacity,
         age_restriction: form.ageRestriction,
-        location_name:  form.locationName.trim() || undefined,
-        location_lat:   form.locationLat ?? undefined,
-        location_lng:   form.locationLng ?? undefined,
-        price_inr:      form.isFree ? 0 : form.priceInr,
-        cover_photos:   form.coverPhotos,
+        location_name: form.locationName.trim() || undefined,
+        location_lat: form.locationLat ?? undefined,
+        location_lng: form.locationLng ?? undefined,
+        price_inr: form.isFree ? 0 : form.priceInr,
+        cover_photos: uploadedUrls,
       })
       router.back()
     } catch (e: any) {
@@ -187,6 +205,11 @@ export default function EditEventScreen() {
     (form.dateTime?.getTime() ?? null) !== o.dateTime ||
     (form.endTime?.getTime() ?? null) !== o.endTime
   )
+
+  const hasCoverPhoto = !!form.coverPhotos[0]
+  const hasGalleryPhoto = form.coverPhotos.slice(1).some(uri => !!uri)
+  const isValid = hasCoverPhoto && hasGalleryPhoto
+  const canSave = isDirty && isValid
 
   if (loading) {
     return (
@@ -270,17 +293,23 @@ export default function EditEventScreen() {
           priceLocked={hasAttendees}
           priceLockNote="Locked — attendees already booked"
         />
+
+        {/* Step 5 — Photos */}
+        <Step5Photos
+          form={form} set={set} errors={errors} setErrors={setErrors}
+          disabled={locked} inline
+        />
       </ScrollView>
 
       {(!locked || (locked && !capacityLocked)) && (
         <View style={[s.footer, { paddingBottom: insets.bottom + 16 }]}>
           <Pressable
-            style={[s.saveBtn, !isDirty && s.saveBtnDisabled]}
+            style={[s.saveBtn, !canSave && s.saveBtnDisabled]}
             onPress={() => { if (!isDirty) return; hSuccess(); handleSave() }}
             disabled={saving || !isDirty}
           >
             <LinearGradient
-              colors={isDirty ? ['#FF6B35', '#FF3864'] : ['#333', '#333']}
+              colors={canSave ? ['#FF6B35', '#FF3864'] : ['#333', '#333']}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
               style={s.saveGradient}
             >
@@ -311,7 +340,6 @@ const s = StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingBottom: 12,
-    borderBottomWidth: 1, borderBottomColor: Colors.divider,
   },
   backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontFamily: FontFamily.headingBold, fontSize: 17, color: Colors.inkPrimary },
@@ -344,10 +372,10 @@ const s = StyleSheet.create({
   dateShiftConfirmText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: '#111' },
 
   scroll: { flex: 1 },
-  content: { padding: 20, gap: 4 },
+  content: { padding: 20, gap: 12 },
   footer: {
     paddingHorizontal: 20, paddingTop: 12,
-    borderTopWidth: 1, borderTopColor: Colors.divider,
+    // borderTopWidth: 1, borderTopColor: Colors.divider,
     backgroundColor: 'rgba(17,17,17,0.95)',
   },
   saveBtn: { borderRadius: 16, overflow: 'hidden' },

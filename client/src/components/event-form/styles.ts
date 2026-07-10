@@ -27,7 +27,7 @@ export const ef = StyleSheet.create({
   fieldLabel: {
     fontFamily: FontFamily.bodyMedium,
     fontSize: 13,
-    color: Colors.inkSecondary,
+    color: '#fff',
     marginBottom: 8,
   },
   errorText: {
@@ -41,10 +41,10 @@ export const ef = StyleSheet.create({
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.elevated,
+    backgroundColor: Colors.glassSurface,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.divider,
+    borderColor: Colors.glassBorder,
     paddingHorizontal: 14,
     paddingVertical: 4,
     minHeight: 52,
@@ -52,14 +52,14 @@ export const ef = StyleSheet.create({
   inputWrapError: { borderColor: Colors.brandCoral },
   textInput: {
     flex: 1,
-    color: Colors.inkPrimary,
+    color: '#fff',
     fontFamily: FontFamily.bodyRegular,
     fontSize: 15,
     paddingVertical: 10,
   },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
   charCount: {
-    color: Colors.inkDisabled,
+    color: Colors.glassTextDisabled,
     fontFamily: FontFamily.bodyRegular,
     fontSize: 11,
     alignSelf: 'flex-end',
@@ -75,23 +75,23 @@ export const ef = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     paddingRight: 16,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.glassSurface,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: Colors.divider,
+    borderColor: Colors.glassBorder,
   },
   typeChipActive: {
-    borderColor: 'transparent',
-    backgroundColor: 'rgba(255,107,53,0.12)',
-    shadowColor: Colors.brandOrange,
-    shadowOpacity: 0.35,
+    backgroundColor: Colors.glassSurfaceActive,
+    borderColor: '#fff',
+    shadowColor: '#fff',
+    shadowOpacity: 0.2,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 3 },
     elevation: 4,
   },
   typeEmojiBadge: {
     width: 32, height: 32, borderRadius: 16,
-    backgroundColor: Colors.elevated,
+    backgroundColor: 'rgba(255,255,255,0.15)', // keep this local as it's specific
     alignItems: 'center', justifyContent: 'center',
   },
   typeEmojiBadgeActive: {
@@ -99,17 +99,17 @@ export const ef = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   typeEmoji: { fontSize: 16 },
-  typeLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.inkSecondary },
-  typeLabelActive: { color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold },
+  typeLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.glassTextSecondary },
+  typeLabelActive: { color: '#fff', fontFamily: FontFamily.bodySemiBold },
 
   // Date/time picker row
   pickerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.elevated,
+    backgroundColor: Colors.glassSurface,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.divider,
+    borderColor: Colors.glassBorder,
     padding: 14,
     marginTop: 10,
     gap: 12,
@@ -119,25 +119,25 @@ export const ef = StyleSheet.create({
   pickerLabel: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 11,
-    color: Colors.inkDisabled,
+    color: Colors.glassTextDisabled,
     marginBottom: 2,
   },
-  pickerValue: { fontFamily: FontFamily.bodyMedium, fontSize: 15, color: Colors.inkPrimary },
-  pickerPlaceholder: { color: Colors.inkDisabled },
+  pickerValue: { fontFamily: FontFamily.bodyMedium, fontSize: 15, color: '#fff' },
+  pickerPlaceholder: { color: Colors.glassTextDisabled },
   timeRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
 
   // Stepper
   stepperRow: { flexDirection: 'row', alignItems: 'center', gap: 20, marginTop: 8 },
   stepperBtn: {
     width: 44, height: 44, borderRadius: 22,
-    backgroundColor: Colors.elevated,
-    borderWidth: 1, borderColor: Colors.divider,
+    backgroundColor: Colors.glassSurface,
+    borderWidth: 1, borderColor: Colors.glassBorder,
     alignItems: 'center', justifyContent: 'center',
   },
   stepperValue: {
     fontFamily: FontFamily.headingBold,
     fontSize: 28,
-    color: Colors.brandOrange,
+    color: '#fff',
     minWidth: 60,
     textAlign: 'center',
   },
@@ -146,13 +146,13 @@ export const ef = StyleSheet.create({
   ageRow: { flexDirection: 'row', gap: 12, marginTop: 8 },
   ageChip: {
     flex: 1, paddingVertical: 12,
-    backgroundColor: Colors.surface,
-    borderRadius: 12, borderWidth: 1, borderColor: Colors.divider,
+    backgroundColor: Colors.glassSurface,
+    borderRadius: 12, borderWidth: 1, borderColor: Colors.glassBorder,
     alignItems: 'center',
   },
-  ageChipActive: { backgroundColor: 'rgba(255,107,53,0.15)', borderColor: Colors.brandOrange },
-  ageText: { fontFamily: FontFamily.headingMedium, fontSize: 16, color: Colors.inkSecondary },
-  ageTextActive: { color: Colors.brandOrange },
+  ageChipActive: { backgroundColor: Colors.glassSurfaceActive, borderColor: '#fff' },
+  ageText: { fontFamily: FontFamily.headingMedium, fontSize: 16, color: Colors.glassTextSecondary },
+  ageTextActive: { color: '#fff' },
 
   // Location step
   step3Container: { flex: 1 },
@@ -162,6 +162,8 @@ export const ef = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 20,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
   },
   mapCentrePin: {
     position: 'absolute',
@@ -171,7 +173,7 @@ export const ef = StyleSheet.create({
   locationNote: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 12,
-    color: Colors.inkSecondary,
+    color: 'rgba(255,255,255,0.6)',
     marginTop: 8,
     marginBottom: 12,
   },
@@ -185,54 +187,67 @@ export const ef = StyleSheet.create({
 
   // Pricing
   pricingCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 16, borderWidth: 1, borderColor: Colors.divider,
+    backgroundColor: Colors.glassSurface,
+    borderRadius: 16, borderWidth: 1, borderColor: Colors.glassBorder,
     padding: 16,
   },
   pricingToggle: { flexDirection: 'row', gap: 8 },
   pricingBtn: {
     flex: 1, paddingVertical: 12,
-    borderRadius: 10, backgroundColor: Colors.elevated, alignItems: 'center',
+    borderRadius: 10, backgroundColor: Colors.glassSurface, alignItems: 'center',
   },
-  pricingBtnActive: { backgroundColor: Colors.brandOrange },
-  pricingBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkSecondary },
-  pricingBtnTextActive: { color: '#fff' },
-  currencySymbol: { color: Colors.inkSecondary, fontFamily: FontFamily.headingBold, fontSize: 18, marginRight: 4 },
+  pricingBtnActive: { backgroundColor: '#fff' },
+  pricingBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.glassTextSecondary },
+  pricingBtnTextActive: { color: '#000' },
+  currencySymbol: { color: Colors.glassTextSecondary, fontFamily: FontFamily.headingBold, fontSize: 18, marginRight: 4 },
 
   // Photos
   photosGrid: { flexDirection: 'row', gap: 8, height: 200 },
   photoCoverSlot: {
     flex: 1,
-    backgroundColor: Colors.elevated,
-    borderRadius: 12, borderWidth: 1.5, borderColor: Colors.divider,
+    backgroundColor: Colors.glassSurface,
+    borderRadius: 12, borderWidth: 1.5, borderColor: Colors.glassBorderThick,
     borderStyle: 'dashed', overflow: 'hidden',
     alignItems: 'center', justifyContent: 'center',
   },
-  photoSlotFilled: { borderStyle: 'solid', borderColor: 'transparent' },
+  photoSlotFilled: { borderStyle: 'solid', borderColor: Colors.glassSurface },
   photoSmallGrid: { width: (W - 48 - 8) / 3, gap: 6 },
   photoSmallSlot: {
     flex: 1,
-    backgroundColor: Colors.elevated,
-    borderRadius: 8, borderWidth: 1, borderColor: Colors.divider,
+    backgroundColor: Colors.glassSurface,
+    borderRadius: 8, borderWidth: 1, borderColor: Colors.glassBorderThick,
     borderStyle: 'dashed', overflow: 'hidden',
     alignItems: 'center', justifyContent: 'center', position: 'relative',
   },
   photoPlaceholder: { alignItems: 'center', gap: 4 },
-  photoPlaceholderText: { color: Colors.inkDisabled, fontFamily: FontFamily.bodyRegular, fontSize: 11 },
+  photoPlaceholderText: { color: Colors.glassTextDisabled, fontFamily: FontFamily.bodyRegular, fontSize: 11 },
   photoRemove: {
     position: 'absolute', top: 4, right: 4,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: Colors.glassOverlay,
     borderRadius: 10, padding: 3, zIndex: 10,
   },
 
-  // Lock note (edit-only)
+  // Lock note & Actions
   fieldLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   fieldLockNote: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.brandCoral },
   sectionLocked: { opacity: 0.45 },
+  autofillBtn: {
+    backgroundColor: Colors.glassSurface,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+  },
+  autofillBtnText: {
+    color: '#fff',
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 11,
+  },
 
   // Shared scroll container for steps 1, 2, 4
   stepScroll: { flex: 1 },
   stepContent: { padding: 24, paddingBottom: 40 },
-  stepTitle: { fontFamily: FontFamily.headingBold, fontSize: 26, color: Colors.inkPrimary, marginBottom: 6 },
-  stepSub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, marginBottom: 24 },
+  stepTitle: { fontFamily: FontFamily.headingBold, fontSize: 26, color: '#fff', marginBottom: 6 },
+  stepSub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.glassTextSecondary, marginBottom: 24 },
 })

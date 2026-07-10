@@ -19,6 +19,15 @@ export const Colors = {
 
   // Structure
   divider: '#2A2A2A',          // borders, separators
+
+  // Glassmorphism (Overlays)
+  glassSurface: 'rgba(255,255,255,0.1)',
+  glassSurfaceActive: 'rgba(255,255,255,0.25)',
+  glassBorder: 'rgba(255,255,255,0.2)',
+  glassBorderThick: 'rgba(255,255,255,0.3)',
+  glassTextSecondary: 'rgba(255,255,255,0.7)',
+  glassTextDisabled: 'rgba(255,255,255,0.5)',
+  glassOverlay: 'rgba(0,0,0,0.6)',
 } as const
 
 export type Color = (typeof Colors)[keyof typeof Colors]

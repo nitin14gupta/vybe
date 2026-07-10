@@ -53,7 +53,7 @@ export default function MyEventsScreen() {
       <AppHeader
         title="My Events"
         leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
-        rightAction={<HeaderIconBtn onPress={() => router.push('/(tabs)/create' as any)}><Plus size={20} color={Colors.brandOrange} strokeWidth={2.5} /></HeaderIconBtn>}
+        rightAction={<HeaderIconBtn onPress={() => router.push('/(events)/create' as any)}><Plus size={20} color={Colors.brandOrange} strokeWidth={2.5} /></HeaderIconBtn>}
       />
 
       <View style={s.tabs}>
@@ -81,7 +81,7 @@ export default function MyEventsScreen() {
               : "Events you've hosted will show up here"}
           </Text>
           {tab === 'upcoming' && (
-            <Pressable style={s.ctaBtn} onPress={() => router.push('/(tabs)/create' as any)}>
+            <Pressable style={s.ctaBtn} onPress={() => router.push('/(events)/create' as any)}>
               <Plus size={16} color="#111" strokeWidth={2.5} />
               <Text style={s.ctaBtnText}>Create Event</Text>
             </Pressable>

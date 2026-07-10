@@ -71,12 +71,14 @@ export function useEvents() {
   }, [locationReady, userLat, userLng, load])
 
   const setFilter = useCallback(
-    (key: keyof EventFilters, val: any) => {
-      const next = { ...filters, [key]: val }
-      setFiltersState(next)
-      load(next, userLat, userLng)
+    (updates: Partial<EventFilters>) => {
+      setFiltersState((prev) => {
+        const next = { ...prev, ...updates }
+        load(next, userLat, userLng)
+        return next
+      })
     },
-    [filters, userLat, userLng, load],
+    [userLat, userLng, load],
   )
 
   const reload = useCallback(() => {

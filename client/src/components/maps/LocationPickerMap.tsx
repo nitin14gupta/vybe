@@ -71,7 +71,7 @@ export function LocationPickerMap({
     }
 
     // No coords yet — detect GPS, then fly
-    ;(async () => {
+    ; (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync()
         if (status !== 'granted') return
@@ -97,7 +97,7 @@ export function LocationPickerMap({
         // GPS unavailable — user stays at world view, can type address manually
       }
     })()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // ── Google Maps ──────────────────────────────────────────────────────────────
@@ -106,7 +106,7 @@ export function LocationPickerMap({
     return (
       <MapView
         ref={googleMapRef}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         customMapStyle={DARK_MAP_STYLE}
         showsUserLocation
         showsMyLocationButton={false}
@@ -123,13 +123,9 @@ export function LocationPickerMap({
     )
   }
 
-  // ── MapLibre ─────────────────────────────────────────────────────────────────
-  // Map starts at a wide zoom (world view). The useEffect flyTo animates
-  // into the user's location with "fly" easing — the nice zoom-from-above effect.
-
   return (
     <Map
-      style={StyleSheet.absoluteFillObject}
+      style={StyleSheet.absoluteFill}
       mapStyle={TILE_STYLE.dark}
       onRegionDidChange={(event: NativeSyntheticEvent<ViewStateChangeEvent>) => {
         if (!event.nativeEvent.userInteraction) return
@@ -143,7 +139,7 @@ export function LocationPickerMap({
         ref={cameraRef}
         initialViewState={{ zoom: 2 }}
       />
-      <UserLocation visible />
+      <UserLocation />
     </Map>
   )
 }

@@ -53,6 +53,16 @@ export function useCreateEvent() {
     setSubmitting(true)
     setSubmitError(null)
     try {
+      // 1. Process and upload all local photos
+      const uploadedUrls = (await Promise.all(
+        form.coverPhotos.map(async (uri, index) => {
+          if (!uri) return null
+          if (uri.startsWith('http')) return uri // Already uploaded
+          return await ApiService.uploadEventPhoto(uri, index)
+        })
+      )).filter(Boolean) as string[]
+
+      // 2. Create the event with the remote URLs
       const result = await ApiService.createEvent({
         title: form.title,
         event_type: form.eventType,
@@ -66,7 +76,7 @@ export function useCreateEvent() {
         location_lat: form.locationLat ?? undefined,
         location_lng: form.locationLng ?? undefined,
         price_inr: form.isFree ? 0 : form.priceInr,
-        cover_photos: form.coverPhotos,
+        cover_photos: uploadedUrls,
       })
       return result
     } catch (e: any) {

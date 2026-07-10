@@ -57,7 +57,7 @@ function VybeRequestModalCore({ user, onSend, onClose }: Omit<Props, 'visible'>)
 
   const charsLeft = MAX_CHARS - message.length
   const canSend = message.trim().length > 0
-  const avatar = user.photos[0]?.url
+  const avatar = user?.photos?.[0]?.url
 
   return (
     <BottomSheetModal
@@ -78,12 +78,12 @@ function VybeRequestModalCore({ user, onSend, onClose }: Omit<Props, 'visible'>)
             <Image source={{ uri: avatar }} style={s.avatar} />
           ) : (
             <View style={[s.avatar, s.avatarFallback]}>
-              <Text style={s.avatarInitial}>{(user.name ?? '?').charAt(0)}</Text>
+              <Text style={s.avatarInitial}>{(user?.name ?? '?').charAt(0)}</Text>
             </View>
           )}
           <View style={s.partnerInfo}>
-            <Text style={s.partnerName}>{user.name ?? 'Someone'}</Text>
-            {user.city ? <Text style={s.partnerCity}>{user.city}</Text> : null}
+            <Text style={s.partnerName}>{user?.name ?? 'Someone'}</Text>
+            {user?.city ? <Text style={s.partnerCity}>{user.city}</Text> : null}
           </View>
           <View style={s.flameBadge}>
             <Flame size={18} color={Colors.brandOrange} fill={Colors.brandOrange} />

@@ -242,7 +242,7 @@ export function useChat(conversationId: string) {
     setFailedIds(prev => { const n = new Set(prev); n.delete(tempId); return n })
     setMessages(prev => prev.filter(m => m.id !== tempId))
     try {
-      await sendMessage(msg.content, msg.content_type, msg.metadata ?? undefined)
+      await sendMessage(msg.content ?? '', msg.content_type, msg.metadata ?? undefined)
     } catch {}
   }, [messages, sendMessage])
 

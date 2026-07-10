@@ -343,7 +343,7 @@ const s = StyleSheet.create({
   resultWarning: { backgroundColor: 'rgba(255,107,53,0.9)' },
   resultText: { color: '#fff', fontFamily: FontFamily.bodyMedium, fontSize: 14 },
   scanningOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.35)',
     alignItems: 'center',
     justifyContent: 'center',

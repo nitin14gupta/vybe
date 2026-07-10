@@ -40,7 +40,7 @@ export function StaticEventMap({
   if (provider === 'google') {
     return (
       <MapView
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         customMapStyle={DARK_MAP_STYLE}
         region={{ latitude: lat, longitude: lng, latitudeDelta: 0.008, longitudeDelta: 0.008 }}
         scrollEnabled={false}
@@ -58,7 +58,7 @@ export function StaticEventMap({
 
   return (
     <Map
-      style={StyleSheet.absoluteFillObject}
+      style={StyleSheet.absoluteFill}
       mapStyle={TILE_STYLE.dark}
       dragPan={false}
       touchZoom={false}

@@ -420,6 +420,7 @@ export default function UserProfileScreen() {
           name: profile.name,
           username: profile.username ?? null,
           gender: profile.gender,
+          age: (profile as any).age ?? 0,
           bio: profile.bio,
           city: profile.city,
           interests: profile.interests,

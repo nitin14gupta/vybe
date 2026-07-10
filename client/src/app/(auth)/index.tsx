@@ -8,6 +8,7 @@ import Animated, {
   withSequence,
   withTiming,
   withDelay,
+  SharedValue,
 } from 'react-native-reanimated'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Screen } from '@/components/ui'
@@ -24,7 +25,7 @@ export default function SplashScreen() {
     opacity.value = withTiming(1, { duration: 600 })
     taglineOpacity.value = withDelay(300, withTiming(1, { duration: 500 }))
 
-    const pulse = (sv: Animated.SharedValue<number>, delay: number) => {
+    const pulse = (sv: SharedValue<number>, delay: number) => {
       sv.value = withDelay(
         delay,
         withRepeat(

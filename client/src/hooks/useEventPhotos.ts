@@ -97,36 +97,31 @@ export function useEventPhotos(
       targets.forEach(t => { n[t.position] = t.uri })
       return n
     })
-    setSlotStates(prev => {
-      const n = [...prev]
-      targets.forEach(t => { n[t.position] = 'uploading' })
-      return n
-    })
 
-    await Promise.all(targets.map(async ({ position, uri }) => {
-      try {
-        const url = await ApiService.uploadEventPhoto(uri)
-        const photos = [...coverPhotosRef.current]
-        photos[position] = url
-        coverPhotosRef.current = photos
-        set('coverPhotos', photos)
-        setSlotStates(prev => { const n = [...prev]; n[position] = 'idle'; return n })
-      } catch {
-        showPill('Photo upload failed, try again', 'error')
-        setLocalUris(prev => { const n = [...prev]; n[position] = coverPhotosRef.current[position] ?? null; return n })
-        setSlotStates(prev => { const n = [...prev]; n[position] = 'error'; return n })
-      }
-    }))
-  }, [set, showPill, displayUri])
+    // Update form state immediately with local URIs
+    const currentPhotos = [...coverPhotosRef.current]
+    targets.forEach(t => { currentPhotos[t.position] = t.uri })
+    coverPhotosRef.current = currentPhotos
+    set('coverPhotos', currentPhotos)
+  }, [set, displayUri])
+
+  const addPhoto = useCallback((position: number, uri: string) => {
+    setLocalUris(prev => { const n = [...prev]; n[position] = uri; return n })
+
+    const photos = [...coverPhotosRef.current]
+    photos[position] = uri
+    coverPhotosRef.current = photos
+    set('coverPhotos', photos)
+  }, [set])
 
   const removePhoto = useCallback((position: number) => {
     setLocalUris(prev => { const n = [...prev]; n[position] = null; return n })
     setSlotStates(prev => { const n = [...prev]; n[position] = 'idle'; return n })
     const photos = [...coverPhotosRef.current]
-    photos.splice(position, 1)
+    photos[position] = ''
     coverPhotosRef.current = photos
     set('coverPhotos', photos)
   }, [set])
 
-  return { localUris, slotStates, pickPhoto, removePhoto, displayUri }
+  return { localUris, slotStates, pickPhoto, addPhoto, removePhoto, displayUri }
 }
