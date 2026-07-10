@@ -1,4 +1,5 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useRef, useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   BackHandler,
   Dimensions,
@@ -117,7 +118,20 @@ export default function EventsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { events, loading, error, filters, setFilter, reload, loadInBounds, userLat, userLng, userHeading, locationStatus } = useEvents();
-  const [viewMode, setViewMode] = useState<"map" | "list">("map");
+  const [viewMode, setViewModeState] = useState<"map" | "list">("map");
+
+  useEffect(() => {
+    AsyncStorage.getItem("events_view_mode").then((mode) => {
+      if (mode === "list" || mode === "map") {
+        setViewModeState(mode);
+      }
+    });
+  }, []);
+
+  const setViewMode = (mode: "map" | "list") => {
+    setViewModeState(mode);
+    AsyncStorage.setItem("events_view_mode", mode).catch(() => {});
+  };
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [listCount, setListCount] = useState(LIST_PAGE);
   const previewListRef = useRef<FlatList>(null);
