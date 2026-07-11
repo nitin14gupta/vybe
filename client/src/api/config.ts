@@ -68,6 +68,7 @@ export const ENDPOINTS = {
   CONVERSATIONS: '/chat/conversations',
   CONVERSATION_MESSAGES: '/chat/conversations/:id/messages',
   CONVERSATION_READ: '/chat/conversations/:id/read',
+  LINK_PREVIEW: '/chat/link-preview',
 
   // Block / Report
   BLOCK_USER: '/users/:id/block',
@@ -78,6 +79,7 @@ export const ENDPOINTS = {
   MESSAGE_REPORT: '/chat/messages/:id/report',
   MESSAGE_UNSEND: '/chat/messages/:id/unsend',
   MESSAGE_DELETE_FOR_ME: '/chat/messages/:id/delete-for-me',
+  MESSAGE_EDIT: '/chat/messages/:id',
 
   // Notifications
   NOTIFICATIONS: '/notifications',

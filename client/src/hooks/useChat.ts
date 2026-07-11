@@ -13,6 +13,7 @@ export function useChat(conversationId: string) {
   const [wsError, setWsError] = useState<string | null>(null)
   const [partnerSeenAt, setPartnerSeenAt] = useState<string | null>(null)
   const [failedIds, setFailedIds] = useState<Set<string>>(new Set())
+  const [loadingMore, setLoadingMore] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
   const retryCountRef = useRef(0)
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -20,6 +21,7 @@ export function useChat(conversationId: string) {
   const pendingTempIds = useRef<Set<string>>(new Set())
   const activeSendTempIdRef = useRef<string | null>(null)
   const noMoreRef = useRef(false)
+  const loadingMoreRef = useRef(false)
   const isBackgrounded = useRef(false)
   const myId = useAuthStore.getState().userId
 
@@ -139,6 +141,12 @@ export function useChat(conversationId: string) {
           setMessages(prev => prev.map(m =>
             m.id === data.message_id
               ? { ...m, content: null, metadata: null, unsent_at: new Date().toISOString() }
+              : m,
+          ))
+        } else if (data.type === 'message_edited') {
+          setMessages(prev => prev.map(m =>
+            m.id === data.message_id
+              ? { ...m, content: data.content, edited_at: data.edited_at }
               : m,
           ))
         }
@@ -331,8 +339,10 @@ export function useChat(conversationId: string) {
   }, [])
 
   const loadMore = useCallback(async (): Promise<boolean> => {
-    if (messages.length === 0 || noMoreRef.current) return false
+    if (messages.length === 0 || noMoreRef.current || loadingMoreRef.current) return false
     const oldest = messages[messages.length - 1]
+    loadingMoreRef.current = true
+    setLoadingMore(true)
     try {
       const older = await ApiService.getMessages(conversationId, oldest.sent_at)
       if (older.length > 0) {
@@ -343,6 +353,9 @@ export function useChat(conversationId: string) {
       return false
     } catch {
       return false
+    } finally {
+      loadingMoreRef.current = false
+      setLoadingMore(false)
     }
   }, [conversationId, messages])
 
@@ -365,6 +378,10 @@ export function useChat(conversationId: string) {
     setMessages(prev => prev.filter(m => m.id !== msgId))
   }, [])
 
+  const applyEditLocally = useCallback((msgId: string, content: string, editedAt: string) => {
+    setMessages(prev => prev.map(m => (m.id === msgId ? { ...m, content, edited_at: editedAt } : m)))
+  }, [])
+
   return {
     messages,
     isPartnerTyping,
@@ -375,6 +392,7 @@ export function useChat(conversationId: string) {
     loading,
     partnerSeenAt,
     failedIds,
+    loadingMore,
     sendMessage,
     retryMessage,
     sendTyping,
@@ -387,5 +405,6 @@ export function useChat(conversationId: string) {
     clearMediaFailed,
     applyUnsentLocally,
     removeMessageLocally,
+    applyEditLocally,
   }
 }

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from 'react'
+import { useCallback, useRef, useEffect, useState } from 'react'
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, type ScrollViewProps } from 'react-native'
 import { KeyboardGestureArea, KeyboardStickyView } from 'react-native-keyboard-controller'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -18,6 +18,8 @@ import { TypingIndicator } from '@/components/chat/TypingIndicator'
 import { EmojiPickerOverlay } from '@/components/chat/EmojiPickerOverlay'
 import { ReportMessageSheet } from '@/components/chat/ReportMessageSheet'
 import { ChatScrollView } from '@/components/chat/ChatScrollView'
+import { ChatPartnerPreview } from '@/components/chat/ChatPartnerPreview'
+import { InAppBrowserModal } from '@/components/chat/InAppBrowserModal'
 
 type ListItem =
   | Message
@@ -39,25 +41,29 @@ function VoiceIndicator() {
 export default function ChatDetailScreen() {
   const { id: convId } = useLocalSearchParams<{ id: string }>()
   const flatListRef = useRef<FlatList>(null)
+  const [browserUrl, setBrowserUrl] = useState<string | null>(null)
 
   const screen = useChatScreen(convId)
 
-  // Auto-scroll to newest message when a new one arrives (skip initial load)
-  const prevMsgLenRef = useRef(0)
+  // Auto-scroll to newest message when a new one arrives (skip initial load).
+  // Keyed on the newest message's id, not the array length — loadMore appends
+  // OLDER messages at the tail, which also grows the length but must NOT yank
+  // the user back down while they're scrolling up to read history.
+  const prevNewestIdRef = useRef<string | null>(null)
   const initializedRef = useRef(false)
   useEffect(() => {
     if (screen.loading) return
-    const len = screen.messages.length
+    const newestId = screen.messages[0]?.id ?? null
     if (!initializedRef.current) {
       initializedRef.current = true
-      prevMsgLenRef.current = len
+      prevNewestIdRef.current = newestId
       return
     }
-    if (len > prevMsgLenRef.current) {
+    if (newestId && newestId !== prevNewestIdRef.current) {
       flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
     }
-    prevMsgLenRef.current = len
-  }, [screen.messages.length, screen.loading])
+    prevNewestIdRef.current = newestId
+  }, [screen.messages, screen.loading])
 
   const handleReplyTap = useCallback((originalMsgId: string) => {
     const targetItem = (screen.listData as ListItem[]).find(
@@ -109,6 +115,7 @@ export default function ChatDetailScreen() {
         onReplyTap={handleReplyTap}
         onMediaTap={screen.handleMediaTap}
         onRetry={screen.handleRetry}
+        onLinkTap={setBrowserUrl}
       />
     )
   }, [screen.myId, screen.failedIds, screen.handleDoubleTap, screen.handleLongPress, screen.handleSwipeReply, screen.handleReactionPillPress, screen.handleMediaTap, screen.handleMediaGroupTap, screen.handleRetry, handleReplyTap])
@@ -153,7 +160,7 @@ export default function ChatDetailScreen() {
               renderItem={renderItem}
               inverted
               contentContainerStyle={s.msgList}
-              showsVerticalScrollIndicator={false}
+              showsVerticalScrollIndicator
               onEndReached={screen.loadMore}
               onEndReachedThreshold={0.2}
               onScrollToIndexFailed={info => {
@@ -163,6 +170,21 @@ export default function ChatDetailScreen() {
                 })
               }}
               ListHeaderComponent={listHeader}
+              ListFooterComponent={
+                <>
+                  {screen.loadingMore && (
+                    <View style={s.loadMoreWrap}>
+                      <ActivityIndicator size="small" color={Colors.brandOrange} />
+                    </View>
+                  )}
+                  <ChatPartnerPreview
+                    partnerId={screen.partnerId}
+                    partnerName={screen.partnerName}
+                    partnerUsername={screen.partnerUsername}
+                    partnerAvatar={screen.partnerAvatar}
+                  />
+                </>
+              }
               keyboardShouldPersistTaps="handled"
               renderScrollComponent={renderScrollComponent}
             />
@@ -175,6 +197,7 @@ export default function ChatDetailScreen() {
                 recordDurationMs={screen.recordDurationMs}
                 recordedVoice={screen.recordedVoice}
                 replyingTo={screen.replyingTo}
+                editingMessage={screen.editingMessage}
                 myId={screen.myId ?? ''}
                 partnerName={screen.partnerName}
                 onTextChange={screen.handleTextChange}
@@ -187,6 +210,7 @@ export default function ChatDetailScreen() {
                 onUnblock={screen.handleUnblock}
                 onDeleteChat={screen.handleDeleteChat}
                 onCancelReply={screen.handleCancelReply}
+                onCancelEdit={screen.handleCancelEdit}
                 onMediaSend={screen.handleMediaSend}
                 onLayout={screen.handleInputLayout}
               />
@@ -202,10 +226,12 @@ export default function ChatDetailScreen() {
           isMine={screen.emojiTarget.isMine}
           currentEmoji={screen.emojiTarget.currentEmoji}
           canCopy={screen.emojiTarget.contentType === 'text' && !!screen.emojiTarget.content}
+          canEdit={screen.emojiTarget.canEdit}
           onSelect={screen.handleEmojiSelect}
           onReply={() => screen.handleReplyFromMenu(screen.emojiTarget!.msgId)}
           onCopy={() => { if (screen.emojiTarget!.content) screen.handleCopyMessage(screen.emojiTarget!.content) }}
           onReport={() => screen.setReportMsgId(screen.emojiTarget!.msgId)}
+          onEdit={() => screen.handleEditFromMenu(screen.emojiTarget!.msgId)}
           onDelete={() => {
             if (screen.emojiTarget!.isMine) screen.handleUnsendMessage(screen.emojiTarget!.msgId)
             else screen.handleDeleteMessageForMe(screen.emojiTarget!.msgId)
@@ -243,6 +269,12 @@ export default function ChatDetailScreen() {
           onClose={screen.closeMedia}
         />
       )}
+
+      <InAppBrowserModal
+        visible={!!browserUrl}
+        url={browserUrl}
+        onClose={() => setBrowserUrl(null)}
+      />
     </View>
   )
 }
@@ -253,6 +285,7 @@ const s = StyleSheet.create({
   stickyWrap: { backgroundColor: Colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   msgList: { paddingHorizontal: 16, paddingVertical: 12 },
+  loadMoreWrap: { paddingVertical: 14, alignItems: 'center' },
   seenLabel: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 11,

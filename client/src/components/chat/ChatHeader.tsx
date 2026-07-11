@@ -25,7 +25,7 @@ export function ChatHeader({
     <>
       <View style={[s.header, { paddingTop: insets.top + 8 }]}>
         <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-          <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
+          <ChevronLeft size={24} color={Colors.inkPrimary} strokeWidth={2} />
         </Pressable>
         <Pressable
           style={s.center}
@@ -72,8 +72,6 @@ const s = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
     backgroundColor: Colors.background,
   },
   backBtn: { padding: 4, marginRight: 8 },
@@ -82,7 +80,7 @@ const s = StyleSheet.create({
   avatarFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
   avatarInitial: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  name: { fontFamily: FontFamily.headingBold, fontSize: 17, color: Colors.brandOrange },
+  name: { fontFamily: FontFamily.headingBold, fontSize: 17, color: Colors.inkPrimary },
   sub: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkSecondary },
   onlineDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#4CAF50' },
   reconnectBanner: {

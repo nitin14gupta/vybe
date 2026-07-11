@@ -19,6 +19,8 @@ import type { Message } from '@/api/apiService'
 import type { MediaViewType } from '@/components/chat/MediaViewerModal'
 import { ReactionPills } from './ReactionPills'
 import { PlaybackWave } from '@/components/ui'
+import { LinkPreviewCard } from './LinkPreviewCard'
+import { isUrlOnly, normalizeUrl } from '@/lib/linkify'
 
 // ── Reply preview ─────────────────────────────────────────────────────────────
 
@@ -182,14 +184,19 @@ function ImageChatBubble({ url, isMine, width: srcW, height: srcH, isPending }: 
 
 // ── Video bubble ──────────────────────────────────────────────────────────────
 
-function VideoChatBubble({ url, isMine, isPending, onPress }: {
-  url: string; isMine: boolean; isPending: boolean
+function VideoChatBubble({ url, isMine, width: srcW, height: srcH, isPending, onPress }: {
+  url: string; isMine: boolean; width?: number; height?: number; isPending: boolean
   onPress: (playUrl: string) => void
 }) {
   const [localUri, setLocalUri] = useState<string | null>(null)
   const [downloading, setDownloading] = useState(false)
   // Always call hook unconditionally (Rules of Hooks) — only rendered for isMine path
   const videoPlayer = useVideoPlayer(url, p => { p.loop = false })
+
+  const aspectRatio = srcW && srcH ? srcW / srcH : 16 / 9
+  const displayH = Math.round(MEDIA_WIDTH / aspectRatio)
+  const h = Math.min(Math.max(displayH, 120), 390)
+  const boxStyle = { width: MEDIA_WIDTH, height: h }
 
   const handleDownload = async () => {
     if (downloading) return
@@ -211,49 +218,48 @@ function VideoChatBubble({ url, isMine, isPending, onPress }: {
     handleDownload()
   }
 
-  const tapGesture = Gesture.Tap().onEnd(() => runOnJS(handleTap)())
+  // Plain View + RNGH Pressable (not Gesture.Tap+GestureDetector) — this bubble
+  // is nested inside the message's own outer GestureDetector, and a second,
+  // independent Gesture.Tap here silently loses the touch to the outer one on
+  // New Architecture. RNGH's Pressable composes correctly in that position
+  // (same fix already applied to VoiceBubble's play button above).
+  const content = isMine ? (
+    <>
+      <VideoView
+        player={videoPlayer}
+        style={mc.video}
+        contentFit="cover"
+        nativeControls={false}
+      />
+      {isPending
+        ? <View style={mc.playOverlay}><ActivityIndicator size="small" color="#fff" /></View>
+        : <View style={mc.playOverlay}><Play size={28} color="#fff" fill="#fff" strokeWidth={0} /></View>
+      }
+    </>
+  ) : localUri ? (
+    <View style={mc.playOverlay}><Play size={28} color="#fff" fill="#fff" strokeWidth={0} /></View>
+  ) : (
+    <View style={[mc.downloadPlaceholder, boxStyle]}>
+      <Film size={32} color="rgba(255,255,255,0.5)" strokeWidth={1.5} />
+      {downloading
+        ? <ActivityIndicator size="small" color={Colors.brandOrange} style={{ marginTop: 8 }} />
+        : <>
+            <Download size={18} color={Colors.brandOrange} strokeWidth={2} style={{ marginTop: 10 }} />
+            <Text style={mc.downloadText}>Tap to download</Text>
+          </>
+      }
+    </View>
+  )
 
-  // Sender: thumbnail + play overlay, tap → open modal
-  if (isMine) {
-    return (
-      <GestureDetector gesture={tapGesture}>
-        <View style={mc.videoWrap}>
-          <VideoView
-            player={videoPlayer}
-            style={mc.video}
-            contentFit="cover"
-            nativeControls={false}
-          />
-          {isPending
-            ? <View style={mc.playOverlay}><ActivityIndicator size="small" color="#fff" /></View>
-            : <View style={mc.playOverlay}><Play size={28} color="#fff" fill="#fff" strokeWidth={0} /></View>
-          }
-        </View>
-      </GestureDetector>
-    )
-  }
-
-  // Recipient: download-first placeholder, tap → download → open modal
+  // Rounded corners live on this outer plain View — RNGH's Pressable doesn't
+  // reliably clip children to a border radius via overflow:hidden on its own
+  // native view, so the radius silently disappeared when Pressable owned it.
   return (
-    <GestureDetector gesture={tapGesture}>
-      <View style={mc.videoWrap}>
-        {localUri
-          ? <View style={mc.playOverlay}><Play size={28} color="#fff" fill="#fff" strokeWidth={0} /></View>
-          : (
-            <View style={mc.downloadPlaceholder}>
-              <Film size={32} color="rgba(255,255,255,0.5)" strokeWidth={1.5} />
-              {downloading
-                ? <ActivityIndicator size="small" color={Colors.brandOrange} style={{ marginTop: 8 }} />
-                : <>
-                    <Download size={18} color={Colors.brandOrange} strokeWidth={2} style={{ marginTop: 10 }} />
-                    <Text style={mc.downloadText}>Tap to download</Text>
-                  </>
-              }
-            </View>
-          )
-        }
-      </View>
-    </GestureDetector>
+    <View style={[mc.videoWrap, boxStyle]}>
+      <Pressable onPress={handleTap} style={StyleSheet.absoluteFill}>
+        {content}
+      </Pressable>
+    </View>
   )
 }
 
@@ -265,15 +271,15 @@ const mc = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center', justifyContent: 'center',
   },
-  videoWrap: { width: MEDIA_WIDTH, height: 160, borderRadius: 14, overflow: 'hidden', backgroundColor: '#111' },
-  video: { width: MEDIA_WIDTH, height: 160 },
+  videoWrap: { borderRadius: 14, overflow: 'hidden', backgroundColor: '#111' },
+  video: { width: '100%', height: '100%' },
   playOverlay: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     alignItems: 'center', justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.3)',
   },
   downloadPlaceholder: {
-    width: MEDIA_WIDTH, height: 160, borderRadius: 14,
+    borderRadius: 14,
     backgroundColor: '#1a1a1a',
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: '#2a2a2a',
@@ -359,23 +365,31 @@ interface Props {
   onReplyTap: (originalMsgId: string) => void
   onMediaTap?: (url: string, type: MediaViewType) => void
   onRetry?: (tempId: string) => void
+  onLinkTap?: (url: string) => void
 }
 
 export function MessageBubble({
   msg, isMine, myId, isFailed,
   onDoubleTap, onLongPress, onSwipeReply,
-  onReactionPillPress, onReplyTap, onMediaTap, onRetry,
+  onReactionPillPress, onReplyTap, onMediaTap, onRetry, onLinkTap,
 }: Props) {
   const translateX = useSharedValue(0)
   const hasTriggeredReply = useSharedValue(false)
 
+  const isLinkMessage = msg.content_type === 'text' && !!msg.content && isUrlOnly(msg.content)
+
   const handleDoubleTap = useCallback(() => { hSelection(); onDoubleTap(msg.id) }, [msg.id, onDoubleTap])
   const handleSwipeReply = useCallback(() => { hTap(); onSwipeReply(msg) }, [msg, onSwipeReply])
   const handleSingleTap = useCallback(() => {
+    if (isLinkMessage && msg.content) {
+      hTap()
+      onLinkTap?.(normalizeUrl(msg.content))
+      return
+    }
     if ((msg.content_type === 'image' || msg.content_type === 'gif') && msg.metadata?.url) {
       onMediaTap?.(msg.metadata.url, msg.content_type as MediaViewType)
     }
-  }, [msg.content_type, msg.metadata, onMediaTap])
+  }, [isLinkMessage, msg.content, msg.content_type, msg.metadata, onMediaTap, onLinkTap])
 
   const doubleTap = Gesture.Tap()
     .numberOfTaps(2)
@@ -421,7 +435,9 @@ export function MessageBubble({
 
   const isPending = msg.id.startsWith('_temp_')
   const hasReply = !!msg.metadata?.reply_to
-  const timeStr = isPending ? '…' : new Date(msg.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const timeStr = isPending
+    ? '…'
+    : new Date(msg.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + (msg.edited_at ? ' · Edited' : '')
 
   const renderBubbleContent = () => {
     if (msg.unsent_at) {
@@ -451,6 +467,9 @@ export function MessageBubble({
               />
             </Animated.View>
           </GestureDetector>
+          {msg.reactions && (
+            <ReactionPills reactions={msg.reactions} myId={myId} onPillPress={emoji => onReactionPillPress(msg.id, emoji)} />
+          )}
           <Animated.Text style={[s.timeBelow, isMine ? s.timeBelowMine : s.timeBelowTheirs, timeRevealStyle]}>
             {timeStr}
           </Animated.Text>
@@ -458,9 +477,6 @@ export function MessageBubble({
             <Pressable onPress={() => onRetry?.(msg.id)} hitSlop={4}>
               <Text style={s.failedText}>⚠ Failed · Tap to retry</Text>
             </Pressable>
-          )}
-          {msg.reactions && (
-            <ReactionPills reactions={msg.reactions} myId={myId} onPillPress={emoji => onReactionPillPress(msg.id, emoji)} />
           )}
         </View>
       )
@@ -474,11 +490,16 @@ export function MessageBubble({
               <VideoChatBubble
                 url={msg.metadata.url}
                 isMine={isMine}
+                width={msg.metadata.width}
+                height={msg.metadata.height}
                 isPending={isPending}
                 onPress={playUrl => onMediaTap?.(playUrl, 'video')}
               />
             </Animated.View>
           </GestureDetector>
+          {msg.reactions && (
+            <ReactionPills reactions={msg.reactions} myId={myId} onPillPress={emoji => onReactionPillPress(msg.id, emoji)} />
+          )}
           <Animated.Text style={[s.timeBelow, isMine ? s.timeBelowMine : s.timeBelowTheirs, timeRevealStyle]}>
             {timeStr}
           </Animated.Text>
@@ -486,9 +507,6 @@ export function MessageBubble({
             <Pressable onPress={() => onRetry?.(msg.id)} hitSlop={4}>
               <Text style={s.failedText}>⚠ Failed · Tap to retry</Text>
             </Pressable>
-          )}
-          {msg.reactions && (
-            <ReactionPills reactions={msg.reactions} myId={myId} onPillPress={emoji => onReactionPillPress(msg.id, emoji)} />
           )}
         </View>
       )
@@ -502,6 +520,9 @@ export function MessageBubble({
               <VoiceBubble url={msg.metadata.url} duration={msg.metadata.duration} isMine={isMine} isPending={isPending} />
             </Animated.View>
           </GestureDetector>
+          {msg.reactions && (
+            <ReactionPills reactions={msg.reactions} myId={myId} onPillPress={emoji => onReactionPillPress(msg.id, emoji)} />
+          )}
           <Animated.Text style={[s.timeBelow, isMine ? s.timeBelowMine : s.timeBelowTheirs, timeRevealStyle]}>
             {timeStr}
           </Animated.Text>
@@ -509,9 +530,6 @@ export function MessageBubble({
             <Pressable onPress={() => onRetry?.(msg.id)} hitSlop={4}>
               <Text style={s.failedText}>⚠ Failed · Tap to retry</Text>
             </Pressable>
-          )}
-          {msg.reactions && (
-            <ReactionPills reactions={msg.reactions} myId={myId} onPillPress={emoji => onReactionPillPress(msg.id, emoji)} />
           )}
         </View>
       )
@@ -524,7 +542,7 @@ export function MessageBubble({
       return <ProfileCard metadata={msg.metadata} isMine={isMine} sentAt={msg.sent_at} />
     }
 
-    // Text bubble
+    // Text bubble (or, if the whole message is a link, a rich preview card)
     return (
       <View style={[s.bubbleWrap, isMine ? s.wrapMine : s.wrapTheirs]}>
         <GestureDetector gesture={gesture}>
@@ -534,15 +552,27 @@ export function MessageBubble({
             isPending && s.bubblePending,
             isFailed && s.bubbleFailed,
             hasReply && s.bubbleWithReply,
+            isLinkMessage && s.bubbleLink,
             animStyle,
           ]}>
             <ReplyPreview metadata={msg.metadata} isMine={isMine} onPress={onReplyTap} />
-            <Text style={[s.text, isMine && s.textMine]}>{msg.content}</Text>
-            <Animated.Text style={[s.timeInner, timeRevealStyle]}>
-              {timeStr}
-            </Animated.Text>
+            {isLinkMessage && msg.content ? (
+              <LinkPreviewCard url={normalizeUrl(msg.content)} isMine={isMine} />
+            ) : (
+              <Text style={[s.text, isMine && s.textMine]}>{msg.content}</Text>
+            )}
+            {!isLinkMessage && (
+              <Animated.Text style={[s.timeInner, timeRevealStyle]}>
+                {timeStr}
+              </Animated.Text>
+            )}
           </Animated.View>
         </GestureDetector>
+        {isLinkMessage && (
+          <Animated.Text style={[s.timeBelow, isMine ? s.timeBelowMine : s.timeBelowTheirs, timeRevealStyle]}>
+            {timeStr}
+          </Animated.Text>
+        )}
         {isFailed && (
           <Pressable onPress={() => onRetry?.(msg.id)} hitSlop={4}>
             <Text style={s.failedText}>⚠ Failed · Tap to retry</Text>
@@ -574,6 +604,7 @@ const s = StyleSheet.create({
     paddingBottom: 16,
   },
   bubbleWithReply: { minWidth: 160 },
+  bubbleLink: { padding: 0, overflow: 'hidden' },
   bubbleTheirs: { backgroundColor: '#222', borderBottomLeftRadius: 4 },
   bubbleMine: {
     backgroundColor: 'rgba(255,107,53,0.22)',

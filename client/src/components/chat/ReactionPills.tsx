@@ -24,7 +24,7 @@ export function ReactionPills({ reactions, myId, onPillPress }: Props) {
       {Object.entries(groups).map(([emoji, { count, iMine }]) => (
         <Pressable
           key={emoji}
-          style={[s.pill, iMine && s.pillMine]}
+          style={s.pill}
           onPress={() => { hSelection(); onPillPress(emoji) }}
           hitSlop={4}
         >
@@ -58,10 +58,6 @@ const s = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 2,
     elevation: 2,
-  },
-  pillMine: {
-    backgroundColor: 'rgba(255,107,53,0.15)',
-    borderColor: 'rgba(255,107,53,0.4)',
   },
   emoji: { fontSize: 14 },
   count: { fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: 'rgba(255,255,255,0.6)' },

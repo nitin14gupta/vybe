@@ -12,6 +12,7 @@ import { useChat } from './useChat'
 import { useImageViewer } from './useImageViewer'
 import { useVoiceRecorder } from './useVoiceRecorder'
 import type { MediaViewType, MediaViewerItem } from '@/components/chat/MediaViewerModal'
+import { canEditMessage } from '@/lib/messageEdit'
 
 const MARGIN = 8
 const MIN_INPUT_HEIGHT = 44
@@ -36,6 +37,7 @@ export interface EmojiTarget {
   currentEmoji: string | null
   content: string | null
   contentType: Message['content_type']
+  canEdit: boolean
 }
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
@@ -145,15 +147,16 @@ export function useChatScreen(convId: string) {
   const [replyingTo, setReplyingTo] = useState<Message | null>(null)
   const [emojiTarget, setEmojiTarget] = useState<EmojiTarget | null>(null)
   const [reportMsgId, setReportMsgId] = useState<string | null>(null)
+  const [editingMessage, setEditingMessage] = useState<Message | null>(null)
 
   const extraContentPadding = useSharedValue(0)
 
   const {
     messages, isPartnerTyping, isPartnerRecording, isPartnerOnline,
     isWsConnected, wsError, loading, partnerSeenAt,
-    failedIds, sendMessage, retryMessage, sendTyping, sendVoiceTyping, loadMore, reactToMessage,
+    failedIds, loadingMore, sendMessage, retryMessage, sendTyping, sendVoiceTyping, loadMore, reactToMessage,
     addOptimisticMedia, sendMediaMessage, markMediaFailed, clearMediaFailed,
-    applyUnsentLocally, removeMessageLocally,
+    applyUnsentLocally, removeMessageLocally, applyEditLocally,
   } = useChat(convId)
 
   const { viewingMedia, openMedia, closeMedia } = useImageViewer()
@@ -202,6 +205,22 @@ export function useChatScreen(convId: string) {
     const text = inputText.trim()
     if (!text) return
     hTap()
+
+    if (editingMessage) {
+      const target = editingMessage
+      setInputText('')
+      setEditingMessage(null)
+      try {
+        const result = await ApiService.editMessage(target.id, text)
+        applyEditLocally(target.id, result.content, result.edited_at)
+      } catch {
+        setInputText(text)
+        setEditingMessage(target)
+        showPill("Couldn't edit, try again", 'error')
+      }
+      return
+    }
+
     setInputText('')
     sendTyping(false)
     const replyMeta = replyingTo
@@ -221,7 +240,7 @@ export function useChatScreen(convId: string) {
       setInputText(text)
       showPill("Message didn't send, tap to retry", 'error')
     }
-  }, [inputText, sendMessage, sendTyping, replyingTo, myId, partnerName, showPill])
+  }, [inputText, sendMessage, sendTyping, replyingTo, myId, partnerName, showPill, editingMessage, applyEditLocally])
 
   const handleTextChange = useCallback((t: string) => {
     setInputText(t)
@@ -318,8 +337,25 @@ export function useChatScreen(convId: string) {
     setEmojiTarget({
       msgId, pageY, isMine, currentEmoji,
       content: msg.content, contentType: msg.content_type,
+      canEdit: canEditMessage(msg, myId),
     })
   }, [messages, myId])
+
+  const handleBeginEdit = useCallback((msg: Message) => {
+    setReplyingTo(null)
+    setEditingMessage(msg)
+    setInputText(msg.content ?? '')
+  }, [])
+
+  const handleEditFromMenu = useCallback((msgId: string) => {
+    const msg = messages.find(m => m.id === msgId)
+    if (msg) handleBeginEdit(msg)
+  }, [messages, handleBeginEdit])
+
+  const handleCancelEdit = useCallback(() => {
+    setEditingMessage(null)
+    setInputText('')
+  }, [])
 
   const handleSwipeReply = useCallback((msg: Message) => {
     setReplyingTo(msg)
@@ -414,7 +450,7 @@ export function useChatScreen(convId: string) {
     isWsConnected, loading,
     // input
     inputText, inputBarHeight, recordState, recordDurationMs,
-    recordedVoice, replyingTo, emojiTarget,
+    recordedVoice, replyingTo, emojiTarget, editingMessage,
     // menu
     menuOpen, setMenuOpen, reportOpen, setReportOpen,
     // message action menu / report
@@ -423,6 +459,7 @@ export function useChatScreen(convId: string) {
     extraContentPadding, stickyOffset,
     // failed + retry
     failedIds,
+    loadingMore,
     // media viewer
     viewingMedia, closeMedia,
     // handlers
@@ -434,6 +471,7 @@ export function useChatScreen(convId: string) {
     handleRetry, handleMediaTap, handleMediaGroupTap,
     handleCopyMessage, handleReportMessageSubmit, handleReportSheetClosed,
     handleUnsendMessage, handleDeleteMessageForMe,
+    handleBeginEdit, handleEditFromMenu, handleCancelEdit,
     handleCancelReply: () => setReplyingTo(null),
     handleCloseEmojiPicker: () => setEmojiTarget(null),
     loadMore,

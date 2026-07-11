@@ -105,15 +105,17 @@ function VybeInboxSheetCore({ requests, loading, onBeginAccept, onPass, onClose 
           </View>
         </BottomSheetView>
       ) : (
-        <BottomSheetFlatList
-          data={requests}
-          keyExtractor={r => r.id}
-          contentContainerStyle={s.listContent}
-          showsVerticalScrollIndicator={false}
-          ListHeaderComponent={Header}
-          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-          renderItem={({ item }) => <RequestCard req={item} onBeginAccept={onBeginAccept} onPass={onPass} />}
-        />
+        <>
+          <View style={s.headerFixed}>{Header}</View>
+          <BottomSheetFlatList
+            data={requests}
+            keyExtractor={r => r.id}
+            contentContainerStyle={s.listContent}
+            showsVerticalScrollIndicator={false}
+            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+            renderItem={({ item }) => <RequestCard req={item} onBeginAccept={onBeginAccept} onPass={onPass} />}
+          />
+        </>
       )}
     </BottomSheetModal>
   )
@@ -129,6 +131,7 @@ const s = StyleSheet.create({
   handleIndicator: { backgroundColor: 'rgba(255,255,255,0.18)' },
   fullContent: { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 8 },
   listContent: { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 8 },
+  headerFixed: { paddingHorizontal: 20, paddingTop: 8 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary },
@@ -137,7 +140,7 @@ const s = StyleSheet.create({
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e1e1e', borderRadius: 16, borderWidth: 1, borderColor: '#2a2a2a', padding: 14, gap: 12 },
   cardActioned: { opacity: 0.55 },
   cardLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  cardAvatar: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: Colors.brandOrange },
+  cardAvatar: { width: 52, height: 52, borderRadius: 26 },
   cardAvatarFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
   cardAvatarInitial: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary },
   cardInfo: { flex: 1 },

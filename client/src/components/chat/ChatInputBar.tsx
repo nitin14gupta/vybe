@@ -5,7 +5,7 @@ import {
 } from 'react-native'
 import { BottomSheetModal } from '@gorhom/bottom-sheet'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
-import { Square, Mic, Send, Trash2, Plus, X, Play, Pause } from 'lucide-react-native'
+import { Square, Mic, Send, Trash2, Plus, X, Play, Pause, Pencil } from 'lucide-react-native'
 import { RecordingWave, PlaybackWave } from '@/components/ui'
 import { hHeavy, hSuccess, hTap, hError } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
@@ -25,6 +25,7 @@ interface Props {
   recordDurationMs: number
   recordedVoice: RecordedVoice | null
   replyingTo: Message | null
+  editingMessage: Message | null
   myId: string
   partnerName: string | null
   onTextChange: (t: string) => void
@@ -37,6 +38,7 @@ interface Props {
   onUnblock: () => void
   onDeleteChat: () => void
   onCancelReply: () => void
+  onCancelEdit: () => void
   onMediaSend: (uri: string, type: 'image' | 'video' | 'gif', width?: number, height?: number) => void
   onLayout: (e: LayoutChangeEvent) => void
 }
@@ -94,10 +96,10 @@ const pv = StyleSheet.create({
 
 export function ChatInputBar({
   blockStatus, inputText, recordState, recordDurationMs, recordedVoice,
-  replyingTo, myId, partnerName,
+  replyingTo, editingMessage, myId, partnerName,
   onTextChange, onSend, onMicPress, onRecordStop, onRecordCancel,
   onSendVoice, onDiscardVoice,
-  onUnblock, onDeleteChat, onCancelReply, onMediaSend, onLayout,
+  onUnblock, onDeleteChat, onCancelReply, onCancelEdit, onMediaSend, onLayout,
 }: Props) {
   const inputRef = useRef<TextInput>(null)
   const sheetRef = useRef<BottomSheetModal>(null)
@@ -110,6 +112,13 @@ export function ChatInputBar({
       return () => clearTimeout(t)
     }
   }, [replyingTo?.id])
+
+  useEffect(() => {
+    if (editingMessage) {
+      const t = setTimeout(() => inputRef.current?.focus(), 60)
+      return () => clearTimeout(t)
+    }
+  }, [editingMessage?.id])
 
   const openMediaSheet = () => {
     Keyboard.dismiss()
@@ -195,7 +204,15 @@ export function ChatInputBar({
   return (
     <>
       <View onLayout={onLayout}>
-        {replyingTo && (
+        {editingMessage ? (
+          <View style={s.editBar}>
+            <Pencil size={14} color={Colors.brandOrange} strokeWidth={2} />
+            <Text style={s.editBarText}>Editing message</Text>
+            <Pressable onPress={onCancelEdit} style={s.cancelEditBtn} hitSlop={8}>
+              <X size={16} color={Colors.inkSecondary} strokeWidth={2} />
+            </Pressable>
+          </View>
+        ) : replyingTo && (
           <ReplyBar msg={replyingTo} myId={myId} partnerName={partnerName} onCancel={onCancelReply} />
         )}
         <View style={s.inputRow}>
@@ -254,6 +271,19 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   deleteBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandCoral },
+
+  editBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#1a1a1a',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    gap: 8,
+  },
+  editBarText: { flex: 1, fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: Colors.brandOrange },
+  cancelEditBtn: { padding: 4 },
 
   recordBar: {
     flexDirection: 'row', alignItems: 'center',

@@ -243,6 +243,14 @@ export interface EventGuest {
   is_following: boolean
 }
 
+export interface LinkPreview {
+  url: string
+  hostname: string | null
+  title: string | null
+  description: string | null
+  image: string | null
+}
+
 export interface Message {
   id: string
   conversation_id: string
@@ -254,6 +262,7 @@ export interface Message {
   read_at: string | null
   reactions: Record<string, string> | null
   unsent_at?: string | null
+  edited_at?: string | null
 }
 
 export interface WalletTransaction {
@@ -619,6 +628,10 @@ class ApiService {
     return this.get(ENDPOINTS.CONVERSATIONS)
   }
 
+  static async getLinkPreview(url: string): Promise<LinkPreview> {
+    return this.get<LinkPreview>(`${ENDPOINTS.LINK_PREVIEW}?url=${encodeURIComponent(url)}`)
+  }
+
   static async getMessages(convId: string, before?: string): Promise<Message[]> {
     const endpoint = ENDPOINTS.CONVERSATION_MESSAGES.replace(':id', convId)
     const qs = before ? `?before=${encodeURIComponent(before)}` : ''
@@ -673,6 +686,11 @@ class ApiService {
   static async unsendMessage(messageId: string): Promise<void> {
     const endpoint = ENDPOINTS.MESSAGE_UNSEND.replace(':id', messageId)
     await this.post<{ ok: boolean }>(endpoint, {})
+  }
+
+  static async editMessage(messageId: string, content: string): Promise<{ content: string; edited_at: string }> {
+    const endpoint = ENDPOINTS.MESSAGE_EDIT.replace(':id', messageId)
+    return this.patch<{ ok: boolean; content: string; edited_at: string }>(endpoint, { content })
   }
 
   static async deleteMessageForMe(messageId: string): Promise<void> {

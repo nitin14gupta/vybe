@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, TextInput, Modal, FlatList, ScrollView, Pressable } from 'react-native'
 import { router } from 'expo-router'
-import { Search, X, Flame, Heart, SlidersHorizontal } from 'lucide-react-native'
+import { Search, X, Flame, SlidersHorizontal } from 'lucide-react-native'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { hTap, hSelection } from '@/lib/haptics'
 import { Colors, FontFamily, FILTER_CHIPS, matchesChip } from '@/constants'
-import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 import { Screen } from '@/components/ui'
 import { EventCard } from '@/components/EventCard'
 import { useEventSearch } from '@/hooks/useEventSearch'
@@ -18,13 +17,6 @@ interface Props {
   lat?: number | null
   lng?: number | null
   nearbyLoading?: boolean
-}
-
-function relevanceBadge(event: EventSummary) {
-  if (event.paid_attended_host_before) return "You've paid to attend their events"
-  if (event.attended_host_before) return "You've been to their events"
-  if (event.is_following_host) return 'Following this host'
-  return null
 }
 
 export function EventSearchModal({ visible, onClose, nearbyEvents, lat, lng, nearbyLoading }: Props) {
@@ -53,26 +45,15 @@ export function EventSearchModal({ visible, onClose, nearbyEvents, lat, lng, nea
     .filter(e => matchesChip(e, chipKey))
     .slice(0, 12)
 
-  const renderCard = (item: EventSummary) => {
-    const badge = isSearching ? relevanceBadge(item) : null
-    return (
-      <View style={s.cardWrap}>
-        <EventCard event={item} onPress={() => openEvent(item.id)} showHost />
-        {badge && (
-          <View style={s.badge}>
-            <Heart size={11} color={Colors.brandCoral} fill={Colors.brandCoral} strokeWidth={0} />
-            <Text style={s.badgeText}>{badge}</Text>
-          </View>
-        )}
-      </View>
-    )
-  }
+  const renderCard = (item: EventSummary) => (
+    <View style={s.cardWrap}>
+      <EventCard event={item} onPress={() => openEvent(item.id)} showHost />
+    </View>
+  )
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <Screen bottom={false} transparent>
-        <LiquidPlasmaBackground colors={['#111111', '#FF3864']} />
-
+      <Screen bottom={false}>
         <View style={s.header}>
           <Pressable onPress={() => { hTap(); onClose() }} style={s.iconBtn}>
             <X size={20} color="#fff" />
@@ -244,15 +225,6 @@ const s = StyleSheet.create({
   },
 
   cardWrap: { marginBottom: 4 },
-  badge: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    marginTop: 8, paddingHorizontal: 10, paddingVertical: 6,
-    backgroundColor: 'rgba(255,56,100,0.12)',
-    borderRadius: 10,
-    alignSelf: 'flex-start',
-  },
-  badgeText: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.brandCoral },
-
   skCard: { height: 220, borderRadius: 20, marginBottom: 16 },
 
   center: { alignItems: 'center', justifyContent: 'center', gap: 10, padding: 40 },

@@ -1,5 +1,6 @@
 import asyncio
 import json
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from typing import Optional
@@ -7,8 +8,19 @@ from middleware.auth import get_current_user
 from db.config import get_db
 from utils.jwt import decode_token
 from utils.push import send_push
+from utils.link_preview import fetch_link_preview, UnsafeUrlError
 
 router = APIRouter(tags=["chat"])
+
+# Must match the `limit` default on GET /messages below — it's the only page size
+# the client ever requests, so it's the only one ever cached/invalidated.
+DEFAULT_MSG_PAGE_SIZE = 20
+MSG_CACHE_TTL_SECONDS = 120
+
+
+def _msg_cache_key(conv_id: str) -> str:
+    return f"conv_msgs:{conv_id}:{DEFAULT_MSG_PAGE_SIZE}"
+
 
 # ── In-memory socket registry (fallback when Redis is unavailable) ────────────
 
@@ -95,6 +107,21 @@ def _get_conversation(cur, conv_id: str, user_id: str) -> dict:
 
 
 # ── REST endpoints ────────────────────────────────────────────────────────────
+
+@router.get("/chat/link-preview")
+async def get_link_preview(url: str = Query(...), current_user: dict = Depends(get_current_user)):
+    """Fetches OG title/description/image for a link shared in chat — the
+    same kind of unfurl WhatsApp/Instagram/iMessage do. Requires auth (like
+    every other endpoint here) mainly to keep this from being an open proxy."""
+    try:
+        return await fetch_link_preview(url)
+    except UnsafeUrlError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception:
+        # Fetch/parse failures shouldn't break the chat UI — the client falls
+        # back to a plain link when title/description/image all come back None.
+        return {"url": url, "hostname": None, "title": None, "description": None, "image": None}
+
 
 @router.get("/chat/conversations")
 def list_conversations(current_user: dict = Depends(get_current_user)):
@@ -183,7 +210,7 @@ def list_conversations(current_user: dict = Depends(get_current_user)):
 async def list_messages(
     conv_id: str,
     before: Optional[str] = Query(None),
-    limit: int = Query(50, le=100),
+    limit: int = Query(DEFAULT_MSG_PAGE_SIZE, le=100),
     current_user: dict = Depends(get_current_user),
 ):
     uid = current_user["id"]
@@ -192,12 +219,15 @@ async def list_messages(
         if conv["status"] != "active":
             raise HTTPException(status_code=403, detail="Conversation not yet active")
 
-    # Redis cache for the initial page (no cursor) — TTL 60s. The cache holds the
-    # RAW rows shared across both participants, so "deleted for me" filtering must
-    # happen per-request below, never baked into the cached payload.
-    cache_key = f"conv_msgs:{conv_id}:{limit}"
+    # Redis cache for the initial page (no cursor, default page size) — TTL 120s.
+    # The cache holds the RAW rows shared across both participants, so "deleted
+    # for me" filtering must happen per-request below, never baked into the
+    # cached payload. Only the default page size is cached/invalidated — a
+    # non-default `limit` always goes straight to the DB.
+    cacheable = not before and limit == DEFAULT_MSG_PAGE_SIZE
+    cache_key = _msg_cache_key(conv_id)
     cached_result = None
-    if not before:
+    if cacheable:
         r = await _get_redis()
         if r:
             try:
@@ -216,7 +246,7 @@ async def list_messages(
                     """
                     SELECT id::text, conversation_id::text, sender_id::text,
                            content, content_type, metadata, sent_at, read_at, reactions,
-                           unsent_at, deleted_for
+                           unsent_at, edited_at, deleted_for
                     FROM messages
                     WHERE conversation_id = %s::uuid AND sent_at < %s
                     ORDER BY sent_at DESC
@@ -229,7 +259,7 @@ async def list_messages(
                     """
                     SELECT id::text, conversation_id::text, sender_id::text,
                            content, content_type, metadata, sent_at, read_at, reactions,
-                           unsent_at, deleted_for
+                           unsent_at, edited_at, deleted_for
                     FROM messages
                     WHERE conversation_id = %s::uuid
                     ORDER BY sent_at DESC
@@ -246,14 +276,16 @@ async def list_messages(
                 d["sent_at"] = d["sent_at"].isoformat()
             if d.get("unsent_at"):
                 d["unsent_at"] = d["unsent_at"].isoformat()
+            if d.get("edited_at"):
+                d["edited_at"] = d["edited_at"].isoformat()
             result.append(d)
 
         # Cache the initial page (raw, unfiltered)
-        if not before:
+        if cacheable:
             r = await _get_redis()
             if r:
                 try:
-                    await r.set(cache_key, json.dumps(result), ex=60)
+                    await r.set(cache_key, json.dumps(result), ex=MSG_CACHE_TTL_SECONDS)
                 except Exception:
                     pass
 
@@ -363,13 +395,76 @@ async def unsend_message(msg_id: str, current_user: dict = Depends(get_current_u
     r = await _get_redis()
     if r:
         try:
-            await r.delete(f"conv_msgs:{conv_id}:50")
+            await r.delete(_msg_cache_key(conv_id))
         except Exception:
             pass
     payload = {"type": "message_unsent", "message_id": msg_id, "conversation_id": conv_id}
     await _broadcast_local(conv_id, payload)
     await _publish(f"conv:{conv_id}", payload)
     return {"ok": True}
+
+
+EDIT_WINDOW_MINUTES = 15
+
+
+class EditMessageBody(BaseModel):
+    content: str
+
+
+@router.patch("/chat/messages/{msg_id}", status_code=200)
+async def edit_message(msg_id: str, body: EditMessageBody, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    content = body.content.strip()
+    if not content:
+        raise HTTPException(status_code=422, detail="Message can't be empty")
+
+    with get_db() as (cur, conn):
+        cur.execute(
+            """
+            SELECT id::text, conversation_id::text, sender_id::text,
+                   content_type, unsent_at, sent_at
+            FROM messages WHERE id = %s::uuid
+            """,
+            (msg_id,),
+        )
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Message not found")
+        row = dict(row)
+        if row["sender_id"] != uid:
+            raise HTTPException(status_code=403, detail="You can only edit your own messages")
+        if row["content_type"] != "text":
+            raise HTTPException(status_code=422, detail="Only text messages can be edited")
+        if row["unsent_at"] is not None:
+            raise HTTPException(status_code=422, detail="This message was unsent")
+
+        sent_at = row["sent_at"]
+        if sent_at.tzinfo is None:
+            sent_at = sent_at.replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) - sent_at > timedelta(minutes=EDIT_WINDOW_MINUTES):
+            raise HTTPException(status_code=422, detail=f"Editing window has passed ({EDIT_WINDOW_MINUTES} min)")
+
+        conv_id = row["conversation_id"]
+        cur.execute(
+            "UPDATE messages SET content = %s, edited_at = NOW() WHERE id = %s::uuid RETURNING edited_at",
+            (content, msg_id),
+        )
+        edited_at = cur.fetchone()["edited_at"].isoformat()
+        conn.commit()
+
+    r = await _get_redis()
+    if r:
+        try:
+            await r.delete(_msg_cache_key(conv_id))
+        except Exception:
+            pass
+    payload = {
+        "type": "message_edited", "message_id": msg_id, "conversation_id": conv_id,
+        "content": content, "edited_at": edited_at,
+    }
+    await _broadcast_local(conv_id, payload)
+    await _publish(f"conv:{conv_id}", payload)
+    return {"ok": True, "content": content, "edited_at": edited_at}
 
 
 @router.post("/chat/messages/{msg_id}/delete-for-me", status_code=200)
@@ -438,7 +533,7 @@ async def send_message_rest(
     r = await _get_redis()
     if r:
         try:
-            await r.delete(f"conv_msgs:{conv_id}:50")
+            await r.delete(_msg_cache_key(conv_id))
         except Exception:
             pass
     asyncio.create_task(_publish(f"conv:{conv_id}", {"type": "message", **out}))
@@ -658,7 +753,7 @@ async def chat_websocket(
                 # Invalidate the cached initial message page for this conversation
                 if r:
                     try:
-                        await r.delete(f"conv_msgs:{conv_id}:50")
+                        await r.delete(_msg_cache_key(conv_id))
                     except Exception:
                         pass
                 # Echo back to sender immediately

@@ -237,9 +237,9 @@ def list_events(
 
     where = "WHERE " + " AND ".join(filters)
 
-    # Relationship signals — only meaningful (and only used to rank) during an
-    # active text search; see the ORDER BY below. Selected unconditionally
-    # since they're cheap and useful for the client to show "why" badges.
+    # Relationship signals — used to rank every listing (browsing or search),
+    # see the ORDER BY below, and also returned so the client can show "why"
+    # badges (e.g. "You've been to their events").
     relationship_select = """
         EXISTS(
             SELECT 1 FROM follows
@@ -259,19 +259,19 @@ def list_events(
     relationship_params = [viewer_id, viewer_id, viewer_id]
 
     default_order = dist_sql + " ASC NULLS LAST" if lat and lng else "e.date_time ASC"
-    if q:
-        order_sql = f"""
-            paid_attended_host_before DESC,
-            attended_host_before DESC,
-            is_following_host DESC,
-            (LOWER(e.title) = LOWER(%s)) DESC,
-            (LOWER(e.title) LIKE LOWER(%s)) DESC,
-            {default_order}
-        """
-        order_params = [q, f"{q}%"]
-    else:
-        order_sql = default_order
-        order_params = []
+    # Relationship ranking (paid-attended > attended > following) applies to
+    # every listing, not just an active text search — a followed host's event
+    # should float up whether you're browsing nearby or typing a query. Text
+    # relevance (exact/prefix title match) only makes sense when there's a q.
+    text_rank_sql = "(LOWER(e.title) = LOWER(%s)) DESC, (LOWER(e.title) LIKE LOWER(%s)) DESC," if q else ""
+    order_sql = f"""
+        paid_attended_host_before DESC,
+        attended_host_before DESC,
+        is_following_host DESC,
+        {text_rank_sql}
+        {default_order}
+    """
+    order_params = [q, f"{q}%"] if q else []
 
     sql = f"""
         SELECT

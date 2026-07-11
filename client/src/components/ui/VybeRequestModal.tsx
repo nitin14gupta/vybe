@@ -136,7 +136,7 @@ const s = StyleSheet.create({
   handleIndicator: { backgroundColor: 'rgba(255,255,255,0.18)' },
   content: { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 8 },
   partnerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  avatar: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: Colors.brandOrange },
+  avatar: { width: 52, height: 52, borderRadius: 26},
   avatarFallback: { backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center' },
   avatarInitial: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.inkPrimary },
   partnerInfo: { flex: 1, marginLeft: 12 },
