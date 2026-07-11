@@ -105,17 +105,15 @@ function VybeInboxSheetCore({ requests, loading, onBeginAccept, onPass, onClose 
           </View>
         </BottomSheetView>
       ) : (
-        <>
-          <View style={s.headerFixed}>{Header}</View>
-          <BottomSheetFlatList
-            data={requests}
-            keyExtractor={r => r.id}
-            contentContainerStyle={s.listContent}
-            showsVerticalScrollIndicator={false}
-            ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-            renderItem={({ item }) => <RequestCard req={item} onBeginAccept={onBeginAccept} onPass={onPass} />}
-          />
-        </>
+        <BottomSheetFlatList
+          data={requests}
+          keyExtractor={r => r.id}
+          contentContainerStyle={s.listContent}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={Header}
+          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+          renderItem={({ item }) => <RequestCard req={item} onBeginAccept={onBeginAccept} onPass={onPass} />}
+        />
       )}
     </BottomSheetModal>
   )
@@ -131,7 +129,6 @@ const s = StyleSheet.create({
   handleIndicator: { backgroundColor: 'rgba(255,255,255,0.18)' },
   fullContent: { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 8 },
   listContent: { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 8 },
-  headerFixed: { paddingHorizontal: 20, paddingTop: 8 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary },
