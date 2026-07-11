@@ -760,6 +760,13 @@ def delete_account(current_user: dict = Depends(get_current_user)):
             """,
             (uid,),
         )
+
+        # ── 4. Revoke every active session immediately (real logout, not just
+        # the client clearing its local tokens) — the access token already
+        # dies on the next request via the is_deleted check in auth middleware,
+        # but the refresh token doesn't check is_deleted at all, so without
+        # this a still-valid refresh token could keep minting new ones.
+        cur.execute("DELETE FROM refresh_tokens WHERE user_id = %s::uuid", (uid,))
         conn.commit()
     return {"ok": True}
 

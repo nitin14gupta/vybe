@@ -1,7 +1,7 @@
-import { View, Text, StyleSheet, ScrollView } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native'
 import { router } from 'expo-router'
 import Constants from 'expo-constants'
-import { ArrowLeft } from 'lucide-react-native'
+import { ArrowLeft, ChevronRight } from 'lucide-react-native'
 import { Screen, AppHeader, HeaderIconBtn } from '@/components/ui'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 
@@ -33,6 +33,15 @@ export default function AboutScreen() {
           <InfoRow label="Contact" value="hello@vybe.in" />
         </View>
 
+        {/* Legal */}
+        <View style={styles.card}>
+          <InfoRow label="Privacy Policy" value="" onPress={() => router.push('/(settings)/privacy')} />
+          <View style={styles.divider} />
+          <InfoRow label="Terms of Use" value="" onPress={() => router.push('/(settings)/terms')} />
+          <View style={styles.divider} />
+          <InfoRow label="Open Source Licenses" value="" onPress={() => router.push('/(settings)/open-source' as any)} />
+        </View>
+
         <Text style={styles.madeWith}>
           Made with ❤️ in India
         </Text>
@@ -41,7 +50,15 @@ export default function AboutScreen() {
   )
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value, onPress }: { label: string; value: string; onPress?: () => void }) {
+  if (onPress) {
+    return (
+      <Pressable style={styles.infoRow} onPress={onPress}>
+        <Text style={styles.infoLabel}>{label}</Text>
+        <ChevronRight size={16} color={Colors.inkDisabled} strokeWidth={2} />
+      </Pressable>
+    )
+  }
   return (
     <View style={styles.infoRow}>
       <Text style={styles.infoLabel}>{label}</Text>

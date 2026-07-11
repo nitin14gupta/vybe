@@ -1,11 +1,9 @@
 import { useState } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
-import { BackButton, PhoneInput, PrimaryButton, KeyboardAvoidingWrapper } from '@/components/ui'
-import { LegalSheet } from '@/components/ui/LegalSheet'
-import type { LegalType } from '@/components/ui/LegalSheet'
+import { BackButton, PhoneInput, PrimaryButton, KeyboardAvoidingWrapper, InAppBrowserModal } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
-import { Colors, FontFamily, Spacing } from '@/constants'
+import { Colors, FontFamily, Spacing, TERMS_URL, PRIVACY_URL } from '@/constants'
 import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -13,7 +11,7 @@ export default function PhoneScreen() {
   const [phone, setPhone]           = useState('')
   const [loading, setLoading]       = useState(false)
   const [error, setError]           = useState('')
-  const [legalType, setLegalType]   = useState<LegalType | null>(null)
+  const [legalUrl, setLegalUrl]     = useState<string | null>(null)
   const { handleSendOTP }           = useAuth()
   const insets                      = useSafeAreaInsets()
   const isValid                     = phone.length === 10
@@ -51,24 +49,26 @@ export default function PhoneScreen() {
         </View>
         <View style={styles.footer}>
           <PrimaryButton
-            label="Continue"
+            label="Send Code"
             onPress={handleContinue}
             disabled={!isValid}
             loading={loading}
           />
           <Text style={styles.legal}>
-            By continuing you agree to our{' '}
-            <Text style={styles.legalLink} onPress={() => setLegalType('terms')}>Terms</Text>
-            {' '}&amp;{' '}
-            <Text style={styles.legalLink} onPress={() => setLegalType('privacy')}>Privacy Policy</Text>
+            By clicking Send Code, you agree to our{' '}
+            <Text style={styles.legalLink} onPress={() => setLegalUrl(TERMS_URL)}>Terms</Text>
+            {' '}and{' '}
+            <Text style={styles.legalLink} onPress={() => setLegalUrl(PRIVACY_URL)}>Privacy Policy</Text>
+            {' '}and consent to receive event texts from Vybe. Msg frequency varies; data rates may apply.
+            {' '}For help, email us at support@vybe.in.
           </Text>
         </View>
       </KeyboardAvoidingWrapper>
 
-      <LegalSheet
-        visible={legalType !== null}
-        type={legalType ?? 'terms'}
-        onClose={() => setLegalType(null)}
+      <InAppBrowserModal
+        visible={legalUrl !== null}
+        url={legalUrl}
+        onClose={() => setLegalUrl(null)}
       />
     </View>
   )

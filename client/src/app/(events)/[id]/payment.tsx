@@ -14,7 +14,7 @@ import RazorpayCustomUI from 'react-native-customui'
 import {
   ArrowLeft, ChevronRight, Wallet, CheckCircle, QrCode,
 } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, PLATFORM_FEE_PERCENT_LABEL } from '@/constants'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { hTap, hSuccess } from '@/lib/haptics'
@@ -313,7 +313,7 @@ export default function PaymentScreen() {
         <View style={s.billCard}>
           <Text style={s.billTitle} numberOfLines={1}>{eventTitle}</Text>
           <BillRow label="Ticket price" value={`₹${ticketPrice}`} />
-          <BillRow label="Platform fee (5%)" value={`₹${platformFee}`} />
+          <BillRow label={`Platform fee (${PLATFORM_FEE_PERCENT_LABEL})`} value={`₹${platformFee}`} />
           {walletApplied > 0 && <BillRow label="Vybe Wallet applied" value={`-₹${walletApplied}`} green />}
           <View style={s.billDivider} />
           <View style={s.billTotalRow}>
@@ -470,7 +470,7 @@ export default function PaymentScreen() {
 
         <View style={s.secureRow}>
           <CheckCircle size={13} color={Colors.inkDisabled} strokeWidth={1.6} />
-          <Text style={s.secureText}>Secure payment · Instant wallet refund if event is cancelled</Text>
+          <Text style={s.secureText}>Secure payment · Instant wallet refund if event is cancelled in your Vybe Wallet</Text>
         </View>
       </ScrollView>
 

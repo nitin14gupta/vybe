@@ -19,7 +19,7 @@ import { EmojiPickerOverlay } from '@/components/chat/EmojiPickerOverlay'
 import { ReportMessageSheet } from '@/components/chat/ReportMessageSheet'
 import { ChatScrollView } from '@/components/chat/ChatScrollView'
 import { ChatPartnerPreview } from '@/components/chat/ChatPartnerPreview'
-import { InAppBrowserModal } from '@/components/chat/InAppBrowserModal'
+import { InAppBrowserModal } from '@/components/ui/InAppBrowserModal'
 
 type ListItem =
   | Message

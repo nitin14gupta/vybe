@@ -19,6 +19,10 @@ from middleware.auth import get_current_user
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
+# Charged on top of the host's ticket price — the host always receives the
+# full ticket price; this is a surcharge added to what the attendee pays.
+PLATFORM_FEE_RATE = 0.10
+
 _rz_client: Optional[razorpay.Client] = None
 
 
@@ -97,7 +101,7 @@ def create_order(body: CreateOrderBody, current_user: dict = Depends(get_current
         contact = f"{country_code}{raw_phone}".replace(" ", "")
 
     ticket_price = ev["price_inr"]
-    platform_fee = round(ticket_price * 0.05)
+    platform_fee = round(ticket_price * PLATFORM_FEE_RATE)
     total = ticket_price + platform_fee
 
     wallet_use = max(0, min(body.wallet_amount, wallet_bal, total))
@@ -198,7 +202,7 @@ def wallet_pay(body: WalletPayBody, current_user: dict = Depends(get_current_use
             raise HTTPException(status_code=409, detail="No spots left")
 
         ticket_price = ev["price_inr"]
-        platform_fee = round(ticket_price * 0.05)
+        platform_fee = round(ticket_price * PLATFORM_FEE_RATE)
         total = ticket_price + platform_fee
 
         cur.execute("SELECT wallet_balance FROM users WHERE id = %s::uuid", (uid,))
@@ -374,7 +378,7 @@ def create_qr(body: CreateQrBody, current_user: dict = Depends(get_current_user)
         wallet_bal = user["wallet_balance"] if user else 0
 
     ticket_price = ev["price_inr"]
-    platform_fee = round(ticket_price * 0.05)
+    platform_fee = round(ticket_price * PLATFORM_FEE_RATE)
     total = ticket_price + platform_fee
     wallet_use = max(0, min(body.wallet_amount, wallet_bal, total))
     charge = total - wallet_use

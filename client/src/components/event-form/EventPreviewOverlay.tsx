@@ -4,7 +4,7 @@ import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, Calendar, Clock, MapPin, Shield, Users } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, PLATFORM_FEE_RATE, PLATFORM_FEE_PERCENT_LABEL } from '@/constants'
 import { hTap, hSelection } from '@/lib/haptics'
 import { EventCard } from '@/components/EventCard'
 import { StaticEventMap } from '@/components/maps'
@@ -214,7 +214,19 @@ export function EventPreviewOverlay({ visible, form, onClose }: Props) {
       <View style={[s.stickyBar, { paddingBottom: insets.bottom + 12 }]}>
         <Text style={s.previewNote}>Preview only — actions are disabled</Text>
         <View style={s.stickyRow}>
-          <Text style={s.stickyPrice}>{formatPrice(form.priceInr, form.isFree)}</Text>
+          <View>
+            <Text style={s.stickyPrice}>
+              {formatPrice(
+                form.isFree ? 0 : form.priceInr + Math.round(form.priceInr * PLATFORM_FEE_RATE),
+                form.isFree,
+              )}
+            </Text>
+            {!form.isFree && form.priceInr > 0 ? (
+              <Text style={s.stickyPriceSub}>
+                Attendee pays this total (₹{form.priceInr} + {PLATFORM_FEE_PERCENT_LABEL} fee)
+              </Text>
+            ) : null}
+          </View>
           <View style={s.previewBookBtn}>
             <Text style={s.previewBookBtnText}>{form.isFree ? 'RSVP Free' : 'Book Now'}</Text>
           </View>
@@ -308,6 +320,7 @@ const s = StyleSheet.create({
   },
   stickyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   stickyPrice: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.inkPrimary },
+  stickyPriceSub: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkSecondary, marginTop: 2 },
   previewBookBtn: {
     borderRadius: 14, paddingHorizontal: 28, paddingVertical: 14,
     backgroundColor: Colors.elevated, minWidth: 120, alignItems: 'center',

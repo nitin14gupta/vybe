@@ -87,23 +87,7 @@ export default function SettingsScreen() {
             showSeparator={false}
           />
         </View>
-
-        {/* Legal */}
-        <Text style={styles.sectionLabel}>LEGAL</Text>
-        <View style={styles.card}>
-          <SettingRow
-            icon={<Shield size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
-            label="Privacy Policy"
-            onPress={() => router.push('/(settings)/privacy')}
-          />
-          <SettingRow
-            icon={<FileText size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
-            label="Terms of Use"
-            onPress={() => router.push('/(settings)/terms')}
-            showSeparator={false}
-          />
-        </View>
-
+        
         {/* App */}
         <Text style={styles.sectionLabel}>APP</Text>
         <View style={styles.card}>

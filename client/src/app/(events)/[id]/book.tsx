@@ -14,7 +14,7 @@ import { StatusBar } from 'expo-status-bar'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Calendar, MapPin, ShieldCheck, Wallet, Music2 } from 'lucide-react-native'
-import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { Colors, FontFamily, Spacing, Radius, PLATFORM_FEE_RATE, PLATFORM_FEE_PERCENT_LABEL } from '@/constants'
 import { BackButton, PrimaryButton } from '@/components/ui'
 import ApiService, { type EventDetail } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
@@ -74,7 +74,7 @@ export default function BookScreen() {
       .finally(() => setLoading(false))
   }, [id])
 
-  const platformFee = event ? Math.round(event.price_inr * 0.05) : 0
+  const platformFee = event ? Math.round(event.price_inr * PLATFORM_FEE_RATE) : 0
   const total       = event ? event.price_inr + platformFee : 0
   const walletApplied = walletEnabled ? Math.min(walletBalance, total) : 0
   const toPay = Math.max(0, total - walletApplied)
@@ -181,7 +181,7 @@ export default function BookScreen() {
             <View style={s.priceSection}>
               <PriceRow label="Ticket price" value={`₹${event.price_inr}`} />
               <View style={s.priceDivider} />
-              <PriceRow label="Platform fee (5%)" value={`₹${platformFee}`} />
+              <PriceRow label={`Platform fee (${PLATFORM_FEE_PERCENT_LABEL})`} value={`₹${platformFee}`} />
               {walletApplied > 0 && (
                 <>
                   <View style={s.priceDivider} />
@@ -229,7 +229,7 @@ export default function BookScreen() {
             {!event.is_free && !isCancelled ? (
               <View style={s.secureRow}>
                 <ShieldCheck size={13} color={Colors.inkDisabled} strokeWidth={1.6} />
-                <Text style={s.secureText}>Secure payment · Instant wallet refund if event is cancelled</Text>
+                <Text style={s.secureText}>Secure payment · Instant wallet refund if event is cancelled in your Vybe Wallet</Text>
               </View>
             ) : null}
           </View>

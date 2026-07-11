@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { Plus, X } from 'lucide-react-native'
 import { Image } from 'expo-image'
-import { Colors } from '@/constants'
+import { Colors, PLATFORM_FEE_RATE, PLATFORM_FEE_PERCENT_LABEL } from '@/constants'
 import type { CreateEventForm } from '@/hooks/useCreateEvent'
 import { useEventPhotos } from '@/hooks/useEventPhotos'
 import { ef } from './styles'
@@ -89,6 +89,16 @@ function Inner({ form, set, errors, setErrors, submitError, priceLocked, priceLo
           </View>
         )}
         {errors.priceInr ? <Text style={ef.errorText}>{errors.priceInr}</Text> : null}
+
+        {!form.isFree && form.priceInr > 0 ? (
+          <View style={s.feeBreakdown}>
+            <Text style={s.feeBreakdownText}>
+              Attendees pay ₹{form.priceInr + Math.round(form.priceInr * PLATFORM_FEE_RATE)} total
+              (₹{form.priceInr} ticket + {PLATFORM_FEE_PERCENT_LABEL} platform fee). You always receive
+              the full ₹{form.priceInr} you set here.
+            </Text>
+          </View>
+        ) : null}
       </View>
 
 
@@ -129,4 +139,16 @@ const s = StyleSheet.create({
   },
   submitErrorText: { color: Colors.brandCoral, fontFamily: 'Satoshi-Medium', fontSize: 13 },
   freeDisabled: { opacity: 0.35 },
+  feeBreakdown: {
+    marginTop: 10,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 10,
+    padding: 10,
+  },
+  feeBreakdownText: {
+    color: Colors.glassTextSecondary,
+    fontFamily: 'Satoshi-Regular',
+    fontSize: 12,
+    lineHeight: 17,
+  },
 })
