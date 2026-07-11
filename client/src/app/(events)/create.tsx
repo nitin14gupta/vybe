@@ -10,9 +10,10 @@ import {
   DateTimePickerSheet,
   KeyboardAvoidingWrapper,
   PrimaryButton,
+  OutlineButton,
   Screen,
 } from '@/components/ui'
-import { Step1Basics, Step2When, Step3Where, Step4Pricing, Step5Photos } from '@/components/event-form'
+import { Step1Basics, Step2When, Step3Where, Step4Pricing, Step5Photos, EventPreviewOverlay } from '@/components/event-form'
 import { useCreateEvent } from '@/hooks/useCreateEvent'
 import ApiService from '@/api/apiService'
 import { useEventDateTimePickers } from '@/hooks/useEventDateTimePickers'
@@ -43,6 +44,7 @@ export default function CreateScreen() {
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [nextLoading, setNextLoading] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
   const showPill = usePillStore(s => s.show)
   const [freeSlots, setFreeSlots] = useState<{ used: number; limit: number; resets_on: string } | null>(null)
 
@@ -87,7 +89,7 @@ export default function CreateScreen() {
     }
     if (step === 4) {
       const slotsExhausted = (freeSlots?.used ?? 0) >= 2
-      const minPrice = slotsExhausted ? 299 : 50
+      const minPrice = 99
       if (form.isFree && slotsExhausted) {
         flag('priceInr', "You've used 2 free events this month", "You've used your 2 free events this month. Set a ticket price.")
       } else if (!form.isFree && form.priceInr < minPrice) {
@@ -97,41 +99,50 @@ export default function CreateScreen() {
       if (!form.coverPhotos[0]) {
         flag('coverPhotos', 'Cover photo is required', 'Please add a 16:9 cover photo for your event')
       }
-      const hasGallery = form.coverPhotos.slice(1).some(uri => !!uri)
-      if (!hasGallery) {
-        flag('coverPhotos', 'At least one gallery photo is required', 'Please add at least one 1:1 gallery photo')
-      }
     }
     setErrors(errs)
     if (firstPill) showPill(firstPill, 'error')
     return Object.keys(errs).length === 0
   }
 
+  const MIN_FEEDBACK_MS = 320
+
   const handleNext = async () => {
     if (!validateStep()) return
-    if (step < 5) {
-      if (step === 2 && form.locationLat == null) {
-        try {
-          const { status } = await Location.requestForegroundPermissionsAsync()
-          if (status === 'granted') {
-            const { coords } = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
-            set('locationLat', coords.latitude)
-            set('locationLng', coords.longitude)
-          }
-        } catch { }
-      }
-      setStep(s => (s + 1) as any)
-      return
-    }
     setNextLoading(true)
-    const result = await submit()
-    if (result) {
-      hSuccess()
-      reset()
-      setStep(1)
-      router.replace(`/(events)/published?id=${result.id}&title=${encodeURIComponent(result.title)}` as any)
+    try {
+      if (step < 5) {
+        await Promise.all([
+          (async () => {
+            if (step === 2 && form.locationLat == null) {
+              try {
+                const { status } = await Location.requestForegroundPermissionsAsync()
+                if (status === 'granted') {
+                  const { coords } = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+                  set('locationLat', coords.latitude)
+                  set('locationLng', coords.longitude)
+                }
+              } catch { }
+            }
+          })(),
+          new Promise(resolve => setTimeout(resolve, MIN_FEEDBACK_MS)),
+        ])
+        setStep(s => (s + 1) as any)
+        return
+      }
+      const [result] = await Promise.all([
+        submit(),
+        new Promise(resolve => setTimeout(resolve, MIN_FEEDBACK_MS)),
+      ])
+      if (result) {
+        hSuccess()
+        reset()
+        setStep(1)
+        router.replace(`/(events)/published?id=${result.id}&title=${encodeURIComponent(result.title)}` as any)
+      }
+    } finally {
+      setNextLoading(false)
     }
-    setNextLoading(false)
   }
 
   const back = () => { if (step > 1) setStep((step - 1) as any) }
@@ -169,7 +180,7 @@ export default function CreateScreen() {
           <Step3Where form={form} set={set} errors={errors} setErrors={setErrors} />
           <View style={[s.step3Footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
             <PrimaryButton
-              label={nextLoading ? "Creating..." : "Continue"}
+              label="Continue"
               onPress={handleNext}
               disabled={nextLoading}
               loading={nextLoading}
@@ -179,13 +190,20 @@ export default function CreateScreen() {
       ) : step === 5 ? (
         <View style={{ flex: 1 }}>
           <Step5Photos form={form} set={set} errors={errors} setErrors={setErrors} />
-          <View style={[s.step3Footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-            <PrimaryButton
-              label={nextLoading ? "Publishing..." : "Publish Event"}
-              onPress={handleNext}
-              disabled={nextLoading}
-              loading={nextLoading}
+          <View style={[s.step3Footer, s.step5Footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+            <OutlineButton
+              label="Preview"
+              onPress={() => { hTap(); setPreviewOpen(true) }}
+              style={s.previewBtn}
             />
+            <View style={{ flex: 1 }}>
+              <PrimaryButton
+                label="Publish Event"
+                onPress={handleNext}
+                disabled={nextLoading}
+                loading={nextLoading}
+              />
+            </View>
           </View>
         </View>
       ) : (
@@ -236,6 +254,12 @@ export default function CreateScreen() {
         value={picker.value}
         onConfirm={picker.confirm}
         onDismiss={picker.dismiss}
+      />
+
+      <EventPreviewOverlay
+        visible={previewOpen}
+        form={form}
+        onClose={() => setPreviewOpen(false)}
       />
     </Screen>
   )
@@ -317,5 +341,12 @@ const s = StyleSheet.create({
   step3Footer: {
     paddingHorizontal: 20,
     paddingTop: 12,
+  },
+  step5Footer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  previewBtn: {
+    width: 110,
   },
 })

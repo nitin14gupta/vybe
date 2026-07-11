@@ -8,6 +8,9 @@ from utils.push import send_push
 
 router = APIRouter(prefix="/events", tags=["events"])
 
+# Single source of truth for both create and edit, so the two can't drift apart.
+MIN_TICKET_PRICE_INR = 99
+
 def _calc_age(dob: date) -> int:
     today = date.today()
     return today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
@@ -103,6 +106,11 @@ class EventSummary(BaseModel):
     age_restriction: int
     attendee_count: int = 0
     is_cancelled: bool = False
+    # Relationship/relevance signals — only populated by the search-ranked
+    # GET /events query (see list_events); default False elsewhere.
+    is_following_host: bool = False
+    attended_host_before: bool = False
+    paid_attended_host_before: bool = False
 
 
 class EventDetail(EventSummary):
@@ -178,6 +186,7 @@ def list_events(
     category: Optional[str] = Query(default=None),
     is_free: Optional[bool] = Query(default=None),
     date_range: Optional[str] = Query(default=None),  # tonight | weekend | all
+    q: Optional[str] = Query(default=None),
     min_lat: Optional[float] = Query(default=None),
     max_lat: Optional[float] = Query(default=None),
     min_lng: Optional[float] = Query(default=None),
@@ -185,15 +194,16 @@ def list_events(
     limit: int = Query(default=30, le=50),
     current_user: dict = Depends(get_current_user),
 ):
+    viewer_id = current_user["id"]
 
     dist_sql = _haversine_sql(lat, lng) if lat and lng else "NULL::int"
 
     filters = ["e.is_published = TRUE", "e.is_cancelled = FALSE", "e.date_time > NOW()"]
-    params: list = []
+    filter_params: list = []
 
     if category:
         filters.append("e.event_type = %s")
-        params.append(category)
+        filter_params.append(category)
 
     if is_free is True:
         filters.append("e.price_inr = 0")
@@ -205,11 +215,16 @@ def list_events(
     elif date_range == "weekend":
         filters.append("EXTRACT(DOW FROM e.date_time) IN (5, 6, 0)")
 
+    if q:
+        filters.append("(e.title ILIKE %s OR e.location_name ILIKE %s)")
+        like = f"%{q}%"
+        filter_params.extend([like, like])
+
     # Viewport bounds take priority over radius — used by MapLibre's onRegionDidChange
     if min_lat is not None and max_lat is not None and min_lng is not None and max_lng is not None:
         filters.append("e.location_lat BETWEEN %s AND %s")
         filters.append("e.location_lng BETWEEN %s AND %s")
-        params.extend([min_lat, max_lat, min_lng, max_lng])
+        filter_params.extend([min_lat, max_lat, min_lng, max_lng])
     elif lat and lng and radius_km:
         filters.append(f"""
             6371.0 * acos(LEAST(1.0,
@@ -218,9 +233,45 @@ def list_events(
                 sin(radians(%s)) * sin(radians(e.location_lat))
             )) <= %s
         """)
-        params.extend([lat, lng, lat, radius_km])
+        filter_params.extend([lat, lng, lat, radius_km])
 
     where = "WHERE " + " AND ".join(filters)
+
+    # Relationship signals — only meaningful (and only used to rank) during an
+    # active text search; see the ORDER BY below. Selected unconditionally
+    # since they're cheap and useful for the client to show "why" badges.
+    relationship_select = """
+        EXISTS(
+            SELECT 1 FROM follows
+            WHERE follower_id = %s::uuid AND following_id = e.host_id
+        ) AS is_following_host,
+        EXISTS(
+            SELECT 1 FROM event_attendees ea
+            WHERE ea.user_id = %s::uuid AND ea.status = 'going'
+              AND ea.event_id IN (SELECT id FROM events WHERE host_id = e.host_id)
+        ) AS attended_host_before,
+        EXISTS(
+            SELECT 1 FROM event_attendees ea
+            WHERE ea.user_id = %s::uuid AND ea.status = 'going' AND ea.payment_id IS NOT NULL
+              AND ea.event_id IN (SELECT id FROM events WHERE host_id = e.host_id)
+        ) AS paid_attended_host_before
+    """
+    relationship_params = [viewer_id, viewer_id, viewer_id]
+
+    default_order = dist_sql + " ASC NULLS LAST" if lat and lng else "e.date_time ASC"
+    if q:
+        order_sql = f"""
+            paid_attended_host_before DESC,
+            attended_host_before DESC,
+            is_following_host DESC,
+            (LOWER(e.title) = LOWER(%s)) DESC,
+            (LOWER(e.title) LIKE LOWER(%s)) DESC,
+            {default_order}
+        """
+        order_params = [q, f"{q}%"]
+    else:
+        order_sql = default_order
+        order_params = []
 
     sql = f"""
         SELECT
@@ -234,14 +285,15 @@ def list_events(
             {dist_sql} AS distance_km,
             u.name AS host_name,
             (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
-            (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id = e.id AND ea.status = 'going')::int AS attendee_count
+            (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id = e.id AND ea.status = 'going')::int AS attendee_count,
+            {relationship_select}
         FROM events e
         JOIN users u ON u.id = e.host_id
         {where}
-        ORDER BY {dist_sql + " ASC NULLS LAST" if lat and lng else "e.date_time ASC"}
+        ORDER BY {order_sql}
         LIMIT %s
     """
-    params.append(limit)
+    params = relationship_params + filter_params + order_params + [limit]
 
     with get_db() as (cur, _):
         cur.execute(sql, params)
@@ -471,12 +523,11 @@ def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, curre
         free_this_month = cur.fetchone()["count"]
 
     slots_exhausted = free_this_month >= 2
-    min_price = 299 if slots_exhausted else 50
 
     if body.price_inr == 0 and slots_exhausted:
-        raise HTTPException(status_code=422, detail="You've used your 2 free events this month. Set a ticket price (minimum ₹299).")
-    if body.price_inr != 0 and body.price_inr < min_price:
-        raise HTTPException(status_code=422, detail=f"Minimum ticket price is ₹{min_price}")
+        raise HTTPException(status_code=422, detail=f"You've used your 2 free events this month. Set a ticket price (minimum ₹{MIN_TICKET_PRICE_INR}).")
+    if body.price_inr != 0 and body.price_inr < MIN_TICKET_PRICE_INR:
+        raise HTTPException(status_code=422, detail=f"Minimum ticket price is ₹{MIN_TICKET_PRICE_INR}")
 
     if body.age_restriction not in (18, 21, 25):
         raise HTTPException(status_code=422, detail="Age restriction must be 18, 21, or 25")
@@ -605,6 +656,9 @@ def update_event(event_id: str, body: CreateEventBody, background_tasks: Backgro
 
     if capacity_increasing and now > capacity_deadline:
         raise HTTPException(status_code=403, detail="Capacity cannot be changed within 2 hours of start")
+
+    if body.price_inr != 0 and body.price_inr < MIN_TICKET_PRICE_INR:
+        raise HTTPException(status_code=422, detail=f"Minimum ticket price is ₹{MIN_TICKET_PRICE_INR}")
 
     old_capacity = ev["capacity"]
     promoted_users = []

@@ -16,14 +16,15 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { EventsMapView } from "@/components/maps";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Flame, List, Map, Plus } from "lucide-react-native";
+import { Flame, List, Map, Plus, Search } from "lucide-react-native";
 import { hTap, hSelection } from "@/lib/haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
-import { Colors, FontFamily } from "@/constants";
+import { Colors, FontFamily, FILTER_CHIPS } from "@/constants";
 import { useEvents } from "@/hooks/useEvents";
 import type { EventSummary } from "@/api/apiService";
 import { EventCard, formatEventDate } from "@/components/EventCard";
+import { EventSearchModal } from "@/components/EventSearchModal";
 import { LocationWarning } from "@/components/ui";
 import { usePermissionSheetStore } from "@/store/permissionSheetStore";
 
@@ -41,17 +42,6 @@ const EVENT_EMOJIS: Record<string, string> = {
   music: "🎵",
   other: "🔥",
 };
-
-const FILTER_CHIPS = [
-  { key: "all", label: "All" },
-  { key: "free", label: "Free" },
-  { key: "tonight", label: "Tonight" },
-  { key: "weekend", label: "Weekend" },
-  { key: "music", label: "Music" },
-  { key: "dinner", label: "Food" },
-  { key: "house_party", label: "Party" },
-  { key: "game_night", label: "Games" },
-];
 
 function formatPrice(price: number, isFree: boolean) {
   if (isFree) return "Free";
@@ -134,6 +124,7 @@ export default function EventsScreen() {
   };
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [listCount, setListCount] = useState(LIST_PAGE);
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
   const previewListRef = useRef<FlatList>(null);
 
   // Events tab back → navigate to discover tab
@@ -255,6 +246,13 @@ export default function EventsScreen() {
           <View style={styles.floatActions}>
             {togglePill}
             <Pressable
+              style={styles.searchBtnLight}
+              onPress={() => { hTap(); setSearchModalOpen(true) }}
+              hitSlop={8}
+            >
+              <Search size={16} color="#fff" strokeWidth={2} />
+            </Pressable>
+            <Pressable
               style={styles.addBtn}
               onPress={() => router.push("/(events)/create" as any)}
               hitSlop={8}
@@ -263,6 +261,15 @@ export default function EventsScreen() {
             </Pressable>
           </View>
         </View>
+
+        <EventSearchModal
+          visible={searchModalOpen}
+          onClose={() => setSearchModalOpen(false)}
+          nearbyEvents={events}
+          lat={userLat}
+          lng={userLng}
+          nearbyLoading={loading}
+        />
 
         {/* Error overlay */}
         {error && !loading && (
@@ -342,6 +349,13 @@ export default function EventsScreen() {
         <View style={styles.floatActions}>
           {togglePill}
           <Pressable
+            style={styles.searchBtnDark}
+            onPress={() => { hTap(); setSearchModalOpen(true) }}
+            hitSlop={8}
+          >
+            <Search size={16} color={Colors.inkPrimary} strokeWidth={2} />
+          </Pressable>
+          <Pressable
             style={styles.addBtn}
             onPress={() => router.push("/(events)/create" as any)}
             hitSlop={8}
@@ -350,6 +364,15 @@ export default function EventsScreen() {
           </Pressable>
         </View>
       </View>
+
+      <EventSearchModal
+        visible={searchModalOpen}
+        onClose={() => setSearchModalOpen(false)}
+        nearbyEvents={events}
+        lat={userLat}
+        lng={userLng}
+        nearbyLoading={loading}
+      />
 
       <LocationWarning />
 
@@ -460,6 +483,24 @@ const styles = StyleSheet.create({
     height: 34,
     borderRadius: 17,
     backgroundColor: Colors.brandOrange,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  searchBtnLight: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "rgba(255,255,255,0.14)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  searchBtnDark: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.divider,
     alignItems: "center",
     justifyContent: "center",
   },

@@ -94,7 +94,8 @@ export function Step5Photos({ form, set, errors, setErrors, disabled, inline }: 
   const sidePadding = inline ? 0 : 24
   const availableWidth = SW - (inline ? 40 : 48)
   const coverHeight = availableWidth * (9 / 16)
-  const smallSlotSize = (availableWidth - 12) / 2
+  const smallSlotWidth = (availableWidth - 12) / 2
+  const smallSlotHeight = smallSlotWidth * (9 / 16)
 
   return (
     <View style={s.container}>
@@ -139,7 +140,7 @@ export function Step5Photos({ form, set, errors, setErrors, disabled, inline }: 
           )}
         </Pressable>
 
-        <Text style={[ef.fieldLabel, { marginTop: 32 }]}>Gallery (Optional)</Text>
+        <Text style={[ef.fieldLabel, { marginTop: 32 }]}>Gallery (Optional, 16:9)</Text>
         <View style={[s.galleryGrid, { width: availableWidth }]}>
           {[1, 2, 3, 4].map((i) => {
             const uri = displayUri(i)
@@ -147,7 +148,7 @@ export function Step5Photos({ form, set, errors, setErrors, disabled, inline }: 
             return (
               <Pressable
                 key={i}
-                style={[s.smallSlot, { width: smallSlotSize, height: smallSlotSize }]}
+                style={[s.smallSlot, { width: smallSlotWidth, height: smallSlotHeight }]}
                 onPress={() => !uploading && pickForSlot(i)}
               >
                 {uri ? (
@@ -182,7 +183,7 @@ export function Step5Photos({ form, set, errors, setErrors, disabled, inline }: 
       {pendingMedia.length > 0 && (
         <MediaPreviewModal
           media={pendingMedia}
-          cropAspectRatio={pendingPosition === 0 ? 16 / 9 : 1}
+          cropAspectRatio={16 / 9}
           onCancel={() => setPendingMedia([])}
           onRemove={() => setPendingMedia([])}
           onUpdate={(index, updated) => setPendingMedia([updated])}

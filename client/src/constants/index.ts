@@ -1,4 +1,5 @@
 export * from './colors'
+export * from './eventFilters'
 export * from './gradients'
 export * from './mapConfig'
 export * from './onboarding'

@@ -104,7 +104,7 @@ export default function EditEventScreen() {
     if (saving || (locked && capacityLocked)) return
 
     if (!form.title.trim()) { showPill('Title is required', 'error'); return }
-    if (!form.isFree && form.priceInr < 50) { showPill('Minimum ticket price is ₹50', 'error'); return }
+    if (!form.isFree && form.priceInr < 99) { showPill('Minimum ticket price is ₹99', 'error'); return }
 
     if (form.capacity < bookedCount) {
       showPill(`${bookedCount} spots already booked — can't reduce below this`, 'error')
@@ -113,11 +113,6 @@ export default function EditEventScreen() {
 
     if (!form.coverPhotos[0]) {
       showPill('Cover photo is required', 'error')
-      return
-    }
-    const hasGallery = form.coverPhotos.slice(1).some(uri => !!uri)
-    if (!hasGallery) {
-      showPill('At least one gallery photo is required', 'error')
       return
     }
 
@@ -207,8 +202,7 @@ export default function EditEventScreen() {
   )
 
   const hasCoverPhoto = !!form.coverPhotos[0]
-  const hasGalleryPhoto = form.coverPhotos.slice(1).some(uri => !!uri)
-  const isValid = hasCoverPhoto && hasGalleryPhoto
+  const isValid = hasCoverPhoto
   const canSave = isDirty && isValid
 
   if (loading) {

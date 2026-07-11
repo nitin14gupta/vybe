@@ -89,7 +89,9 @@ async def upload_event_photo(
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user),
 ):
-    """Upload an event cover photo. No face validation — posters are fine."""
+    """Upload an event cover/gallery photo. No face validation — posters are fine.
+    Always center-cropped to 16:9 server-side — a safety net in case the client
+    skipped the in-app cropper, so every stored photo ends up the right shape."""
     print(f"\n[UPLOAD] event-photo — user={current_user['id']} "
           f"content_type={file.content_type!r} filename={file.filename!r}", flush=True)
 
@@ -97,7 +99,7 @@ async def upload_event_photo(
         raise HTTPException(status_code=400, detail=f"Unsupported image type: {file.content_type}")
 
     contents = await file.read()
-    contents = convert_to_webp(contents)
+    contents = convert_to_webp(contents, aspect_ratio=16 / 9)
     if len(contents) > MAX_PHOTO_SIZE:
         raise HTTPException(status_code=400, detail="Photo must be under 10 MB")
     if len(contents) == 0:
