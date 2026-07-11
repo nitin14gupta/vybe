@@ -1,7 +1,7 @@
 import { View, Text, Image, Pressable, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
-import { ChevronLeft, MoreVertical } from 'lucide-react-native'
+import { ChevronLeft, MoreVertical, Ghost } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   partnerUsername: string | null
   partnerAvatar: string | null
   partnerId: string | null
+  partnerIsDeleted?: boolean
   isPartnerOnline: boolean
   isWsConnected: boolean
   loading: boolean
@@ -16,7 +17,7 @@ interface Props {
 }
 
 export function ChatHeader({
-  partnerName, partnerUsername, partnerAvatar, partnerId,
+  partnerName, partnerUsername, partnerAvatar, partnerId, partnerIsDeleted,
   isPartnerOnline, isWsConnected, loading, onMenuPress,
 }: Props) {
   const insets = useSafeAreaInsets()
@@ -31,7 +32,13 @@ export function ChatHeader({
           style={s.center}
           onPress={() => partnerId && router.push(`/(profile)/${partnerId}` as any)}
         >
-          {partnerAvatar
+          {partnerIsDeleted
+            ? (
+              <View style={[s.avatar, s.avatarDeleted]}>
+                <Ghost size={18} color={Colors.inkDisabled} strokeWidth={1.5} />
+              </View>
+            )
+            : partnerAvatar
             ? <Image source={{ uri: partnerAvatar }} style={s.avatar} />
             : (
               <View style={[s.avatar, s.avatarFallback]}>
@@ -41,11 +48,13 @@ export function ChatHeader({
           }
           <View>
             <View style={s.nameRow}>
-              <Text style={s.name}>{partnerName ?? 'Chat'}</Text>
-              {isPartnerOnline && <View style={s.onlineDot} />}
+              <Text style={[s.name, partnerIsDeleted && s.nameDeleted]}>{partnerName ?? 'Chat'}</Text>
+              {isPartnerOnline && !partnerIsDeleted && <View style={s.onlineDot} />}
             </View>
             <Text style={s.sub}>
-              {partnerUsername
+              {partnerIsDeleted
+                ? 'This account no longer exists'
+                : partnerUsername
                 ? `@${partnerUsername}`
                 : (isPartnerOnline ? 'Active now' : 'Tap for profile')
               }
@@ -78,9 +87,11 @@ const s = StyleSheet.create({
   center: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: { width: 38, height: 38, borderRadius: 19 },
   avatarFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
+  avatarDeleted: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
   avatarInitial: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   name: { fontFamily: FontFamily.headingBold, fontSize: 17, color: Colors.inkPrimary },
+  nameDeleted: { color: Colors.inkDisabled },
   sub: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkSecondary },
   onlineDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#4CAF50' },
   reconnectBanner: {

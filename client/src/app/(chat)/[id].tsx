@@ -131,6 +131,7 @@ export default function ChatDetailScreen() {
         partnerUsername={screen.partnerUsername}
         partnerAvatar={screen.partnerAvatar}
         partnerId={screen.partnerId}
+        partnerIsDeleted={screen.partnerIsDeleted}
         isPartnerOnline={screen.isPartnerOnline}
         isWsConnected={screen.isWsConnected}
         loading={screen.loading}
@@ -182,6 +183,7 @@ export default function ChatDetailScreen() {
                     partnerName={screen.partnerName}
                     partnerUsername={screen.partnerUsername}
                     partnerAvatar={screen.partnerAvatar}
+                    partnerIsDeleted={screen.partnerIsDeleted}
                   />
                 </>
               }
@@ -192,6 +194,7 @@ export default function ChatDetailScreen() {
             <KeyboardStickyView offset={screen.stickyOffset} style={s.stickyWrap}>
               <ChatInputBar
                 blockStatus={screen.blockStatus}
+                partnerIsDeleted={screen.partnerIsDeleted}
                 inputText={screen.inputText}
                 recordState={screen.recordState}
                 recordDurationMs={screen.recordDurationMs}

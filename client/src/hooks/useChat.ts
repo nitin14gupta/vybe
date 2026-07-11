@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { AppState } from 'react-native'
 import ApiService, { Message } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
+import { loadOrCreateKeypair, encryptText, decryptText } from '@/lib/e2ee'
 
 export function useChat(conversationId: string) {
   const [messages, setMessages] = useState<Message[]>([])
@@ -24,21 +25,43 @@ export function useChat(conversationId: string) {
   const loadingMoreRef = useRef(false)
   const isBackgrounded = useRef(false)
   const myId = useAuthStore.getState().userId
+  // Partner's X25519 public key, for end-to-end encrypting/decrypting this
+  // conversation's text messages (see lib/e2ee.ts). Null until fetched.
+  const partnerKeyRef = useRef<string | null>(null)
+
+  // Decrypts a message's content (and any quoted reply-preview content
+  // embedded in its metadata) in place. Safe to call on plaintext
+  // (pre-encryption) messages too — decryptText() falls back to returning
+  // the input unchanged when it doesn't look like our envelope.
+  const decryptMessage = useCallback((msg: Message): Message => {
+    if (msg.content_type !== 'text' || !msg.content) return msg
+    const content = decryptText(msg.content, partnerKeyRef.current)
+    let metadata = msg.metadata
+    const replyTo = metadata?.reply_to
+    if (replyTo?.content) {
+      metadata = { ...metadata, reply_to: { ...replyTo, content: decryptText(replyTo.content, partnerKeyRef.current) } }
+    }
+    return { ...msg, content, metadata }
+  }, [])
 
   // Initial load + mark read
   useEffect(() => {
     noMoreRef.current = false
-    ApiService.getMessages(conversationId)
-      .then(msgs => {
-        setMessages(msgs)
-        setLoading(false)
-        ApiService.markRead(conversationId).catch(() => {})
-        const firstRead = msgs.find(msg => msg.sender_id === myId && msg.read_at != null)
-        if (firstRead) {
-          setPartnerSeenAt(firstRead.read_at)
-        }
-      })
-      .catch(() => setLoading(false))
+    ;(async () => {
+      await loadOrCreateKeypair()
+      const [msgs, keyRes] = await Promise.all([
+        ApiService.getMessages(conversationId),
+        ApiService.getPartnerKey(conversationId).catch(() => ({ partner_public_key: null })),
+      ])
+      partnerKeyRef.current = keyRes.partner_public_key
+      setMessages(msgs.map(decryptMessage))
+      setLoading(false)
+      ApiService.markRead(conversationId).catch(() => {})
+      const firstRead = msgs.find(msg => msg.sender_id === myId && msg.read_at != null)
+      if (firstRead) {
+        setPartnerSeenAt(firstRead.read_at)
+      }
+    })().catch(() => setLoading(false))
   }, [conversationId])
 
   const applyReactionUpdate = useCallback((messageId: string, userId: string, emoji: string | null) => {
@@ -94,7 +117,10 @@ export function useChat(conversationId: string) {
                 const next = [...prev]
                 pendingTempIds.current.delete(prev[tempIdx].id)
                 if (activeSendTempIdRef.current === prev[tempIdx].id) activeSendTempIdRef.current = null
-                next[tempIdx] = data as Message
+                // Keep our own local plaintext content/metadata — the server
+                // echo carries back the ciphertext we sent, no need to
+                // decrypt our own outgoing message.
+                next[tempIdx] = { ...data, content: prev[tempIdx].content, metadata: prev[tempIdx].metadata } as Message
                 return next
               }
             }
@@ -105,7 +131,7 @@ export function useChat(conversationId: string) {
                 liveWs.send(JSON.stringify({ type: 'read' }))
               }
             }
-            return [data as Message, ...prev]
+            return [decryptMessage(data as Message), ...prev]
           })
         } else if (data.type === 'error') {
           if (data.code === 'blocked') {
@@ -146,7 +172,7 @@ export function useChat(conversationId: string) {
         } else if (data.type === 'message_edited') {
           setMessages(prev => prev.map(m =>
             m.id === data.message_id
-              ? { ...m, content: data.content, edited_at: data.edited_at }
+              ? { ...m, content: decryptText(data.content, partnerKeyRef.current), edited_at: data.edited_at }
               : m,
           ))
         }
@@ -213,10 +239,31 @@ export function useChat(conversationId: string) {
     setMessages(prev => [optimistic, ...prev])
     activeSendTempIdRef.current = tempId
 
+    // Encrypt the wire payload only — the optimistic bubble above keeps the
+    // local plaintext for instant display. Text-only for now (see lib/e2ee.ts).
+    let wireContent = content
+    let wireMetadata = metadata
+    if (contentType === 'text') {
+      if (!partnerKeyRef.current) {
+        activeSendTempIdRef.current = null
+        pendingTempIds.current.delete(tempId)
+        setFailedIds(prev => new Set([...prev, tempId]))
+        throw new Error('Partner encryption key not loaded yet')
+      }
+      wireContent = encryptText(content, partnerKeyRef.current)
+      const replyTo = (metadata as any)?.reply_to
+      if (replyTo?.content) {
+        wireMetadata = {
+          ...metadata,
+          reply_to: { ...replyTo, content: encryptText(replyTo.content, partnerKeyRef.current) },
+        }
+      }
+    }
+
     const ws = wsRef.current
     if (ws && ws.readyState === WebSocket.OPEN) {
       try {
-        ws.send(JSON.stringify({ type: 'message', content, content_type: contentType, metadata }))
+        ws.send(JSON.stringify({ type: 'message', content: wireContent, content_type: contentType, metadata: wireMetadata }))
       } catch {
         activeSendTempIdRef.current = null
         pendingTempIds.current.delete(tempId)
@@ -227,14 +274,15 @@ export function useChat(conversationId: string) {
 
     // REST fallback
     try {
-      const msg = await ApiService.sendMessage(conversationId, content, contentType, metadata)
+      const msg = await ApiService.sendMessage(conversationId, wireContent, contentType, wireMetadata)
       activeSendTempIdRef.current = null
       pendingTempIds.current.delete(tempId)
       setMessages(prev => {
         const idx = prev.findIndex(m => m.id === tempId)
-        if (idx === -1) return prev.some(m => m.id === msg.id) ? prev : [msg, ...prev]
+        if (idx === -1) return prev.some(m => m.id === msg.id) ? prev : [decryptMessage(msg), ...prev]
         const next = [...prev]
-        next[idx] = msg
+        // Keep our own local plaintext content/metadata, same reasoning as the WS path above.
+        next[idx] = { ...msg, content: prev[idx].content, metadata: prev[idx].metadata }
         return next
       })
     } catch {
@@ -346,7 +394,7 @@ export function useChat(conversationId: string) {
     try {
       const older = await ApiService.getMessages(conversationId, oldest.sent_at)
       if (older.length > 0) {
-        setMessages(prev => [...prev, ...older])
+        setMessages(prev => [...prev, ...older.map(decryptMessage)])
         return true
       }
       noMoreRef.current = true
@@ -382,6 +430,16 @@ export function useChat(conversationId: string) {
     setMessages(prev => prev.map(m => (m.id === msgId ? { ...m, content, edited_at: editedAt } : m)))
   }, [])
 
+  // Encrypts the new text before sending the edit — same key material as
+  // sendMessage — then applies the local plaintext version optimistically
+  // (no need to decrypt our own edit echo, same reasoning as sendMessage).
+  const editMessageText = useCallback(async (msgId: string, newText: string): Promise<void> => {
+    if (!partnerKeyRef.current) throw new Error('Partner encryption key not loaded yet')
+    const wireContent = encryptText(newText, partnerKeyRef.current)
+    const result = await ApiService.editMessage(msgId, wireContent)
+    applyEditLocally(msgId, newText, result.edited_at)
+  }, [applyEditLocally])
+
   return {
     messages,
     isPartnerTyping,
@@ -406,5 +464,6 @@ export function useChat(conversationId: string) {
     applyUnsentLocally,
     removeMessageLocally,
     applyEditLocally,
+    editMessageText,
   }
 }

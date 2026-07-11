@@ -28,6 +28,7 @@ import {
   ChevronRight,
   Clock,
   Flag,
+  Ghost,
   MapPin,
   MoreVertical,
   Pencil,
@@ -614,12 +615,14 @@ export default function EventDetailScreen() {
 
         {/* Host card */}
         {event.host_name && (
-          <Pressable 
+          <Pressable
             style={styles.hostCard}
             onPress={() => router.push(`/(profile)/${event.host_id}` as any)}
           >
-            <View style={styles.hostAvatar}>
-              {event.host_avatar ? (
+            <View style={[styles.hostAvatar, event.host_is_deleted && styles.hostAvatarDeleted]}>
+              {event.host_is_deleted ? (
+                <Ghost size={20} color={Colors.inkDisabled} strokeWidth={1.5} />
+              ) : event.host_avatar ? (
                 <Image source={{ uri: event.host_avatar }} style={styles.hostAvatarImg} contentFit="cover" />
               ) : (
                 <Text style={styles.hostAvatarFallback}>{event.host_name[0]}</Text>
@@ -627,7 +630,9 @@ export default function EventDetailScreen() {
             </View>
             <View style={styles.hostInfo}>
               <Text style={styles.hostLabel}>Hosted by</Text>
-              <Text style={styles.hostName}>{event.host_id === myId ? 'You' : event.host_name}</Text>
+              <Text style={[styles.hostName, event.host_is_deleted && styles.hostNameDeleted]}>
+                {event.host_is_deleted ? '[deleted]' : event.host_id === myId ? 'You' : event.host_name}
+              </Text>
             </View>
           </Pressable>
         )}
@@ -1088,9 +1093,11 @@ const styles = StyleSheet.create({
   },
   hostAvatarImg: { width: '100%', height: '100%' },
   hostAvatarFallback: { color: Colors.inkPrimary, fontFamily: FontFamily.headingBold, fontSize: 18 },
+  hostAvatarDeleted: { backgroundColor: Colors.surface },
   hostInfo: { flex: 1 },
   hostLabel: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, marginBottom: 2 },
   hostName: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
+  hostNameDeleted: { color: Colors.inkDisabled, fontFamily: FontFamily.headingBold },
 
   guestCard: {
     backgroundColor: Colors.surface,

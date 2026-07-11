@@ -106,6 +106,7 @@ export interface EventSummary {
   cover_photos: EventPhoto[]
   host_name: string | null
   host_avatar: string | null
+  host_is_deleted?: boolean
   age_restriction: number
   attendee_count: number
   is_cancelled?: boolean
@@ -214,6 +215,7 @@ export interface Conversation {
   partner_username: string | null
   partner_avatar: string | null
   partner_is_deleted: boolean
+  partner_public_key: string | null
   last_message: string | null
   last_message_type: string | null
   last_sender_id: string | null
@@ -638,6 +640,11 @@ class ApiService {
     return this.get<Message[]>(`${endpoint}${qs}`)
   }
 
+  static async getPartnerKey(convId: string): Promise<{ partner_id: string; partner_public_key: string | null }> {
+    const endpoint = ENDPOINTS.CONVERSATION_PARTNER_KEY.replace(':id', convId)
+    return this.get(endpoint)
+  }
+
   static async sendMessage(convId: string, content: string, contentType = 'text', metadata?: object): Promise<Message> {
     const endpoint = ENDPOINTS.CONVERSATION_MESSAGES.replace(':id', convId)
     return this.post<Message>(endpoint, { content, content_type: contentType, metadata })
@@ -848,6 +855,10 @@ class ApiService {
 
   static async setDiscoverable(discoverable: boolean): Promise<{ ok: boolean; discoverable: boolean }> {
     return this.patch(ENDPOINTS.SET_DISCOVERABLE, { discoverable })
+  }
+
+  static async setPublicKey(publicKey: string): Promise<{ ok: boolean }> {
+    return this.patch(ENDPOINTS.SET_PUBLIC_KEY, { public_key: publicKey })
   }
 
 

@@ -29,6 +29,11 @@ def send_vibe(body: SendVibeRequest, background_tasks: BackgroundTasks, current_
         raise HTTPException(status_code=400, detail="Cannot vibe yourself")
 
     with get_db() as (cur, conn):
+        cur.execute("SELECT COALESCE(is_deleted, FALSE) AS is_deleted FROM users WHERE id = %s::uuid", (receiver_id,))
+        target = cur.fetchone()
+        if not target or target["is_deleted"]:
+            raise HTTPException(status_code=404, detail="User not found")
+
         # Check active cooldown
         cur.execute(
             """

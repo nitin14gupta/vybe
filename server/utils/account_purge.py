@@ -2,26 +2,44 @@ from db.config import get_db
 from utils.r2_client import r2_client
 
 PURGE_AFTER_DAYS = 30
+SENTINEL_USER_ID = "00000000-0000-0000-0000-000000000001"
+
+
+def _ensure_sentinel_user(cur) -> None:
+    cur.execute(
+        """
+        INSERT INTO users (id, phone, name, profile_complete, is_active, is_deleted, discoverable)
+        VALUES (%s::uuid, 'deleted-user', '[deleted]', TRUE, FALSE, TRUE, FALSE)
+        ON CONFLICT (id) DO NOTHING
+        """,
+        (SENTINEL_USER_ID,),
+    )
 
 
 def purge_expired_deleted_accounts() -> int:
     """Hard-deletes accounts that were soft-deleted more than PURGE_AFTER_DAYS
     ago. Past this point recovery is impossible — the 30-day "email us to
-    restore" window in delete-account.tsx has closed. Deletes R2-stored
-    files first (photos, voice recording), then hard-deletes the user row;
-    every other table cascades via ON DELETE CASCADE (see queries.sql).
+    restore" window in delete-account.tsx has closed.
 
-    Note: since events.host_id also cascades, this also removes any past
-    events the purged user hosted — including other users' attendance,
-    reviews, and payment records for those events. That's accepted as
-    intended full-purge behavior, not a bug.
+    Order per user: (1) reassign any events they hosted to the sentinel
+    "Deleted User" account, so other attendees' RSVP/review/payment history
+    for those events survives; (2) delete their R2-stored files (photos,
+    voice recording); (3) hard-delete the user row, which cascades via
+    ON DELETE CASCADE through everything that's genuinely theirs alone
+    (messages, follows, wallet transactions, their own RSVPs, etc. — see
+    queries.sql).
     """
-    with get_db() as (cur, _):
+    with get_db() as (cur, conn):
+        _ensure_sentinel_user(cur)
+        conn.commit()
+
         cur.execute(
-            """
+            f"""
             SELECT id::text FROM users
-            WHERE is_deleted = TRUE AND deleted_at < NOW() - INTERVAL '%s days'
-            """ % PURGE_AFTER_DAYS
+            WHERE is_deleted = TRUE AND deleted_at < NOW() - INTERVAL '{PURGE_AFTER_DAYS} days'
+              AND id != %s::uuid
+            """,
+            (SENTINEL_USER_ID,),
         )
         expired = [row["id"] for row in cur.fetchall()]
 
@@ -45,6 +63,10 @@ def purge_expired_deleted_accounts() -> int:
                 print(f"[PURGE] R2 voice delete failed for user {uid}: {e}", flush=True)
 
         with get_db() as (cur, conn):
+            cur.execute(
+                "UPDATE events SET host_id = %s::uuid WHERE host_id = %s::uuid",
+                (SENTINEL_USER_ID, uid),
+            )
             cur.execute("DELETE FROM users WHERE id = %s::uuid", (uid,))
             conn.commit()
         print(f"[PURGE] Hard-deleted user {uid} (30-day window elapsed)", flush=True)

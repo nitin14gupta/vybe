@@ -103,6 +103,7 @@ class EventSummary(BaseModel):
     cover_photos: List[EventPhotoItem] = []
     host_name: Optional[str] = None
     host_avatar: Optional[str] = None
+    host_is_deleted: bool = False
     age_restriction: int
     attendee_count: int = 0
     is_cancelled: bool = False
@@ -285,6 +286,7 @@ def list_events(
             {dist_sql} AS distance_km,
             u.name AS host_name,
             (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
+            COALESCE(u.is_deleted, FALSE) AS host_is_deleted,
             (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id = e.id AND ea.status = 'going')::int AS attendee_count,
             {relationship_select}
         FROM events e
@@ -327,6 +329,7 @@ def get_hosted_events(current_user: dict = Depends(get_current_user)):
                 NULL::int AS distance_km,
                 u.name AS host_name,
                 (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
+                COALESCE(u.is_deleted, FALSE) AS host_is_deleted,
                 (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id = e.id AND ea.status = 'going')::int AS attendee_count
             FROM events e
             JOIN users u ON u.id = e.host_id
@@ -364,6 +367,7 @@ def get_joined_events(current_user: dict = Depends(get_current_user)):
                 NULL::int AS distance_km,
                 u.name AS host_name,
                 (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
+                COALESCE(u.is_deleted, FALSE) AS host_is_deleted,
                 (SELECT COUNT(*) FROM event_attendees ea2 WHERE ea2.event_id = e.id AND ea2.status = 'going')::int AS attendee_count
             FROM events e
             JOIN users u ON u.id = e.host_id
@@ -429,6 +433,7 @@ def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
                 (e.date_time - INTERVAL '7 hours')::text AS edit_deadline,
                 u.name AS host_name,
                 (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
+                COALESCE(u.is_deleted, FALSE) AS host_is_deleted,
                 (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id = e.id AND ea.status = 'going')::int AS attendee_count,
                 NULL::int AS distance_km,
                 going_ea.ticket_token AS my_ticket_token,

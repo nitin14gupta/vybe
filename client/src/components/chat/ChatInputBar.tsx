@@ -20,6 +20,7 @@ export type RecordState = 'idle' | 'recording' | 'preview' | 'sending'
 
 interface Props {
   blockStatus: 'none' | 'i_blocked' | 'they_blocked'
+  partnerIsDeleted?: boolean
   inputText: string
   recordState: RecordState
   recordDurationMs: number
@@ -95,7 +96,7 @@ const pv = StyleSheet.create({
 })
 
 export function ChatInputBar({
-  blockStatus, inputText, recordState, recordDurationMs, recordedVoice,
+  blockStatus, partnerIsDeleted, inputText, recordState, recordDurationMs, recordedVoice,
   replyingTo, editingMessage, myId, partnerName,
   onTextChange, onSend, onMicPress, onRecordStop, onRecordCancel,
   onSendVoice, onDiscardVoice,
@@ -125,7 +126,15 @@ export function ChatInputBar({
     setTimeout(() => sheetRef.current?.present(), 160)
   }
 
-  // ── Block states ────────────────────────────────────────────────────────────
+  // ── Deleted partner / block states ──────────────────────────────────────────
+
+  if (partnerIsDeleted) {
+    return (
+      <View style={s.blockNotice} onLayout={onLayout}>
+        <Text style={s.blockNoticeText}>This account no longer exists.</Text>
+      </View>
+    )
+  }
 
   if (blockStatus === 'they_blocked') {
     return (

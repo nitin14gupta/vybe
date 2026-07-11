@@ -10,7 +10,12 @@
     "icon": "./assets/images/icon.png",
     "ios": {
       "bundleIdentifier": "in.vybe.app",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Vybe uses your camera to scan QR tickets at event check-in.",
+        "NSPhotoLibraryUsageDescription": "Vybe uses your photo library so you can choose profile and event photos.",
+        "NSLocationWhenInUseUsageDescription": "Vybe uses your location to show nearby events and how far they are from you."
+      }
     },
     "android": {
       "package": "in.vybe.app",

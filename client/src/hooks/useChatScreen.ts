@@ -137,6 +137,7 @@ export function useChatScreen(convId: string) {
   const [partnerUsername, setPartnerUsername] = useState<string | null>(null)
   const [partnerAvatar, setPartnerAvatar] = useState<string | null>(null)
   const [partnerId, setPartnerId] = useState<string | null>(null)
+  const [partnerIsDeleted, setPartnerIsDeleted] = useState(false)
   const [blockStatus, setBlockStatus] = useState<'none' | 'i_blocked' | 'they_blocked'>('none')
 
   // UI state
@@ -156,7 +157,7 @@ export function useChatScreen(convId: string) {
     isWsConnected, wsError, loading, partnerSeenAt,
     failedIds, loadingMore, sendMessage, retryMessage, sendTyping, sendVoiceTyping, loadMore, reactToMessage,
     addOptimisticMedia, sendMediaMessage, markMediaFailed, clearMediaFailed,
-    applyUnsentLocally, removeMessageLocally, applyEditLocally,
+    applyUnsentLocally, removeMessageLocally, editMessageText,
   } = useChat(convId)
 
   const { viewingMedia, openMedia, closeMedia } = useImageViewer()
@@ -184,6 +185,7 @@ export function useChatScreen(convId: string) {
         setPartnerUsername(conv.partner_username ?? null)
         setPartnerAvatar(conv.partner_avatar)
         setPartnerId(conv.partner_id)
+        setPartnerIsDeleted(!!conv.partner_is_deleted)
         setBlockStatus((conv as any).block_status ?? 'none')
       }
     }).catch(() => {})
@@ -211,8 +213,7 @@ export function useChatScreen(convId: string) {
       setInputText('')
       setEditingMessage(null)
       try {
-        const result = await ApiService.editMessage(target.id, text)
-        applyEditLocally(target.id, result.content, result.edited_at)
+        await editMessageText(target.id, text)
       } catch {
         setInputText(text)
         setEditingMessage(target)
@@ -240,7 +241,7 @@ export function useChatScreen(convId: string) {
       setInputText(text)
       showPill("Message didn't send, tap to retry", 'error')
     }
-  }, [inputText, sendMessage, sendTyping, replyingTo, myId, partnerName, showPill, editingMessage, applyEditLocally])
+  }, [inputText, sendMessage, sendTyping, replyingTo, myId, partnerName, showPill, editingMessage, editMessageText])
 
   const handleTextChange = useCallback((t: string) => {
     setInputText(t)
@@ -444,7 +445,7 @@ export function useChatScreen(convId: string) {
 
   return {
     // partner
-    partnerName, partnerUsername, partnerAvatar, partnerId, blockStatus,
+    partnerName, partnerUsername, partnerAvatar, partnerId, partnerIsDeleted, blockStatus,
     // chat
     messages, listData, isPartnerTyping, isPartnerRecording, isPartnerOnline,
     isWsConnected, loading,

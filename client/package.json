@@ -54,6 +54,7 @@
     "react-native-customui": "^2.2.9",
     "react-native-fast-confetti": "^2.0.0",
     "react-native-gesture-handler": "~2.31.1",
+    "react-native-get-random-values": "^2.0.0",
     "react-native-keyboard-controller": "^1.21.12",
     "react-native-maps": "1.27.2",
     "react-native-qrcode-styled": "^0.4.0",
@@ -72,6 +73,8 @@
     "rn-emoji-keyboard": "^1.7.0",
     "socket.io-client": "^4.8.3",
     "tailwindcss": "^3.4.19",
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },

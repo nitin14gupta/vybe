@@ -141,6 +141,7 @@ def list_conversations(current_user: dict = Depends(get_current_user)):
                 CASE WHEN c.user1_id = %s::uuid THEN u2.username ELSE u1.username END AS partner_username,
                 CASE WHEN c.user1_id = %s::uuid THEN p2.url ELSE p1.url END AS partner_avatar,
                 CASE WHEN c.user1_id = %s::uuid THEN COALESCE(u2.is_deleted, FALSE) ELSE COALESCE(u1.is_deleted, FALSE) END AS partner_is_deleted,
+                CASE WHEN c.user1_id = %s::uuid THEN u2.public_key ELSE u1.public_key END AS partner_public_key,
                 -- Last message
                 m.content AS last_message,
                 m.content_type AS last_message_type,
@@ -189,7 +190,7 @@ def list_conversations(current_user: dict = Depends(get_current_user)):
               AND NOT (%s::uuid = ANY(COALESCE(c.hidden_by, '{}'::uuid[])))
             ORDER BY COALESCE(c.last_message_at, c.created_at) DESC
             """,
-            (uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid),
+            (uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid),
         )
         rows = cur.fetchall()
 
@@ -204,6 +205,19 @@ def list_conversations(current_user: dict = Depends(get_current_user)):
     locked = [c for c in all_convs if c["status"] == "pending" and c["last_sender_id"] == uid]
 
     return {"pending": pending, "active": active, "locked": locked}
+
+
+@router.get("/chat/conversations/{conv_id}/partner-key")
+def get_partner_key(conv_id: str, current_user: dict = Depends(get_current_user)):
+    """Returns the other participant's X25519 public key for end-to-end
+    encrypting/decrypting this conversation's messages client-side."""
+    uid = current_user["id"]
+    with get_db() as (cur, _):
+        conv = _get_conversation(cur, conv_id, uid)
+        partner_id = conv["user2_id"] if conv["user1_id"] == uid else conv["user1_id"]
+        cur.execute("SELECT public_key FROM users WHERE id = %s::uuid", (partner_id,))
+        row = cur.fetchone()
+    return {"partner_id": partner_id, "partner_public_key": row["public_key"] if row else None}
 
 
 @router.get("/chat/conversations/{conv_id}/messages")
@@ -539,7 +553,9 @@ async def send_message_rest(
     asyncio.create_task(_publish(f"conv:{conv_id}", {"type": "message", **out}))
 
     if partner_id:
-        preview = (body.content or "")[:80] if body.content_type == "text" else "Sent you a message"
+        # Text content is end-to-end encrypted — the server can't read it to
+        # build a preview, so text messages get the same generic copy media does.
+        preview = "Sent you a message"
         background_tasks.add_task(
             send_push, partner_id, sender_name, preview,
             {"type": "conversation", "conv_id": conv_id},
@@ -768,7 +784,8 @@ async def chat_websocket(
                         cur.execute("SELECT name FROM users WHERE id = %s::uuid", (uid,))
                         ws_sender_row = cur.fetchone()
                         ws_sender_name = ws_sender_row["name"] if ws_sender_row else "Someone"
-                    ws_preview = (content or "")[:80] if content_type == "text" else "Sent you a message"
+                    # Text content is end-to-end encrypted — server can't preview it.
+                    ws_preview = "Sent you a message"
                     asyncio.create_task(asyncio.to_thread(
                         send_push, partner_id, ws_sender_name, ws_preview,
                         {"type": "conversation", "conv_id": conv_id},

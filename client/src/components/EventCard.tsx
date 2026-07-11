@@ -86,7 +86,9 @@ export function EventCard({ event, onPress, showHost, isPast, isCancelled, foote
         <View style={s.cardFooter}>
           <Text style={s.title} numberOfLines={2}>{event.title}</Text>
           {showHost && event.host_name ? (
-            <Text style={s.hostName} numberOfLines={1}>by {event.host_name}</Text>
+            <Text style={[s.hostName, event.host_is_deleted && s.hostNameDeleted]} numberOfLines={1}>
+              by {event.host_name}
+            </Text>
           ) : null}
           <Text style={s.date}>{formatEventDate(event.date_time)}</Text>
         </View>
@@ -156,6 +158,7 @@ const s = StyleSheet.create({
   cardFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 14 },
   title: { fontFamily: FontFamily.headingBold, fontSize: 16, color: '#fff', lineHeight: 21 },
   hostName: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: 'rgba(255,107,53,0.9)', marginTop: 2 },
+  hostNameDeleted: { color: 'rgba(255,255,255,0.4)' },
   date: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 3 },
 
   meta: {
