@@ -133,7 +133,16 @@ export default function ProfileScreen() {
             <Pencil size={18} color={Colors.inkPrimary} strokeWidth={1.8} />
             <Text style={styles.actionBtnTextSecondary}>Edit Profile</Text>
           </Pressable>
-          <Pressable onPress={() => { hTap(); /* Handle share */ }} style={styles.actionBtnPrimary}>
+          <Pressable
+            onPress={() => {
+              hTap()
+              router.push({
+                pathname: '/(profile)/qr',
+                params: { userId: profile.id, username: profile.username ?? '', name: profile.name ?? '' },
+              } as any)
+            }}
+            style={styles.actionBtnPrimary}
+          >
             <Share size={18} color={'#111'} strokeWidth={2} />
             <Text style={styles.actionBtnTextPrimary}>Share Profile</Text>
           </Pressable>

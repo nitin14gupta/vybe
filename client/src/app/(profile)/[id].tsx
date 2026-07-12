@@ -493,6 +493,7 @@ export default function UserProfileScreen() {
 
       <ProfileMenuSheet
         visible={menuOpen}
+        userId={profile.id}
         username={profile.username ?? null}
         targetName={profile.name ?? null}
         isBlocked={blockedByMe}

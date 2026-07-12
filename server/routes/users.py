@@ -1,6 +1,8 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, status, Depends
 from pydantic import BaseModel
 from datetime import date, datetime, timezone, timedelta
+from typing import Optional
+import uuid as uuid_lib
 from schemas.user import (
     ProfileCreate, ProfileUpdate, LocationUpdate, LivePingUpdate, InterestsUpdate,
     UserResponse, ProfileResponse, DEFAULT_BADGES,
@@ -87,6 +89,19 @@ def _fetch_user(cur, user_id: str, viewer_id: str) -> dict | None:
     d["is_blocked_by_them"] = bool(d.get("is_blocked_by_them", False))
     d["username"] = d.get("username")
     return d
+
+
+def _resolve_user_id(cur, user_id_or_username: str) -> Optional[str]:
+    """Accepts either a real user id or a username — shareable profile links/QR
+    codes embed the username (stable, human-readable), so lookups by id need to
+    fall back to a username match transparently."""
+    try:
+        uuid_lib.UUID(user_id_or_username)
+        return user_id_or_username
+    except ValueError:
+        cur.execute("SELECT id::text FROM users WHERE username = %s", (user_id_or_username,))
+        row = cur.fetchone()
+        return row["id"] if row else None
 
 
 def _age_from_dob(dob: date) -> int:
@@ -415,6 +430,11 @@ def search_users(
 def get_user_profile(user_id: str, current_user: dict = Depends(get_current_user)):
     viewer_id = current_user["id"]
     with get_db() as (cur, _):
+        resolved_id = _resolve_user_id(cur, user_id)
+        if not resolved_id:
+            raise HTTPException(status_code=404, detail="User not found")
+        user_id = resolved_id
+
         user = _fetch_user(cur, user_id, viewer_id)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")

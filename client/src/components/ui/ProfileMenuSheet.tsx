@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, Pressable, Share } from 'react-native'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import * as Clipboard from 'expo-clipboard'
-import { Ban, Flag, Link2, Share2 } from 'lucide-react-native'
+import { router } from 'expo-router'
+import { Ban, Flag, Link2, Share2, QrCode } from 'lucide-react-native'
 import { hError, hSuccess, hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import { BlockSheet } from './BlockSheet'
@@ -11,6 +12,7 @@ import { ReportSheet } from './ReportSheet'
 
 interface Props {
   visible: boolean
+  userId: string
   username: string | null
   targetName: string | null
   isBlocked: boolean
@@ -24,7 +26,7 @@ function renderBackdrop(props: BottomSheetBackdropProps) {
   return <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close" opacity={0.55} />
 }
 
-function ProfileMenuSheetCore({ username, targetName, isBlocked, onBlock, onUnblock, onReport, onClose }: Omit<Props, 'visible'>) {
+function ProfileMenuSheetCore({ userId, username, targetName, isBlocked, onBlock, onUnblock, onReport, onClose }: Omit<Props, 'visible'>) {
   const sheetRef = useRef<BottomSheetModal>(null)
   const [blockOpen, setBlockOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
@@ -81,6 +83,15 @@ function ProfileMenuSheetCore({ username, targetName, isBlocked, onBlock, onUnbl
     onClose()
   }
 
+  const handleQrCode = () => {
+    hTap()
+    onClose()
+    router.push({
+      pathname: '/(profile)/qr',
+      params: { userId, username: username ?? '', name: targetName ?? '' },
+    } as any)
+  }
+
   return (
     <>
       <BottomSheetModal
@@ -108,6 +119,10 @@ function ProfileMenuSheetCore({ username, targetName, isBlocked, onBlock, onUnbl
           <Pressable style={s.row} onPress={handleShare}>
             <Share2 size={20} color={Colors.inkPrimary} strokeWidth={1.8} />
             <Text style={s.rowText}>Share Profile</Text>
+          </Pressable>
+          <Pressable style={s.row} onPress={handleQrCode}>
+            <QrCode size={20} color={Colors.inkPrimary} strokeWidth={1.8} />
+            <Text style={s.rowText}>QR Code</Text>
           </Pressable>
           <View style={s.divider} />
           <Pressable style={s.cancelRow} onPress={() => { hTap(); onClose() }}>

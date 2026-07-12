@@ -16,6 +16,7 @@ import { tokenStorage } from '@/lib/tokenStorage'
 import ApiService from '@/api/apiService'
 import { PillOverlay, PermissionSheetOverlay } from '@/components/ui'
 import { useNotificationSetup } from '@/hooks/useNotificationSetup'
+import { useDeepLinkRouter } from '@/hooks/useDeepLinkRouter'
 import { useE2EESetup } from '@/hooks/useE2EESetup'
 
 SplashScreen.preventAutoHideAsync()
@@ -52,6 +53,7 @@ export default function RootLayout() {
   const [authReady, setAuthReady] = useState(false)
   const { setAuth } = useAuthStore()
   useNotificationSetup()
+  useDeepLinkRouter()
   useE2EESetup()
 
   useEffect(() => {

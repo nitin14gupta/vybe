@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react'
 import * as Notifications from 'expo-notifications'
 import { Platform } from 'react-native'
-import { router } from 'expo-router'
 import { useAuthStore } from '@/store/auth'
 import { useNotificationStore } from '@/store/notificationStore'
 import ApiService from '@/api/apiService'
+import { pushDataToTarget } from '@/lib/deepLink'
+import { navigateToTarget } from '@/hooks/useDeepLinkRouter'
 
 const PROJECT_ID = 'da4e0090-c985-42e9-ab31-f6832bcc46e9'
 
@@ -24,6 +25,7 @@ export function useNotificationSetup() {
   const registeredToken = useNotificationStore(s => s.registeredToken)
   const setRegisteredToken = useNotificationStore(s => s.setRegisteredToken)
   const listenerRef = useRef<Notifications.EventSubscription | null>(null)
+  const handledColdStart = useRef(false)
 
   // Request permission once the user is authenticated — never before
   useEffect(() => {
@@ -65,23 +67,22 @@ export function useNotificationSetup() {
         console.warn('[push] failed to get/register Expo push token:', err)
       })
 
+    // Cold start — app was launched by tapping a notification. The listener
+    // below only fires for taps that happen while it's alive, which a launch
+    // from a killed state isn't guaranteed to hit — so check for it separately,
+    // once per session.
+    if (!handledColdStart.current) {
+      handledColdStart.current = true
+      Notifications.getLastNotificationResponseAsync().then(res => {
+        if (!res) return
+        const target = pushDataToTarget(res.notification.request.content.data)
+        if (target) navigateToTarget(target)
+      })
+    }
+
     listenerRef.current = Notifications.addNotificationResponseReceivedListener(res => {
-      const d = res.notification.request.content.data as any
-      if (!d?.type) return
-      switch (d.type) {
-        case 'conversation':
-          if (d.conv_id) router.push(`/(chat)/${d.conv_id}` as any)
-          break
-        case 'profile':
-          if (d.user_id) router.push(`/(profile)/${d.user_id}` as any)
-          break
-        case 'event':
-          if (d.event_id) router.push(`/(events)/${d.event_id}` as any)
-          break
-        case 'vybe':
-          router.push('/(tabs)/chat' as any)
-          break
-      }
+      const target = pushDataToTarget(res.notification.request.content.data)
+      if (target) navigateToTarget(target)
     })
 
     return () => listenerRef.current?.remove()

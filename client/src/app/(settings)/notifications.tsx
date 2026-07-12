@@ -10,6 +10,8 @@ import { ChevronLeft, Bell, UserPlus, Flame, MessageCircle } from 'lucide-react-
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import ApiService, { AppNotification } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
+import { notifEntityToTarget, targetToHref } from '@/lib/deepLink'
+import { useAuthStore } from '@/store/auth'
 
 // ── Dev-only mock data — lets us eyeball every notification type/copy at once ──
 // (__DEV__ gated below; never shows in a production build)
@@ -188,11 +190,8 @@ export default function NotificationsScreen() {
 
   const handleTap = async (item: AppNotification) => {
     await markRead(item)
-    if (item.entity_type === 'event' && item.entity_id) {
-      router.push(`/(events)/${item.entity_id}` as any)
-    } else if (item.entity_type === 'user' && item.entity_id) {
-      router.push(`/(profile)/${item.entity_id}` as any)
-    }
+    const target = notifEntityToTarget(item.entity_type, item.entity_id)
+    if (target) router.push(targetToHref(target) as any)
   }
 
   const handleAction = async (item: AppNotification) => {
@@ -211,9 +210,9 @@ export default function NotificationsScreen() {
           : n))
       }
     } else if (item.action === 'send_vybe') {
-      router.push(`/(profile)/${item.action_target_id}` as any)
+      router.push(targetToHref({ screen: 'profile', id: item.action_target_id }) as any)
     } else if (item.action === 'message') {
-      router.push(`/(chat)/${item.action_target_id}` as any)
+      router.push(targetToHref({ screen: 'chat', id: item.action_target_id }) as any)
     }
   }
 
