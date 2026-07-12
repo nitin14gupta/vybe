@@ -4,6 +4,7 @@ import { useOnboardingStore } from '@/store/onboarding'
 import { tokenStorage } from '@/lib/tokenStorage'
 import { sendOTP, verifyOTP, logout as apiLogout } from '@/api/auth'
 import ApiService from '@/api/apiService'
+import { EAS_PROJECT_ID } from '@/api/config'
 import { useNotificationStore } from '@/store/notificationStore'
 
 export function useAuth() {
@@ -37,7 +38,7 @@ export function useAuth() {
     if (useNotificationStore.getState().permission === 'granted') {
       try {
         const { data: token } = await Notifications.getExpoPushTokenAsync({
-          projectId: 'da4e0090-c985-42e9-ab31-f6832bcc46e9',
+          projectId: EAS_PROJECT_ID,
         })
         await ApiService.removeDeviceToken(token)
       } catch {}

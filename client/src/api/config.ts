@@ -1,5 +1,10 @@
 import Constants from 'expo-constants'
 
+export const APP_SCHEME: string = (Constants.expoConfig?.scheme as string | undefined) ?? 'vybe'
+export const BUNDLE_ID: string =
+  (Constants.expoConfig?.ios?.bundleIdentifier as string | undefined) ?? 'in.vybe.app'
+export const EAS_PROJECT_ID: string = Constants.expoConfig?.extra?.eas?.projectId as string
+export const UNIVERSAL_LINK_DOMAIN = 'vybe.uilora.com'
 export const API_BASE_URL: string =
   (Constants.expoConfig?.extra?.apiUrl as string | undefined) ?? 'http://192.168.0.103:8000'
 

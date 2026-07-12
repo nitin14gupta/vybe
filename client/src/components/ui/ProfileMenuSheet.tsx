@@ -7,6 +7,7 @@ import { router } from 'expo-router'
 import { Ban, Flag, Link2, Share2, QrCode } from 'lucide-react-native'
 import { hError, hSuccess, hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
+import { APP_SCHEME } from '@/api/config'
 import { BlockSheet } from './BlockSheet'
 import { ReportSheet } from './ReportSheet'
 
@@ -69,7 +70,7 @@ function ProfileMenuSheetCore({ userId, username, targetName, isBlocked, onBlock
 
   const handleCopyUrl = async () => {
     hSuccess()
-    const url = username ? `vybe://profile/${username}` : `vybe://profile`
+    const url = username ? `${APP_SCHEME}://profile/${username}` : `${APP_SCHEME}://profile`
     await Clipboard.setStringAsync(url)
     setCopied(true)
     setTimeout(() => { setCopied(false); onClose() }, 900)
@@ -78,7 +79,7 @@ function ProfileMenuSheetCore({ userId, username, targetName, isBlocked, onBlock
   const handleShare = async () => {
     hTap()
     const handle = username ? `@${username}` : targetName ?? 'this person'
-    const url = username ? `vybe://profile/${username}` : ''
+    const url = username ? `${APP_SCHEME}://profile/${username}` : ''
     await Share.share({ message: `Check out ${handle} on Vybe${url ? `: ${url}` : ''}` })
     onClose()
   }

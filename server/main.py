@@ -15,7 +15,9 @@ from routes.devices import router as devices_router
 from routes.wallet import router as wallet_router
 from routes.payments import router as payments_router
 from routes.misc import router as misc_router
+from routes.wellknown import router as wellknown_router
 from utils.account_purge import purge_expired_deleted_accounts
+from app_config import APP_SCHEME
 
 PURGE_INTERVAL_SECONDS = 24 * 60 * 60
 
@@ -44,7 +46,7 @@ app = FastAPI(title="Vybe API", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8081", "http://localhost:19006", "vybe://"],
+    allow_origins=["http://localhost:8081", "http://localhost:19006", f"{APP_SCHEME}://"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -63,6 +65,7 @@ app.include_router(devices_router)
 app.include_router(wallet_router)
 app.include_router(payments_router)
 app.include_router(misc_router)
+app.include_router(wellknown_router)
 
 
 @app.get("/health")

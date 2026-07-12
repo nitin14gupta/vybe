@@ -1,4 +1,5 @@
 import * as Linking from 'expo-linking'
+import { APP_SCHEME } from '@/api/config'
 
 // Canonical "where a link/notification points" — the single source of truth
 // consumed by push-notification taps, in-app notification-row taps, and
@@ -63,7 +64,13 @@ export function notifEntityToTarget(entityType: string | null, entityId: string 
 // GET /{user_id}/profile resolves either a username or an id), falling back
 // to the id for the rare user who hasn't been assigned one yet.
 export function buildProfileShareUrl(userId: string, username?: string | null): string {
-  return `vybe://profile/${username || userId}`
+  return `${APP_SCHEME}://profile/${username || userId}`
+}
+
+// Builds the shareable event link — path must stay singular ("event", not
+// "events") to match parseIncomingUrl below.
+export function buildEventShareUrl(eventId: string): string {
+  return `${APP_SCHEME}://event/${eventId}`
 }
 
 // Parses an externally-opened URL (vybe://event/123, and later

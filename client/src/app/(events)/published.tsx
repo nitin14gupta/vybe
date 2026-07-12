@@ -19,6 +19,7 @@ import { usePillStore } from '@/store/pillStore'
 import ApiService from '@/api/apiService'
 import { EventShareCard } from '@/components/EventShareCard'
 import { useImageShare } from '@/hooks/useImageShare'
+import { buildEventShareUrl } from '@/lib/deepLink'
 import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 import { BlurView } from 'expo-blur'
 
@@ -148,8 +149,7 @@ export default function PublishedScreen() {
 
   const copyLink = () => {
     hTap()
-    Share.share({ message: `vybe://events/${id}` }).then(() => {
-    })
+    Share.share({ message: buildEventShareUrl(id) })
   }
 
   const goToMyEvents = () => {

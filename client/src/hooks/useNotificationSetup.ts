@@ -4,10 +4,9 @@ import { Platform } from 'react-native'
 import { useAuthStore } from '@/store/auth'
 import { useNotificationStore } from '@/store/notificationStore'
 import ApiService from '@/api/apiService'
+import { EAS_PROJECT_ID } from '@/api/config'
 import { pushDataToTarget } from '@/lib/deepLink'
 import { navigateToTarget } from '@/hooks/useDeepLinkRouter'
-
-const PROJECT_ID = 'da4e0090-c985-42e9-ab31-f6832bcc46e9'
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -51,7 +50,7 @@ export function useNotificationSetup() {
   useEffect(() => {
     if (!isAuthenticated || permission !== 'granted') return
 
-    Notifications.getExpoPushTokenAsync({ projectId: PROJECT_ID })
+    Notifications.getExpoPushTokenAsync({ projectId: EAS_PROJECT_ID })
       .then(async ({ data: freshToken }) => {
         // If token changed, remove the stale one first (prevents duplicate pushes)
         if (registeredToken && registeredToken !== freshToken) {

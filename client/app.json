@@ -11,6 +11,7 @@
     "ios": {
       "bundleIdentifier": "in.vybe.app",
       "supportsTablet": false,
+      "associatedDomains": ["applinks:vybe.uilora.com"],
       "infoPlist": {
         "NSCameraUsageDescription": "Vybe uses your camera to scan QR tickets at event check-in.",
         "NSPhotoLibraryUsageDescription": "Vybe uses your photo library so you can choose profile and event photos.",
@@ -29,6 +30,14 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "usesCleartextTraffic": true,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [{ "scheme": "https", "host": "vybe.uilora.com" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyAzBgikYrIER9BsmcxOF330T_zX2jMdVQg"
