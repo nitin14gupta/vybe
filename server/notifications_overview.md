@@ -5,22 +5,35 @@ This table breaks down all the major actions in the app that trigger notificatio
 | Event / Action | Push Notification | In-App Notification | Sent To |
 | :--- | :---: | :---: | :--- |
 | **Chat & Connections** | | | |
-| Someone sends you a Vybe | ✅ | ❌ | Receiver |
+| Someone sends you a Vybe | ✅ | ✅ | Receiver |
 | Someone accepts your Vybe | ✅ | ✅ | Sender |
-| Someone follows you | ✅ | ❌ | Followee |
+| Someone follows you | ✅ | ✅ | Followee |
 | You receive a new chat message | ✅ | ❌ | Message Receiver |
 | Someone reacts to your message | ✅ | ❌ | Message Sender |
 | **Events** | | | |
+| Your event was created successfully | ✅ | ✅ | Host (creator) |
 | Someone you follow posts an event | ✅ | ✅ | Followers |
 | Someone RSVPs to your event | ✅ | ✅ | Event Host |
-| Someone cancels their RSVP | ✅ | ❌ | Event Host |
-| Event is cancelled | ✅ | ❌ | Confirmed Attendees |
+| Host edits event details (time/location/price/etc.) | ✅ | ✅ | Confirmed + Waitlisted Attendees |
+| Event is cancelled | ✅ | ✅ | Confirmed Attendees |
 | Event is cancelled | ✅ | ✅ | Waitlisted Users |
 | Waitlist spot opens up for you | ✅ | ✅ | Promoted User |
 | Your waitlist spot offer expires | ✅ | ✅ | User who missed out |
-| Someone leaves a review on your event | ✅ | ❌ | Event Host |
+| Someone leaves a review on your event | ✅ | ✅ | Event Host |
+| Your event sold out (0 spots left) | ✅ | ✅ | Event Host |
 | **Payments & Ticketing** | | | |
-| Ticket payment confirmed | ✅ | ❌ | Ticket Buyer |
+| Ticket payment confirmed | ✅ | ✅ | Ticket Buyer |
+| Someone bought a ticket to your event | ✅ | ✅ | Event Host |
+| **Trust & Safety** | | | |
+| You submitted a report (user/event/message) | ❌ | ✅ | Reporter |
 
 > [!NOTE]
-> Currently, things like new chat messages and new followers only send **Push Notifications**. If you want those to also appear in the in-app notification center, we would need to add `notify_` helper functions for them!
+> There is no "Cancel RSVP" button in the client for confirmed ("going") attendees, so the old "Someone cancels their RSVP" notification (host-facing) has been removed as dead logic. Leaving a waitlist spot is a separate, still-supported flow and is unaffected.
+>
+> New chat messages and message reactions still send **Push Notifications only** — no change requested for these.
+>
+> Report-submitted confirmations are **in-app only** and go only to the reporter — the reported user/event/message owner is never notified, to avoid tipping off bad actors.
+>
+> "Event edited" only fires when a substantive field changes (title, description, rules, type, date/time, age restriction, location, or price) — pure capacity increases/decreases don't trigger it (those already notify waitlisted users separately when they get promoted).
+>
+> "Sold out" fires once at the moment spots_left transitions from 1 → 0, for both free RSVPs and all three paid-ticket payment paths (Razorpay checkout, QR code, wallet). If the event later opens back up (e.g. a cancellation) and fills again, it will fire again.

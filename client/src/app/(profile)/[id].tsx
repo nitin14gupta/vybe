@@ -8,7 +8,7 @@ import { hTap, hMedium, hSuccess } from '@/lib/haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   ChevronLeft, MoreVertical, Flame, UserPlus, UserCheck,
-  MessageCircle, Ban, Play, Pause, Check, Ghost,
+  MessageCircle, Ban, Play, Pause, Check, Ghost, Clock,
 } from 'lucide-react-native'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
 import { VybeRequestModal, VybeIcebreakerModal, PlaybackWave, ProfileMenuSheet, InterestChip } from '@/components/ui'
@@ -18,6 +18,8 @@ import { usePillStore } from '@/store/pillStore'
 import { useVybeStore } from '@/store/vybeStore'
 import { useImageViewer } from '@/hooks/useImageViewer'
 import { MediaViewerModal } from '@/components/chat/MediaViewerModal'
+import { useCountdown } from '@/hooks/useCountdown'
+import { parseServerDate } from '@/lib/dates'
 
 const { width: W } = Dimensions.get('window')
 
@@ -37,6 +39,43 @@ function EventChip({ event }: { event: EventSummary }) {
         </View>
       )}
       <Text style={s.eventChipTitle} numberOfLines={2}>{event.title}</Text>
+    </Pressable>
+  )
+}
+
+function formatCooldown(seconds: number): string {
+  if (seconds <= 0) return 'a moment'
+  const days = Math.floor(seconds / 86400)
+  const hours = Math.floor((seconds % 86400) / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  if (days > 0) return `${days}d ${hours}h`
+  if (hours > 0) return `${hours}h ${minutes}m`
+  return `${Math.max(minutes, 1)}m`
+}
+
+// Shown instead of "Send Vybe" while a per-pair cooldown is active (24h after
+// a first pass, 7 days after a second) — ticks down locally and flips back
+// to a normal Send Vybe button on expiry without needing a re-fetch.
+function CooldownPill({ cooldownUntil, onExpiredPress }: { cooldownUntil: string; onExpiredPress: () => void }) {
+  const deadline = parseServerDate(cooldownUntil)
+  const initialSeconds = deadline ? Math.max(0, Math.round((deadline.getTime() - Date.now()) / 1000)) : 0
+  const { seconds, isExpired } = useCountdown(initialSeconds)
+
+  if (isExpired) {
+    return (
+      <Pressable style={[s.ctaBtn, s.ctaBtnPrimary]} onPress={onExpiredPress}>
+        <Flame size={18} color="#111" fill="#111" strokeWidth={2} />
+        <Text style={s.ctaBtnPrimaryText}>Send Vybe</Text>
+      </Pressable>
+    )
+  }
+
+  return (
+    <Pressable style={[s.ctaBtn, s.ctaBtnPending, { borderColor: Colors.divider }]} disabled>
+      <Clock size={16} color={Colors.inkDisabled} strokeWidth={1.8} />
+      <Text style={[s.ctaBtnPendingText, { fontSize: 14, color: Colors.inkDisabled }]} numberOfLines={1}>
+        Try again in {formatCooldown(seconds)}
+      </Text>
     </Pressable>
   )
 }
@@ -111,9 +150,15 @@ export default function UserProfileScreen() {
     markSent(profile.id)
     try {
       await ApiService.sendVibe(profile.id, message)
-    } catch {
+    } catch (err: any) {
       setVybeSent(false)
       markCleared(profile.id)
+      showPill(
+        err?.status === 429
+          ? "You're on cooldown with this person, try again later"
+          : "Couldn't send that vybe, try again",
+        'error',
+      )
     }
   }
 
@@ -198,6 +243,7 @@ export default function UserProfileScreen() {
   const isConnected = profile.vybe_status === 'connected'
   const isPending = vybeSent || (profile.vybe_status === 'pending' && !!profile.vybe_sent_by_me)
   const theySentVybe = profile.vybe_status === 'pending' && !profile.vybe_sent_by_me && !vybeSent
+  const isCooldown = !isPending && !theySentVybe && profile.vybe_status === 'cooldown' && !!profile.cooldown_until
   const age = profile.dob
     ? Math.floor((Date.now() - new Date(profile.dob).getTime()) / 3.156e10)
     : null
@@ -390,6 +436,11 @@ export default function UserProfileScreen() {
             <Flame size={18} color={Colors.brandOrange} fill="transparent" strokeWidth={1.8} />
             <Text style={s.ctaBtnPendingText}>Vybe Sent</Text>
           </Pressable>
+        ) : isCooldown ? (
+          <CooldownPill
+            cooldownUntil={profile.cooldown_until!}
+            onExpiredPress={() => { hMedium(); setVybeModalOpen(true) }}
+          />
         ) : (
           <Pressable
             style={[s.ctaBtn, s.ctaBtnPrimary]}

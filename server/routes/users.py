@@ -8,6 +8,7 @@ from schemas.user import (
 from middleware.auth import get_current_user
 from db.config import get_db
 from utils.push import send_push
+from routes.notifications import notify_new_follower, notify_report_submitted
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -33,8 +34,12 @@ _USER_SELECT = """
         u.public_key,
         COALESCE(u.discoverable, TRUE) AS discoverable,
         COALESCE(u.is_deleted, FALSE) AS is_deleted,
-        (SELECT COUNT(*) FROM follows WHERE following_id = u.id)::int AS vibers_count,
-        (SELECT COUNT(*) FROM follows WHERE follower_id  = u.id)::int AS vibing_count,
+        (SELECT COUNT(*) FROM follows f
+         JOIN users fu ON fu.id = f.follower_id AND COALESCE(fu.is_deleted, FALSE) = FALSE
+         WHERE f.following_id = u.id)::int AS vibers_count,
+        (SELECT COUNT(*) FROM follows f
+         JOIN users fu ON fu.id = f.following_id AND COALESCE(fu.is_deleted, FALSE) = FALSE
+         WHERE f.follower_id = u.id)::int AS vibing_count,
         CASE
             WHEN %s::text = u.id::text THEN FALSE
             ELSE EXISTS(
@@ -339,6 +344,7 @@ def search_users(
             LEFT JOIN user_photos p ON p.user_id = u.id
             WHERE u.id != %s::uuid
               AND u.profile_complete = true
+              AND COALESCE(u.is_deleted, FALSE) = FALSE
               AND (
                   u.username ILIKE %s
                   OR u.name ILIKE %s
@@ -450,6 +456,18 @@ def get_user_profile(user_id: str, current_user: dict = Depends(get_current_user
         """, (viewer_id, user_id, user_id, viewer_id))
         conv = cur.fetchone()
 
+        # Cooldown only applies in the viewer -> this-user direction (matches
+        # the (sender_id, receiver_id) check in POST /vibes) — being on
+        # cooldown as a RECEIVER of someone else's pass doesn't stop the
+        # viewer from sending a fresh request themselves.
+        cur.execute("""
+            SELECT cooldown_until FROM vibe_requests
+            WHERE sender_id = %s::uuid AND receiver_id = %s::uuid
+              AND status = 'passed' AND cooldown_until > NOW()
+        """, (viewer_id, user_id))
+        cooldown_row = cur.fetchone()
+
+        cooldown_until = None
         if conv:
             vybe_status = "connected"
             vybe_id = None
@@ -458,6 +476,11 @@ def get_user_profile(user_id: str, current_user: dict = Depends(get_current_user
             vybe_status = "pending"
             vybe_id = vr["id"]
             vybe_sent_by_me = (vr["sender_id"] == viewer_id)
+        elif cooldown_row:
+            vybe_status = "cooldown"
+            vybe_id = None
+            vybe_sent_by_me = False
+            cooldown_until = cooldown_row["cooldown_until"].isoformat()
         else:
             vybe_status = "none"
             vybe_id = None
@@ -499,6 +522,7 @@ def get_user_profile(user_id: str, current_user: dict = Depends(get_current_user
         "vybe_status": vybe_status,
         "vybe_id": vybe_id,
         "vybe_sent_by_me": vybe_sent_by_me,
+        "cooldown_until": cooldown_until,
         "conversation_id": conv["id"] if conv else None,
         "events_attending": events_attending,
     }
@@ -557,7 +581,7 @@ def _follow_rows(cur, join_col: str, filter_col: str, viewer_id: str, target_id:
         {follows_back_col},
         COUNT(*) OVER() AS total_count
     FROM follows f
-    JOIN users u ON u.id = {join_col}
+    JOIN users u ON u.id = {join_col} AND COALESCE(u.is_deleted, FALSE) = FALSE
     WHERE {filter_col} = %s::uuid
     ORDER BY f.created_at DESC
     LIMIT %s OFFSET %s
@@ -633,6 +657,8 @@ def follow_user(user_id: str, background_tasks: BackgroundTasks, current_user: d
         )
         follower_photo = cur.fetchone()
         follower_avatar = follower_photo["url"] if follower_photo else None
+
+        notify_new_follower(cur, user_id, current_user["id"], follower_name)
 
     background_tasks.add_task(
         send_push, user_id, "New Follower",
@@ -723,6 +749,7 @@ def report_user(user_id: str, body: ReportRequest, current_user: dict = Depends(
             """,
             (current_user["id"], user_id, body.reason),
         )
+        notify_report_submitted(cur, current_user["id"], "user", user_id)
         conn.commit()
     return {"ok": True}
 
@@ -737,12 +764,16 @@ def delete_account(current_user: dict = Depends(get_current_user)):
     """
     uid = current_user["id"]
     with get_db() as (cur, conn):
-        # Block deletion if user still has upcoming hosted events
-        # (they must cancel events manually first so the 48-hour refund rules apply)
+        # Block deletion if user still has upcoming OR currently-ongoing hosted
+        # events (they must cancel events manually first so the 48-hour refund
+        # rules apply) — COALESCE(end_time, date_time) means an event with no
+        # end_time is treated as over once its start time passes, matching
+        # client-side isEventPast() in lib/dates.ts.
         cur.execute(
             """
             SELECT COUNT(*) AS cnt FROM events
-            WHERE host_id = %s::uuid AND is_cancelled = FALSE AND date_time > NOW()
+            WHERE host_id = %s::uuid AND is_cancelled = FALSE
+              AND COALESCE(end_time, date_time) > NOW()
             """,
             (uid,),
         )
@@ -774,14 +805,32 @@ def delete_account(current_user: dict = Depends(get_current_user)):
         )
 
         # ── 3. Soft-delete the account ────────────────────────────────────────
+        # discoverable=FALSE is set explicitly too (belt-and-suspenders) even
+        # though every listing query also filters on is_deleted directly.
         cur.execute(
             """
             UPDATE users
-            SET is_deleted = TRUE, deleted_at = NOW(),
+            SET is_deleted = TRUE, deleted_at = NOW(), discoverable = FALSE,
                 name = '[deleted]', bio = NULL, voice_url = NULL
             WHERE id = %s::uuid
             """,
             (uid,),
+        )
+
+        # ── 3b. Clear pending vybe requests in both directions — a pending
+        # request from/to a deleted account is dead weight in someone's inbox.
+        # Only 'pending' rows are removed: already-accepted requests aren't
+        # what drives "connected" status (the conversations table is), and
+        # already-passed rows are harmless cooldown history — no reason to
+        # destroy either. Unlike this, follows stay fully intact and are just
+        # filtered out of counts/lists while is_deleted=TRUE, so they reappear
+        # automatically if the account is restored within 30 days.
+        cur.execute(
+            """
+            DELETE FROM vibe_requests
+            WHERE (sender_id = %s::uuid OR receiver_id = %s::uuid) AND status = 'pending'
+            """,
+            (uid, uid),
         )
 
         # ── 4. Revoke every active session immediately (real logout, not just

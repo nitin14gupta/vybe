@@ -1,8 +1,8 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useFocusEffect } from 'expo-router'
 import {
   View, Text, StyleSheet, TextInput,
-  ScrollView, ActivityIndicator, Animated,
+  ScrollView, ActivityIndicator, Pressable,
 } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -13,12 +13,14 @@ import {
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 import {
   AppHeader, HeaderIconBtn,
-  PrimaryButton, OutlineButton,
+  PrimaryButton, OutlineButton, OTPInput,
 } from '@/components/ui'
 import ApiService from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
 import { usePillStore } from '@/store/pillStore'
 import { hTap, hSuccess } from '@/lib/haptics'
+import { isEventPast } from '@/lib/dates'
+import { useCountdown } from '@/hooks/useCountdown'
 
 const TOTAL_STEPS = 4
 
@@ -57,36 +59,29 @@ export default function DeleteAccountScreen() {
   const [step, setStep]               = useState(1)
   const [otpSent, setOtpSent]         = useState(false)
   const [otp, setOtp]                 = useState('')
+  const [otpError, setOtpError]       = useState(false)
   const [otpLoading, setOtpLoading]   = useState(false)
   const [otpVerified, setOtpVerified] = useState(false)
   const [deleting, setDeleting]       = useState(false)
   const [typed, setTyped]             = useState('')
   const [upcomingEvents, setUpcomingEvents] = useState(0)
   const [checkingEvents, setCheckingEvents] = useState(true)
+  const { seconds: resendSeconds, isExpired: canResend, reset: resetResendTimer } = useCountdown(45)
 
   useFocusEffect(
     useCallback(() => {
       setCheckingEvents(true)
       ApiService.getMyHostedEvents()
         .then(events => {
-          setUpcomingEvents(events.length)
+          // Only count events that haven't ended yet (upcoming or currently
+          // in progress) — cancelled and past/ended events don't block deletion.
+          const blocking = events.filter(e => !e.is_cancelled && !isEventPast(e))
+          setUpcomingEvents(blocking.length)
         })
         .catch(() => {})
         .finally(() => setCheckingEvents(false))
     }, [])
   )
-
-  const shakeAnim = useRef(new Animated.Value(0)).current
-
-  const shake = () => {
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 8,  duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -8, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 6,  duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -6, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0,  duration: 60, useNativeDriver: true }),
-    ]).start()
-  }
 
   const rawPhone    = useAuthStore(s => s.phone ?? '')
   const maskedPhone = `+91 ******${rawPhone.slice(-4)}`
@@ -98,6 +93,9 @@ export default function DeleteAccountScreen() {
     try {
       await ApiService.sendOTP(rawPhone)
       setOtpSent(true)
+      setOtp('')
+      setOtpError(false)
+      resetResendTimer()
     } catch {
       showPill('Could not send OTP. Please try again.', 'error')
     } finally {
@@ -109,13 +107,15 @@ export default function DeleteAccountScreen() {
     if (otp.length !== 6 || otpLoading) return
     hTap()
     setOtpLoading(true)
+    setOtpError(false)
     try {
       await ApiService.verifyOTP(rawPhone, otp)
       hSuccess()
       setOtpVerified(true)
       setStep(4)
     } catch {
-      shake()
+      setOtpError(true)
+      setOtp('')
       showPill('Invalid OTP. Please check and try again.', 'error')
     } finally {
       setOtpLoading(false)
@@ -270,30 +270,33 @@ export default function DeleteAccountScreen() {
               />
             ) : (
               <>
-                <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
-                  <TextInput
-                    style={s.otpInput}
+                <View style={s.otpInputWrap}>
+                  <OTPInput
                     value={otp}
-                    onChangeText={v => setOtp(v.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="6-digit code"
-                    placeholderTextColor={Colors.inkDisabled}
-                    keyboardType="number-pad"
-                    maxLength={6}
+                    onChange={v => { setOtp(v); setOtpError(false) }}
+                    error={otpError}
                     autoFocus
                   />
-                </Animated.View>
+                </View>
+
+                <View style={s.resendArea}>
+                  {!canResend ? (
+                    <Text style={s.resendCountdown}>
+                      Resend code in <Text style={s.resendCountdownTimer}>0:{String(resendSeconds).padStart(2, '0')}</Text>
+                    </Text>
+                  ) : (
+                    <Pressable onPress={() => { hTap(); handleSendOtp() }} disabled={otpLoading}>
+                      <Text style={s.resendLink}>Resend code</Text>
+                    </Pressable>
+                  )}
+                </View>
+
                 <PrimaryButton
                   label="Verify OTP"
                   onPress={handleVerifyOtp}
                   disabled={otp.length !== 6}
                   loading={otpLoading}
                   style={s.otpBtn}
-                />
-                <OutlineButton
-                  label="Resend code"
-                  onPress={handleSendOtp}
-                  disabled={otpLoading}
-                  style={s.secondaryBtn}
                 />
               </>
             )}
@@ -389,12 +392,11 @@ const s = StyleSheet.create({
   },
   lossText: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, flex: 1 },
 
-  otpInput: {
-    backgroundColor: Colors.surface, borderRadius: 14, borderWidth: 1,
-    borderColor: Colors.divider, paddingHorizontal: 16, paddingVertical: 14,
-    fontFamily: FontFamily.headingBold, fontSize: 24, color: Colors.inkPrimary,
-    textAlign: 'center', letterSpacing: 12, marginBottom: 4, marginTop: 8,
-  },
+  otpInputWrap: { marginTop: 8 },
+  resendArea: { alignItems: 'center', marginTop: 20 },
+  resendCountdown: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary },
+  resendCountdownTimer: { fontFamily: FontFamily.bodySemiBold, color: 'rgba(255,107,53,0.75)' },
+  resendLink: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandOrange },
   typeInput: {
     backgroundColor: Colors.surface, borderRadius: 14, borderWidth: 1,
     borderColor: 'rgba(255,56,100,0.4)', paddingHorizontal: 16, paddingVertical: 14,

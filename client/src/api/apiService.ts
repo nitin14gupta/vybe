@@ -60,9 +60,10 @@ export interface ProfileResponse extends UserResponse {
 
 export interface ExtendedProfile extends ProfileResponse {
   mutual_count: number
-  vybe_status: 'none' | 'pending' | 'connected'
+  vybe_status: 'none' | 'pending' | 'connected' | 'cooldown'
   vybe_id: string | null
   vybe_sent_by_me: boolean
+  cooldown_until: string | null
   conversation_id: string | null
   events_attending: EventSummary[]
 }

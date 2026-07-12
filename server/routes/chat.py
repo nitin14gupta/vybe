@@ -378,6 +378,8 @@ def report_message(
                 """,
                 (msg_id, uid, body.reason, body.description),
             )
+            from routes.notifications import notify_report_submitted
+            notify_report_submitted(cur, uid, "message", msg_id)
             conn.commit()
         except Exception:
             # Already reported by this user (unique constraint) — treat as success

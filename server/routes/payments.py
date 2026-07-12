@@ -192,7 +192,7 @@ def wallet_pay(body: WalletPayBody, current_user: dict = Depends(get_current_use
 
     with get_db() as (cur, _):
         cur.execute(
-            "SELECT price_inr, spots_left FROM events WHERE id = %s AND is_cancelled = FALSE",
+            "SELECT title, host_id::text, price_inr, spots_left FROM events WHERE id = %s AND is_cancelled = FALSE",
             (body.event_id,),
         )
         ev = cur.fetchone()
@@ -201,13 +201,17 @@ def wallet_pay(body: WalletPayBody, current_user: dict = Depends(get_current_use
         if ev["spots_left"] <= 0:
             raise HTTPException(status_code=409, detail="No spots left")
 
+        ev_title = ev["title"]
+        ev_host_id = ev["host_id"]
+        just_sold_out = ev["spots_left"] == 1
         ticket_price = ev["price_inr"]
         platform_fee = round(ticket_price * PLATFORM_FEE_RATE)
         total = ticket_price + platform_fee
 
-        cur.execute("SELECT wallet_balance FROM users WHERE id = %s::uuid", (uid,))
+        cur.execute("SELECT wallet_balance, name FROM users WHERE id = %s::uuid", (uid,))
         user = cur.fetchone()
         bal = user["wallet_balance"] if user else 0
+        buyer_name = user["name"] if user else "Someone"
         if bal < total:
             raise HTTPException(status_code=400, detail="Insufficient wallet balance")
 
@@ -237,7 +241,35 @@ def wallet_pay(body: WalletPayBody, current_user: dict = Depends(get_current_use
             "UPDATE events SET spots_left = GREATEST(0, spots_left - 1) WHERE id = %s::uuid",
             (body.event_id,),
         )
+
+        from routes.notifications import notify_payment_confirmed, notify_event_sold_out, notify_ticket_sold
+        notify_payment_confirmed(cur, uid, body.event_id, ev_title)
+        if ev_host_id:
+            notify_ticket_sold(cur, ev_host_id, body.event_id, ev_title, uid, buyer_name)
+        if just_sold_out and ev_host_id:
+            notify_event_sold_out(cur, ev_host_id, body.event_id, ev_title)
+
         conn.commit()
+
+    from utils.push import send_push
+    if ev_host_id:
+        try:
+            send_push(ev_host_id, f"{buyer_name} bought a ticket!",
+                      f"Someone's going to {ev_title}.",
+                      {"type": "event", "event_id": body.event_id})
+        except Exception:
+            pass
+    if just_sold_out and ev_host_id:
+        try:
+            send_push(ev_host_id, "Your event sold out!", f"{ev_title} has no spots left.",
+                      {"type": "event", "event_id": body.event_id})
+        except Exception:
+            pass
+    try:
+        send_push(uid, "Payment confirmed!", "Your ticket is ready. 🎉",
+                  {"type": "payment_success", "event_id": body.event_id})
+    except Exception:
+        pass
 
     return {"ok": True, "status": "going"}
 
@@ -288,7 +320,20 @@ def _close_qr(rz_client, qr_id: str) -> None:
 # ── Internal helper ───────────────────────────────────────────────────────────
 
 def _finalise_rsvp(*, order_id: str, event_id: str, uid: str, payment_id: str, wallet_amount: int):  # noqa: E501
+    from utils.push import send_push
+    from routes.notifications import notify_payment_confirmed
+
     with get_db() as (cur, conn):
+        cur.execute("SELECT title, host_id::text, spots_left FROM events WHERE id = %s", (event_id,))
+        ev_row = cur.fetchone()
+        ev_title = ev_row["title"] if ev_row else ""
+        ev_host_id = ev_row["host_id"] if ev_row else None
+        just_sold_out = bool(ev_row) and ev_row["spots_left"] == 1
+
+        cur.execute("SELECT name FROM users WHERE id = %s::uuid", (uid,))
+        buyer_row = cur.fetchone()
+        buyer_name = buyer_row["name"] if buyer_row else "Someone"
+
         if wallet_amount > 0:
             cur.execute(
                 "UPDATE users SET wallet_balance = wallet_balance - %s WHERE id = %s::uuid AND wallet_balance >= %s",
@@ -319,7 +364,36 @@ def _finalise_rsvp(*, order_id: str, event_id: str, uid: str, payment_id: str, w
             "UPDATE events SET spots_left = GREATEST(0, spots_left - 1) WHERE id = %s::uuid",
             (event_id,),
         )
+
+        from routes.notifications import notify_event_sold_out, notify_ticket_sold
+        notify_payment_confirmed(cur, uid, event_id, ev_title)
+        if ev_host_id:
+            notify_ticket_sold(cur, ev_host_id, event_id, ev_title, uid, buyer_name)
+        if just_sold_out and ev_host_id:
+            notify_event_sold_out(cur, ev_host_id, event_id, ev_title)
+
         conn.commit()
+
+    try:
+        send_push(uid, "Payment confirmed!", "Your ticket is ready. 🎉",
+                  {"type": "payment_success", "event_id": event_id})
+    except Exception:
+        pass
+
+    if ev_host_id:
+        try:
+            send_push(ev_host_id, f"{buyer_name} bought a ticket!",
+                      f"Someone's going to {ev_title}.",
+                      {"type": "event", "event_id": event_id})
+        except Exception:
+            pass
+
+    if just_sold_out and ev_host_id:
+        try:
+            send_push(ev_host_id, "Your event sold out!", f"{ev_title} has no spots left.",
+                      {"type": "event", "event_id": event_id})
+        except Exception:
+            pass
 
 
 # ── GET /payments/saved-upi-id ────────────────────────────────────────────────
@@ -520,8 +594,19 @@ def get_qr_status(qr_id: str, current_user: dict = Depends(get_current_user)):
 def _finalise_qr_rsvp(*, order_db_id: str, qr_code_id: str, event_id: str,
                        uid: str, payment_id: str, wallet_amount: int):
     from utils.push import send_push  # local import to avoid circular
+    from routes.notifications import notify_payment_confirmed
 
     with get_db() as (cur, conn):
+        cur.execute("SELECT title, host_id::text, spots_left FROM events WHERE id = %s", (event_id,))
+        ev_row = cur.fetchone()
+        ev_title = ev_row["title"] if ev_row else ""
+        ev_host_id = ev_row["host_id"] if ev_row else None
+        just_sold_out = bool(ev_row) and ev_row["spots_left"] == 1
+
+        cur.execute("SELECT name FROM users WHERE id = %s::uuid", (uid,))
+        buyer_row = cur.fetchone()
+        buyer_name = buyer_row["name"] if buyer_row else "Someone"
+
         if wallet_amount > 0:
             cur.execute(
                 "UPDATE users SET wallet_balance = wallet_balance - %s WHERE id = %s::uuid AND wallet_balance >= %s",
@@ -552,6 +637,14 @@ def _finalise_qr_rsvp(*, order_db_id: str, qr_code_id: str, event_id: str,
             "UPDATE events SET spots_left = GREATEST(0, spots_left - 1) WHERE id = %s::uuid",
             (event_id,),
         )
+
+        from routes.notifications import notify_event_sold_out, notify_ticket_sold
+        notify_payment_confirmed(cur, uid, event_id, ev_title)
+        if ev_host_id:
+            notify_ticket_sold(cur, ev_host_id, event_id, ev_title, uid, buyer_name)
+        if just_sold_out and ev_host_id:
+            notify_event_sold_out(cur, ev_host_id, event_id, ev_title)
+
         conn.commit()
 
     try:
@@ -559,3 +652,18 @@ def _finalise_qr_rsvp(*, order_db_id: str, qr_code_id: str, event_id: str,
                   {"type": "payment_success", "event_id": event_id})
     except Exception:
         pass
+
+    if ev_host_id:
+        try:
+            send_push(ev_host_id, f"{buyer_name} bought a ticket!",
+                      f"Someone's going to {ev_title}.",
+                      {"type": "event", "event_id": event_id})
+        except Exception:
+            pass
+
+    if just_sold_out and ev_host_id:
+        try:
+            send_push(ev_host_id, "Your event sold out!", f"{ev_title} has no spots left.",
+                      {"type": "event", "event_id": event_id})
+        except Exception:
+            pass

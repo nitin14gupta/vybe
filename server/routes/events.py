@@ -565,11 +565,14 @@ def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, curre
         new_id = cur.fetchone()["id"]
 
         # Notify followers about the new event
-        from routes.notifications import notify_followers_event_created
+        from routes.notifications import notify_followers_event_created, notify_event_created
         cur.execute("SELECT name FROM users WHERE id = %s::uuid", (current_user["id"],))
         host_row = cur.fetchone()
         host_name = host_row["name"] if host_row else "Someone"
         notify_followers_event_created(cur, current_user["id"], new_id, body.title, host_name)
+
+        # Confirm to the host that their event was created successfully
+        notify_event_created(cur, current_user["id"], new_id, body.title)
 
         # Collect follower IDs for push delivery after commit
         cur.execute(
@@ -585,6 +588,12 @@ def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, curre
             body.title,
             {"type": "event", "event_id": new_id},
         )
+
+    background_tasks.add_task(
+        send_push, current_user["id"], "Your event is live!",
+        f"{body.title} was posted successfully.",
+        {"type": "event", "event_id": new_id},
+    )
 
     return get_event(new_id, current_user)
 
@@ -667,6 +676,7 @@ def update_event(event_id: str, body: CreateEventBody, background_tasks: Backgro
 
     old_capacity = ev["capacity"]
     promoted_users = []
+    affected_user_ids = []
 
     with get_db() as (cur, conn):
         cur.execute(
@@ -696,7 +706,26 @@ def update_event(event_id: str, body: CreateEventBody, background_tasks: Backgro
             if not promoted:
                 break
             promoted_users.append(promoted)
+
+        if non_capacity_changed:
+            from routes.notifications import notify_event_updated
+            cur.execute(
+                "SELECT user_id::text FROM event_attendees WHERE event_id = %s AND status IN ('going', 'waitlist')",
+                (event_id,),
+            )
+            affected_user_ids = [r["user_id"] for r in cur.fetchall()]
+            for a_uid in affected_user_ids:
+                notify_event_updated(cur, a_uid, event_id, body.title)
+
         conn.commit()
+
+    if affected_user_ids:
+        for a_uid in affected_user_ids:
+            background_tasks.add_task(
+                send_push, a_uid, "Event details changed",
+                f"The host updated {body.title}. Check what's new.",
+                {"type": "event", "event_id": event_id},
+            )
 
     if promoted_users:
         from routes.notifications import notify_waitlist_promoted
@@ -776,6 +805,7 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
             )
             active_waitlist_count = cur.fetchone()["cnt"]
 
+            just_sold_out = False
             if promoted_row:
                 # Promoted user confirming — spot was already held, just flip status
                 cur.execute(
@@ -797,6 +827,7 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
                     "UPDATE events SET spots_left = GREATEST(0, spots_left - 1) WHERE id = %s",
                     (event_id,),
                 )
+                just_sold_out = ev["spots_left"] == 1
                 status = "going"
             else:
                 # Event is full — join waitlist with validation
@@ -867,6 +898,15 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
                             {"type": "event", "event_id": event_id},
                         )
 
+                    if just_sold_out:
+                        from routes.notifications import notify_event_sold_out
+                        notify_event_sold_out(cur, host_id, event_id, ev_row["title"])
+                        background_tasks.add_task(
+                            send_push, host_id, "Your event sold out!",
+                            f"{ev_row['title']} has no spots left.",
+                            {"type": "event", "event_id": event_id},
+                        )
+
             conn.commit()
 
         else:  # cancel
@@ -917,20 +957,10 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
             # Fetch for notifications
             cur.execute("SELECT host_id::text, title FROM events WHERE id = %s", (event_id,))
             ev_cancel = cur.fetchone()
-            cur.execute("SELECT name FROM users WHERE id = %s::uuid", (current_user["id"],))
-            attendee_cancel = cur.fetchone()
-            host_id_cancel = ev_cancel["host_id"] if ev_cancel else None
-            attendee_name_cancel = attendee_cancel["name"] if attendee_cancel else "Someone"
             event_title_cancel = ev_cancel["title"] if ev_cancel else ""
 
             conn.commit()
 
-            if host_id_cancel and host_id_cancel != current_user["id"] and prev_status == "going":
-                background_tasks.add_task(
-                    send_push, host_id_cancel, "RSVP Cancelled",
-                    f"{attendee_name_cancel} can't make it to {event_title_cancel}",
-                    {"type": "event", "event_id": event_id},
-                )
             if promoted:
                 from routes.notifications import notify_waitlist_promoted
                 with get_db() as (cur2, conn2):
@@ -1003,24 +1033,25 @@ def cancel_event(event_id: str, background_tasks: BackgroundTasks, current_user:
         )
         waitlist_user_ids = [r["user_id"] for r in cur.fetchall()]
 
-        from routes.notifications import notify_waitlist_event_cancelled
+        from routes.notifications import notify_waitlist_event_cancelled, notify_event_cancelled_attendee
         for wl_uid in waitlist_user_ids:
             notify_waitlist_event_cancelled(cur, wl_uid, event_id, ev_title)
+
+        # Confirmed attendees (free or paid) — notify everyone the event was cancelled
+        cur.execute(
+            "SELECT user_id::text FROM event_attendees WHERE event_id = %s AND status = 'going'",
+            (event_id,),
+        )
+        going_user_ids = [r["user_id"] for r in cur.fetchall()]
+        for going_uid in going_user_ids:
+            notify_event_cancelled_attendee(cur, going_uid, event_id, ev_title)
 
         # Refund paid attendees to Vybe Wallet
         paid_user_ids = []
         if ev_price > 0:
             # Refund = ticket price (platform fee absorbed by VYBE on cancellation)
             refund_amount = ev_price
-            cur.execute(
-                """
-                SELECT user_id::text FROM event_attendees
-                WHERE event_id = %s AND status = 'going'
-                """,
-                (event_id,),
-            )
-            for att_row in cur.fetchall():
-                att_uid = att_row["user_id"]
+            for att_uid in going_user_ids:
                 paid_user_ids.append(att_uid)
                 cur.execute(
                     "UPDATE users SET wallet_balance = wallet_balance + %s WHERE id = %s::uuid",
@@ -1041,6 +1072,13 @@ def cancel_event(event_id: str, background_tasks: BackgroundTasks, current_user:
         background_tasks.add_task(
             send_push, wl_uid, "Event cancelled",
             f"{ev_title} was cancelled. You've been removed from the waitlist.",
+            {"type": "event", "event_id": event_id},
+        )
+
+    for going_uid in going_user_ids:
+        background_tasks.add_task(
+            send_push, going_uid, "Event cancelled",
+            f"{ev_title} was cancelled by the host.",
             {"type": "event", "event_id": event_id},
         )
 
@@ -1326,6 +1364,8 @@ def report_event(event_id: str, body: ReportEventBody, current_user: dict = Depe
             "INSERT INTO event_reports (event_id, reporter_id, reason, description) VALUES (%s, %s::uuid, %s, %s)",
             (event_id, uid, body.reason, body.description),
         )
+        from routes.notifications import notify_report_submitted
+        notify_report_submitted(cur, uid, "event", event_id)
         conn.commit()
     return {"ok": True}
 
@@ -1377,6 +1417,11 @@ def submit_review(event_id: str, body: ReviewBody, background_tasks: BackgroundT
         host_id_review = ev_review["host_id"] if ev_review else None
         reviewer_name = reviewer_row["name"] if reviewer_row else "Someone"
         event_title_review = ev_review["title"] if ev_review else ""
+
+        if host_id_review and host_id_review != uid:
+            from routes.notifications import notify_new_review
+            notify_new_review(cur, host_id_review, event_id, event_title_review, uid, reviewer_name, body.rating)
+
         conn.commit()
 
     if host_id_review and host_id_review != uid:

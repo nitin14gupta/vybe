@@ -45,6 +45,108 @@ def notify_vybe_accepted(cur, requester_id: str, accepter_id: str, accepter_name
     )
 
 
+def notify_vybe_request(cur, receiver_id: str, sender_id: str, sender_name: str):
+    _insert_notification(
+        cur, receiver_id, "vybe_request",
+        title=f"{sender_name} sent you a Vybe!",
+        actor_id=sender_id,
+        entity_id=sender_id,
+        entity_type="user",
+    )
+
+
+def notify_new_follower(cur, followee_id: str, follower_id: str, follower_name: str):
+    _insert_notification(
+        cur, followee_id, "new_follower",
+        title=f"{follower_name} started following you",
+        actor_id=follower_id,
+        entity_id=follower_id,
+        entity_type="user",
+    )
+
+
+def notify_event_created(cur, host_id: str, event_id: str, event_title: str):
+    _insert_notification(
+        cur, host_id, "event_created_confirmation",
+        title="Your event is live!",
+        body=f"{event_title} was posted successfully.",
+        entity_id=event_id,
+        entity_type="event",
+    )
+
+
+def notify_event_cancelled_attendee(cur, user_id: str, event_id: str, event_title: str):
+    _insert_notification(
+        cur, user_id, "event_cancelled",
+        title="Event cancelled",
+        body=f"{event_title} was cancelled by the host.",
+        entity_id=event_id,
+        entity_type="event",
+    )
+
+
+def notify_new_review(cur, host_id: str, event_id: str, event_title: str, reviewer_id: str, reviewer_name: str, rating: int):
+    _insert_notification(
+        cur, host_id, "event_review",
+        title=f"{reviewer_name} left a {rating}-star review",
+        body=event_title,
+        actor_id=reviewer_id,
+        entity_id=event_id,
+        entity_type="event",
+    )
+
+
+def notify_payment_confirmed(cur, user_id: str, event_id: str, event_title: str):
+    _insert_notification(
+        cur, user_id, "payment_confirmed",
+        title="Payment confirmed!",
+        body=f"Your ticket for {event_title} is ready.",
+        entity_id=event_id,
+        entity_type="event",
+    )
+
+
+def notify_report_submitted(cur, reporter_id: str, entity_type: str, entity_id: Optional[str] = None):
+    _insert_notification(
+        cur, reporter_id, "report_submitted",
+        title="Report submitted",
+        body="Thanks for letting us know — our team will review it shortly.",
+        entity_id=entity_id,
+        entity_type=entity_type,
+    )
+
+
+def notify_event_updated(cur, user_id: str, event_id: str, event_title: str):
+    _insert_notification(
+        cur, user_id, "event_updated",
+        title="Event details changed",
+        body=f"The host updated {event_title}. Check what's new.",
+        entity_id=event_id,
+        entity_type="event",
+    )
+
+
+def notify_event_sold_out(cur, host_id: str, event_id: str, event_title: str):
+    _insert_notification(
+        cur, host_id, "event_sold_out",
+        title="Your event sold out!",
+        body=f"{event_title} has no spots left.",
+        entity_id=event_id,
+        entity_type="event",
+    )
+
+
+def notify_ticket_sold(cur, host_id: str, event_id: str, event_title: str, buyer_id: str, buyer_name: str):
+    _insert_notification(
+        cur, host_id, "ticket_sold",
+        title=f"{buyer_name} bought a ticket!",
+        body=f"Someone's going to {event_title}.",
+        actor_id=buyer_id,
+        entity_id=event_id,
+        entity_type="event",
+    )
+
+
 def notify_event_rsvp(cur, host_id: str, attendee_id: str, attendee_name: str, event_id: str, event_title: str):
     _insert_notification(
         cur, host_id, "event_rsvp",

@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from middleware.auth import get_current_user
 from db.config import get_db
-from routes.notifications import notify_vybe_accepted
+from routes.notifications import notify_vybe_accepted, notify_vybe_request
 from utils.push import send_push
 
 router = APIRouter(prefix="/vibes", tags=["vibes"])
@@ -110,6 +110,9 @@ def send_vibe(body: SendVibeRequest, background_tasks: BackgroundTasks, current_
         )
         photo_row = cur.fetchone()
         sender_avatar = photo_row["url"] if photo_row else None
+
+        notify_vybe_request(cur, receiver_id, sender_id, sender_name)
+
         conn.commit()
 
     background_tasks.add_task(
@@ -142,7 +145,7 @@ def get_received_vibes(current_user: dict = Depends(get_current_user)):
                     '[]'::json
                 ) AS photos
             FROM vibe_requests vr
-            JOIN users u ON u.id = vr.sender_id
+            JOIN users u ON u.id = vr.sender_id AND COALESCE(u.is_deleted, FALSE) = FALSE
             LEFT JOIN user_photos p ON p.user_id = u.id
             WHERE vr.receiver_id = %s::uuid
               AND vr.status = 'pending'
@@ -171,7 +174,7 @@ def get_sent_vibes(current_user: dict = Depends(get_current_user)):
                 vr.expires_at,
                 vr.cooldown_until
             FROM vibe_requests vr
-            JOIN users u ON u.id = vr.receiver_id
+            JOIN users u ON u.id = vr.receiver_id AND COALESCE(u.is_deleted, FALSE) = FALSE
             WHERE vr.sender_id = %s::uuid
             ORDER BY vr.created_at DESC
             """,
@@ -195,12 +198,15 @@ def respond_to_vibe(
         raise HTTPException(status_code=400, detail="icebreaker message is required to accept")
 
     with get_db() as (cur, conn):
-        # Fetch the vibe request
+        # Fetch the vibe request — the sender must still be a live account,
+        # otherwise a deleted user's stale pending request could get "accepted"
+        # into a real conversation with someone who no longer exists.
         cur.execute(
             """
-            SELECT id, sender_id, receiver_id, rejection_count
-            FROM vibe_requests
-            WHERE id = %s::uuid AND receiver_id = %s::uuid AND status = 'pending'
+            SELECT vr.id, vr.sender_id, vr.receiver_id, vr.rejection_count
+            FROM vibe_requests vr
+            JOIN users u ON u.id = vr.sender_id AND COALESCE(u.is_deleted, FALSE) = FALSE
+            WHERE vr.id = %s::uuid AND vr.receiver_id = %s::uuid AND vr.status = 'pending'
             """,
             (vibe_id, current_user["id"]),
         )
