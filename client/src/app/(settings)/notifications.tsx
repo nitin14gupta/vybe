@@ -6,7 +6,7 @@ import {
 import { hTap } from '@/lib/haptics'
 import { router } from 'expo-router'
 import { useFocusEffect } from 'expo-router'
-import { ChevronLeft, Bell } from 'lucide-react-native'
+import { ChevronLeft, Bell, UserPlus, Flame, MessageCircle } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import ApiService, { AppNotification } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
@@ -21,10 +21,12 @@ function buildMockNotifications(): AppNotification[] {
   const daysAgo = (d: number) => new Date(now - d * 86400000).toISOString()
 
   return [
-    { id: 'mock-vybe_request', type: 'vybe_request', actor_id: 'u1', actor_name: 'Ava', actor_avatar: MOCK_AVATAR(1), entity_id: 'u1', entity_type: 'user', title: 'Ava sent you a Vybe!', body: null, read_at: null, created_at: hoursAgo(0.1) },
-    { id: 'mock-vybe_accepted', type: 'vybe_accepted', actor_id: 'u2', actor_name: 'Liam', actor_avatar: MOCK_AVATAR(2), entity_id: 'u2', entity_type: 'user', title: 'Liam accepted your Vybe!', body: null, read_at: null, created_at: hoursAgo(1) },
-    { id: 'mock-new_follower', type: 'new_follower', actor_id: 'u3', actor_name: 'Zoe', actor_avatar: MOCK_AVATAR(3), entity_id: 'u3', entity_type: 'user', title: 'Zoe started following you', body: null, read_at: hoursAgo(3), created_at: hoursAgo(2) },
-    { id: 'mock-event_created_confirmation', type: 'event_created_confirmation', actor_id: null, actor_name: null, actor_avatar: null, entity_id: 'e1', entity_type: 'event', title: 'Your event is live!', body: 'Rooftop Mixer was posted successfully.', read_at: null, created_at: hoursAgo(4) },
+    { id: 'mock-vybe_request', type: 'vybe_request', actor_id: 'u1', actor_name: 'Ava', actor_avatar: MOCK_AVATAR(1), entity_id: 'u1', entity_type: 'user', title: 'Ava sent you a Vybe!', body: null, read_at: null, created_at: hoursAgo(0.1), action: 'follow', action_label: 'Follow Back', action_target_id: 'u1' },
+    { id: 'mock-vybe_accepted', type: 'vybe_accepted', actor_id: 'u2', actor_name: 'Liam', actor_avatar: MOCK_AVATAR(2), entity_id: 'u2', entity_type: 'user', title: 'Liam accepted your Vybe!', body: null, read_at: null, created_at: hoursAgo(1), action: 'message', action_label: 'Message', action_target_id: 'mock-conv-1' },
+    { id: 'mock-new_follower-followback', type: 'new_follower', actor_id: 'u3', actor_name: 'Zoe', actor_avatar: MOCK_AVATAR(3), entity_id: 'u3', entity_type: 'user', title: 'Zoe started following you', body: null, read_at: null, created_at: hoursAgo(2), action: 'follow', action_label: 'Follow Back', action_target_id: 'u3' },
+    { id: 'mock-new_follower-send_vybe', type: 'new_follower', actor_id: 'u8', actor_name: 'Ben', actor_avatar: MOCK_AVATAR(8), entity_id: 'u8', entity_type: 'user', title: 'Ben started following you', body: null, read_at: hoursAgo(3), created_at: hoursAgo(3), action: 'send_vybe', action_label: 'Send Vybe', action_target_id: 'u8' },
+    { id: 'mock-new_follower-message', type: 'new_follower', actor_id: 'u9', actor_name: 'Ria', actor_avatar: MOCK_AVATAR(9), entity_id: 'u9', entity_type: 'user', title: 'Ria started following you', body: null, read_at: hoursAgo(4), created_at: hoursAgo(3.5), action: 'message', action_label: 'Message', action_target_id: 'mock-conv-2' },
+    { id: 'mock-event_created_confirmation', type: 'event_created_confirmation', actor_id: null, actor_name: null, actor_avatar: null, entity_id: 'e1', entity_type: 'event', title: 'Your event is live!', body: 'Rooftop Mixer was posted successfully.', read_at: null, created_at: hoursAgo(4), cover_photo: 'https://picsum.photos/seed/vybe-rooftop/400/225' },
     { id: 'mock-event_created', type: 'event_created', actor_id: 'u4', actor_name: 'Maya', actor_avatar: MOCK_AVATAR(4), entity_id: 'e2', entity_type: 'event', title: 'Maya just posted an event', body: 'Sunset Rooftop Party', read_at: hoursAgo(7), created_at: hoursAgo(6) },
     { id: 'mock-event_rsvp', type: 'event_rsvp', actor_id: 'u5', actor_name: 'Noah', actor_avatar: MOCK_AVATAR(5), entity_id: 'e1', entity_type: 'event', title: 'Noah is going to Rooftop Mixer', body: null, read_at: null, created_at: hoursAgo(9) },
     { id: 'mock-ticket_sold', type: 'ticket_sold', actor_id: 'u6', actor_name: 'Priya', actor_avatar: MOCK_AVATAR(6), entity_id: 'e1', entity_type: 'event', title: 'Priya bought a ticket!', body: "Someone's going to Rooftop Mixer.", read_at: hoursAgo(20), created_at: hoursAgo(18) },
@@ -76,26 +78,66 @@ function groupByDate(notifs: AppNotification[]): { title: string; data: AppNotif
     .map(([title, data]) => ({ title, data }))
 }
 
-function NotifRow({ item, onPress }: { item: AppNotification; onPress: () => void }) {
+// Same icon language as the profile screen's CTA bar (client/src/app/(profile)/[id].tsx)
+// — UserPlus for Follow/Follow Back, Flame for Send Vybe, MessageCircle for Message.
+const ACTION_ICON: Record<string, any> = {
+  follow: UserPlus,
+  send_vybe: Flame,
+  message: MessageCircle,
+}
+
+function NotifRow({ item, onPress, onAction }: {
+  item: AppNotification
+  onPress: () => void
+  onAction: (item: AppNotification) => void
+}) {
   const unread = !item.read_at
+  const ActionIcon = item.action ? ACTION_ICON[item.action] : null
+  // Send Vybe / Message mirror the profile screen's primary (filled orange) CTA;
+  // Follow/Follow Back mirrors its secondary (outlined) CTA.
+  const isPrimary = item.action === 'send_vybe' || item.action === 'message'
+
   return (
-    <Pressable style={[s.row, unread && s.rowUnread]} onPress={() => { hTap(); onPress() }}>
-      <View style={s.avatarWrap}>
-        {item.actor_avatar ? (
-          <Image source={{ uri: item.actor_avatar }} style={s.avatar} />
-        ) : (
-          <View style={[s.avatar, s.avatarFallback]}>
-            <Bell size={18} color={Colors.inkDisabled} strokeWidth={1.5} />
-          </View>
-        )}
-        {unread && <View style={s.unreadDot} />}
-      </View>
-      <View style={s.textBlock}>
-        <Text style={s.title} numberOfLines={2}>{item.title}</Text>
-        {item.body ? <Text style={s.body} numberOfLines={2}>{item.body}</Text> : null}
-        <Text style={s.time}>{timeAgo(item.created_at)}</Text>
-      </View>
-    </Pressable>
+    <View style={[s.row, unread && s.rowUnread]}>
+      <Pressable style={s.rowMain} onPress={() => { hTap(); onPress() }}>
+        <View style={s.avatarWrap}>
+          {item.cover_photo ? (
+            <Image source={{ uri: item.cover_photo }} style={s.coverThumb} resizeMode="cover" />
+          ) : item.actor_avatar ? (
+            <Image source={{ uri: item.actor_avatar }} style={s.avatar} />
+          ) : (
+            <View style={[s.avatar, s.avatarFallback]}>
+              <Bell size={18} color={Colors.inkDisabled} strokeWidth={1.5} />
+            </View>
+          )}
+          {unread && <View style={s.unreadDot} />}
+        </View>
+        <View style={s.textBlock}>
+          <Text style={s.title} numberOfLines={2}>{item.title}</Text>
+          {item.body ? <Text style={s.body} numberOfLines={2}>{item.body}</Text> : null}
+          <Text style={s.time}>{timeAgo(item.created_at)}</Text>
+        </View>
+      </Pressable>
+
+      {item.action && item.action_label && ActionIcon ? (
+        <Pressable
+          style={({ pressed }) => [
+            isPrimary ? s.actionBtnPrimary : s.actionBtnSecondary,
+            pressed && (isPrimary ? s.actionBtnPrimaryPressed : s.actionBtnSecondaryPressed),
+          ]}
+          onPress={() => onAction(item)}
+          hitSlop={6}
+        >
+          <ActionIcon size={14} color={isPrimary ? '#111' : Colors.inkPrimary} strokeWidth={2} />
+          <Text
+            style={isPrimary ? s.actionBtnPrimaryText : s.actionBtnSecondaryText}
+            numberOfLines={1}
+          >
+            {item.action_label}
+          </Text>
+        </Pressable>
+      ) : null}
+    </View>
   )
 }
 
@@ -138,15 +180,40 @@ export default function NotificationsScreen() {
     setLoading(false)
   }
 
+  const markRead = async (item: AppNotification) => {
+    if (item.read_at) return
+    await ApiService.markNotificationRead(item.id).catch(() => {})
+    setNotifs(prev => prev.map(n => n.id === item.id ? { ...n, read_at: new Date().toISOString() } : n))
+  }
+
   const handleTap = async (item: AppNotification) => {
-    if (!item.read_at) {
-      await ApiService.markNotificationRead(item.id).catch(() => {})
-      setNotifs(prev => prev.map(n => n.id === item.id ? { ...n, read_at: new Date().toISOString() } : n))
-    }
+    await markRead(item)
     if (item.entity_type === 'event' && item.entity_id) {
       router.push(`/(events)/${item.entity_id}` as any)
     } else if (item.entity_type === 'user' && item.entity_id) {
       router.push(`/(profile)/${item.entity_id}` as any)
+    }
+  }
+
+  const handleAction = async (item: AppNotification) => {
+    hTap()
+    await markRead(item)
+    if (!item.action_target_id) return
+
+    if (item.action === 'follow') {
+      // Optimistic — hide the button immediately, revert if the request fails
+      setNotifs(prev => prev.map(n => n.id === item.id ? { ...n, action: null, action_label: null } : n))
+      try {
+        await ApiService.followUser(item.action_target_id)
+      } catch {
+        setNotifs(prev => prev.map(n => n.id === item.id
+          ? { ...n, action: item.action, action_label: item.action_label }
+          : n))
+      }
+    } else if (item.action === 'send_vybe') {
+      router.push(`/(profile)/${item.action_target_id}` as any)
+    } else if (item.action === 'message') {
+      router.push(`/(chat)/${item.action_target_id}` as any)
     }
   }
 
@@ -182,7 +249,9 @@ export default function NotificationsScreen() {
         <SectionList
           sections={sections}
           keyExtractor={n => n.id}
-          renderItem={({ item }) => <NotifRow item={item} onPress={() => handleTap(item)} />}
+          renderItem={({ item }) => (
+            <NotifRow item={item} onPress={() => handleTap(item)} onAction={handleAction} />
+          )}
           renderSectionHeader={({ section }) => (
             <View style={s.sectionHeader}>
               <Text style={s.sectionHeaderText}>{section.title}</Text>
@@ -230,12 +299,20 @@ const s = StyleSheet.create({
     textTransform: 'uppercase',
   },
   row: {
-    flexDirection: 'row', alignItems: 'flex-start',
-    paddingHorizontal: 20, paddingVertical: 14, gap: 14,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 20, paddingVertical: 14, gap: 10,
   },
   rowUnread: { backgroundColor: 'rgba(255,107,53,0.07)' },
+  rowMain: {
+    flex: 1,
+    flexDirection: 'row', alignItems: 'flex-start',
+    gap: 14,
+  },
   avatarWrap: { position: 'relative' },
   avatar: { width: 44, height: 44, borderRadius: 22 },
+  // Event cover photos are 16:9 — a circular crop mangles them, so these get a
+  // small rounded-rect thumbnail instead (cropped via resizeMode="cover").
+  coverThumb: { width: 56, height: 40, borderRadius: 10 },
   avatarFallback: {
     backgroundColor: '#2a2a2a',
     alignItems: 'center', justifyContent: 'center',
@@ -246,10 +323,43 @@ const s = StyleSheet.create({
     backgroundColor: Colors.brandOrange,
     borderWidth: 2, borderColor: Colors.background,
   },
-  textBlock: { flex: 1, gap: 2 },
+  // minWidth: 0 keeps this from growing past its share when the action button
+  // sits alongside it (RN flex-row-with-Text overflow quirk).
+  textBlock: { flex: 1, minWidth: 0, gap: 2 },
   title: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkPrimary, lineHeight: 20 },
   body: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, lineHeight: 18 },
   time: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, marginTop: 2 },
+  // Mirrors the profile screen's CTA bar (client/src/app/(profile)/[id].tsx) —
+  // primary = filled orange (Send Vybe / Message), secondary = outlined (Follow / Follow Back).
+  actionBtnPrimary: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 100,
+    backgroundColor: Colors.brandOrange,
+  },
+  actionBtnPrimaryPressed: {
+    backgroundColor: '#e85f2e',
+  },
+  actionBtnPrimaryText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 12,
+    color: '#111',
+  },
+  actionBtnSecondary: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 14, paddingVertical: 7,
+    borderRadius: 100,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  actionBtnSecondaryPressed: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  actionBtnSecondaryText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 12,
+    color: Colors.inkPrimary,
+  },
   loadMoreBtn: { alignItems: 'center', paddingVertical: 16 },
   loadMoreText: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.brandOrange },
 })

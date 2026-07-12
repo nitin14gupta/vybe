@@ -187,6 +187,102 @@ def notify_waitlist_event_cancelled(cur, user_id: str, event_id: str, event_titl
     )
 
 
+# ── Action-button enrichment ───────────────────────────────────────────────────
+# Attaches an actionable next-step to certain notification types so the list
+# doesn't just inform — it lets you act (follow back, send a vybe, message).
+
+def _get_active_conversation_id(cur, uid_a: str, uid_b: str) -> Optional[str]:
+    u1, u2 = (uid_a, uid_b) if uid_a < uid_b else (uid_b, uid_a)
+    cur.execute(
+        "SELECT id::text FROM conversations WHERE user1_id = %s::uuid AND user2_id = %s::uuid AND status = 'active'",
+        (u1, u2),
+    )
+    row = cur.fetchone()
+    return row["id"] if row else None
+
+
+def _extract_cover_photo(cover_photos) -> Optional[str]:
+    if not cover_photos:
+        return None
+    first = cover_photos[0]
+    if isinstance(first, str):
+        return first
+    if isinstance(first, dict):
+        return first.get("url")
+    return None
+
+
+def _is_following(cur, follower_id: str, following_id: str) -> bool:
+    cur.execute(
+        "SELECT 1 FROM follows WHERE follower_id = %s::uuid AND following_id = %s::uuid",
+        (follower_id, following_id),
+    )
+    return cur.fetchone() is not None
+
+
+def _enrich_notification(cur, uid: str, row: dict) -> dict:
+    d = dict(row)
+    d["action"] = None
+    d["action_label"] = None
+    d["action_target_id"] = None
+    d["cover_photo"] = None
+
+    ntype = d["type"]
+    actor_id = d.get("actor_id")
+
+    if ntype == "vybe_request" and actor_id:
+        if not _is_following(cur, uid, actor_id):
+            they_follow_me = _is_following(cur, actor_id, uid)
+            d["action"] = "follow"
+            d["action_label"] = "Follow Back" if they_follow_me else "Follow"
+            d["action_target_id"] = actor_id
+
+    elif ntype == "vybe_accepted" and actor_id:
+        conv_id = _get_active_conversation_id(cur, uid, actor_id)
+        if conv_id:
+            d["action"] = "message"
+            d["action_label"] = "Message"
+            d["action_target_id"] = conv_id
+
+    elif ntype == "new_follower" and actor_id:
+        if not _is_following(cur, uid, actor_id):
+            d["action"] = "follow"
+            d["action_label"] = "Follow Back"
+            d["action_target_id"] = actor_id
+        else:
+            cur.execute(
+                """
+                SELECT status FROM vibe_requests
+                WHERE (sender_id = %s::uuid AND receiver_id = %s::uuid)
+                   OR (sender_id = %s::uuid AND receiver_id = %s::uuid)
+                ORDER BY created_at DESC LIMIT 1
+                """,
+                (uid, actor_id, actor_id, uid),
+            )
+            vr = cur.fetchone()
+            if vr and vr["status"] == "accepted":
+                conv_id = _get_active_conversation_id(cur, uid, actor_id)
+                if conv_id:
+                    d["action"] = "message"
+                    d["action_label"] = "Message"
+                    d["action_target_id"] = conv_id
+            elif not vr or vr["status"] not in ("pending",):
+                d["action"] = "send_vybe"
+                d["action_label"] = "Send Vybe"
+                d["action_target_id"] = actor_id
+            # else: pending vybe between the two — ambiguous, no button
+
+    elif ntype == "event_created_confirmation":
+        entity_id = d.get("entity_id")
+        if entity_id:
+            cur.execute("SELECT cover_photos FROM events WHERE id = %s", (entity_id,))
+            ev = cur.fetchone()
+            if ev:
+                d["cover_photo"] = _extract_cover_photo(ev["cover_photos"])
+
+    return d
+
+
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.get("")
@@ -233,7 +329,7 @@ def list_notifications(
             params + [limit],
         )
         rows = cur.fetchall()
-    return [dict(r) for r in rows]
+        return [_enrich_notification(cur, uid, r) for r in rows]
 
 
 @router.patch("/read-all", status_code=200)

@@ -312,6 +312,11 @@ export interface AppNotification {
   body: string | null
   read_at: string | null
   created_at: string
+  // Server-computed contextual action (follow back, send vybe, message, …) — see server/routes/notifications.py
+  action?: 'follow' | 'send_vybe' | 'message' | null
+  action_label?: string | null
+  action_target_id?: string | null
+  cover_photo?: string | null
 }
 
 // ── ApiService ───────────────────────────────────────────────────────────────
