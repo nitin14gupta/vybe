@@ -632,8 +632,14 @@ class ApiService {
 
   // ── Chat ───────────────────────────────────────────────────────────────────
 
-  static async getConversations(): Promise<{ pending: Conversation[]; active: Conversation[]; locked: Conversation[] }> {
-    return this.get(ENDPOINTS.CONVERSATIONS)
+  static async getConversations(activeLimit = 20, activeOffset = 0): Promise<{
+    pending: Conversation[]
+    active: Conversation[]
+    locked: Conversation[]
+    active_total: number
+    has_more: boolean
+  }> {
+    return this.get(`${ENDPOINTS.CONVERSATIONS}?active_limit=${activeLimit}&active_offset=${activeOffset}`)
   }
 
   static async getLinkPreview(url: string): Promise<LinkPreview> {
@@ -663,6 +669,10 @@ class ApiService {
 
   static getChatWsUrl(convId: string, accessToken: string): string {
     return `${WS_BASE_URL}/ws/chat/${convId}?token=${accessToken}`
+  }
+
+  static getInboxWsUrl(accessToken: string): string {
+    return `${WS_BASE_URL}/ws/inbox?token=${accessToken}`
   }
 
   // ── Block / Report ─────────────────────────────────────────────────────────

@@ -1,43 +1,48 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Tabs, router } from "expo-router";
 import { StyleSheet, Pressable, View } from "react-native";
-import type { GestureResponderEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { Ticket, MessageCircle, User, Home, Plus } from "lucide-react-native";
 import { Colors, ComponentSize } from "@/constants";
 import { hTap } from "@/lib/haptics";
-import { usePillStore } from "@/store/pillStore";
 import { useProfile } from "@/hooks/useProfile";
-import { CreateEventSheet } from "@/components/ui";
+import { CreateEventSheet, TabTooltip } from "@/components/ui";
 
-const APP_NAME = "Vybe";
+const TOOLTIP_MS = 1200;
 
-// Wraps the default tab button so a long-press surfaces the app name pill,
-// without touching normal tap-to-navigate behavior.
-function makeTabButton(showPill: (msg: string) => void) {
-  return function TabButton({ ref: _ref, ...props }: any) {
-    return (
-      <Pressable
-        {...props}
-        onLongPress={(e: GestureResponderEvent) => {
-          hTap();
-          showPill(APP_NAME);
-          props.onLongPress?.(e);
-        }}
-      />
-    );
-  };
+function TabButton({ label, ref: _ref, onLongPress, onPress, children, style, ...props }: any) {
+  const [tooltip, setTooltip] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); }, []);
+
+  return (
+    <Pressable
+      {...props}
+      onPress={onPress}
+      onLongPress={(e: any) => {
+        hTap();
+        setTooltip(true);
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => setTooltip(false), TOOLTIP_MS);
+        onLongPress?.(e);
+      }}
+      android_ripple={null}
+      style={[style, styles.tabButton]}
+    >
+      <TabTooltip label={label} visible={tooltip} />
+      {children}
+    </Pressable>
+  );
 }
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
-  const showPill = usePillStore((s) => s.show);
   const { profile } = useProfile();
   const [createOpen, setCreateOpen] = useState(false);
 
   const avatarUrl = profile?.photos?.[0]?.url;
-  const TabButton = makeTabButton(showPill);
 
   return (
     <>
@@ -54,7 +59,6 @@ export default function TabsLayout() {
           tabBarActiveTintColor: Colors.brandOrange,
           tabBarInactiveTintColor: Colors.inkSecondary,
           tabBarShowLabel: false,
-          tabBarButton: TabButton,
         }}
       >
         <Tabs.Screen
@@ -62,8 +66,9 @@ export default function TabsLayout() {
           options={{
             title: "Home",
             tabBarIcon: ({ color }) => (
-              <Home size={27} color={color} strokeWidth={1.8} />
+              <Home size={24} color={color} strokeWidth={1.8} />
             ),
+            tabBarButton: (props) => <TabButton {...props} label="Home" />,
           }}
         />
         <Tabs.Screen
@@ -71,8 +76,9 @@ export default function TabsLayout() {
           options={{
             title: "Events",
             tabBarIcon: ({ color }) => (
-              <Ticket size={27} color={color} strokeWidth={1.8} />
+              <Ticket size={24} color={color} strokeWidth={1.8} />
             ),
+            tabBarButton: (props) => <TabButton {...props} label="Events" />,
           }}
         />
         <Tabs.Screen
@@ -80,21 +86,15 @@ export default function TabsLayout() {
           options={{
             title: "Create",
             tabBarIcon: ({ color }) => (
-              <View style={styles.createIcon}>
-                <Plus size={24} color="#fff" strokeWidth={2.5} />
+              <View style={[styles.createIcon]}>
+                <Plus size={18} color={color} strokeWidth={2} />
               </View>
             ),
-            tabBarButton: ({ ref: _ref, ...props }: any) => (
-              <Pressable
+            tabBarButton: (props) => (
+              <TabButton
                 {...props}
-                onPress={() => {
-                  hTap();
-                  setCreateOpen(true);
-                }}
-                onLongPress={() => {
-                  hTap();
-                  showPill(APP_NAME);
-                }}
+                label="Create"
+                onPress={() => { hTap(); setCreateOpen(true); }}
               />
             ),
           }}
@@ -104,8 +104,9 @@ export default function TabsLayout() {
           options={{
             title: "Chat",
             tabBarIcon: ({ color }) => (
-              <MessageCircle size={27} color={color} strokeWidth={1.8} />
+              <MessageCircle size={24} color={color} strokeWidth={1.8} />
             ),
+            tabBarButton: (props) => <TabButton {...props} label="Chat" />,
           }}
         />
         <Tabs.Screen
@@ -118,12 +119,11 @@ export default function TabsLayout() {
                   <Image source={{ uri: avatarUrl }} style={styles.avatarImg} contentFit="cover" />
                 </View>
               ) : (
-                <User size={27} color={color} strokeWidth={1.8} />
+                <User size={24} color={color} strokeWidth={1.8} />
               ),
+            tabBarButton: (props) => <TabButton {...props} label="Profile" />,
           }}
         />
-        <Tabs.Screen name="search" options={{ href: null }} />
-        <Tabs.Screen name="discover" options={{ href: null }} />
       </Tabs>
 
       <CreateEventSheet
@@ -139,21 +139,25 @@ const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: Colors.background,
     borderTopWidth: 0,
-    paddingTop: 8,
+    paddingTop: 16,
     elevation: 0,
     shadowOpacity: 0,
   },
+  tabButton: {
+    position: "relative",
+  },
   createIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: Colors.brandOrange,
+    width: 32,
+    height: 28,
+    borderRadius: 7,
+    borderWidth: 1.8,
     alignItems: "center",
     justifyContent: "center",
+    borderColor: Colors.inkSecondary,
   },
   avatarWrap: {
-    width: 27,
-    height: 27,
+    width: 24,
+    height: 24,
     borderRadius: 14,
     overflow: "hidden",
     borderWidth: 1.5,

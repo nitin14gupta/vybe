@@ -1,4 +1,5 @@
-import { ActivityIndicator, Pressable, Text, StyleSheet, ViewStyle } from 'react-native'
+import type { ReactNode } from 'react'
+import { ActivityIndicator, Pressable, Text, View, StyleSheet, ViewStyle } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated'
 import { hTap } from '@/lib/haptics'
@@ -9,12 +10,13 @@ interface Props {
   onPress: () => void
   disabled?: boolean
   loading?: boolean
+  icon?: ReactNode
   style?: ViewStyle
 }
 
 const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient)
 
-export function PrimaryButton({ label, onPress, disabled, loading, style }: Props) {
+export function PrimaryButton({ label, onPress, disabled, loading, icon, style }: Props) {
   const scale = useSharedValue(1)
 
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }))
@@ -51,7 +53,10 @@ export function PrimaryButton({ label, onPress, disabled, loading, style }: Prop
             {loading ? (
               <ActivityIndicator color={Colors.background} size="small" />
             ) : (
-              <Text style={styles.text}>{label}</Text>
+              <View style={styles.content}>
+                {icon}
+                <Text style={styles.text}>{label}</Text>
+              </View>
             )}
           </LinearGradient>
         )}
@@ -61,6 +66,11 @@ export function PrimaryButton({ label, onPress, disabled, loading, style }: Prop
 }
 
 const styles = StyleSheet.create({
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   gradient: {
     height: ComponentSize.btnPrimary,
     borderRadius: Radius.pill,

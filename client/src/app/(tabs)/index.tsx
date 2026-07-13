@@ -3,7 +3,7 @@ import {
   BackHandler, View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator,
 } from 'react-native'
 import { useFocusEffect, router } from 'expo-router'
-import { Bell, Flame, PartyPopper } from 'lucide-react-native'
+import { Bell, Flame, PartyPopper, Search } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { AppHeader, HeaderIconBtn, CreateEventSheet } from '@/components/ui'
 import { EventCard } from '@/components/EventCard'
@@ -58,12 +58,17 @@ export default function HomeScreen() {
       <AppHeader
         showLogo
         rightAction={
-          <HeaderIconBtn onPress={() => router.push('/(settings)/notifications' as any)}>
-            <View>
-              <Bell size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
-              {unreadCount > 0 && <View style={styles.bellDot} />}
-            </View>
-          </HeaderIconBtn>
+          <View style={{ flexDirection: 'row', gap: 4 }}>
+            <HeaderIconBtn onPress={() => { hTap(); router.push('/(profile)/search' as any) }}>
+              <Search size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
+            </HeaderIconBtn>
+            <HeaderIconBtn onPress={() => router.push('/(settings)/notifications' as any)}>
+              <View>
+                <Bell size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
+                {unreadCount > 0 && <View style={styles.bellDot} />}
+              </View>
+            </HeaderIconBtn>
+          </View>
         }
       />
 

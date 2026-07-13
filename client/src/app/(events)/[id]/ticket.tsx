@@ -19,14 +19,13 @@ import ReAnimated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated'
-import QRCode from 'react-native-qrcode-svg'
-import ViewShot from 'react-native-view-shot'
+import ViewShot, { type ViewShotRef } from 'react-native-view-shot'
 import { Asset as MediaAsset, requestPermissionsAsync as requestMediaPermissionsAsync } from 'expo-media-library'
 import { hTap, hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily, Radius, Spacing, ComponentSize } from '@/constants'
 import ApiService, { type TicketInfo } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
-import { ConfettiRain } from '@/components/ui'
+import { ConfettiRain, StyledQr } from '@/components/ui'
 import { useGoBack } from '@/hooks/useGoBack'
 import { EventShareCard } from '@/components/EventShareCard'
 import { useImageShare } from '@/hooks/useImageShare'
@@ -130,12 +129,7 @@ function TicketCard({ ticket }: { ticket: TicketInfo }) {
       {/* QR */}
       <View style={s.qrSection}>
         <View style={s.qrPaper}>
-          <QRCode
-            value={ticket.ticket_token}
-            size={176}
-            color="#111111"
-            backgroundColor="#ffffff"
-          />
+          <StyledQr data={ticket.ticket_token} size={176} />
         </View>
         <Text style={s.scanHint}>Scan at the door</Text>
         <Text style={s.orderRef}>{orderRef(ticket.ticket_token)}</Text>
@@ -188,7 +182,7 @@ export default function TicketScreen() {
   const [ticket, setTicket] = useState<TicketInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [coverUrl, setCoverUrl] = useState('')
-  const cardRef = useRef<typeof ViewShot>(null)
+  const cardRef = useRef<ViewShotRef>(null)
   const shareCardRef = useRef<View>(null)
   const { shareImage } = useImageShare()
 

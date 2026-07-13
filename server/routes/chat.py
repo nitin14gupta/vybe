@@ -25,6 +25,10 @@ def _msg_cache_key(conv_id: str) -> str:
 # ── In-memory socket registry (fallback when Redis is unavailable) ────────────
 
 _conv_sockets: dict[str, set] = {}
+# Per-user sockets for the conversation LIST screen — lets it reorder/update
+# live (like WhatsApp) without being connected to any specific conversation's
+# /ws/chat/{conv_id} room.
+_user_sockets: dict[str, set] = {}
 
 
 async def _broadcast_local(conv_id: str, data: dict, exclude=None) -> None:
@@ -39,6 +43,30 @@ async def _broadcast_local(conv_id: str, data: dict, exclude=None) -> None:
         except Exception:
             dead.add(ws)
     room -= dead
+
+
+async def _broadcast_user_local(user_id: str, data: dict) -> None:
+    """Push directly to every open inbox socket for this user (their other devices/tabs)."""
+    room = _user_sockets.get(user_id, set())
+    dead = set()
+    for ws in list(room):
+        try:
+            await ws.send_text(json.dumps(data))
+        except Exception:
+            dead.add(ws)
+    room -= dead
+
+
+async def _notify_inbox(participant_ids: set[str], conv_id: str) -> None:
+    """Tells both participants' conversation-list screens that this
+    conversation has a new last message, so they can bump it to the top —
+    in-memory first (same-worker), Redis as fallback for multi-server."""
+    payload = {"type": "conversation_updated", "conversation_id": conv_id}
+    for pid in participant_ids:
+        if not pid:
+            continue
+        await _broadcast_user_local(pid, payload)
+        await _publish(f"inbox:{pid}", payload)
 
 
 # ── Redis helpers ─────────────────────────────────────────────────────────────
@@ -124,7 +152,11 @@ async def get_link_preview(url: str = Query(...), current_user: dict = Depends(g
 
 
 @router.get("/chat/conversations")
-def list_conversations(current_user: dict = Depends(get_current_user)):
+def list_conversations(
+    current_user: dict = Depends(get_current_user),
+    active_limit: int = Query(20, ge=1, le=100),
+    active_offset: int = Query(0, ge=0),
+):
     uid = current_user["id"]
     with get_db() as (cur, _):
         cur.execute(
@@ -201,10 +233,19 @@ def list_conversations(current_user: dict = Depends(get_current_user)):
         all_convs.append(d)
 
     pending = [c for c in all_convs if c["status"] == "pending" and c["last_sender_id"] != uid]
-    active = [c for c in all_convs if c["status"] == "active"]
+    active_all = [c for c in all_convs if c["status"] == "active"]
     locked = [c for c in all_convs if c["status"] == "pending" and c["last_sender_id"] == uid]
 
-    return {"pending": pending, "active": active, "locked": locked}
+    active_page = active_all[active_offset:active_offset + active_limit]
+    has_more = active_offset + active_limit < len(active_all)
+
+    return {
+        "pending": pending,
+        "active": active_page,
+        "locked": locked,
+        "active_total": len(active_all),
+        "has_more": has_more,
+    }
 
 
 @router.get("/chat/conversations/{conv_id}/partner-key")
@@ -553,6 +594,7 @@ async def send_message_rest(
         except Exception:
             pass
     asyncio.create_task(_publish(f"conv:{conv_id}", {"type": "message", **out}))
+    asyncio.create_task(_notify_inbox({uid, partner_id}, conv_id))
 
     if partner_id:
         # Text content is end-to-end encrypted — the server can't read it to
@@ -779,6 +821,7 @@ async def chat_websocket(
                 # Broadcast to partner — in-memory first (always works), Redis as fallback for multi-server
                 await _broadcast_local(conv_id, out, exclude=websocket)
                 await _publish(f"conv:{conv_id}", out)
+                await _notify_inbox({uid, partner_id}, conv_id)
 
                 # Push notification to partner
                 if partner_id:
@@ -806,3 +849,55 @@ async def chat_websocket(
                 await r.delete(f"online:{uid}")
             except Exception:
                 pass
+
+
+@router.websocket("/ws/inbox")
+async def inbox_websocket(websocket: WebSocket, token: str = Query(...)):
+    """One socket per open conversation-list screen. Doesn't join any
+    conversation room — it only receives `conversation_updated` pings (see
+    _notify_inbox above) so the list can bump the right row to the top and
+    refetch, the same way WhatsApp's chat list updates live."""
+    try:
+        user = _user_from_token(token)
+    except HTTPException:
+        await websocket.close(code=4001)
+        return
+
+    uid = user["id"]
+    await websocket.accept()
+    _user_sockets.setdefault(uid, set()).add(websocket)
+
+    r = await _get_redis()
+
+    async def redis_listener():
+        if not r:
+            return
+        try:
+            async with r.pubsub() as ps:
+                await ps.subscribe(f"inbox:{uid}")
+                async for raw in ps.listen():
+                    if raw["type"] != "message":
+                        continue
+                    try:
+                        await websocket.send_text(raw["data"])
+                    except Exception:
+                        break
+        except Exception:
+            pass
+
+    listener_task = asyncio.create_task(redis_listener())
+
+    try:
+        while True:
+            try:
+                await asyncio.wait_for(websocket.receive_text(), timeout=25.0)
+            except asyncio.TimeoutError:
+                await websocket.send_text(json.dumps({"type": "pong"}))
+                continue
+    except WebSocketDisconnect:
+        pass
+    except Exception as e:
+        print(f"[WS] inbox/{uid} unexpected error: {e}", flush=True)
+    finally:
+        listener_task.cancel()
+        _user_sockets.get(uid, set()).discard(websocket)

@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
 import {
   View, Text, StyleSheet, FlatList, Pressable, Image,
-  TextInput, ActivityIndicator,
+  ActivityIndicator,
 } from 'react-native'
 import { router } from 'expo-router'
-import { Search, MessageCircle, Flame, RefreshCw, Ghost } from 'lucide-react-native'
+import { MessageCircle, Flame, RefreshCw, Ghost } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { VybeInboxSheet, VybeIcebreakerModal } from '@/components/ui'
+import { VybeInboxSheet, VybeIcebreakerModal, SearchBar } from '@/components/ui'
 import { usePillStore } from '@/store/pillStore'
 import { useConversations } from '@/hooks/useConversations'
 import { useAuthStore } from '@/store/auth'
@@ -121,8 +121,11 @@ export default function ChatScreen() {
     lockedConversations,
     pendingVibes,
     loading,
+    loadingMore,
+    hasMore,
     error,
     refresh,
+    loadMore,
     acceptVybe,
     passVybe,
   } = useConversations()
@@ -174,16 +177,12 @@ export default function ChatScreen() {
             )}
           </Pressable>
         </View>
-        <View style={s.searchBar}>
-          <Search size={16} color={Colors.inkDisabled} strokeWidth={1.8} />
-          <TextInput
-            style={s.searchInput}
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search connections..."
-            placeholderTextColor={Colors.inkDisabled}
-          />
-        </View>
+        <SearchBar
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search connections..."
+          style={s.searchBar}
+        />
       </View>
 
       {loading ? (
@@ -217,6 +216,17 @@ export default function ChatScreen() {
           refreshing={refreshing}
           contentContainerStyle={s.listContent}
           ListHeaderComponent={null}
+          onEndReachedThreshold={0.4}
+          onEndReached={() => {
+            if (!search.trim() && hasMore && !loadingMore) loadMore()
+          }}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={s.footerLoading}>
+                <ActivityIndicator color={Colors.brandOrange} size="small" />
+              </View>
+            ) : null
+          }
           renderItem={({ item }) => (
             <ConvRow
               conv={item}
@@ -316,23 +326,11 @@ const s = StyleSheet.create({
   },
   inboxBadgeText: { fontFamily: FontFamily.bodySemiBold, fontSize: 10, color: '#111' },
   searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    paddingHorizontal: 14,
     height: 44,
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 14,
-    color: Colors.inkPrimary,
+    borderRadius: 12,
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 32 },
+  footerLoading: { paddingVertical: 20, alignItems: 'center' },
   emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary },
   emptySub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center' },
   retryBtn: {

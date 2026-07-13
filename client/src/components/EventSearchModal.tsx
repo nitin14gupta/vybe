@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, TextInput, Modal, FlatList, ScrollView, Pressable } from 'react-native'
+import { View, Text, StyleSheet, Modal, FlatList, ScrollView, Pressable } from 'react-native'
 import { router } from 'expo-router'
-import { Search, X, Flame, SlidersHorizontal } from 'lucide-react-native'
+import { X, Flame, SlidersHorizontal } from 'lucide-react-native'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { hTap, hSelection } from '@/lib/haptics'
 import { Colors, FontFamily, FILTER_CHIPS, matchesChip } from '@/constants'
-import { Screen } from '@/components/ui'
+import { Screen, SearchBar } from '@/components/ui'
 import { EventCard } from '@/components/EventCard'
 import { useEventSearch } from '@/hooks/useEventSearch'
 import type { EventSummary } from '@/api/apiService'
@@ -62,30 +62,23 @@ export function EventSearchModal({ visible, onClose, nearbyEvents, lat, lng, nea
           <View style={{ width: 38 }} />
         </View>
 
-        <View style={s.searchWrap}>
-          <Search size={18} color={Colors.glassTextDisabled} />
-          <TextInput
-            style={s.searchInput}
-            placeholder="Search by name or location"
-            placeholderTextColor={Colors.glassTextDisabled}
-            value={query}
-            onChangeText={setQuery}
-            autoFocus
-            returnKeyType="search"
-          />
-          {query.length > 0 && (
-            <Pressable onPress={() => { hTap(); setQuery('') }} hitSlop={8}>
-              <X size={16} color={Colors.glassTextDisabled} strokeWidth={2} />
+        <SearchBar
+          variant="glass"
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search by name or location"
+          autoFocus
+          style={s.searchWrap}
+          rightSlot={
+            <Pressable
+              onPress={() => { hSelection(); setFiltersOpen(v => !v) }}
+              style={[s.filterIconBtn, (filtersOpen || chipKey !== 'all') && s.filterIconBtnActive]}
+              hitSlop={8}
+            >
+              <SlidersHorizontal size={16} color={filtersOpen || chipKey !== 'all' ? '#fff' : Colors.glassTextDisabled} strokeWidth={2} />
             </Pressable>
-          )}
-          <Pressable
-            onPress={() => { hSelection(); setFiltersOpen(v => !v) }}
-            style={[s.filterIconBtn, (filtersOpen || chipKey !== 'all') && s.filterIconBtnActive]}
-            hitSlop={8}
-          >
-            <SlidersHorizontal size={16} color={filtersOpen || chipKey !== 'all' ? '#fff' : Colors.glassTextDisabled} strokeWidth={2} />
-          </Pressable>
-        </View>
+          }
+        />
 
         {filtersOpen && (
           <ScrollView
@@ -144,7 +137,7 @@ export function EventSearchModal({ visible, onClose, nearbyEvents, lat, lng, nea
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             ListHeaderComponent={
-              hostedEvents.length > 0 ? (
+              chipKey === 'all' && hostedEvents.length > 0 ? (
                 <View style={s.section}>
                   <Text style={s.sectionTitle}>Hosted ({hostedEvents.length})</Text>
                   {hostedEvents.map(item => (
@@ -187,17 +180,7 @@ const s = StyleSheet.create({
   title: { fontFamily: FontFamily.headingBold, fontSize: 17, color: '#fff' },
 
   searchWrap: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.glassSurface,
     marginHorizontal: 16, marginTop: 12, marginBottom: 12,
-    borderRadius: 24, paddingHorizontal: 16, height: 48,
-    borderWidth: 1, borderColor: Colors.glassBorder,
-    gap: 10,
-  },
-  searchInput: {
-    flex: 1, color: '#fff',
-    fontFamily: FontFamily.bodyRegular, fontSize: 15,
-    paddingVertical: 10,
   },
   filterIconBtn: {
     width: 30, height: 30, borderRadius: 15,

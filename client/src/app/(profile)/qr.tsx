@@ -1,35 +1,12 @@
-import { View, Text, StyleSheet, Pressable } from 'react-native'
+import { View, Pressable, StyleSheet } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { X, Share2, Download } from 'lucide-react-native'
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated'
 import { hTap } from '@/lib/haptics'
-import { FontFamily } from '@/constants'
 import { buildProfileShareUrl } from '@/lib/deepLink'
+import { Colors } from '@/constants'
 import { useQrShare } from '@/hooks/useQrShare'
-import { QrCard } from '@/components/ui'
-
-// ── Animated icon action (Share / Save) ──────────────────────────────────────
-
-function IconAction({ Icon, label, onPress }: { Icon: typeof Share2; label: string; onPress: () => void }) {
-  const scale = useSharedValue(1)
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }))
-
-  return (
-    <Pressable
-      onPressIn={() => { hTap(); scale.value = withSpring(0.94, { damping: 18, stiffness: 380 }) }}
-      onPressOut={() => { scale.value = withSpring(1, { damping: 10, stiffness: 180 }) }}
-      onPress={onPress}
-    >
-      <Animated.View style={[s.actionBtn, animStyle]}>
-        <Icon size={20} color="#111" strokeWidth={2.2} />
-        <Text style={s.actionBtnText}>{label}</Text>
-      </Animated.View>
-    </Pressable>
-  )
-}
-
-// ── Screen ────────────────────────────────────────────────────────────────────
+import { QrCard, PrimaryButton, OutlineButton } from '@/components/ui'
 
 export default function ProfileQrScreen() {
   const { userId, username, name } = useLocalSearchParams<{ userId: string; username?: string; name?: string }>()
@@ -54,8 +31,12 @@ export default function ProfileQrScreen() {
       </View>
 
       <View style={[s.actionsRow, { paddingBottom: insets.bottom + 24 }]}>
-        <IconAction Icon={Share2} label="Share" onPress={handleShare} />
-        <IconAction Icon={Download} label="Save" onPress={handleSave} />
+        <View style={s.actionBtn}>
+          <PrimaryButton label="Share" onPress={handleShare} icon={<Share2 size={18} color={Colors.background} strokeWidth={2.2} />} />
+        </View>
+        <View style={s.actionBtn}>
+          <OutlineButton label="Save" onPress={handleSave} icon={<Download size={18} color={Colors.inkPrimary} strokeWidth={2.2} />} />
+        </View>
       </View>
     </View>
   )
@@ -72,22 +53,9 @@ const s = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   actionsRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 16,
+    gap: 12,
+    paddingHorizontal: 24,
     paddingTop: 8,
   },
-  actionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#fff',
-    paddingHorizontal: 24,
-    paddingVertical: 13,
-    borderRadius: 26,
-  },
-  actionBtnText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 15,
-    color: '#111',
-  },
+  actionBtn: { flex: 1 },
 })

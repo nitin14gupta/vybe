@@ -1,9 +1,44 @@
 import { forwardRef } from 'react'
 import { View, Text, StyleSheet, type ImageSourcePropType } from 'react-native'
 import QRCodeStyled from 'react-native-qrcode-styled'
-import { Colors, FontFamily } from '@/constants'
+import { FontFamily } from '@/constants'
 
-const DEFAULT_LOGO = require('../../../assets/images/expo-logo.png')
+const DEFAULT_LOGO = require('../../../assets/images/icon.png')
+
+interface StyledQrProps {
+  data: string
+  size?: number
+  padding?: number
+  logoSource?: ImageSourcePropType
+  /** Set false to drop the center logo cutout — useful for very short/dense data */
+  showLogo?: boolean
+}
+
+// Bare branded QR graphic — modern dot pieces, black rounded finder eyes, logo
+// cut into the center. Used on its own (e.g. inside a custom ticket layout)
+// or wrapped by QrCard below for the "big scannable code in a white card" look.
+export function StyledQr({ data, size = 176, padding = 0, logoSource = DEFAULT_LOGO, showLogo = true }: StyledQrProps) {
+  return (
+    <QRCodeStyled
+      data={data}
+      style={s.qr}
+      size={size}
+      padding={padding}
+      color={'#000'}
+      errorCorrectionLevel={'H'}
+      pieceBorderRadius={'50%'}
+      pieceScale={0.86}
+      innerEyesOptions={{ borderRadius: '30%', color: '#000' }}
+      outerEyesOptions={{ borderRadius: '35%', color: '#000' }}
+      // logo={showLogo ? {
+      //   href: logoSource,
+      //   hidePieces: true,
+      //   scale: 0.28,
+      //   padding: 8,
+      // } : undefined}
+    />
+  )
+}
 
 interface QrCardProps {
   data: string
@@ -18,20 +53,7 @@ interface QrCardProps {
 // `data` deep link + title/subtitle).
 export const QrCard = forwardRef<View, QrCardProps>(({ data, title, subtitle, size = 252, logoSource = DEFAULT_LOGO }, ref) => (
   <View ref={ref} collapsable={false} style={s.card}>
-    <QRCodeStyled
-      data={data}
-      style={s.qr}
-      size={size}
-      padding={20}
-      color={'#000'}
-      errorCorrectionLevel={'H'}
-      innerEyesOptions={{ borderRadius: '20%', color: '#000' }}
-      outerEyesOptions={{ borderRadius: '30%', color: Colors.brandOrange }}
-      logo={{
-        href: logoSource,
-        padding: 4,
-      }}
-    />
+    <StyledQr data={data} size={size} logoSource={logoSource} />
     <Text style={s.title} numberOfLines={1}>{title}</Text>
     {subtitle ? <Text style={s.subtitle} numberOfLines={1}>{subtitle}</Text> : null}
   </View>
