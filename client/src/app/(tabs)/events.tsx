@@ -25,7 +25,7 @@ import { useEvents } from "@/hooks/useEvents";
 import type { EventSummary } from "@/api/apiService";
 import { EventCard, formatEventDate } from "@/components/EventCard";
 import { EventSearchModal } from "@/components/EventSearchModal";
-import { LocationWarning } from "@/components/ui";
+import { LocationWarning, CreateEventSheet } from "@/components/ui";
 import { usePermissionSheetStore } from "@/store/permissionSheetStore";
 
 const { width: W } = Dimensions.get("window");
@@ -125,6 +125,7 @@ export default function EventsScreen() {
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [listCount, setListCount] = useState(LIST_PAGE);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const previewListRef = useRef<FlatList>(null);
 
   // Events tab back → navigate to discover tab
@@ -254,7 +255,7 @@ export default function EventsScreen() {
             </Pressable>
             <Pressable
               style={styles.addBtn}
-              onPress={() => router.push("/(events)/create" as any)}
+              onPress={() => { hTap(); setCreateOpen(true) }}
               hitSlop={8}
             >
               <Plus size={18} color="#fff" strokeWidth={2.5} />
@@ -269,6 +270,12 @@ export default function EventsScreen() {
           lat={userLat}
           lng={userLng}
           nearbyLoading={loading}
+        />
+
+        <CreateEventSheet
+          visible={createOpen}
+          onClose={() => setCreateOpen(false)}
+          onCreateEvent={() => router.push("/(events)/create" as any)}
         />
 
         {/* Error overlay */}
@@ -357,7 +364,7 @@ export default function EventsScreen() {
           </Pressable>
           <Pressable
             style={styles.addBtn}
-            onPress={() => router.push("/(events)/create" as any)}
+            onPress={() => { hTap(); setCreateOpen(true) }}
             hitSlop={8}
           >
             <Plus size={18} color="#fff" strokeWidth={2.5} />
@@ -372,6 +379,12 @@ export default function EventsScreen() {
         lat={userLat}
         lng={userLng}
         nearbyLoading={loading}
+      />
+
+      <CreateEventSheet
+        visible={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreateEvent={() => router.push("/(events)/create" as any)}
       />
 
       <LocationWarning />
