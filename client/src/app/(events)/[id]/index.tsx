@@ -6,7 +6,6 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  Share,
   StyleSheet,
   Text,
   View,
@@ -44,10 +43,9 @@ import { Colors, FontFamily } from '@/constants'
 import ApiService, { type EventDetail, type EventAttendee, type EventGuest } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
 import { usePillStore } from '@/store/pillStore'
-import { ConfirmSheet, GuestListSheet } from '@/components/ui'
+import { ConfirmSheet, GuestListSheet, EventShareSheet } from '@/components/ui'
 import { ReportEventSheet } from '@/components/ReportEventSheet'
-import { EventShareCard } from '@/components/EventShareCard'
-import { useImageShare } from '@/hooks/useImageShare'
+import { buildEventShareUrl } from '@/lib/deepLink'
 
 // ── Event options bottom sheet ────────────────────────────────────────────────
 
@@ -278,8 +276,7 @@ export default function EventDetailScreen() {
 
   const [offerSecondsLeft, setOfferSecondsLeft] = useState<number | null>(null)
 
-  const shareCardRef = useRef<View>(null)
-  const { shareImage } = useImageShare()
+  const [shareSheetOpen, setShareSheetOpen] = useState(false)
 
   useFocusEffect(useCallback(() => {
     if (!id) return
@@ -393,15 +390,9 @@ export default function EventDetailScreen() {
     }
   }
 
-  const handleShare = async () => {
+  const handleShare = () => {
     if (!event) return
-    const message = `I'm going to "${event.title}"! 🎉\n${formatDateTime(event.date_time)}${event.location_name ? `\n📍 ${event.location_name}` : ''}`
-    const coverUrl = event.cover_photos?.[0]?.url
-    if (coverUrl) {
-      const result = await shareImage(shareCardRef, { message, title: event.title })
-      if (result.shared || result.error === 'cancelled') return
-    }
-    await Share.share({ message, title: event.title })
+    setShareSheetOpen(true)
   }
 
   const handleJoinWaitlist = async () => {
@@ -906,16 +897,15 @@ export default function EventDetailScreen() {
         onClose={() => setGuestSheetOpen(false)}
       />
 
-      {/* Off-screen — captured and shared as an image, never shown to the user */}
-      {event?.cover_photos?.[0]?.url && (
-        <View style={styles.shareCardHost} pointerEvents="none">
-          <EventShareCard
-            ref={shareCardRef}
-            imageUrl={event.cover_photos[0].url}
-            title={event.title}
-            dateTimeLabel={formatDateTime(event.date_time)}
-          />
-        </View>
+      {event && (
+        <EventShareSheet
+          visible={shareSheetOpen}
+          onClose={() => setShareSheetOpen(false)}
+          title={event.title}
+          dateTimeLabel={formatDateTime(event.date_time)}
+          coverUrl={event.cover_photos?.[0]?.url}
+          shareUrl={buildEventShareUrl(event.id)}
+        />
       )}
     </View>
   )
@@ -987,7 +977,6 @@ function LockedScreen({
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
   center: { alignItems: 'center', justifyContent: 'center' },
-  shareCardHost: { position: 'absolute', top: 0, left: -9999 },
 
   hero: { height: HERO_HEIGHT, backgroundColor: Colors.surface },
   heroPlaceholder: { alignItems: 'center', justifyContent: 'center' },

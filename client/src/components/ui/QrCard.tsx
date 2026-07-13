@@ -1,5 +1,5 @@
-import { forwardRef } from 'react'
-import { View, Text, StyleSheet, type ImageSourcePropType } from 'react-native'
+import { forwardRef, useEffect, useState } from 'react'
+import { View, Text, StyleSheet, InteractionManager, type ImageSourcePropType } from 'react-native'
 import QRCodeStyled from 'react-native-qrcode-styled'
 import { FontFamily } from '@/constants'
 
@@ -14,10 +14,16 @@ interface StyledQrProps {
   showLogo?: boolean
 }
 
-// Bare branded QR graphic — modern dot pieces, black rounded finder eyes, logo
-// cut into the center. Used on its own (e.g. inside a custom ticket layout)
-// or wrapped by QrCard below for the "big scannable code in a white card" look.
 export function StyledQr({ data, size = 176, padding = 0, logoSource = DEFAULT_LOGO, showLogo = true }: StyledQrProps) {
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => setReady(true))
+    return () => task.cancel()
+  }, [])
+
+  if (!ready) return <View style={[s.qr, { width: size, height: size }]} />
+
   return (
     <QRCodeStyled
       data={data}
@@ -25,17 +31,17 @@ export function StyledQr({ data, size = 176, padding = 0, logoSource = DEFAULT_L
       size={size}
       padding={padding}
       color={'#000'}
-      errorCorrectionLevel={'H'}
+      errorCorrectionLevel={'M'}
       pieceBorderRadius={'50%'}
       pieceScale={0.86}
       innerEyesOptions={{ borderRadius: '30%', color: '#000' }}
       outerEyesOptions={{ borderRadius: '35%', color: '#000' }}
-      // logo={showLogo ? {
-      //   href: logoSource,
-      //   hidePieces: true,
-      //   scale: 0.28,
-      //   padding: 8,
-      // } : undefined}
+      logo={showLogo ? {
+        href: logoSource,
+        hidePieces: true,
+        scale: 0.28,
+        padding: 8,
+      } : undefined}
     />
   )
 }

@@ -7,6 +7,7 @@ import { Colors, FontFamily } from '@/constants'
 
 export const SHARE_CARD_WIDTH = 320
 export const SHARE_CARD_HEIGHT = 400
+const LOGO = require('../../assets/images/icon.png')
 
 interface Props {
   imageUrl: string
@@ -37,7 +38,10 @@ export const EventShareCard = forwardRef<View, Props>(
             <Calendar size={16} color="#fff" strokeWidth={2} />
             <Text style={s.meta}>{dateTimeLabel}</Text>
           </View>
-          <Text style={s.brand}>VYBE</Text>
+           <View style={s.brandRow}>
+      <Image source={LOGO} style={s.logo} />
+      <Text style={s.brand}>VYBE</Text>
+    </View>
         </View>
       </View>
     )
@@ -50,5 +54,12 @@ const s = StyleSheet.create({
   title: { fontFamily: FontFamily.headingBold, fontSize: 24, color: '#fff' },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   meta: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: '#fff' },
+  logo: { width: 16, height: 16, borderRadius: 4 },
+   brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 16,
+  },
   brand: { fontFamily: FontFamily.headingBold, fontSize: 12, letterSpacing: 2, color: Colors.brandOrange, marginTop: 4 },
 })
