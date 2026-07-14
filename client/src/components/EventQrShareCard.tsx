@@ -1,10 +1,8 @@
 import { forwardRef } from 'react'
 import { View, Text, Image, StyleSheet } from 'react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, Logo } from '@/constants'
 import { StyledQr } from '@/components/ui/QrCard'
 import { SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT } from './EventShareCard'
-
-const LOGO = require('../../assets/images/icon.png')
 
 interface Props {
   data: string
@@ -22,7 +20,7 @@ export const EventQrShareCard = forwardRef<View, Props>(({ data, title, dateTime
     <Text style={s.title} numberOfLines={2}>{title}</Text>
     <Text style={s.meta}>{dateTimeLabel}</Text>
     <View style={s.brandRow}>
-      <Image source={LOGO} style={s.logo} />
+      <Image source={Logo} style={s.logo} />
       <Text style={s.brand}>VYBE</Text>
     </View>
   </View>

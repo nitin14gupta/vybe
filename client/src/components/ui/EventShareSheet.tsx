@@ -46,6 +46,7 @@ function EventShareSheetCore({ onClose, title, dateTimeLabel, coverUrl, shareUrl
   const flyerRef = useRef<View>(null)
   // No cover photo → drop the photo-based slides, keep only the QR one
   const refs = coverUrl ? [classicRef, qrRef, flyerRef] : [qrRef]
+  const slideTitles = coverUrl ? ['Share Event', 'Share QR', 'Share Flyer'] : ['Share QR']
   const slideCount = refs.length
 
   const message = `I'm going to "${title}"! 🎉\n${dateTimeLabel}\n${shareUrl}`
@@ -95,7 +96,7 @@ function EventShareSheetCore({ onClose, title, dateTimeLabel, coverUrl, shareUrl
       failOffsetX={[-15, 15]}
     >
       <BottomSheetView style={s.content}>
-        <Text style={s.title}>Share Flyer</Text>
+        <Text style={s.title}>{slideTitles[activeIndex] ?? slideTitles[0]}</Text>
         <Text style={s.subtitle}>Post to socials or send with the link</Text>
 
         <ScrollView

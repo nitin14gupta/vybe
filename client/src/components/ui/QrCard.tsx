@@ -1,9 +1,7 @@
 import { forwardRef, useEffect, useState } from 'react'
 import { View, Text, StyleSheet, InteractionManager, type ImageSourcePropType } from 'react-native'
 import QRCodeStyled from 'react-native-qrcode-styled'
-import { FontFamily } from '@/constants'
-
-const DEFAULT_LOGO = require('../../../assets/images/icon.png')
+import { FontFamily, Logo } from '@/constants'
 
 interface StyledQrProps {
   data: string
@@ -14,7 +12,17 @@ interface StyledQrProps {
   showLogo?: boolean
 }
 
-export function StyledQr({ data, size = 176, padding = 0, logoSource = DEFAULT_LOGO, showLogo = true }: StyledQrProps) {
+// Bare branded QR graphic — modern dot pieces, black rounded finder eyes, logo
+// cut into the center. Used on its own (e.g. inside a custom ticket layout)
+// or wrapped by QrCard below for the "big scannable code in a white card" look.
+//
+// Rendering every module as its own rounded/circular SVG piece is expensive
+// (hundreds of individual paths) — expensive enough that mounting it inline
+// was stalling screen transitions and sheet-open animations by several
+// seconds. We defer the actual mount by a frame so the surrounding
+// screen/sheet finishes animating in first, and this pops in a beat later
+// instead of blocking everything else.
+export function StyledQr({ data, size = 176, padding = 0, logoSource = Logo, showLogo = true }: StyledQrProps) {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -31,17 +39,17 @@ export function StyledQr({ data, size = 176, padding = 0, logoSource = DEFAULT_L
       size={size}
       padding={padding}
       color={'#000'}
-      errorCorrectionLevel={'M'}
+      errorCorrectionLevel={'H'}
       pieceBorderRadius={'50%'}
       pieceScale={0.86}
       innerEyesOptions={{ borderRadius: '30%', color: '#000' }}
       outerEyesOptions={{ borderRadius: '35%', color: '#000' }}
-      logo={showLogo ? {
-        href: logoSource,
-        hidePieces: true,
-        scale: 0.28,
-        padding: 8,
-      } : undefined}
+      // logo={showLogo ? {
+      //   href: logoSource,
+      //   hidePieces: true,
+      //   scale: 0.28,
+      //   padding: 8,
+      // } : undefined}
     />
   )
 }
@@ -57,7 +65,7 @@ interface QrCardProps {
 // Reusable "big scannable QR in a white card" — used for profile share codes
 // today; drop into event/ticket share screens the same way (pass a different
 // `data` deep link + title/subtitle).
-export const QrCard = forwardRef<View, QrCardProps>(({ data, title, subtitle, size = 252, logoSource = DEFAULT_LOGO }, ref) => (
+export const QrCard = forwardRef<View, QrCardProps>(({ data, title, subtitle, size = 252, logoSource = Logo }, ref) => (
   <View ref={ref} collapsable={false} style={s.card}>
     <StyledQr data={data} size={size} logoSource={logoSource} />
     <Text style={s.title} numberOfLines={1}>{title}</Text>

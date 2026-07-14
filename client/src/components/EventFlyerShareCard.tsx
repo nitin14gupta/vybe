@@ -1,9 +1,7 @@
 import { forwardRef } from 'react'
 import { View, Text, Image, StyleSheet } from 'react-native'
-import { FontFamily } from '@/constants'
+import { FontFamily, Logo } from '@/constants'
 import { SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT } from './EventShareCard'
-
-const LOGO = require('../../assets/images/icon.png')
 
 const RSVP_STRIP = Array(8).fill('RSVP ON VYBE').join('   •   ')
 
@@ -42,7 +40,7 @@ export const EventFlyerShareCard = forwardRef<View, Props>(
           </View>
           <Text style={s.title} numberOfLines={2}>{title}</Text>
           <View style={s.brandRow}>
-            <Image source={LOGO} style={s.logo} />
+            <Image source={Logo} style={s.logo} />
             <Text style={s.brand}>Vybe</Text>
           </View>
         </View>

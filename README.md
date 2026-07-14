@@ -1,1 +1,3 @@
 now we need work on host onboarding. so in db for eac huser there shoudl is host_onboarding completed if yes then on click + or routing to create tab goes direclty or else it wont go and give host onbiarding ui simple as that. so updatig tble in db. @server/queries.sql so ui and stuff alot to do lets goo. so need to plan it fully the host onboarding. best ui make compnoent and hoo kand stuff and connecting ot server.
+
+ok elts do so spalsh screen i wanna screate i have idea. so now we can add a screen in seetting folder for now dummy so create a file and update this file so we can start worknig on spalsh screen. @client/src/app/(settings)/index.tsx  so do this,  simply liek pariful has so good spalsh only logo. so lets do this.
