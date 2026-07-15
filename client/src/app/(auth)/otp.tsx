@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { hTap } from '@/lib/haptics'
 import { Pencil } from 'lucide-react-native'
-import { BackButton, OTPInput, PrimaryButton, Screen, KeyboardAvoidingWrapper, DeletedAccountSheet } from '@/components/ui'
+import { BackButton, OTPInput, PrimaryButton, Screen, KeyboardAvoidingWrapper, DeletedAccountSheet, LogoMark } from '@/components/ui'
 import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 import { useAuth } from '@/hooks/useAuth'
 import { useCountdown } from '@/hooks/useCountdown'
@@ -77,7 +77,10 @@ export default function OTPScreen() {
         deletedOn={deletedOn ?? ''}
         onClose={() => setDeletedOn(null)}
       />
-      <BackButton transparent onPress={() => router.back()} />
+      <View style={styles.topRow}>
+        <BackButton transparent onPress={() => router.back()} />
+        <LogoMark size={20} opacity={0.7} style={styles.topLogo} />
+      </View>
       <KeyboardAvoidingWrapper transparent>
         <View style={styles.inner}>
           <Text style={styles.title}>Enter the code</Text>
@@ -129,6 +132,14 @@ export default function OTPScreen() {
 }
 
 const styles = StyleSheet.create({
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  topLogo: {
+    marginRight: Spacing.screenPadding,
+  },
   inner: {
     flex: 1,
     paddingHorizontal: Spacing.screenPadding,

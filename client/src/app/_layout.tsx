@@ -1,6 +1,6 @@
 import '../../global.css'
 import { useEffect, useState } from 'react'
-import { StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated'
 
 configureReanimatedLogger({ level: ReanimatedLogLevel.warn, strict: false })
@@ -10,6 +10,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
+import { SplashScreen as AppSplashScreen } from '@/components/SplashScreen'
 import { useVybeFonts } from '@/lib/fonts'
 import { useAuthStore } from '@/store/auth'
 import { tokenStorage } from '@/lib/tokenStorage'
@@ -86,14 +87,18 @@ export default function RootLayout() {
     bootstrap()
   }, [])
 
-  useEffect(() => {
-    if ((fontsLoaded || fontError) && authReady) {
-      SplashScreen.hideAsync()
-    }
-  }, [fontsLoaded, fontError, authReady])
+  const appReady = (fontsLoaded || fontError) && authReady
 
-  // Always render the navigation tree so expo-router's useLinking stays mounted.
-  // SplashScreen covers the UI while fonts + auth bootstrap; hiding it is handled above.
+  useEffect(() => {
+    // Our own animated splash (below) already covers the screen by the time
+    // this runs, so hiding the native one here is seamless — no blank-frame
+    // flash between "native splash" and "our splash".
+    SplashScreen.hideAsync()
+  }, [])
+
+  // Always render the navigation tree so expo-router's useLinking stays
+  // mounted, even while fonts/auth are still bootstrapping — the custom
+  // splash overlay below just sits on top of it until appReady.
   return (
     <GestureHandlerRootView style={styles.root}>
       <KeyboardProvider>
@@ -102,6 +107,11 @@ export default function RootLayout() {
         <RootNavigator />
         <PillOverlay />
         <PermissionSheetOverlay />
+        {!appReady && (
+          <View style={StyleSheet.absoluteFill}>
+            <AppSplashScreen />
+          </View>
+        )}
       </BottomSheetModalProvider>
       </KeyboardProvider>
     </GestureHandlerRootView>

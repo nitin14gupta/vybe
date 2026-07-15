@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
 import { hTap } from '@/lib/haptics'
-import { PrimaryButton, OutlineButton, Screen } from '@/components/ui'
+import { PrimaryButton, OutlineButton, Screen, LogoMark } from '@/components/ui'
 import { Colors, FontFamily, Spacing } from '@/constants'
 import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 
@@ -28,6 +28,7 @@ export default function AgeGateScreen() {
   return (
     <Screen transparent style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 }}>
       <LiquidPlasmaBackground />
+      <LogoMark size={30} opacity={0.9} style={{ marginBottom: 24 }} />
       <Text style={styles.emoji}>🎂</Text>
       <Text style={styles.title}>Are you 18 or older?</Text>
       <Text style={styles.body}>

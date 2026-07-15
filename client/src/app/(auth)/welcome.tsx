@@ -8,12 +8,14 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated'
 import { LinearGradient } from 'expo-linear-gradient'
-import { PrimaryButton, TextLinkButton, Screen } from '@/components/ui'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { PrimaryButton, TextLinkButton, Screen, LogoMark } from '@/components/ui'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 
 const { height } = Dimensions.get('window')
 
 export default function WelcomeScreen() {
+  const insets = useSafeAreaInsets()
   const cardY = useSharedValue(40)
   const cardOpacity = useSharedValue(0)
 
@@ -42,6 +44,10 @@ export default function WelcomeScreen() {
           end={{ x: 0, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
+        <View style={[styles.brandRow, { top: insets.top + 12 }]}>
+          <LogoMark size={22} />
+          <Text style={styles.brandText}>VYBE</Text>
+        </View>
       </View>
 
       {/* Bottom card */}
@@ -81,6 +87,19 @@ const styles = StyleSheet.create({
   cityImage: {
     width: '100%',
     height: '100%',
+  },
+  brandRow: {
+    position: 'absolute',
+    left: Spacing.screenPadding,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  brandText: {
+    fontFamily: FontFamily.headingBold,
+    fontSize: 15,
+    letterSpacing: 1,
+    color: '#fff',
   },
   card: {
     flex: 1,

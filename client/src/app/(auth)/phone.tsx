@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
-import { BackButton, PhoneInput, PrimaryButton, KeyboardAvoidingWrapper, InAppBrowserModal } from '@/components/ui'
+import { BackButton, PhoneInput, PrimaryButton, KeyboardAvoidingWrapper, InAppBrowserModal, LogoMark } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
 import { Colors, FontFamily, Spacing, TERMS_URL, PRIVACY_URL } from '@/constants'
 import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
@@ -33,7 +33,10 @@ export default function PhoneScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <LiquidPlasmaBackground />
-      <BackButton transparent onPress={() => router.back()} />
+      <View style={styles.topRow}>
+        <BackButton transparent onPress={() => router.back()} />
+        <LogoMark size={20} opacity={0.7} style={styles.topLogo} />
+      </View>
       <KeyboardAvoidingWrapper transparent>
         <View style={styles.inner}>
           <View style={styles.header}>
@@ -77,6 +80,14 @@ export default function PhoneScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  topLogo: {
+    marginRight: Spacing.screenPadding,
   },
   inner: {
     flex: 1,

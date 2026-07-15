@@ -4,10 +4,10 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import { router } from 'expo-router'
-import { MessageCircle, Flame, RefreshCw, Ghost } from 'lucide-react-native'
+import { Flame, RefreshCw, Ghost } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { VybeInboxSheet, VybeIcebreakerModal, SearchBar } from '@/components/ui'
+import { VybeInboxSheet, VybeIcebreakerModal, SearchBar, LogoMark } from '@/components/ui'
 import { usePillStore } from '@/store/pillStore'
 import { useConversations } from '@/hooks/useConversations'
 import { useAuthStore } from '@/store/auth'
@@ -200,7 +200,7 @@ export default function ChatScreen() {
         </View>
       ) : isEmpty ? (
         <View style={s.center}>
-          <MessageCircle size={52} color={Colors.inkDisabled} strokeWidth={1.2} />
+          <LogoMark size={72} opacity={0.1} style={{ marginBottom: 4 }} />
           <Text style={s.emptyTitle}>No chats yet</Text>
           <Text style={s.emptySub}>Send a Vybe to spark a conversation</Text>
           <Pressable onPress={() => router.navigate('/(tabs)/')} style={s.exploreBtn}>

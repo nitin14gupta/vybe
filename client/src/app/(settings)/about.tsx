@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native'
 import { router } from 'expo-router'
 import Constants from 'expo-constants'
 import { ArrowLeft, ChevronRight } from 'lucide-react-native'
-import { Screen, AppHeader, HeaderIconBtn } from '@/components/ui'
+import { Screen, AppHeader, HeaderIconBtn, LogoMark } from '@/components/ui'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 
 export default function AboutScreen() {
@@ -19,6 +19,7 @@ export default function AboutScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         {/* Logo block */}
         <View style={styles.logoBlock}>
+          <LogoMark size={48} style={{ marginBottom: 4 }} />
           <Text style={styles.wordmark}>VYBE</Text>
           <Text style={styles.tagline}>Meet. Vybe. Connect.</Text>
           <Text style={styles.version}>Version {version} ({buildNumber})</Text>
