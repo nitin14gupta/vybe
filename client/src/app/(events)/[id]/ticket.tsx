@@ -131,7 +131,10 @@ function TicketCard({ ticket }: { ticket: TicketInfo }) {
         <View style={s.qrPaper}>
           <StyledQr data={ticket.ticket_token} size={176} />
         </View>
-        <Text style={s.scanHint}>Scan at the door</Text>
+        <View style={s.scanHintRow}>
+          <LogoMark size={13} opacity={0.55} />
+          <Text style={s.scanHint}>Scan at the door</Text>
+        </View>
         <Text style={s.orderRef}>{orderRef(ticket.ticket_token)}</Text>
       </View>
     </View>
@@ -462,6 +465,11 @@ const s = StyleSheet.create({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 4,
+  },
+  scanHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   scanHint: {
     fontFamily: FontFamily.bodySemiBold,

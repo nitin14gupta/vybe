@@ -224,6 +224,7 @@ export interface Conversation {
   last_unsent?: boolean
   unread_count: number
   last_message_at: string | null
+  block_status?: 'none' | 'i_blocked' | 'they_blocked'
 }
 
 export interface EventAttendee {
@@ -632,14 +633,14 @@ class ApiService {
 
   // ── Chat ───────────────────────────────────────────────────────────────────
 
-  static async getConversations(activeLimit = 20, activeOffset = 0): Promise<{
+  static async getConversations(activeLimit = 20, activeOffset = 0, includeHidden = false): Promise<{
     pending: Conversation[]
     active: Conversation[]
     locked: Conversation[]
     active_total: number
     has_more: boolean
   }> {
-    return this.get(`${ENDPOINTS.CONVERSATIONS}?active_limit=${activeLimit}&active_offset=${activeOffset}`)
+    return this.get(`${ENDPOINTS.CONVERSATIONS}?active_limit=${activeLimit}&active_offset=${activeOffset}&include_hidden=${includeHidden}`)
   }
 
   static async getLinkPreview(url: string): Promise<LinkPreview> {

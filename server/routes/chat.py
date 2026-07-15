@@ -156,8 +156,14 @@ def list_conversations(
     current_user: dict = Depends(get_current_user),
     active_limit: int = Query(20, ge=1, le=100),
     active_offset: int = Query(0, ge=0),
+    include_hidden: bool = Query(False),
 ):
     uid = current_user["id"]
+    hidden_filter_sql = (
+        ""
+        if include_hidden
+        else "\n              AND NOT (%s::uuid = ANY(COALESCE(c.hidden_by, '{}'::uuid[])))"
+    )
     with get_db() as (cur, _):
         cur.execute(
             """
@@ -218,11 +224,10 @@ def list_conversations(
                   AND NOT (%s::uuid = ANY(COALESCE(deleted_for, '{}'::uuid[])))
                 ORDER BY sent_at DESC LIMIT 1
             ) m ON true
-            WHERE (c.user1_id = %s::uuid OR c.user2_id = %s::uuid)
-              AND NOT (%s::uuid = ANY(COALESCE(c.hidden_by, '{}'::uuid[])))
+            WHERE (c.user1_id = %s::uuid OR c.user2_id = %s::uuid)""" + hidden_filter_sql + """
             ORDER BY COALESCE(c.last_message_at, c.created_at) DESC
             """,
-            (uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid),
+            (uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid) + (() if include_hidden else (uid,)),
         )
         rows = cur.fetchall()
 

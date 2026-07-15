@@ -18,17 +18,16 @@ export function AppHeader({ showLogo = false, title, leftAction, rightAction, tr
   return (
     <View style={[styles.root, transparent && styles.rootTransparent, { paddingTop: insets.top }]}>
       <View style={styles.bar}>
-        {showLogo ? (
-          <View style={styles.brandRow}>
-            <LogoMark size={22} />
-            <Text style={styles.logo}>VYBE</Text>
-          </View>
-        ) : (
-          <View style={styles.side}>{leftAction ?? <View />}</View>
-        )}
+        <View style={styles.side}>
+          {showLogo ? <LogoMark size={22} style={styles.sideLogo} /> : (leftAction ?? <View />)}
+        </View>
 
         <View style={styles.center}>
-          {!showLogo && title ? <Text style={styles.title}>{title}</Text> : null}
+          {showLogo ? (
+            <Text style={styles.logo}>VYBE</Text>
+          ) : title ? (
+            <Text style={styles.title}>{title}</Text>
+          ) : null}
         </View>
 
         <View style={[styles.side, styles.sideRight]}>{rightAction ?? <View />}</View>
@@ -74,10 +73,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     justifyContent: 'center',
   },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
+  sideLogo: {
+    marginLeft: 6,
   },
   sideRight: {
     alignItems: 'flex-end',

@@ -4,13 +4,15 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import { router } from 'expo-router'
-import { Flame, RefreshCw, Ghost } from 'lucide-react-native'
+import { Flame, RefreshCw, Ghost, Search } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { VybeInboxSheet, VybeIcebreakerModal, SearchBar, LogoMark } from '@/components/ui'
+import { VybeInboxSheet, VybeIcebreakerModal, LogoMark, ProfileMenuSheet } from '@/components/ui'
+import { ChatSearchModal } from '@/components/ChatSearchModal'
 import { usePillStore } from '@/store/pillStore'
 import { useConversations } from '@/hooks/useConversations'
 import { useAuthStore } from '@/store/auth'
+import ApiService from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
 import type { Conversation } from '@/api/apiService'
 
@@ -56,13 +58,15 @@ function formatLastMessage(conv: Conversation, currentUserId: string | null): st
 
 // ── Conversation row ──────────────────────────────────────────────────────────
 
-function ConvRow({ conv, onPress, currentUserId }: { conv: Conversation; onPress: () => void; currentUserId: string | null }) {
+function ConvRow({ conv, onPress, onLongPress, currentUserId }: {
+  conv: Conversation; onPress: () => void; onLongPress: () => void; currentUserId: string | null
+}) {
   const isLocked   = conv.status === 'pending'
   const isDeleted  = conv.partner_is_deleted
   const displayName = conv.partner_name ?? 'User'
 
   return (
-    <Pressable onPress={onPress} style={[s.convRow, isLocked && s.convRowLocked]}>
+    <Pressable onPress={onPress} onLongPress={onLongPress} style={[s.convRow, isLocked && s.convRowLocked]}>
       <View style={s.convAvatarWrap}>
         {isDeleted ? (
           <View style={[s.convAvatar, s.convAvatarDeleted]}>
@@ -108,10 +112,12 @@ function ConvRow({ conv, onPress, currentUserId }: { conv: Conversation; onPress
 
 export default function ChatScreen() {
   const insets = useSafeAreaInsets()
-  const [search, setSearch] = useState('')
   const [inboxOpen, setInboxOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [pendingAccept, setPendingAccept] = useState<{ vibeId: string; name: string | null } | null>(null)
+  const [menuTarget, setMenuTarget] = useState<Conversation | null>(null)
+  const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set())
 
   const showPill = usePillStore(s => s.show)
   const currentUserId = useAuthStore(s => s.userId)
@@ -151,16 +157,44 @@ export default function ChatScreen() {
     ...lockedConversations.slice().sort(sortByRecent),
   ]
 
-  const filtered = search.trim()
-    ? allConvs.filter(c =>
-        (c.partner_name ?? '').toLowerCase().includes(search.toLowerCase()),
-      )
-    : allConvs
-
   const isEmpty = !loading && !error && allConvs.length === 0 && pendingVibes.length === 0
 
+  const openConversation = (item: Conversation) => {
+    if (item.status === 'active') {
+      router.push(`/(chat)/${item.id}` as any)
+    } else {
+      router.push({
+        pathname: '/(chat)/pending' as any,
+        params: {
+          partnerName: item.partner_name ?? '',
+          partnerAvatar: item.partner_avatar ?? '',
+          message: item.last_message ?? '',
+        },
+      })
+    }
+  }
+
+  const handleBlock = async () => {
+    if (!menuTarget) return
+    await ApiService.blockUser(menuTarget.partner_id)
+    setBlockedIds(prev => new Set(prev).add(menuTarget.partner_id))
+  }
+
+  const handleUnblock = async () => {
+    if (!menuTarget) return
+    await ApiService.unblockUser(menuTarget.partner_id)
+    setBlockedIds(prev => { const next = new Set(prev); next.delete(menuTarget.partner_id); return next })
+  }
+
+  const handleReport = async (reason: string) => {
+    if (!menuTarget) return
+    await ApiService.reportUser(menuTarget.partner_id, reason)
+  }
+
+  const isTargetBlocked = !!menuTarget && (blockedIds.has(menuTarget.partner_id) || menuTarget.block_status === 'i_blocked')
+
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
+    <View style={[s.root, { paddingTop: insets.top + 4 }]}>
       {/* Header */}
       <View style={s.header}>
         <View style={s.headerTop}>
@@ -177,12 +211,10 @@ export default function ChatScreen() {
             )}
           </Pressable>
         </View>
-        <SearchBar
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search connections..."
-          style={s.searchBar}
-        />
+        <Pressable style={s.searchBar} onPress={() => { hTap(); setSearchOpen(true) }}>
+          <Search size={16} color={Colors.inkDisabled} strokeWidth={1.8} />
+          <Text style={s.searchBarText}>Search conversations...</Text>
+        </Pressable>
       </View>
 
       {loading ? (
@@ -209,7 +241,7 @@ export default function ChatScreen() {
         </View>
       ) : (
         <FlatList
-          data={filtered}
+          data={allConvs}
           keyExtractor={c => c.id}
           showsVerticalScrollIndicator={false}
           onRefresh={handleRefresh}
@@ -218,7 +250,7 @@ export default function ChatScreen() {
           ListHeaderComponent={null}
           onEndReachedThreshold={0.4}
           onEndReached={() => {
-            if (!search.trim() && hasMore && !loadingMore) loadMore()
+            if (hasMore && !loadingMore) loadMore()
           }}
           ListFooterComponent={
             loadingMore ? (
@@ -231,27 +263,10 @@ export default function ChatScreen() {
             <ConvRow
               conv={item}
               currentUserId={currentUserId}
-              onPress={() => {
-                if (item.status === 'active') {
-                  router.push(`/(chat)/${item.id}` as any)
-                } else {
-                  router.push({
-                    pathname: '/(chat)/pending' as any,
-                    params: {
-                      partnerName: item.partner_name ?? '',
-                      partnerAvatar: item.partner_avatar ?? '',
-                      message: item.last_message ?? '',
-                    },
-                  })
-                }
-              }}
+              onPress={() => openConversation(item)}
+              onLongPress={() => { hTap(); setMenuTarget(item) }}
             />
           )}
-          ListEmptyComponent={
-            <View style={s.center}>
-              <Text style={s.emptySub}>No conversations match your search</Text>
-            </View>
-          }
         />
       )}
 
@@ -287,6 +302,27 @@ export default function ChatScreen() {
         }}
         onClose={() => setPendingAccept(null)}
       />
+
+      <ChatSearchModal
+        visible={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        conversations={activeConversations}
+        onSelectConversation={openConversation}
+      />
+
+      {menuTarget && (
+        <ProfileMenuSheet
+          visible={!!menuTarget}
+          userId={menuTarget.partner_id}
+          username={menuTarget.partner_username}
+          targetName={menuTarget.partner_name}
+          isBlocked={isTargetBlocked}
+          onBlock={handleBlock}
+          onUnblock={handleUnblock}
+          onReport={handleReport}
+          onClose={() => setMenuTarget(null)}
+        />
+      )}
     </View>
   )
 }
@@ -312,8 +348,7 @@ const s = StyleSheet.create({
   },
   inboxBtn: {
     width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,107,53,0.12)',
-    borderWidth: 1, borderColor: 'rgba(255,107,53,0.25)',
+    // backgroundColor: 'rgba(255,107,53,0.12)',
     alignItems: 'center', justifyContent: 'center',
   },
   inboxBadge: {
@@ -326,8 +361,20 @@ const s = StyleSheet.create({
   },
   inboxBadgeText: { fontFamily: FontFamily.bodySemiBold, fontSize: 10, color: '#111' },
   searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     height: 44,
     borderRadius: 12,
+    paddingHorizontal: 14,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.divider,
+  },
+  searchBarText: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 14,
+    color: Colors.inkDisabled,
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 32 },
   footerLoading: { paddingVertical: 20, alignItems: 'center' },

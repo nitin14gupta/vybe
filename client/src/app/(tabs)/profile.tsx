@@ -1,13 +1,13 @@
 import { useEffect, useState, useCallback } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, Pressable,
-  Image, Dimensions, ActivityIndicator, RefreshControl,
+  Image, Dimensions, RefreshControl,
 } from 'react-native'
 import { router } from 'expo-router'
 import { hTap } from '@/lib/haptics'
 import { MapPin, Play, Pause, Pencil, Settings, Share } from 'lucide-react-native'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
-import { InterestChip, PlaybackWave, AppHeader, HeaderIconBtn } from '@/components/ui'
+import { InterestChip, PlaybackWave, AppHeader, HeaderIconBtn, BrandedLoader } from '@/components/ui'
 import { useProfile } from '@/hooks/useProfile'
 import { useAuthStore } from '@/store/auth'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
@@ -56,7 +56,7 @@ export default function ProfileScreen() {
   if (loading) {
     return (
       <View style={styles.loader}>
-        <ActivityIndicator color={Colors.brandOrange} />
+        <BrandedLoader />
       </View>
     )
   }

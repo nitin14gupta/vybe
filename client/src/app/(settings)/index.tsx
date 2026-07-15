@@ -1,9 +1,9 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import { router } from 'expo-router'
 import {
-  User, Bell, HelpCircle, MessageSquare, Shield, FileText,
+  User, Bell, HelpCircle, MessageSquare,
   Info, LogOut, Calendar, Ticket, Wallet, HeadphonesIcon,
-  Trash2, Eye,
+  Trash2,
 } from 'lucide-react-native'
 import { Screen, BackButton, SettingRow, ConfirmSheet } from '@/components/ui'
 import { useSettings } from '@/hooks/useSettings'
@@ -104,15 +104,9 @@ export default function SettingsScreen() {
         <Text style={styles.sectionLabel}>PRIVACY</Text>
         <View style={styles.card}>
           <SettingRow
-            icon={<Eye size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
-            label="Show Me in Discover"
-            onPress={() => router.push('/(settings)/discoverable' as any)}
-          />
-          <SettingRow
-            icon={<Trash2 size={18} color={Colors.brandCoral} strokeWidth={1.5} />}
+            icon={<Trash2 size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
             label="Delete Account"
             onPress={() => router.push('/(settings)/delete-account' as any)}
-            destructive
             showSeparator={false}
           />
         </View>
@@ -120,10 +114,9 @@ export default function SettingsScreen() {
         {/* Logout */}
         <View style={styles.logoutWrap}>
           <SettingRow
-            icon={<LogOut size={18} color={Colors.brandCoral} strokeWidth={1.5} />}
+            icon={<LogOut size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
             label="Log Out"
             onPress={showLogout}
-            destructive
             showSeparator={false}
           />
         </View>

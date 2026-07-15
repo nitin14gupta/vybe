@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useState } from 'react'
-import { View, Text, StyleSheet, InteractionManager, type ImageSourcePropType } from 'react-native'
+import { View, Text, StyleSheet, InteractionManager, ActivityIndicator, type ImageSourcePropType } from 'react-native'
 import QRCodeStyled from 'react-native-qrcode-styled'
 import { FontFamily, Logo } from '@/constants'
 
@@ -30,7 +30,13 @@ export function StyledQr({ data, size = 176, padding = 0, logoSource = Logo, sho
     return () => task.cancel()
   }, [])
 
-  if (!ready) return <View style={[s.qr, { width: size, height: size }]} />
+  if (!ready) {
+    return (
+      <View style={[s.qr, s.qrLoading, { width: size, height: size }]}>
+        <ActivityIndicator color="#ccc" />
+      </View>
+    )
+  }
 
   return (
     <QRCodeStyled
@@ -84,6 +90,7 @@ const s = StyleSheet.create({
     gap: 4,
   },
   qr: { backgroundColor: '#fff' },
+  qrLoading: { alignItems: 'center', justifyContent: 'center' },
   title: {
     fontFamily: FontFamily.headingBold,
     fontSize: 18,

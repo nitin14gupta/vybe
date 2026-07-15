@@ -1,11 +1,11 @@
 import { useCallback, useRef, useState } from 'react'
 import {
-  BackHandler, View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator,
+  BackHandler, View, Text, StyleSheet, Pressable, FlatList,
 } from 'react-native'
 import { useFocusEffect, router } from 'expo-router'
 import { Bell, Flame, PartyPopper, Search } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import { AppHeader, HeaderIconBtn, CreateEventSheet } from '@/components/ui'
+import { AppHeader, HeaderIconBtn, CreateEventSheet, BrandedLoader } from '@/components/ui'
 import { EventCard } from '@/components/EventCard'
 import { useEvents } from '@/hooks/useEvents'
 import { useProfile } from '@/hooks/useProfile'
@@ -121,7 +121,7 @@ export default function HomeScreen() {
         ListEmptyComponent={
           loading ? (
             <View style={styles.center}>
-              <ActivityIndicator color={Colors.brandOrange} />
+              <BrandedLoader />
             </View>
           ) : error ? (
             <View style={styles.center}>
