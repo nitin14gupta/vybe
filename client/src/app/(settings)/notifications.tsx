@@ -11,10 +11,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import ApiService, { AppNotification } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
 import { notifEntityToTarget, targetToHref } from '@/lib/deepLink'
-import { useAuthStore } from '@/store/auth'
+import { OutlineButton, PrimaryButton } from '@/components/ui'
 
-// ── Dev-only mock data — lets us eyeball every notification type/copy at once ──
-// (__DEV__ gated below; never shows in a production build)
 const MOCK_AVATAR = (n: number) => `https://i.pravatar.cc/150?img=${n}`
 
 function buildMockNotifications(): AppNotification[] {
@@ -115,29 +113,30 @@ function NotifRow({ item, onPress, onAction }: {
           {unread && <View style={s.unreadDot} />}
         </View>
         <View style={s.textBlock}>
-          <Text style={s.title} numberOfLines={2}>{item.title}</Text>
-          {item.body ? <Text style={s.body} numberOfLines={2}>{item.body}</Text> : null}
+          <Text style={s.title}>{item.title}</Text>
+          {item.body ? <Text style={s.body}>{item.body}</Text> : null}
           <Text style={s.time}>{timeAgo(item.created_at)}</Text>
         </View>
       </Pressable>
 
       {item.action && item.action_label && ActionIcon ? (
-        <Pressable
-          style={({ pressed }) => [
-            isPrimary ? s.actionBtnPrimary : s.actionBtnSecondary,
-            pressed && (isPrimary ? s.actionBtnPrimaryPressed : s.actionBtnSecondaryPressed),
-          ]}
-          onPress={() => onAction(item)}
-          hitSlop={6}
-        >
-          <ActionIcon size={14} color={isPrimary ? '#111' : Colors.inkPrimary} strokeWidth={2} />
-          <Text
-            style={isPrimary ? s.actionBtnPrimaryText : s.actionBtnSecondaryText}
-            numberOfLines={1}
-          >
-            {item.action_label}
-          </Text>
-        </Pressable>
+        <View style={s.actionBtnWrap}>
+          {isPrimary ? (
+            <PrimaryButton
+              label={item.action_label}
+              onPress={() => onAction(item)}
+              icon={<ActionIcon size={14} color="#111" strokeWidth={2} />}
+              size="small"
+            />
+          ) : (
+            <OutlineButton
+              label={item.action_label}
+              onPress={() => onAction(item)}
+              icon={<ActionIcon size={14} color={Colors.inkPrimary} strokeWidth={2} />}
+              size="small"
+            />
+          )}
+        </View>
       ) : null}
     </View>
   )
@@ -159,7 +158,7 @@ export default function NotificationsScreen() {
       setNotifs(data)
       setHasMore(data.length === 10)
       if (data.length > 0) cursorRef.current = data[data.length - 1].created_at
-    } catch {}
+    } catch { }
     finally { setLoading(false) }
   }, [])
 
@@ -170,7 +169,7 @@ export default function NotificationsScreen() {
       setNotifs(prev => [...prev, ...data])
       setHasMore(data.length === 10)
       if (data.length > 0) cursorRef.current = data[data.length - 1].created_at
-    } catch {}
+    } catch { }
     finally { setLoadingMore(false) }
   }, [])
 
@@ -184,7 +183,7 @@ export default function NotificationsScreen() {
 
   const markRead = async (item: AppNotification) => {
     if (item.read_at) return
-    await ApiService.markNotificationRead(item.id).catch(() => {})
+    await ApiService.markNotificationRead(item.id).catch(() => { })
     setNotifs(prev => prev.map(n => n.id === item.id ? { ...n, read_at: new Date().toISOString() } : n))
   }
 
@@ -328,36 +327,8 @@ const s = StyleSheet.create({
   title: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkPrimary, lineHeight: 20 },
   body: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, lineHeight: 18 },
   time: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, marginTop: 2 },
-  // Mirrors the profile screen's CTA bar (client/src/app/(profile)/[id].tsx) —
-  // primary = filled orange (Send Vybe / Message), secondary = outlined (Follow / Follow Back).
-  actionBtnPrimary: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 100,
-    backgroundColor: Colors.brandOrange,
-  },
-  actionBtnPrimaryPressed: {
-    backgroundColor: '#e85f2e',
-  },
-  actionBtnPrimaryText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 12,
-    color: '#111',
-  },
-  actionBtnSecondary: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 14, paddingVertical: 7,
-    borderRadius: 100,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  actionBtnSecondaryPressed: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-  },
-  actionBtnSecondaryText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 12,
-    color: Colors.inkPrimary,
+  actionBtnWrap: {
+    marginLeft: 'auto',
   },
   loadMoreBtn: { alignItems: 'center', paddingVertical: 16 },
   loadMoreText: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.brandOrange },

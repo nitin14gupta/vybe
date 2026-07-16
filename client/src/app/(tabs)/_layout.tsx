@@ -156,8 +156,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.inkSecondary,
   },
   avatarWrap: {
-    width: 24,
-    height: 24,
+    width: 28,
+    height: 28,
     borderRadius: 14,
     overflow: "hidden",
     borderWidth: 1.5,

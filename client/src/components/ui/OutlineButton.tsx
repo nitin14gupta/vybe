@@ -11,10 +11,12 @@ interface Props {
   loading?: boolean
   icon?: ReactNode
   style?: ViewStyle
+  size?: 'default' | 'small'
 }
 
-export function OutlineButton({ label, onPress, disabled, loading, icon, style }: Props) {
+export function OutlineButton({ label, onPress, disabled, loading, icon, style, size = 'default' }: Props) {
   const scale = useSharedValue(1)
+  const isSmall = size === 'small'
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }))
 
   return (
@@ -24,13 +26,13 @@ export function OutlineButton({ label, onPress, disabled, loading, icon, style }
       onPressOut={() => { scale.value = withSpring(1, { duration: 120 }) }}
       disabled={disabled || loading}
     >
-      <Animated.View style={[styles.btn, style, animStyle]}>
+      <Animated.View style={[styles.btn, isSmall && styles.btnSmall, style, animStyle]}>
         {loading ? (
           <ActivityIndicator color={Colors.inkPrimary} size="small" />
         ) : (
           <View style={styles.content}>
             {icon}
-            <Text style={[styles.text, disabled && styles.disabledText]}>{label}</Text>
+            <Text style={[styles.text, isSmall && styles.textSmall, disabled && styles.disabledText]}>{label}</Text>
           </View>
         )}
       </Animated.View>
@@ -59,5 +61,12 @@ const styles = StyleSheet.create({
   },
   disabledText: {
     color: Colors.inkDisabled,
+  },
+  btnSmall: {
+    height: 36,
+    paddingHorizontal: 16,
+  },
+  textSmall: {
+    fontSize: 13,
   },
 })

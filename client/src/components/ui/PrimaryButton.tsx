@@ -12,12 +12,14 @@ interface Props {
   loading?: boolean
   icon?: ReactNode
   style?: ViewStyle
+  size?: 'default' | 'small'
 }
 
 const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient)
 
-export function PrimaryButton({ label, onPress, disabled, loading, icon, style }: Props) {
+export function PrimaryButton({ label, onPress, disabled, loading, icon, style, size = 'default' }: Props) {
   const scale = useSharedValue(1)
+  const isSmall = size === 'small'
 
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }))
 
@@ -40,22 +42,22 @@ export function PrimaryButton({ label, onPress, disabled, loading, icon, style }
     >
       <Animated.View style={[animStyle, style]}>
         {disabled && !loading ? (
-          <Animated.View style={styles.disabled}>
-            <Text style={styles.disabledText}>{label}</Text>
+          <Animated.View style={[styles.disabled, isSmall && styles.gradientSmall]}>
+            <Text style={[styles.disabledText, isSmall && styles.textSmall]}>{label}</Text>
           </Animated.View>
         ) : (
           <LinearGradient
             colors={[Colors.brandOrange, Colors.brandCoral]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.gradient}
+            style={[styles.gradient, isSmall && styles.gradientSmall]}
           >
             {loading ? (
               <ActivityIndicator color={Colors.background} size="small" />
             ) : (
               <View style={styles.content}>
                 {icon}
-                <Text style={styles.text}>{label}</Text>
+                <Text style={[styles.text, isSmall && styles.textSmall]}>{label}</Text>
               </View>
             )}
           </LinearGradient>
@@ -95,5 +97,12 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 16,
     color: Colors.inkDisabled,
+  },
+  gradientSmall: {
+    height: 36,
+    paddingHorizontal: 16,
+  },
+  textSmall: {
+    fontSize: 13,
   },
 })
