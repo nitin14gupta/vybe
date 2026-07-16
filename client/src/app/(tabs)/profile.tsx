@@ -27,11 +27,11 @@ const GENDER_DISPLAY: Record<string, string> = {
   'Prefer not to say': '—',
 }
 
-const HOST_BADGES: Record<string, any> = {
-  'Ignite': require('@/assets/images/flame.svg'),
-  'Buzzing': require('@/assets/images/lightning.svg'),
-  'Iconic': require('@/assets/images/crown.svg'),
-  'Gorave OG': require('@/assets/images/star.svg'),
+const HOST_BADGES: Record<string, string> = {
+  'Rising': '🛡️',
+  'Established': '⭐',
+  'Elite': '💎',
+  'Legend': '👑',
 }
 
 export default function ProfileScreen() {
@@ -148,7 +148,7 @@ export default function ProfileScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 8 }}>
             <Text style={[styles.nameLarge, { marginBottom: 0 }]} numberOfLines={1}>{name}</Text>
             {hostBadgeIcon && (
-              <ExpoImage source={hostBadgeIcon} style={{ width: 40, height: 40 }} contentFit="contain" />
+              <Text style={{ fontSize: 24, marginLeft: -2 }}>{hostBadgeIcon}</Text>
             )}
           </View>
 
@@ -235,7 +235,7 @@ export default function ProfileScreen() {
                 const icon = HOST_BADGES[badge]
                 return (
                   <View key={badge} style={styles.badgeChip}>
-                    {icon && <ExpoImage source={icon} style={{ width: 14, height: 14, marginRight: 6 }} contentFit="contain" />}
+                    {icon && <Text style={{ fontSize: 14, marginRight: 4 }}>{icon}</Text>}
                     <Text style={styles.badgeText}>{badge}</Text>
                   </View>
                 )

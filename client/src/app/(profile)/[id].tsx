@@ -24,11 +24,11 @@ import { parseServerDate } from '@/lib/dates'
 
 const { width: W } = Dimensions.get('window')
 
-const HOST_BADGES: Record<string, any> = {
-  'Ignite': require('@/assets/images/flame.svg'),
-  'Buzzing': require('@/assets/images/lightning.svg'),
-  'Iconic': require('@/assets/images/crown.svg'),
-  'Gorave OG': require('@/assets/images/star.svg'),
+const HOST_BADGES: Record<string, string> = {
+  'Rising': '🛡️',
+  'Established': '⭐',
+  'Elite': '💎',
+  'Legend': '👑',
 }
 
 // ── Mini event card ───────────────────────────────────────────────────────────
@@ -299,7 +299,7 @@ export default function UserProfileScreen() {
                 {profile.name ?? 'User'}{age ? `, ${age}` : ''}
               </Text>
               {hostBadgeIcon && (
-                <ExpoImage source={hostBadgeIcon} style={{ width: 40, height: 40, marginLeft: -4 }} contentFit="contain" />
+                <Text style={{ fontSize: 24, marginLeft: -2 }}>{hostBadgeIcon}</Text>
               )}
             </View>
             {profile.mutual_count > 0 && (
@@ -372,7 +372,7 @@ export default function UserProfileScreen() {
                 const icon = HOST_BADGES[badge]
                 return (
                   <View key={badge} style={s.badgeChip}>
-                    {icon && <ExpoImage source={icon} style={{ width: 14, height: 14, marginRight: 6 }} contentFit="contain" />}
+                    {icon && <Text style={{ fontSize: 14, marginRight: 4 }}>{icon}</Text>}
                     <Text style={s.badgeText}>{badge}</Text>
                   </View>
                 )

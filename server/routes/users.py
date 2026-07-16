@@ -88,13 +88,13 @@ def _fetch_user(cur, user_id: str, viewer_id: str) -> dict | None:
     hosted_events_count = d.pop("hosted_events_count", 0)
     badges = d.get("badges") or []
     if hosted_events_count >= 75:
-        badges.append("Gorave OG")
+        badges.append("Legend")
     elif hosted_events_count >= 25:
-        badges.append("Iconic")
+        badges.append("Elite")
     elif hosted_events_count >= 10:
-        badges.append("Buzzing")
+        badges.append("Established")
     elif hosted_events_count >= 3:
-        badges.append("Ignite")
+        badges.append("Rising")
         
     d["badges"] = badges
     d["bio"] = d.get("bio")
