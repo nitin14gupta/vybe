@@ -2,8 +2,9 @@ import { useRef, useEffect } from 'react'
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
+import { router } from 'expo-router'
 import { LinearGradient } from 'expo-linear-gradient'
-import { PartyPopper, Plus } from 'lucide-react-native'
+import { PartyPopper, Plus, Ticket, Lock } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 
@@ -41,23 +42,51 @@ function CreateEventSheetCore({ onCreateEvent, onClose }: Omit<Props, 'visible'>
       <BottomSheetView style={s.content}>
         <Text style={s.title}>Create</Text>
 
-        <Pressable style={s.card} android_ripple={{ color: 'rgba(255,255,255,0.06)' }} onPress={handlePress}>
-          <View style={s.cardIcon}>
-            <Plus size={20} color="#fff" strokeWidth={2.5} />
-          </View>
-          <View style={s.cardText}>
-            <Text style={s.cardTitle}>Host an event</Text>
-            <Text style={s.cardSubtitle}>Collect RSVPs</Text>
-          </View>
-          <LinearGradient
-            colors={[Colors.brandOrange, Colors.brandCoral]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={s.cardBadge}
-          >
-            <PartyPopper size={22} color="#fff" strokeWidth={2} />
-          </LinearGradient>
-        </Pressable>
+        <View style={{ gap: 12 }}>
+          <Pressable style={s.card} android_ripple={{ color: 'rgba(255,255,255,0.06)' }} onPress={handlePress}>
+            <View style={s.cardIcon}>
+              <Plus size={20} color="#fff" strokeWidth={2.5} />
+            </View>
+            <View style={s.cardText}>
+              <Text style={s.cardTitle}>Host an event</Text>
+              <Text style={s.cardSubtitle}>Collect RSVPs</Text>
+            </View>
+            <LinearGradient
+              colors={[Colors.brandOrange, Colors.brandCoral]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={s.cardBadge}
+            >
+              <PartyPopper size={22} color="#fff" strokeWidth={2} />
+            </LinearGradient>
+          </Pressable>
+
+          <Pressable style={s.card} android_ripple={{ color: 'rgba(255,255,255,0.06)' }} onPress={handlePress}>
+            <View style={s.cardIcon}>
+              <Plus size={20} color="#fff" strokeWidth={2.5} />
+            </View>
+            <View style={s.cardText}>
+              <Text style={s.cardTitle}>Sell tickets</Text>
+              <Text style={s.cardSubtitle}>Host a paid gathering or workshop</Text>
+            </View>
+            <View style={[s.cardBadge, s.badgeDark]}>
+              <Ticket size={22} color={Colors.brandOrange} strokeWidth={2} />
+            </View>
+          </Pressable>
+
+          <Pressable style={s.card} android_ripple={{ color: 'rgba(255,255,255,0.06)' }} onPress={handlePress}>
+            <View style={s.cardIcon}>
+              <Plus size={20} color="#fff" strokeWidth={2.5} />
+            </View>
+            <View style={s.cardText}>
+              <Text style={s.cardTitle}>Private gathering</Text>
+              <Text style={s.cardSubtitle}>Invite-only for your inner circle</Text>
+            </View>
+            <View style={[s.cardBadge, s.badgeDark]}>
+              <Lock size={22} color={Colors.brandOrange} strokeWidth={2} />
+            </View>
+          </Pressable>
+        </View>
 
         <View style={{ height: 16 }} />
       </BottomSheetView>
@@ -107,5 +136,8 @@ const s = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  badgeDark: {
+    backgroundColor: 'rgba(255,107,53,0.12)',
   },
 })

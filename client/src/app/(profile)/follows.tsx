@@ -200,7 +200,6 @@ export default function FollowsScreen() {
           keyExtractor={u => u.id}
           renderItem={renderItem}
           ItemSeparatorComponent={null}
-          estimatedItemSize={84}
           onEndReached={active.loadMore}
           onEndReachedThreshold={0.4}
           contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
