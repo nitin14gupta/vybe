@@ -66,6 +66,7 @@ export interface ExtendedProfile extends ProfileResponse {
   cooldown_until: string | null
   conversation_id: string | null
   events_attending: EventSummary[]
+  events_hosted: EventSummary[]
 }
 
 export interface FollowUser {

@@ -6,11 +6,6 @@ import Animated, {
 } from 'react-native-reanimated'
 import { Logo } from '@/constants'
 
-// App-launch splash — full black, centered logo with a soft glow, and a
-// slim indeterminate loading bar underneath. Both animate continuously
-// ("breathing" logo, sliding bar) for as long as this stays mounted, so
-// whatever navigates away from it can wait on real async work (auth check,
-// initial data fetch, etc.) without the screen ever looking frozen.
 export function SplashScreen() {
   const scale = useSharedValue(1)
   const barX = useSharedValue(0)

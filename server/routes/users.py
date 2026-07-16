@@ -57,6 +57,10 @@ _USER_SELECT = """
             SELECT 1 FROM user_blocks
             WHERE blocker_id = u.id AND blocked_id = %s::uuid
         ) AS is_blocked_by_them,
+        (SELECT COUNT(*) FROM events e
+         WHERE e.host_id = u.id 
+           AND COALESCE(e.is_cancelled, FALSE) = FALSE
+        )::int AS hosted_events_count,
         COALESCE(
             json_agg(
                 json_build_object('id', p.id::text, 'url', p.url, 'position', p.position)
@@ -79,7 +83,20 @@ def _fetch_user(cur, user_id: str, viewer_id: str) -> dict | None:
         return None
     d = dict(row)
     d["interests"] = d["interests"] or []
-    d["badges"] = d.get("badges") or []
+    
+    # Calculate dynamic host badge based on hosted events count
+    hosted_events_count = d.pop("hosted_events_count", 0)
+    badges = d.get("badges") or []
+    if hosted_events_count >= 75:
+        badges.append("Gorave OG")
+    elif hosted_events_count >= 25:
+        badges.append("Iconic")
+    elif hosted_events_count >= 10:
+        badges.append("Buzzing")
+    elif hosted_events_count >= 3:
+        badges.append("Ignite")
+        
+    d["badges"] = badges
     d["bio"] = d.get("bio")
     d["photos"] = d.get("photos") or []
     d["vibers_count"] = d.get("vibers_count") or 0
@@ -524,7 +541,7 @@ def get_user_profile(user_id: str, current_user: dict = Depends(get_current_user
               AND e.date_time >= NOW()
               AND e.is_cancelled = false
             ORDER BY e.date_time ASC
-            LIMIT 6
+            LIMIT 20
         """, (user_id,))
         raw_events = cur.fetchall()
         events_attending = []
@@ -536,6 +553,33 @@ def get_user_profile(user_id: str, current_user: dict = Depends(get_current_user
                 d["cover_photos"] = [{"url": p, "position": i} for i, p in enumerate(photos_raw)]
             events_attending.append(d)
 
+        # Events this user is hosting (upcoming)
+        cur.execute("""
+            SELECT
+                e.id::text,
+                e.title,
+                e.event_type,
+                e.date_time,
+                e.price_inr         AS price,
+                (e.price_inr = 0)   AS is_free,
+                e.spots_left,
+                COALESCE(e.cover_photos, '[]'::jsonb) AS cover_photos
+            FROM events e
+            WHERE e.host_id = %s::uuid
+              AND e.date_time >= NOW()
+              AND e.is_cancelled = false
+            ORDER BY e.date_time ASC
+            LIMIT 20
+        """, (user_id,))
+        raw_hosted = cur.fetchall()
+        events_hosted = []
+        for row in raw_hosted:
+            d = dict(row)
+            photos_raw = d.get("cover_photos") or []
+            if photos_raw and isinstance(photos_raw[0], str):
+                d["cover_photos"] = [{"url": p, "position": i} for i, p in enumerate(photos_raw)]
+            events_hosted.append(d)
+
     return {
         **user,
         "mutual_count": mutual_count,
@@ -545,6 +589,7 @@ def get_user_profile(user_id: str, current_user: dict = Depends(get_current_user
         "cooldown_until": cooldown_until,
         "conversation_id": conv["id"] if conv else None,
         "events_attending": events_attending,
+        "events_hosted": events_hosted,
     }
 
 

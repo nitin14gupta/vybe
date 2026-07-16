@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, Pressable, Image,
   FlatList, ActivityIndicator, Dimensions, RefreshControl,
 } from 'react-native'
+import { Image as ExpoImage } from 'expo-image'
 import { router, useLocalSearchParams } from 'expo-router'
 import { hTap, hMedium, hSuccess } from '@/lib/haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -11,7 +12,7 @@ import {
   MessageCircle, Ban, Play, Pause, Check, Ghost, Clock,
 } from 'lucide-react-native'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
-import { VybeRequestModal, VybeIcebreakerModal, PlaybackWave, ProfileMenuSheet, InterestChip } from '@/components/ui'
+import { VybeRequestModal, VybeIcebreakerModal, PlaybackWave, ProfileMenuSheet, InterestChip, TabSwitcher, SmallEventCard } from '@/components/ui'
 import ApiService, { ExtendedProfile, EventSummary } from '@/api/apiService'
 import { Colors, FontFamily, Radius } from '@/constants'
 import { usePillStore } from '@/store/pillStore'
@@ -23,25 +24,14 @@ import { parseServerDate } from '@/lib/dates'
 
 const { width: W } = Dimensions.get('window')
 
-// ── Mini event card ───────────────────────────────────────────────────────────
-
-function EventChip({ event }: { event: EventSummary }) {
-  return (
-    <Pressable
-      style={s.eventChip}
-      onPress={() => router.push(`/(events)/${event.id}` as any)}
-    >
-      {event.cover_photos?.[0]?.url ? (
-        <Image source={{ uri: event.cover_photos[0].url }} style={s.eventChipImg} />
-      ) : (
-        <View style={[s.eventChipImg, s.eventChipImgFallback]}>
-          <Text style={{ fontSize: 24 }}>🎉</Text>
-        </View>
-      )}
-      <Text style={s.eventChipTitle} numberOfLines={2}>{event.title}</Text>
-    </Pressable>
-  )
+const HOST_BADGES: Record<string, any> = {
+  'Ignite': require('@/assets/images/flame.svg'),
+  'Buzzing': require('@/assets/images/lightning.svg'),
+  'Iconic': require('@/assets/images/crown.svg'),
+  'Gorave OG': require('@/assets/images/star.svg'),
 }
+
+// ── Mini event card ───────────────────────────────────────────────────────────
 
 function formatCooldown(seconds: number): string {
   if (seconds <= 0) return 'a moment'
@@ -94,6 +84,7 @@ export default function UserProfileScreen() {
   const [acceptModalOpen, setAcceptModalOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [blockedByMe, setBlockedByMe] = useState(false)
+  const [activeTab, setActiveTab] = useState<'going' | 'hosted'>('going')
   const showPill = usePillStore(s => s.show)
   const { markSent, markCleared, isSentTo } = useVybeStore()
 
@@ -216,10 +207,14 @@ export default function UserProfileScreen() {
   if (!profile) {
     return (
       <View style={[s.root, s.center]}>
-        <Text style={s.errorText}>Profile not found</Text>
-        <Pressable onPress={() => router.back()} style={s.backBtn}>
-          <Text style={s.backBtnText}>← Go back</Text>
+        <Pressable onPress={() => router.back()} style={[s.backBtn, { position: 'absolute', top: insets.top + 8, left: 0 }]}>
+          <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
         </Pressable>
+        <View style={s.deletedIconWrap}>
+          <Ghost size={40} color={Colors.inkDisabled} strokeWidth={1.5} />
+        </View>
+        <Text style={s.deletedTitle}>Profile Not Found</Text>
+        <Text style={s.deletedBody}>This user may not exist or the link is invalid.</Text>
       </View>
     )
   }
@@ -247,6 +242,11 @@ export default function UserProfileScreen() {
   const age = profile.dob
     ? Math.floor((Date.now() - new Date(profile.dob).getTime()) / 3.156e10)
     : null
+
+  const allBadges = profile.badges ?? []
+  const hostBadgeName = allBadges.find(b => HOST_BADGES[b])
+  const hostBadgeIcon = hostBadgeName ? HOST_BADGES[hostBadgeName] : null
+  const otherBadges = allBadges.filter(b => b !== hostBadgeName)
 
   return (
     <View style={[s.root, { paddingBottom: insets.bottom }]}>
@@ -294,9 +294,14 @@ export default function UserProfileScreen() {
         <View style={s.body}>
           {/* Name + location */}
           <View style={s.nameRow}>
-            <Text style={s.name}>
-              {profile.name ?? 'User'}{age ? `, ${age}` : ''}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={s.name}>
+                {profile.name ?? 'User'}{age ? `, ${age}` : ''}
+              </Text>
+              {hostBadgeIcon && (
+                <ExpoImage source={hostBadgeIcon} style={{ width: 40, height: 40, marginLeft: -4 }} contentFit="contain" />
+              )}
+            </View>
             {profile.mutual_count > 0 && (
               <Text style={s.mutual}>{profile.mutual_count} mutual</Text>
             )}
@@ -363,11 +368,15 @@ export default function UserProfileScreen() {
           {/* Details (Badges & Interests) */}
           {!blockedByMe && ((profile.badges?.length ?? 0) > 0 || (profile.interests?.length ?? 0) > 0) && (
             <View style={s.chipsRow}>
-              {profile.badges?.map(badge => (
-                <View key={badge} style={s.badgeChip}>
-                  <Text style={s.badgeText}>{badge}</Text>
-                </View>
-              ))}
+              {profile.badges?.map(badge => {
+                const icon = HOST_BADGES[badge]
+                return (
+                  <View key={badge} style={s.badgeChip}>
+                    {icon && <ExpoImage source={icon} style={{ width: 14, height: 14, marginRight: 6 }} contentFit="contain" />}
+                    <Text style={s.badgeText}>{badge}</Text>
+                  </View>
+                )
+              })}
               {profile.interests?.map(tag => (
                 <InterestChip key={tag} label={tag} emoji="" selected onPress={() => {}} />
               ))}
@@ -390,18 +399,30 @@ export default function UserProfileScreen() {
             </View>
           ) : null}
 
-          {/* Events attending */}
-          {!blockedByMe && profile.events_attending?.length > 0 && (
+          {/* Events Tabs */}
+          {!blockedByMe && (profile.events_attending?.length > 0 || profile.events_hosted?.length > 0) && (
             <View style={s.eventsSection}>
-              <Text style={s.sectionLabel}>Going to</Text>
-              <FlatList
-                data={profile.events_attending}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={e => e.id}
-                contentContainerStyle={{ gap: 12 }}
-                renderItem={({ item }) => <EventChip event={item} />}
+              <TabSwitcher 
+                tabs={['Going to', 'Hosted']}
+                activeTab={activeTab === 'going' ? 'Going to' : 'Hosted'}
+                onChange={(tab) => setActiveTab(tab === 'Going to' ? 'going' : 'hosted')}
               />
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.eventsList}>
+                {activeTab === 'going' && profile.events_attending?.length === 0 && (
+                  <Text style={s.emptyEventsText}>Not going to any upcoming events.</Text>
+                )}
+                {activeTab === 'hosted' && profile.events_hosted?.length === 0 && (
+                  <Text style={s.emptyEventsText}>Not hosting any upcoming events.</Text>
+                )}
+                
+                {activeTab === 'going' && profile.events_attending?.slice(0, 3).map(item => (
+                  <SmallEventCard key={item.id} event={item} />
+                ))}
+                
+                {activeTab === 'hosted' && profile.events_hosted?.slice(0, 3).map(item => (
+                  <SmallEventCard key={item.id} event={item} />
+                ))}
+              </ScrollView>
             </View>
           )}
         </View>
@@ -617,6 +638,8 @@ const s = StyleSheet.create({
   // Chips
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   badgeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'rgba(255,184,48,0.12)',
     borderRadius: Radius.pill,
     paddingHorizontal: 12,
@@ -637,21 +660,14 @@ const s = StyleSheet.create({
   },
 
   // Events
-  eventsSection: { gap: 10 },
-  sectionLabel: {
-    fontFamily: FontFamily.bodySemiBold, fontSize: 12,
-    color: Colors.inkSecondary, letterSpacing: 0.8, textTransform: 'uppercase',
-  },
-  eventChip: {
-    width: 130, borderRadius: 14,
-    backgroundColor: '#1e1e1e', borderWidth: 1, borderColor: '#2a2a2a',
-    overflow: 'hidden',
-  },
-  eventChipImg: { width: '100%', height: 80 },
-  eventChipImgFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
-  eventChipTitle: {
-    fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkPrimary,
-    padding: 8, lineHeight: 16,
+  eventsSection: { gap: 12, marginTop: 8 },
+  eventsList: { gap: 12, paddingRight: 24 },
+  emptyEventsText: { 
+    fontFamily: FontFamily.bodyRegular, 
+    fontSize: 14, 
+    color: Colors.inkSecondary, 
+    textAlign: 'center', 
+    marginVertical: 20 
   },
 
   // CTAs

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet, Keyboard } from 'react-native'
 import { router } from 'expo-router'
 import { BackButton, PhoneInput, PrimaryButton, KeyboardAvoidingWrapper, InAppBrowserModal, LogoMark } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
@@ -18,6 +18,7 @@ export default function PhoneScreen() {
 
   const handleContinue = async () => {
     if (!isValid) return
+    Keyboard.dismiss()
     setLoading(true)
     setError('')
     try {

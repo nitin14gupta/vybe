@@ -16,6 +16,7 @@ export function useFollowsList(userId: string, type: 'followers' | 'following') 
   const [hasMore, setHasMore] = useState(false)
   const [error, setError] = useState(false)
   const [query, setQuery] = useState('')
+  const [refreshing, setRefreshing] = useState(false)
   const offset = useRef(0)
 
   const fetchPage = useCallback(async (off: number, append: boolean) => {
@@ -33,11 +34,13 @@ export function useFollowsList(userId: string, type: 'followers' | 'following') 
     }
   }, [userId, type, showPill])
 
-  const load = useCallback(async () => {
-    setLoading(true)
+  const load = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true)
+    else setLoading(true)
     offset.current = 0
     await fetchPage(0, false)
-    setLoading(false)
+    if (isRefresh) setRefreshing(false)
+    else setLoading(false)
   }, [fetchPage])
 
   const loadMore = useCallback(async () => {
@@ -94,6 +97,7 @@ export function useFollowsList(userId: string, type: 'followers' | 'following') 
     users: filtered,
     totalCount: allUsers.length,
     loading,
+    refreshing,
     loadingMore,
     hasMore,
     error,

@@ -290,7 +290,7 @@ export default function EventDetailScreen() {
           setAttendeesLoading(true)
           ApiService.getEventAttendees(id)
             .then(r => setAttendees(r.attendees))
-            .catch(() => {})
+            .catch(() => { })
             .finally(() => setAttendeesLoading(false))
         }
         ApiService.getEventGuests(id)
@@ -300,7 +300,7 @@ export default function EventDetailScreen() {
             setGuestTotal(TEMP_MOCK_GUESTS.length)
             setGuestWaitlist(TEMP_MOCK_WAITLIST)
           })
-          .catch(() => {})
+          .catch(() => { })
       })
       .catch(() => showPill("Couldn't load this event", 'error'))
       .finally(() => setLoading(false))
@@ -331,7 +331,7 @@ export default function EventDetailScreen() {
     try {
       const ev = await ApiService.getEvent(id)
       setEvent(ev)
-    } catch {}
+    } catch { }
     finally { setRefreshing(false) }
   }, [id])
 
@@ -344,7 +344,7 @@ export default function EventDetailScreen() {
           const me = await ApiService.getMe()
           dob = me.dob ?? null
           if (dob) useAuthStore.getState().setDob(dob)
-        } catch {}
+        } catch { }
       }
       if (dob && calcAge(dob) < event.age_restriction) {
         setLockedReason('age')
@@ -463,10 +463,14 @@ export default function EventDetailScreen() {
   if (!event) {
     return (
       <View style={[styles.root, styles.center]}>
-        <Text style={styles.errorText}>Event not found</Text>
-        <Pressable onPress={goBack} style={styles.backBtn}>
-          <Text style={styles.backBtnText}>← Go back</Text>
+        <Pressable onPress={goBack} style={[styles.backBtn, { position: 'absolute', top: insets.top + 8, left: 0 }]}>
+          <ArrowLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
         </Pressable>
+        <View style={styles.deletedIconWrap}>
+          <Ghost size={40} color={Colors.inkDisabled} strokeWidth={1.5} />
+        </View>
+        <Text style={styles.deletedTitle}>Event Not Found</Text>
+        <Text style={styles.deletedBody}>This event may not exist or has been removed.</Text>
       </View>
     )
   }
@@ -557,150 +561,150 @@ export default function EventDetailScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.brandOrange} colors={[Colors.brandOrange]} />}
         >
-        {/* Category + title */}
-        <View style={styles.categoryRow}>
-          <Text style={styles.categoryChip}>{EVENT_EMOJIS[event.event_type]} {event.event_type.replace('_', ' ')}</Text>
-          {event.age_restriction && (
-            <View style={styles.ageBadge}>
-              <Shield size={12} color={Colors.inkSecondary} />
-              <Text style={styles.ageBadgeText}>{event.age_restriction}+</Text>
-            </View>
-          )}
-        </View>
-
-        <Text style={styles.title}>{event.title}</Text>
-        <Text style={styles.daysAway}>{daysUntil(event.date_time)}</Text>
-
-        {/* Info card */}
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <Calendar size={16} color={Colors.brandOrange} />
-            <Text style={styles.infoText}>{formatDateTime(event.date_time)}</Text>
-          </View>
-          {event.end_time && (
-            <>
-              <View style={styles.infoDivider} />
-              <View style={styles.infoRow}>
-                <Clock size={16} color={Colors.inkSecondary} />
-                <Text style={styles.infoText}>Ends {formatDateTime(event.end_time)}</Text>
+          {/* Category + title */}
+          <View style={styles.categoryRow}>
+            <Text style={styles.categoryChip}>{EVENT_EMOJIS[event.event_type]} {event.event_type.replace('_', ' ')}</Text>
+            {event.age_restriction && (
+              <View style={styles.ageBadge}>
+                <Shield size={12} color={Colors.inkSecondary} />
+                <Text style={styles.ageBadgeText}>{event.age_restriction}+</Text>
               </View>
-            </>
-          )}
-          {event.location_name && (
-            <>
-              <View style={styles.infoDivider} />
-              <View style={styles.infoRow}>
-                <MapPin size={16} color={Colors.brandOrange} />
-                <Text style={styles.infoText}>{event.location_name}</Text>
-              </View>
-            </>
-          )}
-          <View style={styles.infoDivider} />
-          <View style={styles.infoRow}>
-            <Users size={16} color={Colors.inkSecondary} />
-            <Text style={styles.infoText}>
-              {event.attendee_count} going · {event.spots_left} spots left
-            </Text>
-          </View>
-        </View>
-
-        {/* Host card */}
-        {event.host_name && (
-          <Pressable
-            style={styles.hostCard}
-            onPress={() => router.push(`/(profile)/${event.host_id}` as any)}
-          >
-            <View style={[styles.hostAvatar, event.host_is_deleted && styles.hostAvatarDeleted]}>
-              {event.host_is_deleted ? (
-                <Ghost size={20} color={Colors.inkDisabled} strokeWidth={1.5} />
-              ) : event.host_avatar ? (
-                <Image source={{ uri: event.host_avatar }} style={styles.hostAvatarImg} contentFit="cover" />
-              ) : (
-                <Text style={styles.hostAvatarFallback}>{event.host_name[0]}</Text>
-              )}
-            </View>
-            <View style={styles.hostInfo}>
-              <Text style={styles.hostLabel}>Hosted by</Text>
-              <Text style={[styles.hostName, event.host_is_deleted && styles.hostNameDeleted]}>
-                {event.host_is_deleted ? '[deleted]' : event.host_id === myId ? 'You' : event.host_name}
-              </Text>
-            </View>
-          </Pressable>
-        )}
-
-        {/* Guest List */}
-        {guestTotal > 0 && (
-          <Pressable
-            style={styles.guestCard}
-            onPress={() => { hTap(); setGuestSheetOpen(true) }}
-          >
-            <View style={styles.guestCardTop}>
-              <Text style={styles.guestCardTitle}>Guest List</Text>
-              <View style={styles.viewAllPill}>
-                <Text style={styles.viewAllText}>View all</Text>
-                <ChevronRight size={14} color={Colors.brandOrange} strokeWidth={2} />
-              </View>
-            </View>
-            <View style={styles.guestCardBottom}>
-              <View style={styles.guestStack}>
-                {guests.slice(0, 7).map((g, i) => (
-                  <View key={g.id} style={[styles.guestStackAvatar, { marginLeft: i === 0 ? 0 : -12, zIndex: 7 - i }]}>
-                    {g.avatar ? (
-                      <Image source={{ uri: g.avatar }} style={styles.guestStackImg} contentFit="cover" />
-                    ) : (
-                      <View style={[styles.guestStackImg, styles.guestStackFallback]}>
-                        <Text style={styles.guestStackInitial}>{(g.name ?? '?').charAt(0).toUpperCase()}</Text>
-                      </View>
-                    )}
-                  </View>
-                ))}
-                {guestTotal > 7 && (
-                  <View style={[styles.guestStackAvatar, styles.guestStackMore, { marginLeft: -12 }]}>
-                    <Text style={styles.guestStackMoreText}>+{guestTotal - 7}</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={styles.guestCardCount}>{guestTotal} going</Text>
-            </View>
-          </Pressable>
-        )}
-
-        {/* About */}
-        {event.description ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>About</Text>
-            <Text
-              style={styles.sectionBody}
-              numberOfLines={showFullDesc ? undefined : 3}
-            >
-              {event.description}
-            </Text>
-            {event.description.length > 140 && (
-              <Pressable onPress={() => { hSelection(); setShowFullDesc(p => !p) }}>
-                <Text style={styles.readMore}>{showFullDesc ? 'Show less' : 'Read more'}</Text>
-              </Pressable>
             )}
           </View>
-        ) : null}
 
-        {/* Rules */}
-        {event.rules ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>House Rules</Text>
-            <Text style={styles.sectionBody}>{event.rules}</Text>
-          </View>
-        ) : null}
+          <Text style={styles.title}>{event.title}</Text>
+          <Text style={styles.daysAway}>{daysUntil(event.date_time)}</Text>
 
-        {/* Mini map */}
-        {event.location_lat != null && event.location_lng != null && (
-          <View style={styles.miniMapWrap}>
-            <StaticEventMap
-              lat={event.location_lat}
-              lng={event.location_lng}
-              eventType={event.event_type}
-            />
+          {/* Info card */}
+          <View style={styles.infoCard}>
+            <View style={styles.infoRow}>
+              <Calendar size={16} color={Colors.brandOrange} />
+              <Text style={styles.infoText}>{formatDateTime(event.date_time)}</Text>
+            </View>
+            {event.end_time && (
+              <>
+                <View style={styles.infoDivider} />
+                <View style={styles.infoRow}>
+                  <Clock size={16} color={Colors.inkSecondary} />
+                  <Text style={styles.infoText}>Ends {formatDateTime(event.end_time)}</Text>
+                </View>
+              </>
+            )}
+            {event.location_name && (
+              <>
+                <View style={styles.infoDivider} />
+                <View style={styles.infoRow}>
+                  <MapPin size={16} color={Colors.brandOrange} />
+                  <Text style={styles.infoText}>{event.location_name}</Text>
+                </View>
+              </>
+            )}
+            <View style={styles.infoDivider} />
+            <View style={styles.infoRow}>
+              <Users size={16} color={Colors.inkSecondary} />
+              <Text style={styles.infoText}>
+                {event.attendee_count} going · {event.spots_left} spots left
+              </Text>
+            </View>
           </View>
-        )}
+
+          {/* Host card */}
+          {event.host_name && (
+            <Pressable
+              style={styles.hostCard}
+              onPress={() => router.push(`/(profile)/${event.host_id}` as any)}
+            >
+              <View style={[styles.hostAvatar, event.host_is_deleted && styles.hostAvatarDeleted]}>
+                {event.host_is_deleted ? (
+                  <Ghost size={20} color={Colors.inkDisabled} strokeWidth={1.5} />
+                ) : event.host_avatar ? (
+                  <Image source={{ uri: event.host_avatar }} style={styles.hostAvatarImg} contentFit="cover" />
+                ) : (
+                  <Text style={styles.hostAvatarFallback}>{event.host_name[0]}</Text>
+                )}
+              </View>
+              <View style={styles.hostInfo}>
+                <Text style={styles.hostLabel}>Hosted by</Text>
+                <Text style={[styles.hostName, event.host_is_deleted && styles.hostNameDeleted]}>
+                  {event.host_is_deleted ? '[deleted]' : event.host_id === myId ? 'You' : event.host_name}
+                </Text>
+              </View>
+            </Pressable>
+          )}
+
+          {/* Guest List */}
+          {guestTotal > 0 && (
+            <Pressable
+              style={styles.guestCard}
+              onPress={() => { hTap(); setGuestSheetOpen(true) }}
+            >
+              <View style={styles.guestCardTop}>
+                <Text style={styles.guestCardTitle}>Guest List</Text>
+                <View style={styles.viewAllPill}>
+                  <Text style={styles.viewAllText}>View all</Text>
+                  <ChevronRight size={14} color={Colors.brandOrange} strokeWidth={2} />
+                </View>
+              </View>
+              <View style={styles.guestCardBottom}>
+                <View style={styles.guestStack}>
+                  {guests.slice(0, 7).map((g, i) => (
+                    <View key={g.id} style={[styles.guestStackAvatar, { marginLeft: i === 0 ? 0 : -12, zIndex: 7 - i }]}>
+                      {g.avatar ? (
+                        <Image source={{ uri: g.avatar }} style={styles.guestStackImg} contentFit="cover" />
+                      ) : (
+                        <View style={[styles.guestStackImg, styles.guestStackFallback]}>
+                          <Text style={styles.guestStackInitial}>{(g.name ?? '?').charAt(0).toUpperCase()}</Text>
+                        </View>
+                      )}
+                    </View>
+                  ))}
+                  {guestTotal > 7 && (
+                    <View style={[styles.guestStackAvatar, styles.guestStackMore, { marginLeft: -12 }]}>
+                      <Text style={styles.guestStackMoreText}>+{guestTotal - 7}</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.guestCardCount}>{guestTotal} going</Text>
+              </View>
+            </Pressable>
+          )}
+
+          {/* About */}
+          {event.description ? (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>About</Text>
+              <Text
+                style={styles.sectionBody}
+                numberOfLines={showFullDesc ? undefined : 3}
+              >
+                {event.description}
+              </Text>
+              {event.description.length > 140 && (
+                <Pressable onPress={() => { hSelection(); setShowFullDesc(p => !p) }}>
+                  <Text style={styles.readMore}>{showFullDesc ? 'Show less' : 'Read more'}</Text>
+                </Pressable>
+              )}
+            </View>
+          ) : null}
+
+          {/* Rules */}
+          {event.rules ? (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>House Rules</Text>
+              <Text style={styles.sectionBody}>{event.rules}</Text>
+            </View>
+          ) : null}
+
+          {/* Mini map */}
+          {event.location_lat != null && event.location_lng != null && (
+            <View style={styles.miniMapWrap}>
+              <StaticEventMap
+                lat={event.location_lat}
+                lng={event.location_lng}
+                eventType={event.event_type}
+              />
+            </View>
+          )}
         </ScrollView>
       </View>
 
@@ -932,11 +936,11 @@ function LockedScreen({
   if (reason === 'checkin') {
     const opensAt = eventStart
       ? new Date(eventStart.getTime() - 3 * 3600_000).toLocaleTimeString('en-IN', {
-          hour: '2-digit',
-          minute: '2-digit',
-          day: 'numeric',
-          month: 'short',
-        })
+        hour: '2-digit',
+        minute: '2-digit',
+        day: 'numeric',
+        month: 'short',
+      })
       : '3 hours before the event'
     title = 'Check-in not open yet'
     subtitle = `Scanner unlocks 3 hours before the event starts.\n\nComes alive at ${opensAt}.`
@@ -1350,4 +1354,12 @@ const styles = StyleSheet.create({
   },
   hostBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkPrimary },
   hostBtnPrimaryText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: '#fff' },
+
+  deletedIconWrap: {
+    width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.surface,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 20,
+    borderWidth: 1, borderColor: Colors.inkDisabled,
+  },
+  deletedTitle: { fontFamily: FontFamily.headingBold, fontSize: 24, color: Colors.inkPrimary, marginBottom: 8 },
+  deletedBody: { fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkSecondary, textAlign: 'center' },
 })

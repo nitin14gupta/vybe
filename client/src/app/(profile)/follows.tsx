@@ -6,6 +6,7 @@ import {
   Text,
   TextInput,
   View,
+  RefreshControl,
 } from 'react-native'
 import { FlashList } from '@shopify/flash-list'
 import { useLocalSearchParams } from 'expo-router'
@@ -189,7 +190,7 @@ export default function FollowsScreen() {
       ) : active.error && sortedUsers.length === 0 ? (
         <View style={s.center}>
           <Text style={s.emptyTitle}>Something went wrong</Text>
-          <Pressable onPress={active.load} style={s.retryBtn} android_ripple={null}>
+          <Pressable onPress={() => active.load()} style={s.retryBtn} android_ripple={null}>
             <Text style={s.retryText}>Tap to retry</Text>
           </Pressable>
         </View>
@@ -203,6 +204,13 @@ export default function FollowsScreen() {
           onEndReached={active.loadMore}
           onEndReachedThreshold={0.4}
           contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={active.refreshing}
+              onRefresh={() => active.load(true)}
+              tintColor={Colors.brandOrange}
+            />
+          }
           ListEmptyComponent={
             <View style={s.center}>
               <Users size={48} color={Colors.elevated} strokeWidth={1} />

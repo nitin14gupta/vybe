@@ -1,14 +1,16 @@
 import { useEffect, useState, useCallback } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, Pressable,
-  Image, Dimensions, RefreshControl,
+  Image, Dimensions, RefreshControl, ActivityIndicator
 } from 'react-native'
+import { Image as ExpoImage } from 'expo-image'
 import { router } from 'expo-router'
 import { hTap } from '@/lib/haptics'
-import { MapPin, Play, Pause, Pencil, Settings, Share } from 'lucide-react-native'
+import { MapPin, Play, Pause, Pencil, Settings, Share, Ticket, Calendar, Plus } from 'lucide-react-native'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
-import { InterestChip, PlaybackWave, AppHeader, HeaderIconBtn, BrandedLoader } from '@/components/ui'
+import { InterestChip, PlaybackWave, AppHeader, HeaderIconBtn, BrandedLoader, TabSwitcher, SmallEventCard, OutlineButton } from '@/components/ui'
 import { useProfile } from '@/hooks/useProfile'
+import ApiService, { EventSummary } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 import { useImageViewer } from '@/hooks/useImageViewer'
@@ -25,9 +27,20 @@ const GENDER_DISPLAY: Record<string, string> = {
   'Prefer not to say': '—',
 }
 
+const HOST_BADGES: Record<string, any> = {
+  'Ignite': require('@/assets/images/flame.svg'),
+  'Buzzing': require('@/assets/images/lightning.svg'),
+  'Iconic': require('@/assets/images/crown.svg'),
+  'Gorave OG': require('@/assets/images/star.svg'),
+}
+
 export default function ProfileScreen() {
   const { profile, loading, error, refresh } = useProfile()
   const { viewingMedia, openMedia, closeMedia } = useImageViewer()
+  const [activeTab, setActiveTab] = useState<'going' | 'hosted'>('going')
+  const [eventsAttending, setEventsAttending] = useState<EventSummary[]>([])
+  const [eventsHosted, setEventsHosted] = useState<EventSummary[]>([])
+  const [eventsLoading, setEventsLoading] = useState(false)
 
   const player = useAudioPlayer(null)
   const status = useAudioPlayerStatus(player)
@@ -45,8 +58,27 @@ export default function ProfileScreen() {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
     await refresh()
+    if (profile?.id) {
+      try {
+        const ext = await ApiService.getUserProfile(profile.id)
+        setEventsAttending(ext.events_attending || [])
+        setEventsHosted(ext.events_hosted || [])
+      } catch { }
+    }
     setRefreshing(false)
-  }, [refresh])
+  }, [refresh, profile?.id])
+
+  useEffect(() => {
+    if (profile?.id) {
+      setEventsLoading(true)
+      ApiService.getUserProfile(profile.id)
+        .then(ext => {
+          setEventsAttending(ext.events_attending || [])
+          setEventsHosted(ext.events_hosted || [])
+        })
+        .finally(() => setEventsLoading(false))
+    }
+  }, [profile?.id])
 
   const toggleVoice = () => {
     hTap()
@@ -74,14 +106,17 @@ export default function ProfileScreen() {
     )
   }
 
-  const name    = profile?.name ?? '—'
-  const gender  = profile?.gender ? GENDER_DISPLAY[profile.gender] ?? profile.gender : null
-  const city    = profile?.city ?? null
-  const bio     = profile?.bio ?? null
-  const badges  = profile?.badges ?? []
-  const vibers  = profile?.vibers_count ?? 0
-  const vibing  = profile?.vibing_count ?? 0
-  const posts   = profile?.photos?.length ?? 0
+  const name = profile?.name ?? '—'
+  const gender = profile?.gender ? GENDER_DISPLAY[profile.gender] ?? profile.gender : null
+  const city = profile?.city ?? null
+  const bio = profile?.bio ?? null
+  const allBadges = profile?.badges ?? []
+  const hostBadgeName = allBadges.find(b => HOST_BADGES[b])
+  const hostBadgeIcon = hostBadgeName ? HOST_BADGES[hostBadgeName] : null
+  const otherBadges = allBadges.filter(b => b !== hostBadgeName)
+  const vibers = profile?.vibers_count ?? 0
+  const vibing = profile?.vibing_count ?? 0
+  const posts = profile?.photos?.length ?? 0
 
   return (
     <View style={styles.root}>
@@ -109,9 +144,14 @@ export default function ProfileScreen() {
               </View>
             )}
           </View>
-          
-          <Text style={styles.nameLarge} numberOfLines={1}>{name}</Text>
-          
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 8 }}>
+            <Text style={[styles.nameLarge, { marginBottom: 0 }]} numberOfLines={1}>{name}</Text>
+            {hostBadgeIcon && (
+              <ExpoImage source={hostBadgeIcon} style={{ width: 40, height: 40 }} contentFit="contain" />
+            )}
+          </View>
+
           <View style={styles.pillsRowCentered}>
             {gender && (
               <View style={styles.pill}>
@@ -168,13 +208,13 @@ export default function ProfileScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>About me</Text>
             {bio ? <Text style={styles.bio}>{bio}</Text> : null}
-            
+
             {profile?.voice_url ? (
               <View style={styles.voiceCard}>
                 <Pressable onPress={toggleVoice} style={styles.voicePlayBtn}>
                   {status.playing
                     ? <Pause size={15} color={Colors.background} strokeWidth={2.5} />
-                    : <Play  size={15} color={Colors.background} strokeWidth={2.5} />
+                    : <Play size={15} color={Colors.background} strokeWidth={2.5} />
                   }
                 </Pressable>
                 <View style={styles.voiceWave}>
@@ -187,19 +227,68 @@ export default function ProfileScreen() {
         )}
 
         {/* ── Details: Badges & Interests ── */}
-        {(badges.length > 0 || (profile?.interests?.length ?? 0) > 0) && (
+        {(otherBadges.length > 0 || (profile?.interests?.length ?? 0) > 0) && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>My Details</Text>
             <View style={styles.chipsWrap}>
-              {badges.map(badge => (
-                <View key={badge} style={styles.badgeChip}>
-                  <Text style={styles.badgeText}>{badge}</Text>
-                </View>
-              ))}
+              {otherBadges.map(badge => {
+                const icon = HOST_BADGES[badge]
+                return (
+                  <View key={badge} style={styles.badgeChip}>
+                    {icon && <ExpoImage source={icon} style={{ width: 14, height: 14, marginRight: 6 }} contentFit="contain" />}
+                    <Text style={styles.badgeText}>{badge}</Text>
+                  </View>
+                )
+              })}
               {profile?.interests?.map(tag => (
-                <InterestChip key={tag} label={tag} emoji="" selected onPress={() => {}} />
+                <InterestChip key={tag} label={tag} emoji="" selected onPress={() => { }} />
               ))}
             </View>
+          </View>
+        )}
+
+        {/* ── Events Tabs ── */}
+        {(eventsAttending.length > 0 || eventsHosted.length > 0 || eventsLoading) && (
+          <View style={styles.section}>
+            <TabSwitcher
+              tabs={['Going to', 'Hosted']}
+              activeTab={activeTab === 'going' ? 'Going to' : 'Hosted'}
+              onChange={(tab) => setActiveTab(tab === 'Going to' ? 'going' : 'hosted')}
+            />
+            {eventsLoading ? (
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <ActivityIndicator size="small" color={Colors.brandOrange} />
+              </View>
+            ) : activeTab === 'going' && eventsAttending.length === 0 ? (
+              <View style={styles.emptyCenter}>
+                <Ticket size={52} color={Colors.inkDisabled} strokeWidth={1.2} />
+                <Text style={styles.emptyTitle}>No upcoming tickets</Text>
+                <Text style={styles.emptySub}>Events you RSVP to will appear here</Text>
+                <Pressable style={styles.emptyCtaBtn} onPress={() => router.push('/(tabs)/events' as any)}>
+                  <Text style={styles.emptyCtaBtnText}>Browse Events</Text>
+                </Pressable>
+              </View>
+            ) : activeTab === 'hosted' && eventsHosted.length === 0 ? (
+              <View style={styles.emptyCenter}>
+                <Calendar size={52} color={Colors.inkDisabled} strokeWidth={1.2} />
+                <Text style={styles.emptyTitle}>No upcoming events</Text>
+                <Text style={styles.emptySub}>Events you host will appear here</Text>
+                <Pressable style={styles.emptyCtaBtn} onPress={() => router.push('/(events)/create' as any)}>
+                  <Plus size={16} color="#111" strokeWidth={2.5} />
+                  <Text style={styles.emptyCtaBtnText}>Create Event</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, marginTop: 12 }}>
+                {activeTab === 'going' && eventsAttending.slice(0, 3).map(item => (
+                  <SmallEventCard key={item.id} event={item} />
+                ))}
+
+                {activeTab === 'hosted' && eventsHosted.slice(0, 3).map(item => (
+                  <SmallEventCard key={item.id} event={item} />
+                ))}
+              </ScrollView>
+            )}
           </View>
         )}
 
@@ -288,10 +377,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: 'center',
   },
-  pillsRowCentered: { 
-    flexDirection: 'row', 
-    gap: 8, 
-    flexWrap: 'wrap', 
+  pillsRowCentered: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
     justifyContent: 'center',
   },
   pill: {
@@ -407,6 +496,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   badgeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'rgba(255,184,48,0.12)',
     borderRadius: Radius.pill,
     paddingHorizontal: 12,
@@ -448,4 +539,38 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.screenPadding,
   },
   gridPhoto: { width: PHOTO_SIZE, height: PHOTO_SIZE },
+
+  // Events
+  emptyCenter: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    padding: 32
+  },
+  emptyTitle: {
+    fontFamily: FontFamily.headingBold,
+    fontSize: 18,
+    color: Colors.inkPrimary
+  },
+  emptySub: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 14,
+    color: Colors.inkSecondary,
+    textAlign: 'center'
+  },
+  emptyCtaBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+    backgroundColor: Colors.brandOrange,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  emptyCtaBtnText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 15,
+    color: '#111'
+  },
 })
