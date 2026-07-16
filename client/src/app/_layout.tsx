@@ -66,10 +66,10 @@ export default function RootLayout() {
           try {
             const fresh = await ApiService.refreshToken(stored.refreshToken)
             const next = {
-              accessToken:     fresh.access_token,
-              refreshToken:    fresh.refresh_token,
-              userId:          fresh.user_id,
-              phone:           stored.phone,
+              accessToken: fresh.access_token,
+              refreshToken: fresh.refresh_token,
+              userId: fresh.user_id,
+              phone: stored.phone,
               profileComplete: fresh.profile_complete,
             }
             await tokenStorage.save(next)
@@ -82,6 +82,7 @@ export default function RootLayout() {
       } catch (e) {
         console.warn('[bootstrap] error:', e)
       }
+      useAuthStore.getState().setHydrated(true)
       setAuthReady(true)
     }
     bootstrap()
@@ -90,29 +91,23 @@ export default function RootLayout() {
   const appReady = (fontsLoaded || fontError) && authReady
 
   useEffect(() => {
-    // Our own animated splash (below) already covers the screen by the time
-    // this runs, so hiding the native one here is seamless — no blank-frame
-    // flash between "native splash" and "our splash".
     SplashScreen.hideAsync()
   }, [])
 
-  // Always render the navigation tree so expo-router's useLinking stays
-  // mounted, even while fonts/auth are still bootstrapping — the custom
-  // splash overlay below just sits on top of it until appReady.
   return (
     <GestureHandlerRootView style={styles.root}>
       <KeyboardProvider>
-      <BottomSheetModalProvider>
-        <StatusBar style="light" />
-        <RootNavigator />
-        <PillOverlay />
-        <PermissionSheetOverlay />
-        {!appReady && (
-          <View style={StyleSheet.absoluteFill}>
-            <AppSplashScreen />
-          </View>
-        )}
-      </BottomSheetModalProvider>
+        <BottomSheetModalProvider>
+          <StatusBar style="light" />
+          <RootNavigator />
+          <PillOverlay />
+          <PermissionSheetOverlay />
+          {!appReady && (
+            <View style={StyleSheet.absoluteFill}>
+              <AppSplashScreen />
+            </View>
+          )}
+        </BottomSheetModalProvider>
       </KeyboardProvider>
     </GestureHandlerRootView>
   )

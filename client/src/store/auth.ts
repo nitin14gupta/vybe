@@ -4,12 +4,14 @@ import { useDeepLinkStore } from '@/store/deepLinkStore'
 
 interface AuthState {
   isAuthenticated: boolean
+  isHydrated: boolean
   userId: string | null
   accessToken: string | null
   refreshToken: string | null
   phone: string | null
   profileComplete: boolean
   dob: string | null
+  setHydrated: (val: boolean) => void
   setAuth: (payload: {
     userId: string
     accessToken: string
@@ -24,12 +26,15 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
+  isHydrated: false,
   userId: null,
   accessToken: null,
   refreshToken: null,
   phone: null,
   profileComplete: false,
   dob: null,
+
+  setHydrated: (val) => set({ isHydrated: val }),
 
   setAuth: (payload) => {
     set({
