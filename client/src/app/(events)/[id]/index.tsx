@@ -14,7 +14,7 @@ import {
 import { hTap, hSuccess, hSelection } from '@/lib/haptics'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
-import { PrimaryButton } from '@/components/ui'
+import { PrimaryButton, BrandedLoader } from '@/components/ui'
 import { StaticEventMap } from '@/components/maps'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
@@ -455,7 +455,7 @@ export default function EventDetailScreen() {
   if (loading) {
     return (
       <View style={[styles.root, styles.center]}>
-        <ActivityIndicator size="large" color={Colors.brandOrange} />
+        <BrandedLoader />
       </View>
     )
   }

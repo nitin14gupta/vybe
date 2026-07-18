@@ -2,11 +2,10 @@ import { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, Modal, FlatList, ScrollView, Pressable } from 'react-native'
 import { router } from 'expo-router'
 import { X, Flame, SlidersHorizontal } from 'lucide-react-native'
-import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { hTap, hSelection } from '@/lib/haptics'
 import { Colors, FontFamily, FILTER_CHIPS, matchesChip } from '@/constants'
 import { Screen, SearchBar } from '@/components/ui'
-import { EventCard } from '@/components/EventCard'
+import { EventCard, EventCardSkeletonList } from '@/components/EventCard'
 import { useEventSearch } from '@/hooks/useEventSearch'
 import type { EventSummary } from '@/api/apiService'
 
@@ -101,13 +100,9 @@ export function EventSearchModal({ visible, onClose, nearbyEvents, lat, lng, nea
 
         {isSearching ? (
           loading ? (
-            <AutoSkeletonView isLoading animationType="gradient" defaultRadius={14} gradientColors={['#1e1e1e', '#2e2e2e']}>
-              <View style={s.listContent}>
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <View key={i} style={s.skCard} />
-                ))}
-              </View>
-            </AutoSkeletonView>
+            <View style={s.listContent}>
+              <EventCardSkeletonList count={3} />
+            </View>
           ) : searchError ? (
             <View style={s.center}>
               <Text style={s.emptyTitle}>Search failed</Text>
@@ -208,7 +203,6 @@ const s = StyleSheet.create({
   },
 
   cardWrap: { marginBottom: 4 },
-  skCard: { height: 220, borderRadius: 20, marginBottom: 16 },
 
   center: { alignItems: 'center', justifyContent: 'center', gap: 10, padding: 40 },
   emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 18, color: '#fff' },

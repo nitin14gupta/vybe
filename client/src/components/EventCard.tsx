@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Image } from 'expo-image'
+import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { Colors, FontFamily } from '@/constants'
 import { parseServerDate } from '@/lib/dates'
 import type { EventSummary } from '@/api/apiService'
@@ -121,6 +122,43 @@ export function EventCard({ event, onPress, showHost, isPast, isCancelled, foote
   )
 }
 
+// Loading placeholder shaped like EventCard — drop in wherever a card grid/list
+// is waiting on data (events list, map preview strip, search results).
+export function EventCardSkeleton() {
+  return (
+    <AutoSkeletonView isLoading animationType="gradient" defaultRadius={14} gradientColors={['#1e1e1e', '#2e2e2e']}>
+      <View style={s.card}>
+        <View style={s.skImage} />
+        <View style={s.meta}>
+          <View style={s.metaLeft}>
+            <View style={s.skLine1} />
+            <View style={s.skLine2} />
+          </View>
+          <View style={s.metaRight}>
+            <View style={s.skLine3} />
+          </View>
+        </View>
+      </View>
+    </AutoSkeletonView>
+  )
+}
+
+interface SkeletonListProps {
+  count?: number
+}
+
+export function EventCardSkeletonList({ count = 3 }: SkeletonListProps) {
+  return (
+    <>
+      {Array.from({ length: count }).map((_, i) => (
+        <View key={i} style={s.skCardWrap}>
+          <EventCardSkeleton />
+        </View>
+      ))}
+    </>
+  )
+}
+
 const s = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
@@ -178,4 +216,10 @@ const s = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 8,
   },
   spotsText: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.brandOrange },
+
+  skCardWrap: { marginBottom: 16 },
+  skImage: { width: '100%', aspectRatio: 16 / 9, backgroundColor: '#2a2a2a' },
+  skLine1: { height: 13, width: '70%', borderRadius: 6, backgroundColor: '#2a2a2a', marginBottom: 6 },
+  skLine2: { height: 11, width: '45%', borderRadius: 6, backgroundColor: '#2a2a2a' },
+  skLine3: { height: 11, width: 50, borderRadius: 6, backgroundColor: '#2a2a2a' },
 })

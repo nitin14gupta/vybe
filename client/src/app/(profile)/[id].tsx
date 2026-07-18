@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, Pressable, Image,
-  FlatList, ActivityIndicator, Dimensions, RefreshControl,
+  FlatList, Dimensions, RefreshControl,
 } from 'react-native'
 import { Image as ExpoImage } from 'expo-image'
 import { router, useLocalSearchParams } from 'expo-router'
@@ -12,7 +12,7 @@ import {
   MessageCircle, Ban, Play, Pause, Check, Ghost, Clock,
 } from 'lucide-react-native'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
-import { VybeRequestModal, VybeIcebreakerModal, PlaybackWave, ProfileMenuSheet, InterestChip, TabSwitcher, SmallEventCard } from '@/components/ui'
+import { VybeRequestModal, VybeIcebreakerModal, PlaybackWave, ProfileMenuSheet, InterestChip, TabSwitcher, SmallEventCard, BrandedLoader } from '@/components/ui'
 import ApiService, { ExtendedProfile, EventSummary } from '@/api/apiService'
 import { Colors, FontFamily, Radius } from '@/constants'
 import { usePillStore } from '@/store/pillStore'
@@ -199,7 +199,7 @@ export default function UserProfileScreen() {
   if (loading) {
     return (
       <View style={[s.root, s.center]}>
-        <ActivityIndicator size="large" color={Colors.brandOrange} />
+        <BrandedLoader />
       </View>
     )
   }
