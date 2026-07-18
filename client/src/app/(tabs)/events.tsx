@@ -23,7 +23,7 @@ import { Image } from "expo-image";
 import { Colors, FontFamily, FILTER_CHIPS } from "@/constants";
 import { useEvents } from "@/hooks/useEvents";
 import type { EventSummary } from "@/api/apiService";
-import { EventCard, EventCardSkeleton, formatEventDate } from "@/components/EventCard";
+import { EventCard, formatEventDate } from "@/components/EventCard";
 import { EventSearchModal } from "@/components/EventSearchModal";
 import { LocationWarning, CreateEventSheet } from "@/components/ui";
 import { usePermissionSheetStore } from "@/store/permissionSheetStore";
@@ -192,7 +192,6 @@ export default function EventsScreen() {
 
   const openEvent = (id: string) => router.push(`/(events)/${id}` as any);
   const isEmpty = !loading && !error && events.length === 0;
-  const isInitialLoading = loading && events.length === 0;
   const previewEvents = events.slice(0, PREVIEW_MAX);
   const extraCount = events.length - PREVIEW_MAX;
 
@@ -308,27 +307,7 @@ export default function EventsScreen() {
         )}
 
         {/* Preview strip — floats over map with fade gradient */}
-        {isInitialLoading ? (
-          <View style={[styles.previewStrip, { paddingBottom: Math.max(insets.bottom, 8) + 6 }]}>
-            <LinearGradient
-              colors={['transparent', 'rgba(6,6,6,0.72)', 'rgba(6,6,6,0.94)']}
-              style={StyleSheet.absoluteFill}
-              pointerEvents="none"
-            />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 14, gap: CARD_MARGIN }}
-              scrollEnabled={false}
-            >
-              {Array.from({ length: 3 }).map((_, i) => (
-                <View key={i} style={styles.previewCard}>
-                  <EventCardSkeleton />
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        ) : !isEmpty ? (
+        {!isEmpty ? (
           <View style={[styles.previewStrip, { paddingBottom: Math.max(insets.bottom, 8) + 6 }]}>
             <LinearGradient
               colors={['transparent', 'rgba(6,6,6,0.72)', 'rgba(6,6,6,0.94)']}
@@ -433,13 +412,7 @@ export default function EventsScreen() {
       </ScrollView>
 
       {/* List */}
-      {isInitialLoading ? (
-        <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
-          <EventCardSkeleton />
-          <EventCardSkeleton />
-          <EventCardSkeleton />
-        </ScrollView>
-      ) : error && !loading ? (
+      {error && !loading ? (
         <View style={[styles.listEmpty, { flex: 1 }]}>
           <Text style={styles.listEmptyTitle}>Couldn't load events</Text>
           <Text style={styles.listEmptySub}>Check your connection and try again</Text>
