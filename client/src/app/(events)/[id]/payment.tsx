@@ -20,6 +20,7 @@ import { usePillStore } from '@/store/pillStore'
 import { hTap, hSuccess } from '@/lib/haptics'
 import { usePaymentData } from '@/hooks/usePaymentData'
 import { useInstalledUpiApps } from '@/hooks/useInstalledUpiApps'
+import type { UpiApp } from '@/hooks/useInstalledUpiApps'
 import { UpiIdSheet } from '@/components/UpiIdSheet'
 import { PaymentFailedSheet } from '@/components/PaymentFailedSheet'
 
@@ -362,29 +363,12 @@ export default function PaymentScreen() {
                 </View>
               ) : (
                 upiApps.map((app, i) => (
-                  <Pressable
+                  <UpiAppRow
                     key={app.package_name}
+                    app={app}
                     style={[s.methodRow, i < upiApps.length - 1 && s.methodBorder]}
                     onPress={() => handleUpiApp(app.package_name)}
-                  >
-                    {app.app_icon ? (
-                      <Image
-                        source={{ uri: (app.app_icon.startsWith('http') || app.app_icon.startsWith('file:') || app.app_icon.startsWith('/'))
-                          ? app.app_icon
-                          : `data:image/png;base64,${app.app_icon}`
-                        }}
-                        style={s.upiAppIcon}
-                      />
-                    ) : (
-                      <View style={[s.dot, { backgroundColor: Colors.elevated }]}>
-                        <Text style={[s.dotText, { fontSize: 13, color: Colors.inkSecondary }]}>
-                          {app.app_name.charAt(0)}
-                        </Text>
-                      </View>
-                    )}
-                    <Text style={s.methodLabel}>{app.app_name}</Text>
-                    <ChevronRight size={18} color={Colors.inkDisabled} strokeWidth={1.8} />
-                  </Pressable>
+                  />
                 ))
               )}
               <Pressable
@@ -488,6 +472,34 @@ export default function PaymentScreen() {
         onBack={() => { setFailedMsg(null); router.back() }}
       />
     </View>
+  )
+}
+
+function UpiAppRow({ app, style, onPress }: { app: UpiApp; style: any; onPress: () => void }) {
+  const [iconFailed, setIconFailed] = useState(false)
+  const showIcon = !!app.app_icon && !iconFailed
+
+  return (
+    <Pressable style={style} onPress={onPress}>
+      {showIcon ? (
+        <Image
+          source={{ uri: (app.app_icon.startsWith('http') || app.app_icon.startsWith('file:') || app.app_icon.startsWith('/'))
+            ? app.app_icon
+            : `data:image/png;base64,${app.app_icon}`
+          }}
+          style={s.upiAppIcon}
+          onError={() => setIconFailed(true)}
+        />
+      ) : (
+        <View style={[s.dot, { backgroundColor: Colors.elevated }]}>
+          <Text style={[s.dotText, { fontSize: 13, color: Colors.inkSecondary }]}>
+            {app.app_name.charAt(0)}
+          </Text>
+        </View>
+      )}
+      <Text style={s.methodLabel}>{app.app_name}</Text>
+      <ChevronRight size={18} color={Colors.inkDisabled} strokeWidth={1.8} />
+    </Pressable>
   )
 }
 

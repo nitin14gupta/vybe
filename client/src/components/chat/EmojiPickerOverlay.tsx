@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, Pressable, Modal, StyleSheet, Dimensions } from 'react-native'
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated'
 import EmojiKeyboard, { type EmojiType } from 'rn-emoji-keyboard'
-import { Reply, Copy, Flag, Trash2, Undo2, Pencil } from 'lucide-react-native'
+import { Reply, Copy, Flag, Trash2, Undo2, Pencil, CheckSquare } from 'lucide-react-native'
 import { hSelection, hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 
@@ -23,14 +23,19 @@ interface Props {
   onReply: () => void
   onCopy: () => void
   onReport: () => void
-  onDelete: () => void
+  /** Unsend — mine only, both-sided (partner sees "message was unsent" too) */
+  onUnsend: () => void
+  /** Delete for me — mine or theirs, one-sided (only disappears from my view) */
+  onDeleteForMe: () => void
+  /** "Select" row — no behavior yet, just the menu affordance for now */
+  onSelectMessage: () => void
   onEdit: () => void
   onClose: () => void
 }
 
 export function EmojiPickerOverlay({
   msgId, pageY, isMine, currentEmoji, canCopy, canEdit,
-  onSelect, onReply, onCopy, onReport, onDelete, onEdit, onClose,
+  onSelect, onReply, onCopy, onReport, onUnsend, onDeleteForMe, onSelectMessage, onEdit, onClose,
 }: Props) {
   const [showFullPicker, setShowFullPicker] = useState(false)
   const scale = useSharedValue(0.7)
@@ -46,7 +51,7 @@ export function EmojiPickerOverlay({
     opacity: opacity.value,
   }))
 
-  const actionRowCount = 1 + (canCopy ? 1 : 0) + (isMine && canEdit ? 1 : 0) + (!isMine ? 1 : 0) + 1 // reply, copy?, edit?, report?, delete/unsend
+  const actionRowCount = 1 + (canCopy ? 1 : 0) + (isMine && canEdit ? 1 : 0) + (!isMine ? 1 : 0) + (isMine ? 1 : 0) + 1 + 1 // reply, copy?, edit?, report?, unsend?, delete for me, select
   const actionCardHeight = actionRowCount * ACTION_ROW_HEIGHT + 8
   const totalHeight = PICKER_HEIGHT + GAP + actionCardHeight
 
@@ -111,12 +116,19 @@ export function EmojiPickerOverlay({
                 <Text style={s.actionText}>Report</Text>
               </Pressable>
             )}
-            <Pressable style={s.actionRow} onPress={() => runAction(onDelete)} hitSlop={2}>
-              {isMine
-                ? <Undo2 size={19} color={Colors.inkSecondary} strokeWidth={1.8} />
-                : <Trash2 size={19} color={Colors.inkSecondary} strokeWidth={1.8} />
-              }
-              <Text style={[s.actionText, s.actionTextDanger]}>{isMine ? 'Unsend' : 'Delete for me'}</Text>
+            {isMine && (
+              <Pressable style={s.actionRow} onPress={() => runAction(onUnsend)} hitSlop={2}>
+                <Undo2 size={19} color={Colors.inkSecondary} strokeWidth={1.8} />
+                <Text style={s.actionText}>Unsend</Text>
+              </Pressable>
+            )}
+            <Pressable style={s.actionRow} onPress={() => runAction(onDeleteForMe)} hitSlop={2}>
+              <Trash2 size={19} color={Colors.inkSecondary} strokeWidth={1.8} />
+              <Text style={s.actionText}>Delete for me</Text>
+            </Pressable>
+            <Pressable style={s.actionRow} onPress={() => runAction(onSelectMessage)} hitSlop={2}>
+              <CheckSquare size={19} color={Colors.inkSecondary} strokeWidth={1.8} />
+              <Text style={s.actionText}>Select</Text>
             </Pressable>
           </View>
         </Animated.View>
@@ -232,5 +244,4 @@ const s = StyleSheet.create({
     fontSize: 15,
     color: Colors.inkPrimary,
   },
-  actionTextDanger: { color: Colors.brandCoral },
 })

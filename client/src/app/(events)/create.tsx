@@ -7,6 +7,7 @@ import { ChevronLeft, X } from 'lucide-react-native'
 import { hTap, hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import {
+  BrandedLoader,
   DateTimePickerSheet,
   KeyboardAvoidingWrapper,
   PrimaryButton,
@@ -175,6 +176,12 @@ export default function CreateScreen() {
         ))}
       </View>
 
+      {nextLoading && (
+        <View style={s.loadingOverlay}>
+          <BrandedLoader />
+        </View>
+      )}
+
       {step === 3 ? (
         <View style={{ flex: 1 }}>
           <Step3Where form={form} set={set} errors={errors} setErrors={setErrors} />
@@ -318,6 +325,13 @@ const s = StyleSheet.create({
     backgroundColor: Colors.glassSurface,
   },
   segActive: { backgroundColor: '#fff' },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 10,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   stepContent: {
     padding: 24,
     paddingTop: 20,

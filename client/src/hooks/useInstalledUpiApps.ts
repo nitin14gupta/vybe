@@ -1,20 +1,11 @@
 import { useState, useEffect } from 'react'
 import RazorpayCustomUI from 'react-native-customui'
+import { getUpiAppIcon } from '../../modules/upi-icons'
 
 export interface UpiApp {
   app_name: string
   package_name: string
-  app_icon: string  // base64 PNG
-}
-
-const FALLBACK_LOGOS: Record<string, string> = {
-  'com.google.android.apps.nbu.paisa.user': 'https://img.icons8.com/color/512/google-pay.png', // Replace with your GPay logo URL
-  'com.phonepe.app': 'https://download.logo.wine/logo/PhonePe/PhonePe-Logo.wine.png', // Replace with your PhonePe logo URL
-  'net.one97.paytm': 'https://download.logo.wine/logo/Paytm/Paytm-Logo.wine.png', // Replace with your Paytm logo URL
-  'in.org.npci.upiapp': 'https://download.logo.wine/logo/BHIM/BHIM-Logo.wine.png', // Replace with your BHIM logo URL
-  'com.whatsapp': 'https://upload.wikimedia.org/wikipedia/commons/5/5e/WhatsApp_icon.png', // Replace with your WhatsApp logo URL
-  'in.amazon.mShop.android.shopping': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/512px-Amazon_logo.svg.png', // Replace with your Amazon Pay logo URL
-  'com.dreamplug.androidapp': 'https://webimages.credcdn.in/_next/assets/images/home-page/cred-logo.png', // Replace with your CRED logo URL
+  app_icon: string  // base64 PNG, read straight off the device via PackageManager
 }
 
 export function useInstalledUpiApps(): { apps: UpiApp[]; loading: boolean } {
@@ -22,16 +13,25 @@ export function useInstalledUpiApps(): { apps: UpiApp[]; loading: boolean } {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    RazorpayCustomUI.getAppsWhichSupportUPI((result: any) => {
-      // SDK returns { data: [ { appName, packageName, iconBase64, appLogo } ] }
+    let cancelled = false
+
+    RazorpayCustomUI.getAppsWhichSupportUPI(async (result: any) => {
+      // SDK returns { data: [ { appName, packageName } ] } — icon fields are
+      // unreliable/empty for anything Razorpay hasn't explicitly branded, so
+      // we read the real installed-app icon ourselves via PackageManager.
       const raw: any[] = Array.isArray(result?.data) ? result.data : []
-      setApps(raw.map(a => ({
+      const withIcons = await Promise.all(raw.map(async (a): Promise<UpiApp> => ({
         app_name: a.appName ?? '',
         package_name: a.packageName ?? '',
-        app_icon: a.iconBase64 || a.appLogo || FALLBACK_LOGOS[a.packageName] || '',
+        app_icon: (await getUpiAppIcon(a.packageName ?? '')) ?? '',
       })))
-      setLoading(false)
+      if (!cancelled) {
+        setApps(withIcons)
+        setLoading(false)
+      }
     })
+
+    return () => { cancelled = true }
   }, [])
 
   return { apps, loading }

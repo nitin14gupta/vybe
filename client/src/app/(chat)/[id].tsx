@@ -1,5 +1,5 @@
 import { useCallback, useRef, useEffect, useState } from 'react'
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, type ScrollViewProps } from 'react-native'
+import { View, Text, Pressable, FlatList, StyleSheet, ActivityIndicator, type ScrollViewProps } from 'react-native'
 import { KeyboardGestureArea, KeyboardStickyView } from 'react-native-keyboard-controller'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams } from 'expo-router'
@@ -108,6 +108,9 @@ export default function ChatDetailScreen() {
         isMine={msg.sender_id === screen.myId}
         myId={screen.myId ?? ''}
         isFailed={screen.failedIds?.has(msg.id)}
+        selectMode={screen.selectMode}
+        isSelected={screen.selectedIds.has(msg.id)}
+        onToggleSelect={screen.handleToggleSelected}
         onDoubleTap={screen.handleDoubleTap}
         onLongPress={screen.handleLongPress}
         onSwipeReply={screen.handleSwipeReply}
@@ -118,7 +121,7 @@ export default function ChatDetailScreen() {
         onLinkTap={setBrowserUrl}
       />
     )
-  }, [screen.myId, screen.failedIds, screen.handleDoubleTap, screen.handleLongPress, screen.handleSwipeReply, screen.handleReactionPillPress, screen.handleMediaTap, screen.handleMediaGroupTap, screen.handleRetry, handleReplyTap])
+  }, [screen.myId, screen.failedIds, screen.selectMode, screen.selectedIds, screen.handleToggleSelected, screen.handleDoubleTap, screen.handleLongPress, screen.handleSwipeReply, screen.handleReactionPillPress, screen.handleMediaTap, screen.handleMediaGroupTap, screen.handleRetry, handleReplyTap])
 
   const listHeader = screen.isPartnerRecording
     ? <VoiceIndicator />
@@ -136,6 +139,9 @@ export default function ChatDetailScreen() {
         isWsConnected={screen.isWsConnected}
         loading={screen.loading}
         onMenuPress={() => screen.setMenuOpen(true)}
+        selectMode={screen.selectMode}
+        selectedCount={screen.selectedIds.size}
+        onExitSelect={screen.handleExitSelectMode}
       />
 
       <SafeAreaView edges={['bottom']} style={s.body}>
@@ -191,6 +197,22 @@ export default function ChatDetailScreen() {
               renderScrollComponent={renderScrollComponent}
             />
 
+            {screen.selectMode ? (
+              <View style={s.selectionBar}>
+                <Text style={s.selectionBarNote}>
+                  If this chat is reported, recently deleted messages will be included in the report
+                </Text>
+                <Pressable
+                  onPress={screen.handleBulkDeleteForMe}
+                  disabled={screen.selectedIds.size === 0}
+                  style={s.selectionBarBtn}
+                >
+                  <Text style={[s.selectionBarBtnText, screen.selectedIds.size === 0 && s.selectionBarBtnTextDisabled]}>
+                    Delete for you ({screen.selectedIds.size})
+                  </Text>
+                </Pressable>
+              </View>
+            ) : (
             <KeyboardStickyView offset={screen.stickyOffset} style={s.stickyWrap}>
               <ChatInputBar
                 blockStatus={screen.blockStatus}
@@ -218,6 +240,7 @@ export default function ChatDetailScreen() {
                 onLayout={screen.handleInputLayout}
               />
             </KeyboardStickyView>
+            )}
           </KeyboardGestureArea>
         )}
       </SafeAreaView>
@@ -235,10 +258,9 @@ export default function ChatDetailScreen() {
           onCopy={() => { if (screen.emojiTarget!.content) screen.handleCopyMessage(screen.emojiTarget!.content) }}
           onReport={() => screen.setReportMsgId(screen.emojiTarget!.msgId)}
           onEdit={() => screen.handleEditFromMenu(screen.emojiTarget!.msgId)}
-          onDelete={() => {
-            if (screen.emojiTarget!.isMine) screen.handleUnsendMessage(screen.emojiTarget!.msgId)
-            else screen.handleDeleteMessageForMe(screen.emojiTarget!.msgId)
-          }}
+          onUnsend={() => screen.handleUnsendMessage(screen.emojiTarget!.msgId)}
+          onDeleteForMe={() => screen.handleDeleteMessageForMe(screen.emojiTarget!.msgId)}
+          onSelectMessage={() => screen.handleEnterSelectMode(screen.emojiTarget!.msgId)}
           onClose={screen.handleCloseEmojiPicker}
         />
       )}
@@ -286,6 +308,29 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
   body: { flex: 1 },
   stickyWrap: { backgroundColor: Colors.background },
+  selectionBar: {
+    backgroundColor: Colors.background,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 20,
+    alignItems: 'center',
+    gap: 10,
+  },
+  selectionBarNote: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 12,
+    color: Colors.inkDisabled,
+    textAlign: 'center',
+  },
+  selectionBarBtn: { paddingVertical: 4 },
+  selectionBarBtnText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 15,
+    color: Colors.brandCoral,
+  },
+  selectionBarBtnTextDisabled: { color: Colors.inkDisabled },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   msgList: { paddingHorizontal: 16, paddingVertical: 12 },
   loadMoreWrap: { paddingVertical: 14, alignItems: 'center' },

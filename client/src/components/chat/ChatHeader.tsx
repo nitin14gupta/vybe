@@ -1,7 +1,7 @@
 import { View, Text, Image, Pressable, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
-import { ChevronLeft, MoreVertical, Ghost } from 'lucide-react-native'
+import { ChevronLeft, MoreVertical, Ghost, X } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 
 interface Props {
@@ -14,13 +14,33 @@ interface Props {
   isWsConnected: boolean
   loading: boolean
   onMenuPress: () => void
+  /** Bulk-select mode — swaps the back chevron for an X (exits select mode
+   * instead of navigating back) and shows "N selected" instead of the
+   * partner's name/status. */
+  selectMode?: boolean
+  selectedCount?: number
+  onExitSelect?: () => void
 }
 
 export function ChatHeader({
   partnerName, partnerUsername, partnerAvatar, partnerId, partnerIsDeleted,
   isPartnerOnline, isWsConnected, loading, onMenuPress,
+  selectMode, selectedCount = 0, onExitSelect,
 }: Props) {
   const insets = useSafeAreaInsets()
+
+  if (selectMode) {
+    return (
+      <View style={[s.header, { paddingTop: insets.top + 8 }]}>
+        <Pressable onPress={onExitSelect} style={s.backBtn} hitSlop={8}>
+          <X size={22} color={Colors.inkPrimary} strokeWidth={2} />
+        </Pressable>
+        <View style={s.center}>
+          <Text style={s.name}>{selectedCount} selected</Text>
+        </View>
+      </View>
+    )
+  }
 
   return (
     <>

@@ -1,12 +1,34 @@
 import { useState, useRef, useEffect } from 'react'
-import { View, Text, StyleSheet, Pressable, Image, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, Pressable, Image } from 'react-native'
 import { BottomSheetModal, BottomSheetView, BottomSheetFlatList, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
+import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { router } from 'expo-router'
 import { X, Flame, Check } from 'lucide-react-native'
 import { hTap, hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import type { VybeRequest } from '@/api/apiService'
+
+// Flat shapes only, no background on the wrapper — AutoSkeletonView shimmers
+// each child by its own background color; a solid wrapper competes with
+// them and just reads as static.
+function RequestCardSkeleton() {
+  return (
+    <View style={s.card}>
+      <View style={[s.cardAvatar, sk.avatar]} />
+      <View style={s.cardInfo}>
+        <View style={[sk.line, { width: '50%', marginBottom: 6 }]} />
+        <View style={[sk.line, { width: '30%', marginBottom: 6 }]} />
+        <View style={[sk.line, { width: '85%' }]} />
+      </View>
+    </View>
+  )
+}
+
+const sk = StyleSheet.create({
+  avatar: { backgroundColor: '#2a2a2a' },
+  line: { height: 10, borderRadius: 5, backgroundColor: '#2a2a2a' },
+})
 
 interface Props {
   visible: boolean
@@ -89,19 +111,24 @@ function VybeInboxSheetCore({ requests, loading, onBeginAccept, onPass, onClose 
       backgroundStyle={s.bg}
       handleIndicatorStyle={s.handleIndicator}
     >
-      {loading || requests.length === 0 ? (
+      {loading ? (
+        <BottomSheetView style={s.fullContent}>
+          {Header}
+          <AutoSkeletonView isLoading animationType="gradient" defaultRadius={16} gradientColors={['#2a2a2a', '#3a3a3a']}>
+            <View style={{ gap: 12 }}>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <RequestCardSkeleton key={i} />
+              ))}
+            </View>
+          </AutoSkeletonView>
+        </BottomSheetView>
+      ) : requests.length === 0 ? (
         <BottomSheetView style={s.fullContent}>
           {Header}
           <View style={s.emptyBox}>
-            {loading ? (
-              <ActivityIndicator color={Colors.brandOrange} />
-            ) : (
-              <>
-                <Flame size={40} color={Colors.inkDisabled} strokeWidth={1.2} />
-                <Text style={s.emptyTitle}>No vybe requests</Text>
-                <Text style={s.emptySub}>When someone sends you a vybe, it'll show up here.</Text>
-              </>
-            )}
+            <Flame size={40} color={Colors.inkDisabled} strokeWidth={1.2} />
+            <Text style={s.emptyTitle}>No vybe requests</Text>
+            <Text style={s.emptySub}>When someone sends you a vybe, it'll show up here.</Text>
           </View>
         </BottomSheetView>
       ) : (

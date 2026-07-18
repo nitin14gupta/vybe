@@ -149,6 +149,8 @@ export function useChatScreen(convId: string) {
   const [emojiTarget, setEmojiTarget] = useState<EmojiTarget | null>(null)
   const [reportMsgId, setReportMsgId] = useState<string | null>(null)
   const [editingMessage, setEditingMessage] = useState<Message | null>(null)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const extraContentPadding = useSharedValue(0)
 
@@ -323,6 +325,40 @@ export function useChatScreen(convId: string) {
     }
   }, [removeMessageLocally, showPill])
 
+  // ── Multi-select (bulk "Delete for you") ───────────────────────────────────
+
+  const handleEnterSelectMode = useCallback((msgId: string) => {
+    setSelectMode(true)
+    setSelectedIds(new Set([msgId]))
+  }, [])
+
+  const handleToggleSelected = useCallback((msgId: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(msgId)) next.delete(msgId)
+      else next.add(msgId)
+      return next
+    })
+  }, [])
+
+  const handleExitSelectMode = useCallback(() => {
+    setSelectMode(false)
+    setSelectedIds(new Set())
+  }, [])
+
+  const handleBulkDeleteForMe = useCallback(async () => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) return
+    ids.forEach(removeMessageLocally)
+    setSelectMode(false)
+    setSelectedIds(new Set())
+    try {
+      await Promise.all(ids.map(id => ApiService.deleteMessageForMe(id)))
+    } catch {
+      showPill("Couldn't delete some messages, try again", 'error')
+    }
+  }, [selectedIds, removeMessageLocally, showPill])
+
   const handleDoubleTap = useCallback((msgId: string) => {
     const msg = messages.find(m => m.id === msgId)
     if (!msg) return
@@ -472,6 +508,8 @@ export function useChatScreen(convId: string) {
     handleRetry, handleMediaTap, handleMediaGroupTap,
     handleCopyMessage, handleReportMessageSubmit, handleReportSheetClosed,
     handleUnsendMessage, handleDeleteMessageForMe,
+    selectMode, selectedIds,
+    handleEnterSelectMode, handleToggleSelected, handleExitSelectMode, handleBulkDeleteForMe,
     handleBeginEdit, handleEditFromMenu, handleCancelEdit,
     handleCancelReply: () => setReplyingTo(null),
     handleCloseEmojiPicker: () => setEmojiTarget(null),

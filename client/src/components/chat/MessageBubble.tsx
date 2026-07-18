@@ -13,7 +13,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
 import * as FileSystem from 'expo-file-system/legacy'
 import { router } from 'expo-router'
-import { Play, Pause, Download, Film, Mic, Image as ImageIcon, Calendar, User } from 'lucide-react-native'
+import { Play, Pause, Download, Film, Mic, Image as ImageIcon, Calendar, User, Check } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 import type { Message } from '@/api/apiService'
 import type { MediaViewType } from '@/components/chat/MediaViewerModal'
@@ -358,6 +358,10 @@ interface Props {
   isMine: boolean
   myId: string
   isFailed?: boolean
+  /** Bulk "select messages to delete" mode — see EmojiPickerOverlay's Select action */
+  selectMode?: boolean
+  isSelected?: boolean
+  onToggleSelect?: (msgId: string) => void
   onDoubleTap: (msgId: string) => void
   onLongPress: (msgId: string, pageY: number, isMine: boolean) => void
   onSwipeReply: (msg: Message) => void
@@ -370,6 +374,7 @@ interface Props {
 
 export function MessageBubble({
   msg, isMine, myId, isFailed,
+  selectMode, isSelected, onToggleSelect,
   onDoubleTap, onLongPress, onSwipeReply,
   onReactionPillPress, onReplyTap, onMediaTap, onRetry, onLinkTap,
 }: Props) {
@@ -589,8 +594,43 @@ export function MessageBubble({
     )
   }
 
-  return renderBubbleContent()
+  if (!selectMode) return renderBubbleContent()
+
+  return (
+    <View style={sel.row}>
+      <Pressable
+        style={sel.checkboxWrap}
+        onPress={() => { hSelection(); onToggleSelect?.(msg.id) }}
+        hitSlop={8}
+      >
+        <View style={[sel.checkbox, isSelected && sel.checkboxChecked]}>
+          {isSelected && <Check size={13} color="#111" strokeWidth={3} />}
+        </View>
+      </Pressable>
+      <View style={sel.content}>
+        {renderBubbleContent()}
+        {/* Swallows taps/gestures on the bubble itself while selecting —
+            tapping the message body toggles selection too, not just the box. */}
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={() => { hSelection(); onToggleSelect?.(msg.id) }}
+        />
+      </View>
+    </View>
+  )
 }
+
+const sel = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center' },
+  checkboxWrap: { width: 36, alignItems: 'center', justifyContent: 'center' },
+  checkbox: {
+    width: 20, height: 20, borderRadius: 5,
+    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.3)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  checkboxChecked: { backgroundColor: Colors.brandOrange, borderColor: Colors.brandOrange },
+  content: { flex: 1 },
+})
 
 const s = StyleSheet.create({
   bubbleWrap: { marginBottom: 4, maxWidth: '82%', overflow: 'visible' },

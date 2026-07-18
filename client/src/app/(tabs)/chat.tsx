@@ -273,6 +273,7 @@ export default function ChatScreen() {
       <VybeInboxSheet
         visible={inboxOpen}
         requests={pendingVibes}
+        loading={loading && pendingVibes.length === 0}
         onBeginAccept={(vibeId, name) => {
           setInboxOpen(false)
           setPendingAccept({ vibeId, name })

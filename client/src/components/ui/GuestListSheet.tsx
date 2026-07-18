@@ -4,6 +4,7 @@ import { Image } from 'expo-image'
 import { router } from 'expo-router'
 import { BottomSheetModal, BottomSheetView, BottomSheetFlatList, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
+import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { Heart, Users, X as XIcon } from 'lucide-react-native'
 import { hTap, hSelection } from '@/lib/haptics'
 import { Colors, FontFamily, Spacing } from '@/constants'
@@ -19,8 +20,53 @@ interface Props {
   guests: EventGuest[]
   total: number
   waitlist?: EventGuest[]
+  /** Shows a shimmering placeholder grid instead of the real/empty state
+   * while the parent's guest fetch is still in flight — the sheet itself
+   * still opens immediately (see `useEffect(() => sheetRef.current?.present())`
+   * below), this only swaps what's inside it. */
+  loading?: boolean
   onClose: () => void
 }
+
+// Flat shapes only, no background/shadow on any wrapping view — AutoSkeletonView
+// shimmers every child with its own background color, so a solid-colored
+// wrapper competes with the tiles underneath and just reads as a static block
+// (see EventCard.tsx's EventCardSkeleton for the same fix, in more detail).
+function GuestTileSkeleton() {
+  return (
+    <View style={t.root}>
+      <View style={[t.avatar, sk.circle]} />
+      <View style={sk.line} />
+    </View>
+  )
+}
+
+function GuestListSkeleton() {
+  return (
+    <BottomSheetView style={s.container}>
+      <View style={s.header}>
+        <View>
+          <View style={[sk.title, { marginBottom: 6 }]} />
+          <View style={sk.subtitle} />
+        </View>
+      </View>
+      <AutoSkeletonView isLoading animationType="gradient" defaultRadius={8} gradientColors={['#2a2a2a', '#3a3a3a']}>
+        <View style={s.grid}>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <GuestTileSkeleton key={i} />
+          ))}
+        </View>
+      </AutoSkeletonView>
+    </BottomSheetView>
+  )
+}
+
+const sk = StyleSheet.create({
+  circle: { backgroundColor: '#2a2a2a' },
+  line: { width: 48, height: 10, borderRadius: 5, backgroundColor: '#2a2a2a' },
+  title: { width: 130, height: 20, borderRadius: 6, backgroundColor: '#2a2a2a' },
+  subtitle: { width: 70, height: 13, borderRadius: 6, backgroundColor: '#2a2a2a' },
+})
 
 function renderBackdrop(props: BottomSheetBackdropProps) {
   return (
@@ -89,7 +135,7 @@ const t = StyleSheet.create({
   name: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.inkSecondary, maxWidth: 84, textAlign: 'center' },
 })
 
-function GuestListSheetCore({ eventId, guests, total, waitlist = [], onClose }: Omit<Props, 'visible'>) {
+function GuestListSheetCore({ eventId, guests, total, waitlist = [], loading, onClose }: Omit<Props, 'visible'>) {
   const sheetRef = useRef<BottomSheetModal>(null)
   const myId = useAuthStore(s => s.userId)
   const showPill = usePillStore(s => s.show)
@@ -170,7 +216,9 @@ function GuestListSheetCore({ eventId, guests, total, waitlist = [], onClose }: 
       backgroundStyle={s.bg}
       handleIndicatorStyle={s.handleIndicator}
     >
-      {guests.length === 0 ? (
+      {loading ? (
+        <GuestListSkeleton />
+      ) : guests.length === 0 ? (
         <BottomSheetView style={s.container}>
           {Header}
           <View style={s.empty}>
@@ -203,9 +251,9 @@ function GuestListSheetCore({ eventId, guests, total, waitlist = [], onClose }: 
   )
 }
 
-export function GuestListSheet({ visible, eventId, guests, total, waitlist, onClose }: Props) {
+export function GuestListSheet({ visible, eventId, guests, total, waitlist, loading, onClose }: Props) {
   if (!visible) return null
-  return <GuestListSheetCore eventId={eventId} guests={guests} total={total} waitlist={waitlist} onClose={onClose} />
+  return <GuestListSheetCore eventId={eventId} guests={guests} total={total} waitlist={waitlist} loading={loading} onClose={onClose} />
 }
 
 const s = StyleSheet.create({
