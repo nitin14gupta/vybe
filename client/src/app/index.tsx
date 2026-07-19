@@ -12,7 +12,7 @@ export default function Index() {
 
     // Navigate imperatively once hydrated
     if (!isAuthenticated) {
-      router.replace('/(auth)/welcome' as any)
+      router.replace('/(auth)')
     } else if (!profileComplete) {
       router.replace('/(onboarding)')
     } else {

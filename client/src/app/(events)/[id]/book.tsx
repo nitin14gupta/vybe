@@ -15,7 +15,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Calendar, MapPin, ShieldCheck, Wallet, Music2 } from 'lucide-react-native'
 import { Colors, FontFamily, Spacing, Radius, PLATFORM_FEE_RATE, PLATFORM_FEE_PERCENT_LABEL } from '@/constants'
-import { BackButton, PrimaryButton } from '@/components/ui'
+import { BackButton, BrandedLoader, PrimaryButton } from '@/components/ui'
 import ApiService, { type EventDetail } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { hSuccess, hSelection } from '@/lib/haptics'
@@ -110,8 +110,7 @@ export default function BookScreen() {
   if (loading || !event) {
     return (
       <View style={[s.root, s.center]}>
-        <StatusBar style="light" />
-        <ActivityIndicator size="large" color={Colors.brandOrange} />
+        <BrandedLoader />
       </View>
     )
   }

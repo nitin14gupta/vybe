@@ -387,7 +387,10 @@ export default function UserProfileScreen() {
           {!blockedByMe && profile.voice_url ? (
             <View style={s.voiceWrap}>
               <Pressable
-                onPress={() => { hTap(); voiceStatus.playing ? voicePlayer.pause() : voicePlayer.play() }}
+                onPress={() => {
+                  hTap()
+                  if (voiceStatus.playing) { voicePlayer.pause() } else { voicePlayer.seekTo(0); voicePlayer.play() }
+                }}
                 style={s.voicePlayBtn}
                 android_ripple={null}
               >
