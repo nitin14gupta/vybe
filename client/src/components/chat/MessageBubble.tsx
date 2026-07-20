@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from 'react'
+import { useCallback, useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import {
   View, Text, StyleSheet, ActivityIndicator,
 } from 'react-native'
@@ -92,9 +92,22 @@ const rp = StyleSheet.create({
 
 // ── Voice bubble ──────────────────────────────────────────────────────────────
 
-function VoiceBubble({ url, duration, isMine, isPending }: {
+export interface VoiceBubbleHandle {
+  toggle: () => void
+}
+
+// Tapping to play/pause is handled by the parent MessageBubble's outer
+// GestureDetector (the same singleTap that opens image/gif bubbles) via the
+// imperative `toggle` handle below — NOT a Pressable nested inside this
+// component. A nested Pressable here used to compete with the parent's
+// composed pan/singleTap/doubleTap/longPress gesture for the same touch,
+// two independent gesture recognizers racing for ownership of the same
+// region — which is why tapping the play button only registered a small
+// fraction of the time. Funneling everything through the one outer gesture
+// removes the race entirely.
+const VoiceBubble = forwardRef<VoiceBubbleHandle, {
   url: string; duration?: number; isMine: boolean; isPending: boolean
-}) {
+}>(({ url, duration, isMine, isPending }, ref) => {
   const player = useAudioPlayer(null)
   const status = useAudioPlayerStatus(player)
 
@@ -105,9 +118,7 @@ function VoiceBubble({ url, duration, isMine, isPending }: {
     player.replace({ uri: url })
   }, [url])
 
-  // Use RNGH Tap instead of Pressable — Pressable is blocked by parent GestureDetector
-  // on New Architecture (RNGH v2 intercepts all touches before RN's touch system)
-  const handleToggle = () => {
+  const toggle = useCallback(() => {
     if (isPending) return
     if (status.playing) {
       player.pause()
@@ -115,7 +126,9 @@ function VoiceBubble({ url, duration, isMine, isPending }: {
       player.seekTo(0)
       player.play()
     }
-  }
+  }, [isPending, status.playing, player])
+
+  useImperativeHandle(ref, () => ({ toggle }), [toggle])
 
   const dur = duration ?? 0
   const mins = Math.floor(dur / 60)
@@ -124,13 +137,12 @@ function VoiceBubble({ url, duration, isMine, isPending }: {
 
   return (
     <View style={[vb.bubble, isMine ? vb.bubbleMine : vb.bubbleTheirs]}>
-      {/* RNGH Pressable works inside GestureDetector on New Architecture (RN Pressable doesn't) */}
-      <Pressable onPress={handleToggle} style={[vb.playBtn, isPending && { opacity: 0.4 }]} hitSlop={6}>
+      <View style={[vb.playBtn, isPending && { opacity: 0.4 }]}>
         {status.playing
           ? <Pause size={16} color="#111" strokeWidth={2.5} />
           : <Play  size={16} color="#111" strokeWidth={2.5} />
         }
-      </Pressable>
+      </View>
       <View style={vb.waveWrap}>
         <PlaybackWave isActive={status.playing} color={isMine ? Colors.brandOrange : '#888'} />
       </View>
@@ -142,7 +154,7 @@ function VoiceBubble({ url, duration, isMine, isPending }: {
       }
     </View>
   )
-}
+})
 
 const vb = StyleSheet.create({
   bubble: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 12, minWidth: 200 },
@@ -380,6 +392,7 @@ export function MessageBubble({
 }: Props) {
   const translateX = useSharedValue(0)
   const hasTriggeredReply = useSharedValue(false)
+  const voiceBubbleRef = useRef<VoiceBubbleHandle>(null)
 
   const isLinkMessage = msg.content_type === 'text' && !!msg.content && isUrlOnly(msg.content)
 
@@ -393,6 +406,11 @@ export function MessageBubble({
     }
     if ((msg.content_type === 'image' || msg.content_type === 'gif') && msg.metadata?.url) {
       onMediaTap?.(msg.metadata.url, msg.content_type as MediaViewType)
+      return
+    }
+    if (msg.content_type === 'voice') {
+      hTap()
+      voiceBubbleRef.current?.toggle()
     }
   }, [isLinkMessage, msg.content, msg.content_type, msg.metadata, onMediaTap, onLinkTap])
 
@@ -522,7 +540,7 @@ export function MessageBubble({
         <View style={[s.bubbleWrap, isMine ? s.wrapMine : s.wrapTheirs]}>
           <GestureDetector gesture={gesture}>
             <Animated.View style={animStyle}>
-              <VoiceBubble url={msg.metadata.url} duration={msg.metadata.duration} isMine={isMine} isPending={isPending} />
+              <VoiceBubble ref={voiceBubbleRef} url={msg.metadata.url} duration={msg.metadata.duration} isMine={isMine} isPending={isPending} />
             </Animated.View>
           </GestureDetector>
           {msg.reactions && (

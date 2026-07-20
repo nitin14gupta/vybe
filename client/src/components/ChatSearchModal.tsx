@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, Modal, FlatList, Pressable, Image } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, X, Users } from 'lucide-react-native'
+import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import { SearchBar } from '@/components/ui'
@@ -53,6 +54,22 @@ function PersonRow({
   )
 }
 
+function PersonRowSkeleton() {
+  return (
+    <AutoSkeletonView isLoading animationType="gradient" defaultRadius={7} gradientColors={['#1e1e1e', '#2e2e2e']}>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <View key={i} style={s.row}>
+          <View style={s.skAvatar} />
+          <View style={s.skInfo}>
+            <View style={s.skLineName} />
+            <View style={s.skLineUser} />
+          </View>
+        </View>
+      ))}
+    </AutoSkeletonView>
+  )
+}
+
 export function ChatSearchModal({ visible, onClose, conversations, onSelectConversation }: Props) {
   const insets = useSafeAreaInsets()
   const [query, setQuery] = useState('')
@@ -66,7 +83,7 @@ export function ChatSearchModal({ visible, onClose, conversations, onSelectConve
   // start talking again. Fetch the full mutual pool (hidden included) once
   // the modal opens; show the fast prop-based list in the meantime.
   useEffect(() => {
-    if (!visible) return
+    if (!visible) { setFullList(null); return }
     let cancelled = false
     ApiService.getConversations(100, 0, true)
       .then(res => { if (!cancelled) setFullList(res.active) })
@@ -92,6 +109,7 @@ export function ChatSearchModal({ visible, onClose, conversations, onSelectConve
     onClose()
   }
 
+  const poolLoading = fullList === null && conversations.length === 0
   const isSearching = query.trim().length > 0
   const suggestions = pool.slice(0, SUGGESTIONS_MAX)
   const recentToShow = expanded ? history : history.slice(0, RECENT_PREVIEW)
@@ -115,7 +133,9 @@ export function ChatSearchModal({ visible, onClose, conversations, onSelectConve
           />
         </View>
 
-        {isSearching ? (
+        {poolLoading ? (
+          <PersonRowSkeleton />
+        ) : isSearching ? (
           <FlatList
             data={results}
             keyExtractor={c => c.id}
@@ -249,6 +269,10 @@ const s = StyleSheet.create({
   avatarFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
   avatarInitial: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
   info: { flex: 1, gap: 2 },
+  skAvatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#2a2a2a' },
+  skInfo: { flex: 1, gap: 8 },
+  skLineName: { height: 14, width: '50%', borderRadius: 7, backgroundColor: '#2a2a2a' },
+  skLineUser: { height: 12, width: '32%', borderRadius: 6, backgroundColor: '#2a2a2a' },
   name: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.inkPrimary },
   username: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkDisabled },
   removeBtn: { padding: 4 },

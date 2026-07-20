@@ -3,6 +3,7 @@ import { View, Text, Pressable, FlatList, StyleSheet, ActivityIndicator, type Sc
 import { KeyboardGestureArea, KeyboardStickyView } from 'react-native-keyboard-controller'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams } from 'expo-router'
+import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { BlockSheet, ReportSheet } from '@/components/ui'
 import { Colors, FontFamily } from '@/constants'
 import { useChatScreen } from '@/hooks/useChatScreen'
@@ -34,6 +35,32 @@ function VoiceIndicator() {
       <View style={s.voiceIndicatorBubble}>
         <Text style={s.voiceIndicatorText}>🎤 Recording…</Text>
       </View>
+    </View>
+  )
+}
+
+// Widths vary per row so the shimmer reads as chat bubbles, not a repeated bar
+const SKELETON_ROWS: { mine: boolean; width: number }[] = [
+  { mine: false, width: 160 }, { mine: true, width: 200 },
+  { mine: true, width: 120 }, { mine: false, width: 220 },
+  { mine: false, width: 90 },  { mine: true, width: 170 },
+  { mine: false, width: 200 }, { mine: true, width: 130 },
+]
+
+function MessageListSkeleton() {
+  return (
+    <View style={[s.body, s.msgList, { justifyContent: 'flex-end' }]}>
+      <AutoSkeletonView isLoading animationType="gradient" defaultRadius={16} gradientColors={['#1e1e1e', '#2e2e2e']}>
+        {SKELETON_ROWS.map((row, i) => (
+          <View
+            key={i}
+            style={[
+              s.skBubble,
+              { width: row.width, alignSelf: row.mine ? 'flex-end' : 'flex-start' },
+            ]}
+          />
+        ))}
+      </AutoSkeletonView>
     </View>
   )
 }
@@ -146,9 +173,7 @@ export default function ChatDetailScreen() {
 
       <SafeAreaView edges={['bottom']} style={s.body}>
         {screen.loading ? (
-          <View style={s.center}>
-            <ActivityIndicator color={Colors.brandOrange} />
-          </View>
+          <MessageListSkeleton />
         ) : (
           <KeyboardGestureArea
             interpolator="ios"
@@ -333,6 +358,7 @@ const s = StyleSheet.create({
   selectionBarBtnTextDisabled: { color: Colors.inkDisabled },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   msgList: { paddingHorizontal: 16, paddingVertical: 12 },
+  skBubble: { height: 40, borderRadius: 16, backgroundColor: '#2a2a2a', marginBottom: 10 },
   loadMoreWrap: { paddingVertical: 14, alignItems: 'center' },
   seenLabel: {
     fontFamily: FontFamily.bodyRegular,

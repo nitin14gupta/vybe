@@ -2,17 +2,24 @@ import { View, Text, StyleSheet, Pressable, Image } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
 import { ChevronLeft, Clock, Flame } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 
 export default function PendingChatScreen() {
   const insets = useSafeAreaInsets()
-  const { partnerName, partnerAvatar, message } = useLocalSearchParams<{
+  const { partnerId, partnerName, partnerAvatar, message } = useLocalSearchParams<{
+    partnerId?: string
     partnerName?: string
     partnerAvatar?: string
     message?: string
   }>()
 
   const name = partnerName ?? 'them'
+  const goToProfile = () => {
+    if (!partnerId) return
+    hTap()
+    router.push(`/(profile)/${partnerId}` as any)
+  }
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
@@ -27,7 +34,7 @@ export default function PendingChatScreen() {
 
       {/* Avatar area */}
       <View style={s.avatarSection}>
-        <View style={s.avatarRing}>
+        <Pressable onPress={goToProfile} style={s.avatarRing} hitSlop={6}>
           {partnerAvatar ? (
             <Image source={{ uri: partnerAvatar }} style={s.avatar} />
           ) : (
@@ -38,7 +45,7 @@ export default function PendingChatScreen() {
           <View style={s.flameBadge}>
             <Flame size={16} color="#111" fill="#111" />
           </View>
-        </View>
+        </Pressable>
       </View>
 
       {/* Status card */}

@@ -7,6 +7,7 @@ import { router } from 'expo-router'
 import { Flame, RefreshCw, Ghost, Search } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { VybeInboxSheet, VybeIcebreakerModal, LogoMark, ProfileMenuSheet } from '@/components/ui'
 import { ChatSearchModal } from '@/components/ChatSearchModal'
 import { usePillStore } from '@/store/pillStore'
@@ -58,8 +59,8 @@ function formatLastMessage(conv: Conversation, currentUserId: string | null): st
 
 // ── Conversation row ──────────────────────────────────────────────────────────
 
-function ConvRow({ conv, onPress, onLongPress, currentUserId }: {
-  conv: Conversation; onPress: () => void; onLongPress: () => void; currentUserId: string | null
+function ConvRow({ conv, onPress, onLongPress, onAvatarPress, currentUserId }: {
+  conv: Conversation; onPress: () => void; onLongPress: () => void; onAvatarPress: () => void; currentUserId: string | null
 }) {
   const isLocked   = conv.status === 'pending'
   const isDeleted  = conv.partner_is_deleted
@@ -67,7 +68,7 @@ function ConvRow({ conv, onPress, onLongPress, currentUserId }: {
 
   return (
     <Pressable onPress={onPress} onLongPress={onLongPress} style={[s.convRow, isLocked && s.convRowLocked]}>
-      <View style={s.convAvatarWrap}>
+      <Pressable onPress={onAvatarPress} hitSlop={4} style={s.convAvatarWrap}>
         {isDeleted ? (
           <View style={[s.convAvatar, s.convAvatarDeleted]}>
             <Ghost size={20} color={Colors.inkDisabled} strokeWidth={1.5} />
@@ -79,7 +80,7 @@ function ConvRow({ conv, onPress, onLongPress, currentUserId }: {
             <Text style={s.convAvatarInitial}>{(conv.partner_name ?? '?').charAt(0)}</Text>
           </View>
         )}
-      </View>
+      </Pressable>
 
       <View style={s.convBody}>
         <View style={s.convTopRow}>
@@ -105,6 +106,27 @@ function ConvRow({ conv, onPress, onLongPress, currentUserId }: {
         </View>
       </View>
     </Pressable>
+  )
+}
+
+// ── Loading skeleton ─────────────────────────────────────────────────────────
+
+function ConvListSkeleton() {
+  return (
+    <AutoSkeletonView isLoading animationType="gradient" defaultRadius={7} gradientColors={['#1e1e1e', '#2e2e2e']}>
+      {Array.from({ length: 8 }).map((_, i) => (
+        <View key={i} style={s.skRow}>
+          <View style={s.skAvatar} />
+          <View style={s.skBody}>
+            <View style={s.skTopRow}>
+              <View style={s.skLineName} />
+              <View style={s.skLineTime} />
+            </View>
+            <View style={s.skLinePreview} />
+          </View>
+        </View>
+      ))}
+    </AutoSkeletonView>
   )
 }
 
@@ -166,12 +188,19 @@ export default function ChatScreen() {
       router.push({
         pathname: '/(chat)/pending' as any,
         params: {
+          partnerId: item.partner_id,
           partnerName: item.partner_name ?? '',
           partnerAvatar: item.partner_avatar ?? '',
           message: item.last_message ?? '',
         },
       })
     }
+  }
+
+  const openProfile = (item: Conversation) => {
+    if (item.partner_is_deleted) return
+    hTap()
+    router.push(`/(profile)/${item.partner_id}` as any)
   }
 
   const handleBlock = async () => {
@@ -218,9 +247,7 @@ export default function ChatScreen() {
       </View>
 
       {loading ? (
-        <View style={s.center}>
-          <ActivityIndicator color={Colors.brandOrange} />
-        </View>
+        <ConvListSkeleton />
       ) : error ? (
         <View style={s.center}>
           <Text style={s.emptyTitle}>Couldn't load messages</Text>
@@ -265,6 +292,7 @@ export default function ChatScreen() {
               currentUserId={currentUserId}
               onPress={() => openConversation(item)}
               onLongPress={() => { hTap(); setMenuTarget(item) }}
+              onAvatarPress={() => openProfile(item)}
             />
           )}
         />
@@ -429,6 +457,15 @@ const s = StyleSheet.create({
     color: Colors.inkSecondary,
     textAlign: 'center',
   },
+
+  // Loading skeleton
+  skRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, gap: 14 },
+  skAvatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#2a2a2a' },
+  skBody: { flex: 1, gap: 8 },
+  skTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  skLineName: { height: 14, width: '45%', borderRadius: 7, backgroundColor: '#2a2a2a' },
+  skLineTime: { height: 11, width: 36, borderRadius: 6, backgroundColor: '#2a2a2a' },
+  skLinePreview: { height: 12, width: '70%', borderRadius: 6, backgroundColor: '#2a2a2a' },
 
   // Conversation rows
   convRow: {
