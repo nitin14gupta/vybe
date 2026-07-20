@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  View, Text, StyleSheet, Pressable, Dimensions,
+  View, Text, StyleSheet, Pressable, Dimensions, InteractionManager,
 } from 'react-native'
 import type { NativeSyntheticEvent, NativeScrollEvent } from 'react-native'
 import { ScrollView } from 'react-native-gesture-handler'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
-import { Download, Share2 } from 'lucide-react-native'
+import { Download, Share2, MessageCircle } from 'lucide-react-native'
 import { captureRef } from 'react-native-view-shot'
 import { Asset as MediaAsset, requestPermissionsAsync as requestMediaPermissionsAsync } from 'expo-media-library'
 import { hTap, hSuccess } from '@/lib/haptics'
@@ -16,6 +16,7 @@ import { Colors, FontFamily } from '@/constants'
 import { EventShareCard, SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT } from '@/components/EventShareCard'
 import { EventQrShareCard } from '@/components/EventQrShareCard'
 import { EventFlyerShareCard } from '@/components/EventFlyerShareCard'
+import { ShareToChatSheet } from './ShareToChatSheet'
 
 const { width: SCREEN_W } = Dimensions.get('window')
 const CARD_GAP = 14
@@ -25,6 +26,7 @@ const SHEET_HEIGHT = 8 + 64 + SHARE_CARD_HEIGHT + 30 + 118 + 24
 interface Props {
   visible: boolean
   onClose: () => void
+  eventId: string
   title: string
   dateTimeLabel: string
   coverUrl?: string | null
@@ -35,9 +37,12 @@ function renderBackdrop(props: BottomSheetBackdropProps) {
   return <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close" opacity={0.6} />
 }
 
-function EventShareSheetCore({ onClose, title, dateTimeLabel, coverUrl, shareUrl }: Omit<Props, 'visible'>) {
+function EventShareSheetCore({ onClose, eventId, title, dateTimeLabel, coverUrl, shareUrl }: Omit<Props, 'visible'>) {
   const sheetRef = useRef<BottomSheetModal>(null)
   const [activeIndex, setActiveIndex] = useState(0)
+  const [chatShareOpen, setChatShareOpen] = useState(false)
+  const [heavySlidesReady, setHeavySlidesReady] = useState(false)
+  const transitioning = useRef(false)
   const showPill = usePillStore(s => s.show)
   const { shareImage } = useImageShare()
 
@@ -53,6 +58,17 @@ function EventShareSheetCore({ onClose, title, dateTimeLabel, coverUrl, shareUrl
 
   useEffect(() => { sheetRef.current?.present() }, [])
 
+  // The classic + flyer slides each decode a full-size network image plus a
+  // gradient/text overlay — mounting both eagerly alongside the sheet's own
+  // spring-open animation is what causes the lag. Same fix as StyledQr's own
+  // defer (see QrCard.tsx): let the sheet finish opening first, then mount
+  // the heavy slides a beat later. The QR slide stays untouched — it's cheap
+  // and already defers its own internal render.
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => setHeavySlidesReady(true))
+    return () => task.cancel()
+  }, [])
+
   const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const idx = Math.round(e.nativeEvent.contentOffset.x / (SHARE_CARD_WIDTH + CARD_GAP))
     setActiveIndex(Math.max(0, Math.min(slideCount - 1, idx)))
@@ -64,6 +80,18 @@ function EventShareSheetCore({ onClose, title, dateTimeLabel, coverUrl, shareUrl
     hTap()
     const result = await shareImage(activeRef, { message, title })
     if (!result.shared && result.error === 'failed') showPill("Couldn't share, try again", 'error')
+  }
+
+  const handleDismiss = () => {
+    if (transitioning.current) { transitioning.current = false; return }
+    onClose()
+  }
+
+  const openChatShare = () => {
+    hTap()
+    transitioning.current = true
+    setChatShareOpen(true)
+    sheetRef.current?.dismiss()
   }
 
   const handleSave = async () => {
@@ -85,11 +113,12 @@ function EventShareSheetCore({ onClose, title, dateTimeLabel, coverUrl, shareUrl
   }
 
   return (
+    <>
     <BottomSheetModal
       ref={sheetRef}
       snapPoints={[SHEET_HEIGHT]}
       enablePanDownToClose
-      onDismiss={onClose}
+      onDismiss={handleDismiss}
       backdropComponent={renderBackdrop}
       backgroundStyle={s.bg}
       handleIndicatorStyle={s.handle}
@@ -109,12 +138,14 @@ function EventShareSheetCore({ onClose, title, dateTimeLabel, coverUrl, shareUrl
           style={s.carousel}
         >
           {coverUrl && (
-            <EventShareCard
-              ref={classicRef}
-              imageUrl={coverUrl}
-              title={title}
-              dateTimeLabel={dateTimeLabel}
-            />
+            heavySlidesReady ? (
+              <EventShareCard
+                ref={classicRef}
+                imageUrl={coverUrl}
+                title={title}
+                dateTimeLabel={dateTimeLabel}
+              />
+            ) : <View style={s.slidePlaceholder} />
           )}
           <EventQrShareCard
             ref={qrRef}
@@ -123,12 +154,14 @@ function EventShareSheetCore({ onClose, title, dateTimeLabel, coverUrl, shareUrl
             dateTimeLabel={dateTimeLabel}
           />
           {coverUrl && (
-            <EventFlyerShareCard
-              ref={flyerRef}
-              imageUrl={coverUrl}
-              title={title}
-              dateTimeLabel={dateTimeLabel}
-            />
+            heavySlidesReady ? (
+              <EventFlyerShareCard
+                ref={flyerRef}
+                imageUrl={coverUrl}
+                title={title}
+                dateTimeLabel={dateTimeLabel}
+              />
+            ) : <View style={s.slidePlaceholder} />
           )}
         </ScrollView>
 
@@ -147,11 +180,26 @@ function EventShareSheetCore({ onClose, title, dateTimeLabel, coverUrl, shareUrl
             <View style={[s.actionIcon, s.actionIconOutline]}><Share2 size={20} color={Colors.inkPrimary} strokeWidth={2} /></View>
             <Text style={s.actionLabel}>Share</Text>
           </Pressable>
+          <Pressable style={s.actionBtn} onPress={openChatShare}>
+            <View style={[s.actionIcon, s.actionIconOutline]}><MessageCircle size={20} color={Colors.inkPrimary} strokeWidth={2} /></View>
+            <Text style={s.actionLabel}>Chat</Text>
+          </Pressable>
         </View>
 
         <View style={{ height: 16 }} />
       </BottomSheetView>
     </BottomSheetModal>
+
+    <ShareToChatSheet
+      visible={chatShareOpen}
+      onClose={() => { setChatShareOpen(false); onClose() }}
+      contentType="event"
+      metadata={{ event_id: eventId, title, date: dateTimeLabel, cover_url: coverUrl ?? null }}
+      previewTitle={title}
+      previewSubtitle={dateTimeLabel}
+      previewImage={coverUrl}
+    />
+    </>
   )
 }
 
@@ -177,6 +225,10 @@ const s = StyleSheet.create({
     marginBottom: 20,
   },
   carousel: { width: '100%', height: SHARE_CARD_HEIGHT, flexGrow: 0 },
+  slidePlaceholder: {
+    width: SHARE_CARD_WIDTH, height: SHARE_CARD_HEIGHT,
+    borderRadius: 20, backgroundColor: '#1a1a1a',
+  },
   dots: {
     flexDirection: 'row',
     gap: 6,
@@ -195,7 +247,7 @@ const s = StyleSheet.create({
   actionsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 32,
+    gap: 24,
     marginTop: 26,
   },
   actionBtn: { alignItems: 'center', gap: 8 },

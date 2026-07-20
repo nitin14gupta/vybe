@@ -25,6 +25,7 @@ import { hTap, hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily, Radius, Spacing, ComponentSize } from '@/constants'
 import ApiService, { type TicketInfo } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
+import { getOrFetch, peekCached } from '@/lib/queryCache'
 import { ConfettiRain, StyledQr, LogoMark } from '@/components/ui'
 import { useGoBack } from '@/hooks/useGoBack'
 import { EventShareCard } from '@/components/EventShareCard'
@@ -129,7 +130,7 @@ function TicketCard({ ticket }: { ticket: TicketInfo }) {
       {/* QR */}
       <View style={s.qrSection}>
         <View style={s.qrPaper}>
-          <StyledQr data={ticket.ticket_token} size={176} />
+          <StyledQr data={ticket.ticket_token} size={176} errorCorrectionLevel="M" />
         </View>
         <View style={s.scanHintRow}>
           <LogoMark size={13} opacity={0.55} />
@@ -182,8 +183,8 @@ export default function TicketScreen() {
   const goBack = useGoBack()
   const showPill = usePillStore(s => s.show)
 
-  const [ticket, setTicket] = useState<TicketInfo | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [ticket, setTicket] = useState<TicketInfo | null>(() => id ? peekCached<TicketInfo>(`ticket:${id}`) : null)
+  const [loading, setLoading] = useState(() => !(id && peekCached<TicketInfo>(`ticket:${id}`)))
   const [coverUrl, setCoverUrl] = useState('')
   const cardRef = useRef<ViewShotRef>(null)
   const shareCardRef = useRef<View>(null)
@@ -191,11 +192,24 @@ export default function TicketScreen() {
 
   useEffect(() => {
     if (!id) return
-    ApiService.getMyTicket(id)
+    getOrFetch(`ticket:${id}`, () => ApiService.getMyTicket(id), {
+      ttlMs: t => {
+        const d = parseTs(t.date_time)
+        return d ? Math.max(d.getTime() - Date.now(), 0) : 60_000
+      },
+    })
       .then(setTicket)
       .catch(() => showPill("Couldn't load your ticket", 'error'))
       .finally(() => setLoading(false))
-    ApiService.getEvent(id)
+    // Cover photo only — this screen never touches live fields (RSVP status,
+    // spots left), just cosmetic display for the share card, so it's as safe
+    // to cache-until-event-ends as the ticket itself.
+    getOrFetch(`event-cover:${id}`, () => ApiService.getEvent(id), {
+      ttlMs: ev => {
+        const d = parseTs(ev.date_time)
+        return d ? Math.max(d.getTime() - Date.now(), 0) : 60_000
+      },
+    })
       .then(ev => setCoverUrl(ev.cover_photos?.[0]?.url ?? ''))
       .catch(() => {})
   }, [id])

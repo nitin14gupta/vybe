@@ -18,7 +18,7 @@ import { Colors, FontFamily } from '@/constants'
 import type { Message } from '@/api/apiService'
 import type { MediaViewType } from '@/components/chat/MediaViewerModal'
 import { ReactionPills } from './ReactionPills'
-import { PlaybackWave } from '@/components/ui'
+import { PlaybackWave, OutlineButton } from '@/components/ui'
 import { LinkPreviewCard } from './LinkPreviewCard'
 import { isUrlOnly, normalizeUrl } from '@/lib/linkify'
 
@@ -96,24 +96,12 @@ export interface VoiceBubbleHandle {
   toggle: () => void
 }
 
-// Tapping to play/pause is handled by the parent MessageBubble's outer
-// GestureDetector (the same singleTap that opens image/gif bubbles) via the
-// imperative `toggle` handle below — NOT a Pressable nested inside this
-// component. A nested Pressable here used to compete with the parent's
-// composed pan/singleTap/doubleTap/longPress gesture for the same touch,
-// two independent gesture recognizers racing for ownership of the same
-// region — which is why tapping the play button only registered a small
-// fraction of the time. Funneling everything through the one outer gesture
-// removes the race entirely.
 const VoiceBubble = forwardRef<VoiceBubbleHandle, {
   url: string; duration?: number; isMine: boolean; isPending: boolean
 }>(({ url, duration, isMine, isPending }, ref) => {
   const player = useAudioPlayer(null)
   const status = useAudioPlayerStatus(player)
 
-  // Pre-load audio on mount — matches the working useVoiceEdit pattern.
-  // Calling replace() + play() in the same tap handler is unreliable because
-  // the audio system hasn't finished loading when play() fires.
   useEffect(() => {
     player.replace({ uri: url })
   }, [url])
@@ -304,61 +292,71 @@ const mc = StyleSheet.create({
 
 // ── Event / Profile cards ─────────────────────────────────────────────────────
 
-function EventCard({ metadata, isMine, sentAt }: { metadata: Record<string, any>; isMine: boolean; sentAt: string }) {
+// Just the card itself — no bubbleWrap/time/reactions here. Those are handled
+// by renderBubbleContent the same way as every other message type, so these
+// cards get the standard long-press menu (react/reply/unsend/delete) too.
+function EventCard({ metadata }: { metadata: Record<string, any> }) {
   return (
-    <View style={[s.bubbleWrap, isMine ? s.wrapMine : s.wrapTheirs]}>
-      <View style={s.richCard}>
-        {metadata.cover_url
-          ? <Image source={{ uri: metadata.cover_url }} style={s.richCardImg} contentFit="cover" />
-          : <View style={[s.richCardImg, s.richCardImgFallback]} />
-        }
-        <View style={s.richCardBody}>
-          <Text style={s.richCardTitle} numberOfLines={2}>{metadata.title}</Text>
-          {metadata.date ? <Text style={s.richCardSub}>{metadata.date}</Text> : null}
-          <Pressable style={s.richCardBtn} onPress={() => metadata.event_id && router.push(`/(events)/${metadata.event_id}` as any)}>
-            <Text style={s.richCardBtnText}>View Event</Text>
-          </Pressable>
-        </View>
+    <View style={s.richCard}>
+      {metadata.cover_url
+        ? <Image source={{ uri: metadata.cover_url }} style={s.richCardImg} contentFit="cover" />
+        : <View style={[s.richCardImg, s.richCardImgFallback]} />
+      }
+      <View style={s.richCardBody}>
+        <Text style={s.richCardTitle} numberOfLines={2}>{metadata.title}</Text>
+        {metadata.date ? <Text style={s.richCardSub}>{metadata.date}</Text> : null}
+        {/* Visual only — this card sits inside the bubble's GestureDetector,
+            where a plain RN Pressable never receives touches (New Architecture).
+            The actual tap is handled by handleSingleTap on the outer gesture. */}
+        <OutlineButton
+          label="View Event"
+          size="small"
+          style={s.richCardBtn}
+          onPress={() => metadata.event_id && router.push(`/(events)/${metadata.event_id}` as any)}
+        />
       </View>
-      <Text style={[s.timeBelow, isMine ? s.timeBelowMine : s.timeBelowTheirs]}>
-        {new Date(sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-      </Text>
     </View>
   )
 }
 
-function ProfileCard({ metadata, isMine, sentAt }: { metadata: Record<string, any>; isMine: boolean; sentAt: string }) {
+function ProfileCard({ metadata, myId }: { metadata: Record<string, any>; myId: string }) {
   return (
-    <View style={[s.bubbleWrap, isMine ? s.wrapMine : s.wrapTheirs]}>
-      <View style={s.richCard}>
-        <View style={s.profileRow}>
-          {metadata.avatar_url
-            ? <Image source={{ uri: metadata.avatar_url }} style={s.profileAvatar} contentFit="cover" />
-            : (
-              <View style={[s.profileAvatar, s.profileAvatarFallback]}>
-                <Text style={s.profileAvatarInitial}>{(metadata.name ?? '?').charAt(0)}</Text>
-              </View>
-            )
-          }
-          <View style={{ flex: 1 }}>
-            <Text style={s.richCardTitle}>{metadata.name}</Text>
-            {metadata.city ? <Text style={s.richCardSub}>{metadata.city}</Text> : null}
-          </View>
+    <View style={s.richCard}>
+      <View style={s.profileRow}>
+        {metadata.avatar_url
+          ? <Image source={{ uri: metadata.avatar_url }} style={s.profileAvatar} contentFit="cover" />
+          : (
+            <View style={[s.profileAvatar, s.profileAvatarFallback]}>
+              <Text style={s.profileAvatarInitial}>{(metadata.name ?? '?').charAt(0)}</Text>
+            </View>
+          )
+        }
+        <View style={{ flex: 1 }}>
+          <Text style={s.richCardTitle}>{metadata.name}</Text>
+          {metadata.city ? <Text style={s.richCardSub}>{metadata.city}</Text> : null}
         </View>
-        {metadata.interests?.length > 0 && (
-          <View style={s.profileChips}>
-            {(metadata.interests as string[]).slice(0, 3).map((t: string) => (
-              <View key={t} style={s.profileChip}><Text style={s.profileChipText}>{t}</Text></View>
-            ))}
-          </View>
-        )}
-        <Pressable style={s.richCardBtn} onPress={() => metadata.user_id && router.push(`/(profile)/${metadata.user_id}` as any)}>
-          <Text style={s.richCardBtnText}>View Profile</Text>
-        </Pressable>
       </View>
-      <Text style={[s.timeBelow, isMine ? s.timeBelowMine : s.timeBelowTheirs]}>
-        {new Date(sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-      </Text>
+      {metadata.interests?.length > 0 && (
+        <View style={s.profileChips}>
+          {(metadata.interests as string[]).slice(0, 3).map((t: string) => (
+            <View key={t} style={s.profileChip}><Text style={s.profileChipText}>{t}</Text></View>
+          ))}
+        </View>
+      )}
+      {/* Visual only — see EventCard's comment above; outer handleSingleTap does the real navigation. */}
+      <OutlineButton
+        label="View Profile"
+        size="small"
+        style={s.profileCardBtn}
+        onPress={() => {
+          if (!metadata.user_id) return
+          // Someone can share your own profile back to you — that route is
+          // built for viewing other people, so send self back to the actual
+          // profile tab instead of a "profile not found"-shaped dead end.
+          if (metadata.user_id === myId) router.push('/(tabs)/profile' as any)
+          else router.push(`/(profile)/${metadata.user_id}` as any)
+        }}
+      />
     </View>
   )
 }
@@ -411,8 +409,19 @@ export function MessageBubble({
     if (msg.content_type === 'voice') {
       hTap()
       voiceBubbleRef.current?.toggle()
+      return
     }
-  }, [isLinkMessage, msg.content, msg.content_type, msg.metadata, onMediaTap, onLinkTap])
+    if (msg.content_type === 'event' && msg.metadata?.event_id) {
+      hTap()
+      router.push(`/(events)/${msg.metadata.event_id}` as any)
+      return
+    }
+    if (msg.content_type === 'profile' && msg.metadata?.user_id) {
+      hTap()
+      if (msg.metadata.user_id === myId) router.push('/(tabs)/profile' as any)
+      else router.push(`/(profile)/${msg.metadata.user_id}` as any)
+    }
+  }, [isLinkMessage, msg.content, msg.content_type, msg.metadata, myId, onMediaTap, onLinkTap])
 
   const doubleTap = Gesture.Tap()
     .numberOfTaps(2)
@@ -559,10 +568,48 @@ export function MessageBubble({
     }
 
     if (msg.content_type === 'event' && msg.metadata) {
-      return <EventCard metadata={msg.metadata} isMine={isMine} sentAt={msg.sent_at} />
+      return (
+        <View style={[s.bubbleWrap, isMine ? s.wrapMine : s.wrapTheirs]}>
+          <GestureDetector gesture={gesture}>
+            <Animated.View style={animStyle}>
+              <EventCard metadata={msg.metadata} />
+            </Animated.View>
+          </GestureDetector>
+          {msg.reactions && (
+            <ReactionPills reactions={msg.reactions} myId={myId} onPillPress={emoji => onReactionPillPress(msg.id, emoji)} />
+          )}
+          <Animated.Text style={[s.timeBelow, isMine ? s.timeBelowMine : s.timeBelowTheirs, timeRevealStyle]}>
+            {timeStr}
+          </Animated.Text>
+          {isFailed && (
+            <Pressable onPress={() => onRetry?.(msg.id)} hitSlop={4}>
+              <Text style={s.failedText}>⚠ Failed · Tap to retry</Text>
+            </Pressable>
+          )}
+        </View>
+      )
     }
     if (msg.content_type === 'profile' && msg.metadata) {
-      return <ProfileCard metadata={msg.metadata} isMine={isMine} sentAt={msg.sent_at} />
+      return (
+        <View style={[s.bubbleWrap, isMine ? s.wrapMine : s.wrapTheirs]}>
+          <GestureDetector gesture={gesture}>
+            <Animated.View style={animStyle}>
+              <ProfileCard metadata={msg.metadata} myId={myId} />
+            </Animated.View>
+          </GestureDetector>
+          {msg.reactions && (
+            <ReactionPills reactions={msg.reactions} myId={myId} onPillPress={emoji => onReactionPillPress(msg.id, emoji)} />
+          )}
+          <Animated.Text style={[s.timeBelow, isMine ? s.timeBelowMine : s.timeBelowTheirs, timeRevealStyle]}>
+            {timeStr}
+          </Animated.Text>
+          {isFailed && (
+            <Pressable onPress={() => onRetry?.(msg.id)} hitSlop={4}>
+              <Text style={s.failedText}>⚠ Failed · Tap to retry</Text>
+            </Pressable>
+          )}
+        </View>
+      )
     }
 
     // Text bubble (or, if the whole message is a link, a rich preview card)
@@ -718,17 +765,13 @@ const s = StyleSheet.create({
   richCardBody: { padding: 12, gap: 4 },
   richCardTitle: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.inkPrimary },
   richCardSub: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary },
-  richCardBtn: {
-    marginTop: 8, height: 38, borderRadius: 19,
-    borderWidth: 1, borderColor: Colors.brandOrange,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  richCardBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.brandOrange },
+  richCardBtn: { marginTop: 8 },
   profileRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 },
-  profileAvatar: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, borderColor: Colors.brandOrange },
+  profileAvatar: { width: 44, height: 44, borderRadius: 22 },
   profileAvatarFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
   profileAvatarInitial: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
   profileChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 12, paddingBottom: 4 },
+  profileCardBtn: { marginHorizontal: 12, marginBottom: 12, marginTop: 4 },
   profileChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.08)' },
   profileChipText: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkPrimary },
 })

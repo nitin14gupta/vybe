@@ -4,18 +4,22 @@ import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import * as Clipboard from 'expo-clipboard'
 import { router } from 'expo-router'
-import { Ban, Flag, Link2, Share2, QrCode } from 'lucide-react-native'
+import { Ban, Flag, Link2, Share2, QrCode, MessageCircle } from 'lucide-react-native'
 import { hError, hSuccess, hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import { APP_SCHEME } from '@/api/config'
 import { BlockSheet } from './BlockSheet'
 import { ReportSheet } from './ReportSheet'
+import { ShareToChatSheet } from './ShareToChatSheet'
 
 interface Props {
   visible: boolean
   userId: string
   username: string | null
   targetName: string | null
+  avatarUrl?: string | null
+  city?: string | null
+  interests?: string[]
   isBlocked: boolean
   onBlock: () => Promise<void>
   onUnblock: () => Promise<void>
@@ -27,10 +31,14 @@ function renderBackdrop(props: BottomSheetBackdropProps) {
   return <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close" opacity={0.55} />
 }
 
-function ProfileMenuSheetCore({ userId, username, targetName, isBlocked, onBlock, onUnblock, onReport, onClose }: Omit<Props, 'visible'>) {
+function ProfileMenuSheetCore({
+  userId, username, targetName, avatarUrl, city, interests,
+  isBlocked, onBlock, onUnblock, onReport, onClose,
+}: Omit<Props, 'visible'>) {
   const sheetRef = useRef<BottomSheetModal>(null)
   const [blockOpen, setBlockOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
+  const [chatShareOpen, setChatShareOpen] = useState(false)
   const [blockLoading, setBlockLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const transitioning = useRef(false)
@@ -89,8 +97,18 @@ function ProfileMenuSheetCore({ userId, username, targetName, isBlocked, onBlock
     onClose()
     router.push({
       pathname: '/(profile)/qr',
-      params: { userId, username: username ?? '', name: targetName ?? '' },
+      params: {
+        userId, username: username ?? '', name: targetName ?? '',
+        avatar: avatarUrl ?? '', city: city ?? '', interests: (interests ?? []).join(','),
+      },
     } as any)
+  }
+
+  const openChatShare = () => {
+    hTap()
+    transitioning.current = true
+    setChatShareOpen(true)
+    sheetRef.current?.dismiss()
   }
 
   return (
@@ -125,6 +143,10 @@ function ProfileMenuSheetCore({ userId, username, targetName, isBlocked, onBlock
             <QrCode size={20} color={Colors.inkPrimary} strokeWidth={1.8} />
             <Text style={s.rowText}>QR Code</Text>
           </Pressable>
+          <Pressable style={s.row} onPress={openChatShare}>
+            <MessageCircle size={20} color={Colors.inkPrimary} strokeWidth={1.8} />
+            <Text style={s.rowText}>Send in Chat</Text>
+          </Pressable>
           <View style={s.divider} />
           <Pressable style={s.cancelRow} onPress={() => { hTap(); onClose() }}>
             <Text style={s.cancelText}>Cancel</Text>
@@ -146,6 +168,15 @@ function ProfileMenuSheetCore({ userId, username, targetName, isBlocked, onBlock
         targetName={targetName}
         onSubmit={onReport}
         onClose={() => { setReportOpen(false); onClose() }}
+      />
+      <ShareToChatSheet
+        visible={chatShareOpen}
+        onClose={() => { setChatShareOpen(false); onClose() }}
+        contentType="profile"
+        metadata={{ user_id: userId, name: targetName, avatar_url: avatarUrl ?? null, city: city ?? null, interests: interests ?? [] }}
+        previewTitle={targetName ?? 'User'}
+        previewSubtitle={username ? `@${username}` : null}
+        previewImage={avatarUrl}
       />
     </>
   )

@@ -1,16 +1,20 @@
+import { useState } from 'react'
 import { View, Pressable, StyleSheet } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { X, Share2, Download } from 'lucide-react-native'
+import { X, Share2, Download, MessageCircle } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
 import { buildProfileShareUrl } from '@/lib/deepLink'
 import { Colors } from '@/constants'
 import { useQrShare } from '@/hooks/useQrShare'
-import { QrCard, PrimaryButton, OutlineButton } from '@/components/ui'
+import { QrCard, PrimaryButton, OutlineButton, ShareToChatSheet } from '@/components/ui'
 
 export default function ProfileQrScreen() {
-  const { userId, username, name } = useLocalSearchParams<{ userId: string; username?: string; name?: string }>()
+  const { userId, username, name, avatar, city, interests } = useLocalSearchParams<{
+    userId: string; username?: string; name?: string; avatar?: string; city?: string; interests?: string
+  }>()
   const insets = useSafeAreaInsets()
+  const [chatShareOpen, setChatShareOpen] = useState(false)
 
   const shareUrl = buildProfileShareUrl(userId, username)
   const handle = username ? `@${username}` : (name ?? 'this profile')
@@ -37,7 +41,26 @@ export default function ProfileQrScreen() {
         <View style={s.actionBtn}>
           <OutlineButton label="Save" onPress={handleSave} icon={<Download size={18} color={Colors.inkPrimary} strokeWidth={2.2} />} />
         </View>
+        <View style={s.actionBtn}>
+          <OutlineButton label="Chat" onPress={() => { hTap(); setChatShareOpen(true) }} icon={<MessageCircle size={18} color={Colors.inkPrimary} strokeWidth={2.2} />} />
+        </View>
       </View>
+
+      <ShareToChatSheet
+        visible={chatShareOpen}
+        onClose={() => setChatShareOpen(false)}
+        contentType="profile"
+        metadata={{
+          user_id: userId,
+          name: name ?? null,
+          avatar_url: avatar ?? null,
+          city: city ?? null,
+          interests: interests ? interests.split(',').filter(Boolean) : [],
+        }}
+        previewTitle={name ?? handle}
+        previewSubtitle={username ? `@${username}` : null}
+        previewImage={avatar}
+      />
     </View>
   )
 }

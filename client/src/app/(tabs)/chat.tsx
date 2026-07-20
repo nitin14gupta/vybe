@@ -345,6 +345,7 @@ export default function ChatScreen() {
           userId={menuTarget.partner_id}
           username={menuTarget.partner_username}
           targetName={menuTarget.partner_name}
+          avatarUrl={menuTarget.partner_avatar}
           isBlocked={isTargetBlocked}
           onBlock={handleBlock}
           onUnblock={handleUnblock}

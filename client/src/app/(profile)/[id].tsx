@@ -520,6 +520,9 @@ export default function UserProfileScreen() {
         userId={profile.id}
         username={profile.username ?? null}
         targetName={profile.name ?? null}
+        avatarUrl={photos[0]?.url ?? null}
+        city={profile.city}
+        interests={profile.interests}
         isBlocked={blockedByMe}
         onBlock={handleBlock}
         onUnblock={handleUnblock}

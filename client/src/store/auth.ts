@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { tokenStorage } from '@/lib/tokenStorage'
 import { useDeepLinkStore } from '@/store/deepLinkStore'
+import { clearAllCached } from '@/lib/queryCache'
 
 interface AuthState {
   isAuthenticated: boolean
@@ -65,6 +66,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       dob: null,
     })
     tokenStorage.clear()
+    clearAllCached()
     // Drop any deep link that was queued for a now-abandoned session so it
     // doesn't silently resurface on the next unrelated login.
     useDeepLinkStore.getState().clearPending()

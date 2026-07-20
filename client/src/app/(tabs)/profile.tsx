@@ -178,7 +178,14 @@ export default function ProfileScreen() {
               hTap()
               router.push({
                 pathname: '/(profile)/qr',
-                params: { userId: profile.id, username: profile.username ?? '', name: profile.name ?? '' },
+                params: {
+                  userId: profile.id,
+                  username: profile.username ?? '',
+                  name: profile.name ?? '',
+                  avatar: profile.photos?.[0]?.url ?? '',
+                  city: profile.city ?? '',
+                  interests: (profile.interests ?? []).join(','),
+                },
               } as any)
             }}
             style={styles.actionBtnPrimary}

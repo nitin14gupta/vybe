@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { View, Text, StyleSheet, Modal, FlatList, Pressable, Image } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, X, Users } from 'lucide-react-native'
@@ -7,7 +7,7 @@ import { hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import { SearchBar } from '@/components/ui'
 import { useChatSearchHistoryStore, type ChatSearchHistoryEntry } from '@/store/chatSearchHistoryStore'
-import ApiService from '@/api/apiService'
+import { useChatShareTargets } from '@/hooks/useChatShareTargets'
 import type { Conversation } from '@/api/apiService'
 
 const RECENT_PREVIEW = 6
@@ -74,7 +74,6 @@ export function ChatSearchModal({ visible, onClose, conversations, onSelectConve
   const insets = useSafeAreaInsets()
   const [query, setQuery] = useState('')
   const [expanded, setExpanded] = useState(false)
-  const [fullList, setFullList] = useState<Conversation[] | null>(null)
   const { history, add, remove, clear } = useChatSearchHistoryStore()
 
   // The passed-in `conversations` (from the visible inbox list) excludes any
@@ -82,14 +81,7 @@ export function ChatSearchModal({ visible, onClose, conversations, onSelectConve
   // with that person, so you should still be able to find them here and
   // start talking again. Fetch the full mutual pool (hidden included) once
   // the modal opens; show the fast prop-based list in the meantime.
-  useEffect(() => {
-    if (!visible) { setFullList(null); return }
-    let cancelled = false
-    ApiService.getConversations(100, 0, true)
-      .then(res => { if (!cancelled) setFullList(res.active) })
-      .catch(err => { if (!cancelled) console.warn('[ChatSearchModal] failed to load full mutual list:', err) })
-    return () => { cancelled = true }
-  }, [visible])
+  const { people: fullList } = useChatShareTargets(visible)
 
   const pool = fullList ?? conversations
 

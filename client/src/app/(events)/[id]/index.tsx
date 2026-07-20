@@ -829,6 +829,7 @@ export default function EventDetailScreen() {
         <EventShareSheet
           visible={shareSheetOpen}
           onClose={() => setShareSheetOpen(false)}
+          eventId={event.id}
           title={event.title}
           dateTimeLabel={formatDateTime(event.date_time)}
           coverUrl={event.cover_photos?.[0]?.url}

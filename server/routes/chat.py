@@ -573,6 +573,20 @@ async def send_message_rest(
 
         partner_id = conv["user2_id"] if conv["user1_id"] == uid else conv["user1_id"]
 
+        # Same block check as the WS "message" path — the REST endpoint used
+        # to skip this entirely, which meant anything sent through it
+        # (voice fallback, and now ShareToChatSheet) could bypass a block.
+        cur.execute(
+            """
+            SELECT 1 FROM user_blocks
+            WHERE (blocker_id = %s::uuid AND blocked_id = %s::uuid)
+               OR (blocker_id = %s::uuid AND blocked_id = %s::uuid)
+            """,
+            (uid, partner_id, partner_id, uid),
+        )
+        if cur.fetchone():
+            raise HTTPException(status_code=403, detail="You can't message this person")
+
         cur.execute(
             """
             INSERT INTO messages (conversation_id, sender_id, content, content_type, metadata)

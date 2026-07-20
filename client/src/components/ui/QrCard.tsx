@@ -1,6 +1,6 @@
-import { forwardRef, useEffect, useState } from 'react'
-import { View, Text, StyleSheet, InteractionManager, ActivityIndicator, type ImageSourcePropType } from 'react-native'
-import QRCodeStyled from 'react-native-qrcode-styled'
+import { forwardRef } from 'react'
+import { View, Text, StyleSheet, type ImageSourcePropType } from 'react-native'
+import QRCode from 'react-native-qrcode-svg'
 import { FontFamily, Logo } from '@/constants'
 
 interface StyledQrProps {
@@ -10,53 +10,29 @@ interface StyledQrProps {
   logoSource?: ImageSourcePropType
   /** Set false to drop the center logo cutout — useful for very short/dense data */
   showLogo?: boolean
+  errorCorrectionLevel?: 'L' | 'M' | 'Q' | 'H'
 }
 
-// Bare branded QR graphic — modern dot pieces, black rounded finder eyes, logo
-// cut into the center. Used on its own (e.g. inside a custom ticket layout)
-// or wrapped by QrCard below for the "big scannable code in a white card" look.
-//
-// Rendering every module as its own rounded/circular SVG piece is expensive
-// (hundreds of individual paths) — expensive enough that mounting it inline
-// was stalling screen transitions and sheet-open animations by several
-// seconds. We defer the actual mount by a frame so the surrounding
-// screen/sheet finishes animating in first, and this pops in a beat later
-// instead of blocking everything else.
-export function StyledQr({ data, size = 176, padding = 0, logoSource = Logo, showLogo = true }: StyledQrProps) {
-  const [ready, setReady] = useState(false)
-
-  useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => setReady(true))
-    return () => task.cancel()
-  }, [])
-
-  if (!ready) {
-    return (
-      <View style={[s.qr, s.qrLoading, { width: size, height: size }]}>
-        <ActivityIndicator color="#ccc" />
-      </View>
-    )
-  }
-
+export function StyledQr({
+  data, size = 176, padding = 0, logoSource = Logo, showLogo = true,
+  errorCorrectionLevel = 'H',
+}: StyledQrProps) {
   return (
-    <QRCodeStyled
-      data={data}
-      style={s.qr}
-      size={size}
-      padding={padding}
-      color={'#000'}
-      errorCorrectionLevel={'H'}
-      pieceBorderRadius={'50%'}
-      pieceScale={0.86}
-      innerEyesOptions={{ borderRadius: '30%', color: '#000' }}
-      outerEyesOptions={{ borderRadius: '35%', color: '#000' }}
-      // logo={showLogo ? {
-      //   href: logoSource,
-      //   hidePieces: true,
-      //   scale: 0.28,
-      //   padding: 8,
-      // } : undefined}
-    />
+    <View style={[s.qr, { width: size, height: size, alignItems: 'center', justifyContent: 'center' }]}>
+      <QRCode
+        value={data}
+        size={size - padding * 2}
+        color="#000"
+        backgroundColor="#fff"
+        ecl={errorCorrectionLevel}
+        logo={showLogo ? logoSource : undefined}
+        logoSize={size * 0.22}
+        logoBackgroundColor="#fff"
+        logoBorderRadius={8}
+        logoMargin={2}
+        quietZone={padding}
+      />
+    </View>
   )
 }
 
@@ -90,7 +66,6 @@ const s = StyleSheet.create({
     gap: 4,
   },
   qr: { backgroundColor: '#fff' },
-  qrLoading: { alignItems: 'center', justifyContent: 'center' },
   title: {
     fontFamily: FontFamily.headingBold,
     fontSize: 18,

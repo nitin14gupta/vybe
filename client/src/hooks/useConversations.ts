@@ -3,8 +3,16 @@ import { useFocusEffect } from 'expo-router'
 import ApiService, { Conversation, VybeRequest } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
 import { loadOrCreateKeypair, decryptText } from '@/lib/e2ee'
+import { peekCached, setCached } from '@/lib/queryCache'
 
 const PAGE_SIZE = 20
+const CACHE_KEY = 'chat:conversations'
+
+interface CachedConversations {
+  active: Conversation[]
+  locked: Conversation[]
+  pending: VybeRequest[]
+}
 
 function decryptPreview(conv: Conversation): Conversation {
   if (conv.last_message_type !== 'text' || !conv.last_message) return conv
@@ -17,10 +25,11 @@ const byRecent = (a: Conversation, b: Conversation) =>
   )
 
 export function useConversations() {
-  const [activeConversations, setActiveConversations] = useState<Conversation[]>([])
-  const [lockedConversations, setLockedConversations] = useState<Conversation[]>([])
-  const [pendingVibes, setPendingVibes] = useState<VybeRequest[]>([])
-  const [loading, setLoading] = useState(true)
+  const [initialCache] = useState(() => peekCached<CachedConversations>(CACHE_KEY))
+  const [activeConversations, setActiveConversations] = useState<Conversation[]>(initialCache?.active ?? [])
+  const [lockedConversations, setLockedConversations] = useState<Conversation[]>(initialCache?.locked ?? [])
+  const [pendingVibes, setPendingVibes] = useState<VybeRequest[]>(initialCache?.pending ?? [])
+  const [loading, setLoading] = useState(!initialCache)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(false)
   const [error, setError] = useState(false)
@@ -34,12 +43,18 @@ export function useConversations() {
         ApiService.getConversations(PAGE_SIZE, 0),
         ApiService.getReceivedVibes(),
       ])
-      setActiveConversations([...convData.active].sort(byRecent).map(decryptPreview))
-      setLockedConversations([...convData.locked].sort(byRecent).map(decryptPreview))
+      const active = [...convData.active].sort(byRecent).map(decryptPreview)
+      const locked = [...convData.locked].sort(byRecent).map(decryptPreview)
+      const pending = [...vibeData].sort((a, b) => b.created_at.localeCompare(a.created_at))
+      setActiveConversations(active)
+      setLockedConversations(locked)
       setHasMore(convData.has_more)
-      setPendingVibes([...vibeData].sort((a, b) => b.created_at.localeCompare(a.created_at)))
+      setPendingVibes(pending)
+      setCached(CACHE_KEY, { active, locked, pending }, 5 * 60_000, false)
     } catch {
-      setError(true)
+      // Keep showing whatever's cached instead of blanking the list on a
+      // transient failure — only flag the error if we truly have nothing.
+      if (!peekCached<CachedConversations>(CACHE_KEY)) setError(true)
     } finally {
       setLoading(false)
     }
