@@ -28,7 +28,6 @@ export interface UserResponse {
   profile_complete: boolean
   photos: PhotoResponse[]
   name_changed_at: string | null
-  discoverable: boolean
 }
 
 export interface InterestResponse {
@@ -599,22 +598,6 @@ class ApiService {
   static async getBadges(): Promise<string[]> {
     const res = await this.get<{ badges: string[] }>(ENDPOINTS.GET_BADGES)
     return res.badges
-  }
-
-  static async getDiscover(
-    limit = 30,
-    filters: { gender?: string; minAge?: number; maxAge?: number; maxDistanceKm?: number } = {},
-  ): Promise<DiscoverUser[]> {
-    const params = new URLSearchParams({ limit: String(limit) })
-    if (filters.gender) params.set('gender', filters.gender)
-    if (filters.minAge != null) params.set('min_age', String(filters.minAge))
-    if (filters.maxAge != null) params.set('max_age', String(filters.maxAge))
-    if (filters.maxDistanceKm != null) params.set('max_distance_km', String(filters.maxDistanceKm))
-    return this.get<DiscoverUser[]>(`${ENDPOINTS.DISCOVER}?${params.toString()}`)
-  }
-
-  static async passUser(targetId: string): Promise<void> {
-    await this.post<{ ok: boolean }>(ENDPOINTS.DISCOVER_PASS, { target_id: targetId })
   }
 
   static async sendVibe(targetId: string, message: string): Promise<{ conversation_id: string | null }> {

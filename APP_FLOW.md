@@ -29,8 +29,8 @@ Onboarding (all required, in order, cannot skip ahead):
   6. Location (onboarding/location.tsx)           [PERMISSION: location] — city search or detect
   7. Complete (onboarding/complete.tsx)           celebratory screen, auto-redirects to Tabs after 5s
 
-Tabs (bottom nav, home = index/Discover):
-  → Discover (tabs/index.tsx)
+Tabs (bottom nav, home = index/home):
+  → home (tabs/index.tsx)
   → Events (tabs/events.tsx)
   → Search (tabs/search.tsx)
   → Chat (tabs/chat.tsx)
@@ -76,7 +76,6 @@ default reason. Add a proper usage description before an iOS release.
 - `index.tsx` (age gate), `profile.tsx`, `photos.tsx`, `voice.tsx`, `interests.tsx`, `location.tsx`, `complete.tsx`
 
 ### Tabs (`(tabs)/`)
-- `index.tsx` — **Discover**: swipeable profile cards (pass/vybe/star), filter sheet, notification bell
 - `events.tsx` — **Events**: map + list view, search, category filter chips, location-based
 - `search.tsx` — **Search** (people search — separate from event search)
 - `chat.tsx` — **Chat**: conversation list (pending/active/locked)
@@ -118,7 +117,6 @@ default reason. Add a proper usage description before an iOS release.
 - `help.tsx` — static FAQ (7 Q&As)
 - `feedback.tsx` — free-text feedback form → `ApiService.submitFeedback`
 - `support.tsx` — structured support ticket (topic + message) → `ApiService.submitSupport`, plus a `mailto:support@vybe.in` fallback
-- `discoverable.tsx` — "Show me in Discover" on/off toggle (profile visibility)
 - `delete-account.tsx` — 4-step guided deletion: warning → data-loss summary → phone OTP re-verification → type "DELETE" to confirm; blocked entirely if the user has upcoming hosted events (real server-side check, not just UI — see §8a for what deletion actually does today)
 - `about.tsx` — version info, **Privacy Policy / Terms of Use / Open Source Licenses** links (all open the in-app browser or a dedicated screen)
 - `privacy.tsx`, `terms.tsx` — open the in-app browser (WebView) directly to the hosted legal pages; currently pointed at placeholder URLs (see §5)

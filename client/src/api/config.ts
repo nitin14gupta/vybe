@@ -47,10 +47,6 @@ export const ENDPOINTS = {
   SEARCH_USERS: '/users/search',
   CHECK_USERNAME: '/users/check-username',
 
-  // Discover
-  DISCOVER: '/discover',
-  DISCOVER_PASS: '/discover/pass',
-
   // Vibes
   VIBES: '/vibes',
 
@@ -121,7 +117,6 @@ export const ENDPOINTS = {
 
   // Account management
   DELETE_ACCOUNT: '/users/me',
-  SET_DISCOVERABLE: '/users/me/discoverable',
   SET_PUBLIC_KEY: '/users/me/public-key',
 } as const
 

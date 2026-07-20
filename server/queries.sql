@@ -329,11 +329,10 @@ CREATE TABLE IF NOT EXISTS public.support_requests (
   CONSTRAINT support_requests_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- ── Account deletion & discovery ─────────────────────────────────────────────
+-- ── Account deletion ──────────────────────────────────────────────────────────
 ALTER TABLE public.users
   ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
-  ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE,
-  ADD COLUMN IF NOT EXISTS discoverable BOOLEAN NOT NULL DEFAULT TRUE;
+  ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
 
 -- ── Saved UPI IDs ─────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.saved_upi_ids (
@@ -377,3 +376,6 @@ CREATE TABLE IF NOT EXISTS public.message_reports (
 );
 ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMP WITH TIME ZONE;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS public_key text;
+
+-- ── Discover feed removed — drop its now-unused column ───────────────────────
+ALTER TABLE public.users DROP COLUMN IF EXISTS discoverable;

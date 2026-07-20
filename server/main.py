@@ -6,7 +6,6 @@ from routes.auth import router as auth_router
 from routes.users import router as users_router
 from routes.upload import router as upload_router
 from routes.places import router as places_router
-from routes.discover import router as discover_router
 from routes.vibes import router as vibes_router
 from routes.events import router as events_router
 from routes.chat import router as chat_router
@@ -56,7 +55,6 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(upload_router)
 app.include_router(places_router)
-app.include_router(discover_router)
 app.include_router(vibes_router)
 app.include_router(events_router)
 app.include_router(chat_router)

@@ -8,8 +8,8 @@ SENTINEL_USER_ID = "00000000-0000-0000-0000-000000000001"
 def _ensure_sentinel_user(cur) -> None:
     cur.execute(
         """
-        INSERT INTO users (id, phone, name, profile_complete, is_active, is_deleted, discoverable)
-        VALUES (%s::uuid, 'deleted-user', '[deleted]', TRUE, FALSE, TRUE, FALSE)
+        INSERT INTO users (id, phone, name, profile_complete, is_active, is_deleted)
+        VALUES (%s::uuid, 'deleted-user', '[deleted]', TRUE, FALSE, TRUE)
         ON CONFLICT (id) DO NOTHING
         """,
         (SENTINEL_USER_ID,),

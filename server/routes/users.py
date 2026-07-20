@@ -34,7 +34,6 @@ _USER_SELECT = """
         u.lng,
         u.name_changed_at::text,
         u.public_key,
-        COALESCE(u.discoverable, TRUE) AS discoverable,
         COALESCE(u.is_deleted, FALSE) AS is_deleted,
         (SELECT COUNT(*) FROM follows f
          JOIN users fu ON fu.id = f.follower_id AND COALESCE(fu.is_deleted, FALSE) = FALSE
@@ -870,12 +869,10 @@ def delete_account(current_user: dict = Depends(get_current_user)):
         )
 
         # ── 3. Soft-delete the account ────────────────────────────────────────
-        # discoverable=FALSE is set explicitly too (belt-and-suspenders) even
-        # though every listing query also filters on is_deleted directly.
         cur.execute(
             """
             UPDATE users
-            SET is_deleted = TRUE, deleted_at = NOW(), discoverable = FALSE,
+            SET is_deleted = TRUE, deleted_at = NOW(),
                 name = '[deleted]', bio = NULL, voice_url = NULL
             WHERE id = %s::uuid
             """,
@@ -906,21 +903,3 @@ def delete_account(current_user: dict = Depends(get_current_user)):
         cur.execute("DELETE FROM refresh_tokens WHERE user_id = %s::uuid", (uid,))
         conn.commit()
     return {"ok": True}
-
-
-# ── Update discoverable ───────────────────────────────────────────────────────
-
-class DiscoverableBody(BaseModel):
-    discoverable: bool
-
-
-@router.patch("/me/discoverable", status_code=status.HTTP_200_OK)
-def set_discoverable(body: DiscoverableBody, current_user: dict = Depends(get_current_user)):
-    uid = current_user["id"]
-    with get_db() as (cur, conn):
-        cur.execute(
-            "UPDATE users SET discoverable = %s WHERE id = %s::uuid",
-            (body.discoverable, uid),
-        )
-        conn.commit()
-    return {"ok": True, "discoverable": body.discoverable}
