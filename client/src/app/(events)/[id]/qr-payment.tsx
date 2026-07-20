@@ -10,13 +10,12 @@ import Animated, {
 } from 'react-native-reanimated'
 import * as Notifications from 'expo-notifications'
 import { ArrowLeft, CheckCircle } from 'lucide-react-native'
-import QRCode from 'react-native-qrcode-svg'
 import { Colors, FontFamily } from '@/constants'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { hTap, hSuccess } from '@/lib/haptics'
 import { useImageShare } from '@/hooks/useImageShare'
-import { PrimaryButton, OutlineButton, ConfirmSheet } from '@/components/ui'
+import { PrimaryButton, OutlineButton, ConfirmSheet, StyledQr } from '@/components/ui'
 
 type Status = 'loading' | 'active' | 'paid' | 'expired' | 'error'
 
@@ -270,12 +269,7 @@ export default function QrPaymentScreen() {
                 {paymentUrl ? (
                   // Clean QR generated from UPI payment string — no Razorpay branding
                   <View style={s.qrSvgWrap}>
-                    <QRCode
-                      value={paymentUrl}
-                      size={220}
-                      color="#000000"
-                      backgroundColor="#FFFFFF"
-                    />
+                    <StyledQr data={paymentUrl} size={220} showLogo={false} />
                   </View>
                 ) : imageUrl ? (
                   // Fallback: crop Razorpay branded image to show just the QR code area

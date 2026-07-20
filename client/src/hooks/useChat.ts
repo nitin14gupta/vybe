@@ -3,10 +3,16 @@ import { AppState } from 'react-native'
 import ApiService, { Message } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
 import { loadOrCreateKeypair, encryptText, decryptText } from '@/lib/e2ee'
+import { peekCached, setCached } from '@/lib/queryCache'
+
+function messagesCacheKey(conversationId: string) {
+  return `chat:messages:${conversationId}`
+}
 
 export function useChat(conversationId: string) {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [loading, setLoading] = useState(true)
+  const [initialCache] = useState(() => peekCached<Message[]>(messagesCacheKey(conversationId)))
+  const [messages, setMessages] = useState<Message[]>(initialCache ?? [])
+  const [loading, setLoading] = useState(!initialCache)
   const [isPartnerTyping, setIsPartnerTyping] = useState(false)
   const [isPartnerRecording, setIsPartnerRecording] = useState(false)
   const [isPartnerOnline, setIsPartnerOnline] = useState(false)
@@ -25,14 +31,7 @@ export function useChat(conversationId: string) {
   const loadingMoreRef = useRef(false)
   const isBackgrounded = useRef(false)
   const myId = useAuthStore.getState().userId
-  // Partner's X25519 public key, for end-to-end encrypting/decrypting this
-  // conversation's text messages (see lib/e2ee.ts). Null until fetched.
   const partnerKeyRef = useRef<string | null>(null)
-
-  // Decrypts a message's content (and any quoted reply-preview content
-  // embedded in its metadata) in place. Safe to call on plaintext
-  // (pre-encryption) messages too — decryptText() falls back to returning
-  // the input unchanged when it doesn't look like our envelope.
   const decryptMessage = useCallback((msg: Message): Message => {
     if (msg.content_type !== 'text' || !msg.content) return msg
     const content = decryptText(msg.content, partnerKeyRef.current)
@@ -63,6 +62,11 @@ export function useChat(conversationId: string) {
       }
     })().catch(() => setLoading(false))
   }, [conversationId])
+
+  useEffect(() => {
+    if (loading) return
+    setCached(messagesCacheKey(conversationId), messages, 5 * 60_000, false)
+  }, [messages, loading, conversationId])
 
   const applyReactionUpdate = useCallback((messageId: string, userId: string, emoji: string | null) => {
     setMessages(prev => prev.map(m => {
