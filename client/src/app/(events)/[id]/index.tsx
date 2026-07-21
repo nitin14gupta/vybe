@@ -44,7 +44,7 @@ import ApiService, { type EventDetail, type EventAttendee, type EventGuest } fro
 import { useAuthStore } from '@/store/auth'
 import { usePillStore } from '@/store/pillStore'
 import { ConfirmSheet, GuestListSheet, EventShareSheet } from '@/components/ui'
-import { ReportEventSheet } from '@/components/ReportEventSheet'
+import { ReportEventSheet } from '@/components/events/ReportEventSheet'
 import { buildEventShareUrl } from '@/lib/deepLink'
 
 // ── Event options bottom sheet ────────────────────────────────────────────────

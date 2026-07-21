@@ -3,7 +3,7 @@ import { router } from 'expo-router'
 import {
   User, Bell, HelpCircle, MessageSquare,
   Info, LogOut, Calendar, Ticket, Wallet, HeadphonesIcon,
-  Trash2,
+  Trash2, CalendarHeart,
 } from 'lucide-react-native'
 import { Screen, BackButton, SettingRow, ConfirmSheet } from '@/components/ui'
 import { useSettings } from '@/hooks/useSettings'
@@ -58,6 +58,11 @@ export default function SettingsScreen() {
             icon={<Ticket size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
             label="Joined Events"
             onPress={() => router.push('/(settings)/joined-events' as any)}
+          />
+          <SettingRow
+            icon={<CalendarHeart size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
+            label="Calendar"
+            onPress={() => router.push('/(settings)/calendar' as any)}
           />
           <SettingRow
             icon={<Wallet size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}

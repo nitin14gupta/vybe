@@ -6,7 +6,7 @@ import { Colors, FontFamily } from '@/constants'
 import { AppHeader, HeaderIconBtn } from '@/components/ui'
 import ApiService from '@/api/apiService'
 import type { EventSummary } from '@/api/apiService'
-import { EventCard } from '@/components/EventCard'
+import { EventCard } from '@/components/events/EventCard'
 import { parseServerDate } from '@/lib/dates'
 
 type Tab = 'upcoming' | 'past'

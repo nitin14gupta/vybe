@@ -13,9 +13,9 @@ import { hTap, hSuccess } from '@/lib/haptics'
 import { useImageShare } from '@/hooks/useImageShare'
 import { usePillStore } from '@/store/pillStore'
 import { Colors, FontFamily } from '@/constants'
-import { EventShareCard, SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT } from '@/components/EventShareCard'
-import { EventQrShareCard } from '@/components/EventQrShareCard'
-import { EventFlyerShareCard } from '@/components/EventFlyerShareCard'
+import { EventShareCard, SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT } from '@/components/events/EventShareCard'
+import { EventQrShareCard } from '@/components/events/EventQrShareCard'
+import { EventFlyerShareCard } from '@/components/events/EventFlyerShareCard'
 import { ShareToChatSheet } from './ShareToChatSheet'
 
 const { width: SCREEN_W } = Dimensions.get('window')

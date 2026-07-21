@@ -28,7 +28,7 @@ import { usePillStore } from '@/store/pillStore'
 import { getOrFetch, peekCached } from '@/lib/queryCache'
 import { ConfettiRain, StyledQr, LogoMark } from '@/components/ui'
 import { useGoBack } from '@/hooks/useGoBack'
-import { EventShareCard } from '@/components/EventShareCard'
+import { EventShareCard } from '@/components/events/EventShareCard'
 import { useImageShare } from '@/hooks/useImageShare'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
