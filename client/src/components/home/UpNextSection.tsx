@@ -1,15 +1,14 @@
-import { useCallback, useState } from 'react'
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native'
-import { router, useFocusEffect } from 'expo-router'
+import { router } from 'expo-router'
 import { QrCode, ChevronRight } from 'lucide-react-native'
-import ApiService, { type EventSummary } from '@/api/apiService'
+import type { EventSummary } from '@/api/apiService'
 import { EventCard } from '@/components/events/EventCard'
-import { parseServerDate, isEventPast } from '@/lib/dates'
+import { parseServerDate } from '@/lib/dates'
 import { Colors, FontFamily } from '@/constants'
 
 const CARD_WIDTH = 240
 
-function relativeDayLabel(date: Date): string {
+export function relativeDayLabel(date: Date): string {
   const now = new Date()
   const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const eventMid = new Date(date.getFullYear(), date.getMonth(), date.getDate())
@@ -20,20 +19,13 @@ function relativeDayLabel(date: Date): string {
   return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 }
 
-export function UpNextSection() {
-  const [events, setEvents] = useState<EventSummary[]>([])
-
-  useFocusEffect(useCallback(() => {
-    ApiService.getMyJoinedEvents()
-      .then(data => {
-        const upcoming = data
-          .filter(e => !isEventPast(e))
-          .sort((a, b) => (parseServerDate(a.date_time)?.getTime() ?? 0) - (parseServerDate(b.date_time)?.getTime() ?? 0))
-        setEvents(upcoming)
-      })
-      .catch(() => {})
-  }, []))
-
+// Every event you're actually going to (RSVP'd/ticketed, not yet ended) —
+// a "you're going" reminder, separate from RecentlyViewedSection which just
+// tracks what you've looked at. Nobody has more than a handful of these at
+// once, so fetching them all and scrolling horizontally needs no paging.
+// Presentational only — MyEventsSection fetches and orders it against
+// HostingSection by whichever has the nearer date.
+export function UpNextSection({ events }: { events: EventSummary[] }) {
   if (events.length === 0) return null
 
   return (

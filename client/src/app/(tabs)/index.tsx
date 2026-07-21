@@ -7,7 +7,7 @@ import { Heart, Flame, PartyPopper, Search } from 'lucide-react-native'
 import { AppHeader, HeaderIconBtn, CreateEventSheet } from '@/components/ui'
 import { HomeGradientBackdrop } from '@/components/home/HomeGradientBackdrop'
 import { TemplateFan } from '@/components/home/TemplateFan'
-import { UpNextSection } from '@/components/home/UpNextSection'
+import { MyEventsSection } from '@/components/home/MyEventsSection'
 import { RecentlyViewedSection } from '@/components/home/RecentlyViewedSection'
 import { TrendingSection } from '@/components/home/TrendingSection'
 import { useEvents } from '@/hooks/useEvents'
@@ -79,7 +79,7 @@ export default function HomeScreen() {
           <Text style={styles.createBtnText}>Create event</Text>
         </Pressable>
 
-        <UpNextSection />
+        <MyEventsSection />
         <RecentlyViewedSection />
         <TrendingSection />
       </ScrollView>
