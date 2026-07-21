@@ -1,9 +1,12 @@
 import { StyleSheet } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
+import { Image } from 'expo-image'
 import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, Easing,
   type SharedValue,
 } from 'react-native-reanimated'
+
+const AnimatedTemplateImage = Animated.createAnimatedComponent(Image)
 
 // 7 template images.
 const TEMPLATE_IMAGES = [
@@ -71,7 +74,14 @@ function FanCard({ p, source, center, settledCenter }: {
       ],
     }
   })
-  return <Animated.Image source={source} resizeMode="cover" style={[s.card, style]} />
+  return (
+    <AnimatedTemplateImage
+      source={source}
+      contentFit="cover"
+      cachePolicy="disk"
+      style={[s.card, style]}
+    />
+  )
 }
 
 interface Props {
