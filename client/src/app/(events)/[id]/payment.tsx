@@ -12,15 +12,17 @@ import Animated, {
 } from 'react-native-reanimated'
 import RazorpayCustomUI from 'react-native-customui'
 import {
-  ArrowLeft, ChevronRight, Wallet, CheckCircle, QrCode,
+  ArrowLeft, ChevronRight, ChevronDown, ChevronUp, Wallet, CheckCircle, QrCode,
 } from 'lucide-react-native'
 import { Colors, FontFamily, PLATFORM_FEE_PERCENT_LABEL } from '@/constants'
+import { BrandedLoader } from '@/components/ui'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { hTap, hSuccess } from '@/lib/haptics'
 import { usePaymentData } from '@/hooks/usePaymentData'
 import { useInstalledUpiApps } from '@/hooks/useInstalledUpiApps'
 import type { UpiApp } from '@/hooks/useInstalledUpiApps'
+import { useLastPaymentStore } from '@/store/lastPaymentStore'
 import { UpiIdSheet } from '@/components/UpiIdSheet'
 import { PaymentFailedSheet } from '@/components/PaymentFailedSheet'
 
@@ -102,6 +104,14 @@ export default function PaymentScreen() {
 
   const { eventTitle, ticketPrice, platformFee, total, loading, error } = usePaymentData(id)
   const { apps: upiApps, loading: upiAppsLoading } = useInstalledUpiApps()
+  const lastPackageName = useLastPaymentStore(s => s.lastPackageName)
+  const setLastPackageName = useLastPaymentStore(s => s.setLastPackageName)
+  // Whatever app you actually paid with last time wins the "Recommended" slot;
+  // otherwise GPay if installed; otherwise just the first app we found.
+  const recommendedApp =
+    upiApps.find(a => a.package_name === lastPackageName) ??
+    upiApps.find(a => /google ?pay|gpay/i.test(a.app_name)) ??
+    upiApps[0]
 
   const [paying, setPaying]         = useState(false)
   const [payingMsg, setPayingMsg]   = useState('Processing…')
@@ -109,7 +119,7 @@ export default function PaymentScreen() {
   const [rzpKey, setRzpKey]         = useState('')
   const [showWalletAnim, setShowWalletAnim] = useState(false)
   const [failedMsg, setFailedMsg]   = useState<string | null>(null)
-  const [qrGenerating, setQrGenerating] = useState(false)
+  const [billExpanded, setBillExpanded] = useState(false)
 
   const amountToPay = Math.max(0, total - walletApplied)
 
@@ -205,6 +215,7 @@ export default function PaymentScreen() {
         email: order.email ?? '',
       })
       await finalise(data)
+      setLastPackageName(packageName)
     } catch (err: any) {
       setFailedMsg(err?.code === 0 ? 'Payment was cancelled.' : (err?.description ?? err?.detail ?? 'Payment failed. Please try again.'))
       setPaying(false)
@@ -275,7 +286,7 @@ export default function PaymentScreen() {
   if (loading) {
     return (
       <View style={[s.root, s.center]}>
-        <ActivityIndicator size="large" color={Colors.brandOrange} />
+        <BrandedLoader />
       </View>
     )
   }
@@ -283,7 +294,7 @@ export default function PaymentScreen() {
   if (paying) {
     return (
       <View style={[s.root, s.center]}>
-        <ActivityIndicator size="large" color={Colors.brandOrange} />
+        <BrandedLoader />
         <Text style={s.payingMsg}>{payingMsg}</Text>
       </View>
     )
@@ -310,19 +321,34 @@ export default function PaymentScreen() {
         contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 40 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Bill summary */}
+        {/* Bill summary — collapsed to just the total by default */}
         <View style={s.billCard}>
           <Text style={s.billTitle} numberOfLines={1}>{eventTitle}</Text>
-          <BillRow label="Ticket price" value={`₹${ticketPrice}`} />
-          <BillRow label={`Platform fee (${PLATFORM_FEE_PERCENT_LABEL})`} value={`₹${platformFee}`} />
-          {walletApplied > 0 && <BillRow label="Vybe Wallet applied" value={`-₹${walletApplied}`} green />}
-          <View style={s.billDivider} />
-          <View style={s.billTotalRow}>
-            <Text style={s.billTotalLabel}>To Pay</Text>
-            <LinearGradient colors={['#FF6B35', '#FF3864']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.billTotalBadge}>
-              <Text style={s.billTotalValue}>₹{amountToPay}</Text>
-            </LinearGradient>
-          </View>
+          <Pressable style={s.billSummaryRow} onPress={() => { hTap(); setBillExpanded(v => !v) }}>
+            <Text style={s.billSummaryLabel}>
+              To Pay: <Text style={s.billSummaryValue}>₹{amountToPay}</Text>
+            </Text>
+            {billExpanded ? (
+              <ChevronUp size={18} color={Colors.brandCoral} strokeWidth={2.2} />
+            ) : (
+              <ChevronDown size={18} color={Colors.brandCoral} strokeWidth={2.2} />
+            )}
+          </Pressable>
+
+          {billExpanded && (
+            <View style={s.billDetails}>
+              <BillRow label="Ticket price" value={`₹${ticketPrice}`} />
+              <BillRow label={`Platform fee (${PLATFORM_FEE_PERCENT_LABEL})`} value={`₹${platformFee}`} />
+              {walletApplied > 0 && <BillRow label="Vybe Wallet applied" value={`-₹${walletApplied}`} green />}
+              <View style={s.billDivider} />
+              <View style={s.billTotalRow}>
+                <Text style={s.billTotalLabel}>Total</Text>
+                <LinearGradient colors={['#FF6B35', '#FF3864']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.billTotalBadge}>
+                  <Text style={s.billTotalValue}>₹{amountToPay}</Text>
+                </LinearGradient>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Wallet banner — if wallet was applied on booking screen */}
@@ -343,6 +369,20 @@ export default function PaymentScreen() {
           </Pressable>
         ) : (
           <>
+            {/* Recommended — GPay if installed, else whatever's first */}
+            {recommendedApp && (
+              <>
+                <Text style={s.sectionLabel}>Recommended Payments</Text>
+                <View style={s.methodCard}>
+                  <UpiAppRow
+                    app={recommendedApp}
+                    style={s.methodRow}
+                    onPress={() => handleUpiApp(recommendedApp.package_name)}
+                  />
+                </View>
+              </>
+            )}
+
             {/* UPI */}
             <View style={s.upiSectionRow}>
               <Image
@@ -350,9 +390,23 @@ export default function PaymentScreen() {
                 style={s.upiLogoImg}
                 resizeMode="contain"
               />
-              <Text style={s.sectionLabel}>Pay with UPI</Text>
+              <Text style={s.sectionLabel}>Pay by UPI</Text>
             </View>
             <View style={s.methodCard}>
+              <View style={[s.methodRow, s.methodBorder]}>
+                <View style={[s.dot, { backgroundColor: Colors.elevated }]}>
+                  <Image
+                    source={require('../../../../assets/images/payments/upiLogo.png')}
+                    style={s.upiLogoImgTiny}
+                    resizeMode="contain"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.methodLabel}>Pay by any UPI app</Text>
+                  <Text style={s.methodSub}>Use any UPI app on the phone to pay</Text>
+                </View>
+              </View>
+
               {upiAppsLoading ? (
                 <View style={s.upiLoadingRow}>
                   <ActivityIndicator size="small" color={Colors.inkDisabled} />
@@ -362,21 +416,29 @@ export default function PaymentScreen() {
                   <Text style={s.upiEmptyText}>No UPI apps found on device</Text>
                 </View>
               ) : (
-                upiApps.map((app, i) => (
-                  <UpiAppRow
-                    key={app.package_name}
-                    app={app}
-                    style={[s.methodRow, i < upiApps.length - 1 && s.methodBorder]}
-                    onPress={() => handleUpiApp(app.package_name)}
-                  />
-                ))
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={s.upiChipRow}
+                  style={s.methodBorder}
+                >
+                  {upiApps.map(app => (
+                    <UpiAppChip
+                      key={app.package_name}
+                      app={app}
+                      onPress={() => handleUpiApp(app.package_name)}
+                    />
+                  ))}
+                </ScrollView>
               )}
+
               <Pressable
                 style={[s.methodRow, s.methodTopBorder]}
                 onPress={async () => {
-                  if (qrGenerating) return
+                  if (paying) return
                   hTap()
-                  setQrGenerating(true)
+                  setPaying(true)
+                  setPayingMsg('Generating QR code…')
                   try {
                     const res = await ApiService.createQrPayment(id!, walletApplied)
                     router.push({
@@ -391,6 +453,7 @@ export default function PaymentScreen() {
                         etitle: eventTitle ?? '',
                       },
                     })
+                    setPaying(false)
                   } catch (err: any) {
                     const detail = err?.detail ?? err?.message ?? ''
                     if (detail.toLowerCase().includes('unavailable') || detail.toLowerCase().includes('busy') || detail.toLowerCase().includes('try again')) {
@@ -398,20 +461,16 @@ export default function PaymentScreen() {
                     } else {
                       showPill(detail || 'Could not generate QR code. Please try again.', 'error')
                     }
-                  } finally {
-                    setQrGenerating(false)
+                    setPaying(false)
                   }
                 }}
-                disabled={qrGenerating}
+                disabled={paying}
               >
                 <View style={[s.dot, { backgroundColor: Colors.elevated }]}>
-                  {qrGenerating
-                    ? <ActivityIndicator size="small" color={Colors.brandOrange} />
-                    : <QrCode size={18} color={Colors.inkSecondary} strokeWidth={2} />
-                  }
+                  <QrCode size={18} color={Colors.inkSecondary} strokeWidth={2} />
                 </View>
-                <Text style={s.methodLabel}>{qrGenerating ? 'Generating QR…' : 'Pay via QR Code'}</Text>
-                {!qrGenerating && <ChevronRight size={18} color={Colors.inkDisabled} strokeWidth={1.8} />}
+                <Text style={s.methodLabel}>Pay via QR Code</Text>
+                <ChevronRight size={18} color={Colors.inkDisabled} strokeWidth={1.8} />
               </Pressable>
               <Pressable
                 style={[s.methodRow, s.methodTopBorder]}
@@ -503,6 +562,33 @@ function UpiAppRow({ app, style, onPress }: { app: UpiApp; style: any; onPress: 
   )
 }
 
+function UpiAppChip({ app, onPress }: { app: UpiApp; onPress: () => void }) {
+  const [iconFailed, setIconFailed] = useState(false)
+  const showIcon = !!app.app_icon && !iconFailed
+
+  return (
+    <Pressable style={s.upiChip} onPress={onPress}>
+      {showIcon ? (
+        <Image
+          source={{ uri: (app.app_icon.startsWith('http') || app.app_icon.startsWith('file:') || app.app_icon.startsWith('/'))
+            ? app.app_icon
+            : `data:image/png;base64,${app.app_icon}`
+          }}
+          style={s.upiChipIcon}
+          onError={() => setIconFailed(true)}
+        />
+      ) : (
+        <View style={[s.upiChipIcon, s.upiChipIconFallback]}>
+          <Text style={[s.dotText, { fontSize: 15, color: Colors.inkSecondary }]}>
+            {app.app_name.charAt(0)}
+          </Text>
+        </View>
+      )}
+      <Text style={s.upiChipLabel} numberOfLines={1}>{app.app_name}</Text>
+    </Pressable>
+  )
+}
+
 function BillRow({ label, value, green }: { label: string; value: string; green?: boolean }) {
   return (
     <View style={s.billRow}>
@@ -525,6 +611,10 @@ const s = StyleSheet.create({
 
   billCard: { backgroundColor: Colors.surface, borderRadius: 16, padding: 16, gap: 10 },
   billTitle: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary, marginBottom: 4 },
+  billSummaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  billSummaryLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.inkSecondary },
+  billSummaryValue: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.accentGreen },
+  billDetails: { gap: 10, marginTop: 2 },
   billRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   billLabel: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary },
   billValue: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.inkPrimary },
@@ -540,6 +630,13 @@ const s = StyleSheet.create({
   sectionLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 14, letterSpacing: 0.1, color: Colors.inkSecondary, marginLeft: 4 },
   upiSectionRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 4, marginTop: 4 },
   upiLogoImg: { height: 28, width: 54 },
+  upiLogoImgTiny: { height: 16, width: 16 },
+
+  upiChipRow: { flexDirection: 'row', gap: 20, paddingHorizontal: 16, paddingVertical: 16 },
+  upiChip: { alignItems: 'center', gap: 6, width: 64 },
+  upiChipIcon: { width: 48, height: 48, borderRadius: 14 },
+  upiChipIconFallback: { backgroundColor: Colors.elevated, alignItems: 'center', justifyContent: 'center' },
+  upiChipLabel: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkSecondary, textAlign: 'center' },
 
   methodCard: { backgroundColor: Colors.surface, borderRadius: 16, overflow: 'hidden' },
   methodRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingVertical: 14 },

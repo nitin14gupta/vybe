@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {
-  ActivityIndicator,
   Animated,
   Pressable,
   ScrollView,
@@ -26,7 +25,7 @@ import { Colors, FontFamily, Radius, Spacing, ComponentSize } from '@/constants'
 import ApiService, { type TicketInfo } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { getOrFetch, peekCached } from '@/lib/queryCache'
-import { ConfettiRain, StyledQr, LogoMark } from '@/components/ui'
+import { ConfettiRain, StyledQr, LogoMark, BrandedLoader } from '@/components/ui'
 import { useGoBack } from '@/hooks/useGoBack'
 import { EventShareCard } from '@/components/events/EventShareCard'
 import { useImageShare } from '@/hooks/useImageShare'
@@ -245,7 +244,7 @@ export default function TicketScreen() {
     return (
       <View style={[s.root, s.center]}>
         <StatusBar style="light" />
-        <ActivityIndicator size="large" color={Colors.brandOrange} />
+        <BrandedLoader />
       </View>
     )
   }

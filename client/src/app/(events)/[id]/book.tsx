@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import {
-  ActivityIndicator,
   Dimensions,
   ScrollView,
   StyleSheet,
@@ -20,8 +19,8 @@ import ApiService, { type EventDetail } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { hSuccess, hSelection } from '@/lib/haptics'
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window')
-const BANNER_H = SCREEN_H * 0.42
+const { width: SCREEN_W } = Dimensions.get('window')
+const BANNER_H = SCREEN_W * (9 / 16)
 
 function formatDateTime(iso: string | null | undefined) {
   if (!iso) return 'Date TBC'

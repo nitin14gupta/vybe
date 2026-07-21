@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   StyleSheet,
@@ -12,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, Star } from 'lucide-react-native'
 import { Colors, FontFamily, Radius, Spacing } from '@/constants'
+import { BrandedLoader } from '@/components/ui'
 import ApiService, { type ReviewItem } from '@/api/apiService'
 
 function StarRow({ rating }: { rating: number }) {
@@ -120,7 +120,7 @@ export default function ReviewsScreen() {
 
       {loading ? (
         <View style={s.center}>
-          <ActivityIndicator size="large" color={Colors.brandOrange} />
+          <BrandedLoader />
         </View>
       ) : count === 0 ? (
         <View style={s.center}>

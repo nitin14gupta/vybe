@@ -15,7 +15,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
 import { hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
-import { DateTimePickerSheet } from '@/components/ui'
+import { DateTimePickerSheet, BrandedLoader } from '@/components/ui'
 import { Step1Basics, Step2When, Step3Where, Step4Pricing, Step5Photos } from '@/components/event-form'
 import { useCreateEvent, type CreateEventForm } from '@/hooks/useCreateEvent'
 import { useEventDateTimePickers } from '@/hooks/useEventDateTimePickers'
@@ -208,7 +208,7 @@ export default function EditEventScreen() {
   if (loading) {
     return (
       <View style={[s.root, s.center]}>
-        <ActivityIndicator size="large" color={Colors.brandOrange} />
+        <BrandedLoader />
       </View>
     )
   }

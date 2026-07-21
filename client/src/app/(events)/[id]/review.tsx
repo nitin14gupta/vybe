@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -21,7 +20,7 @@ import { hSelection, hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily, Radius } from '@/constants'
 import ApiService, { type EventDetail } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
-import { ConfettiRain, PrimaryButton } from '@/components/ui'
+import { ConfettiRain, PrimaryButton, BrandedLoader } from '@/components/ui'
 
 const MAX_BODY = 300
 const STAR_LABELS = ['', 'Terrible', 'Bad', 'Okay', 'Great', 'Amazing!']
@@ -160,7 +159,7 @@ export default function ReviewScreen() {
   if (loading) {
     return (
       <View style={[s.root, s.center]}>
-        <ActivityIndicator size="large" color={Colors.brandOrange} />
+        <BrandedLoader />
       </View>
     )
   }

@@ -82,7 +82,17 @@ export function useLocation() {
     c.state.toLowerCase().includes(query.toLowerCase()),
   )
 
-  const selectCity = (name: string) => store.setField('city', name)
+  // Manual pick from the list — attach the city's known coordinates too, not
+  // just the name, so profile.lat/lng isn't left at 0,0 for anyone who
+  // doesn't use "Use my current location".
+  const selectCity = (name: string) => {
+    store.setField('city', name)
+    const match = cities.find(c => c.name === name)
+    if (match) {
+      store.setField('lat', match.lat)
+      store.setField('lng', match.lng)
+    }
+  }
 
   const handleContinue = async () => {
     if (!store.city) return

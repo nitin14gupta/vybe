@@ -46,6 +46,8 @@ export interface PhotoResponse {
 export interface CityResponse {
   name: string
   state: string
+  lat: number
+  lng: number
 }
 
 export interface ProfileResponse extends UserResponse {

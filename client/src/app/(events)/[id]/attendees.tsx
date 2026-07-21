@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   StyleSheet,
@@ -12,6 +11,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, QrCode, Users } from 'lucide-react-native'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { BrandedLoader } from '@/components/ui'
 import ApiService, { type EventAttendee, type EventDetail } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 
@@ -364,7 +364,7 @@ export default function AttendeesScreen() {
       {/* Content */}
       {loading ? (
         <View style={s.center}>
-          <ActivityIndicator size="large" color={Colors.brandOrange} />
+          <BrandedLoader />
         </View>
       ) : list.length === 0 ? (
         <View style={s.center}>

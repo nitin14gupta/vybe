@@ -9,13 +9,13 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, withTiming,
 } from 'react-native-reanimated'
 import * as Notifications from 'expo-notifications'
-import { ArrowLeft, CheckCircle } from 'lucide-react-native'
+import { ArrowLeft, CheckCircle, Share2 } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { hTap, hSuccess } from '@/lib/haptics'
 import { useImageShare } from '@/hooks/useImageShare'
-import { PrimaryButton, OutlineButton, ConfirmSheet, StyledQr } from '@/components/ui'
+import { PrimaryButton, OutlineButton, ConfirmSheet, StyledQr, BrandedLoader } from '@/components/ui'
 
 type Status = 'loading' | 'active' | 'paid' | 'expired' | 'error'
 
@@ -237,7 +237,7 @@ export default function QrPaymentScreen() {
       {/* Loading */}
       {status === 'loading' && (
         <View style={s.center}>
-          <ActivityIndicator size="large" color={Colors.brandOrange} />
+          <BrandedLoader />
           <Text style={s.hintText}>Generating QR code…</Text>
         </View>
       )}
@@ -327,12 +327,17 @@ export default function QrPaymentScreen() {
                 <View style={{ flex: 1 }}>
                   <OutlineButton
                     label={verifying ? 'Checking…' : "I've Paid"}
+                    icon={!verifying && <CheckCircle size={16} color={Colors.inkPrimary} strokeWidth={2} />}
                     onPress={handleManualCheck}
                     disabled={verifying}
                   />
                 </View>
                 <View style={{ flex: 1.4 }}>
-                  <PrimaryButton label="Share QR Code" onPress={handleShare} />
+                  <PrimaryButton
+                    label="Share QR Code"
+                    icon={<Share2 size={16} color={Colors.background} strokeWidth={2} />}
+                    onPress={handleShare}
+                  />
                 </View>
               </>
             ) : (

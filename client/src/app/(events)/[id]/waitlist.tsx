@@ -13,6 +13,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, Users } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Colors, FontFamily } from '@/constants'
+import { BrandedLoader } from '@/components/ui'
 import ApiService, { type WaitlistEntry } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 
@@ -85,7 +86,7 @@ export default function ManageWaitlistScreen() {
 
       {loading ? (
         <View style={s.center}>
-          <ActivityIndicator size="large" color={Colors.brandOrange} />
+          <BrandedLoader />
         </View>
       ) : waitlist.length === 0 ? (
         <View style={s.center}>
