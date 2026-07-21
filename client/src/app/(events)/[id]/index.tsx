@@ -42,6 +42,7 @@ import {
 import { Colors, FontFamily } from '@/constants'
 import ApiService, { type EventDetail, type EventAttendee, type EventGuest } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
+import { useRecentEventsStore } from '@/store/recentEventsStore'
 import { usePillStore } from '@/store/pillStore'
 import { ConfirmSheet, GuestListSheet, EventShareSheet } from '@/components/ui'
 import { ReportEventSheet } from '@/components/events/ReportEventSheet'
@@ -205,6 +206,7 @@ export default function EventDetailScreen() {
     ApiService.getEvent(id)
       .then(ev => {
         setEvent(ev)
+        useRecentEventsStore.getState().add(ev)
         if (ev.my_rsvp_status === 'going' || ev.my_rsvp_status === 'waitlist') {
           setRsvpStatus(ev.my_rsvp_status)
         }

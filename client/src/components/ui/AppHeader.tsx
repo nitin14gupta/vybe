@@ -24,7 +24,7 @@ export function AppHeader({ showLogo = false, title, leftAction, rightAction, tr
 
         <View style={styles.center}>
           {showLogo ? (
-            <Text style={styles.logo}>VYBE</Text>
+            <Text style={styles.logo}></Text>
           ) : title ? (
             <Text style={styles.title}>{title}</Text>
           ) : null}

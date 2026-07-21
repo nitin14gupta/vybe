@@ -50,16 +50,18 @@ function centeredMod(x: number, m: number) {
   return r
 }
 
-function FanCard({ p, source, center }: {
+function FanCard({ p, source, center, settledCenter }: {
   p: number
   source: any
   center: SharedValue<number>
+  settledCenter: SharedValue<number>
 }) {
   const style = useAnimatedStyle(() => {
     const offset = centeredMod(p - center.value, PHYSICAL_COUNT)
     const dist = Math.abs(offset)
+    const settledDist = Math.abs(centeredMod(p - settledCenter.value, PHYSICAL_COUNT))
     return {
-      zIndex: Math.round(100 - dist),
+      zIndex: Math.round(100 - settledDist),
       opacity: Math.max(0, Math.min(1, 1 - (dist - VISIBLE_HALF) / FADE_PAST)),
       transform: [
         { translateX: offset * STEP },
@@ -84,15 +86,24 @@ interface Props {
 // guarantee.
 export function TemplateFan({ startIndex = 0 }: Props) {
   const center = useSharedValue(startIndex)
+  const settledCenter = useSharedValue(startIndex)
 
   const pan = Gesture.Pan()
     .onEnd(e => {
       const distance = e.translationX + e.velocityX * 0.05
-      if (Math.abs(distance) < SWIPE_THRESHOLD) return
-      const steps = distance > 0 ? -1 : 1
-      center.value = withTiming(center.value + steps, {
-        duration: SPIN_MS,
+      const force = Math.abs(e.translationX) + Math.abs(e.velocityX) * 0.12
+      if (force < SWIPE_THRESHOLD) return
+
+      const extra = Math.max(0, force - SWIPE_THRESHOLD)
+      const steps = 1 + Math.round(Math.log2(extra / STEP + 1) * 2)
+      const direction = distance > 0 ? -1 : 1
+      const duration = SPIN_MS + Math.min(steps - 1, 10) * 70
+
+      center.value = withTiming(center.value + steps * direction, {
+        duration,
         easing: Easing.out(Easing.cubic),
+      }, finished => {
+        if (finished) settledCenter.value = center.value
       })
     })
 
@@ -102,7 +113,7 @@ export function TemplateFan({ startIndex = 0 }: Props) {
     <GestureDetector gesture={pan}>
       <Animated.View style={s.root}>
         {cards.map(p => (
-          <FanCard key={p} p={p} center={center} source={TEMPLATE_IMAGES[p % N]} />
+          <FanCard key={p} p={p} center={center} settledCenter={settledCenter} source={TEMPLATE_IMAGES[p % N]} />
         ))}
       </Animated.View>
     </GestureDetector>

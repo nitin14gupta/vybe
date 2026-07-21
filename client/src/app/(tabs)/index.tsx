@@ -7,6 +7,7 @@ import { Heart, Flame, PartyPopper, Search } from 'lucide-react-native'
 import { AppHeader, HeaderIconBtn, CreateEventSheet } from '@/components/ui'
 import { HomeGradientBackdrop } from '@/components/home/HomeGradientBackdrop'
 import { TemplateFan } from '@/components/home/TemplateFan'
+import { RecentlyViewedSection } from '@/components/home/RecentlyViewedSection'
 import { useEvents } from '@/hooks/useEvents'
 import { useProfile } from '@/hooks/useProfile'
 import ApiService from '@/api/apiService'
@@ -75,6 +76,8 @@ export default function HomeScreen() {
         <Pressable style={styles.createBtn} onPress={() => { hTap(); setCreateOpen(true) }}>
           <Text style={styles.createBtnText}>Create event</Text>
         </Pressable>
+
+        <RecentlyViewedSection />
 
         <View>
           <Text style={styles.greeting}>Hey {firstName} 👋</Text>
