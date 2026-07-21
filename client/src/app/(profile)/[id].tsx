@@ -294,12 +294,12 @@ export default function UserProfileScreen() {
         <View style={s.body}>
           {/* Name + location */}
           <View style={s.nameRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={s.name}>
+            <View style={s.nameWithBadge}>
+              <Text style={s.name} numberOfLines={1}>
                 {profile.name ?? 'User'}{age ? `, ${age}` : ''}
               </Text>
               {hostBadgeIcon && (
-                <Text style={{ fontSize: 24, marginLeft: -2 }}>{hostBadgeIcon}</Text>
+                <Text style={s.hostBadgeIcon}>{hostBadgeIcon}</Text>
               )}
             </View>
             {profile.mutual_count > 0 && (
@@ -335,7 +335,7 @@ export default function UserProfileScreen() {
           )}
 
           {/* Vybe status badge */}
-          {isConnected && (
+          {/* {isConnected && (
             <View style={[s.statusBadge, s.statusBadgeConnected]}>
               <Text style={s.statusBadgeText}>✓ Connected</Text>
             </View>
@@ -344,7 +344,7 @@ export default function UserProfileScreen() {
             <View style={[s.statusBadge, s.statusBadgePending]}>
               <Text style={s.statusBadgeText}>Vybe Pending</Text>
             </View>
-          )}
+          )} */}
 
           {/* Blocked overlay */}
           {blockedByMe && (
@@ -615,8 +615,10 @@ const s = StyleSheet.create({
 
   // Body
   body: { padding: 20, gap: 16 },
-  nameRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10 },
-  name: { fontFamily: FontFamily.headingBold, fontSize: 26, color: Colors.inkPrimary, flex: 1 },
+  nameRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 },
+  nameWithBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
+  name: { fontFamily: FontFamily.headingBold, fontSize: 26, color: Colors.inkPrimary },
+  hostBadgeIcon: { fontSize: 24, marginLeft: -2 },
   mutual: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary },
   username: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.brandOrange, marginTop: -6 },
   city: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, marginTop: -10 },
