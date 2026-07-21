@@ -125,7 +125,7 @@ def get_cities():
 
 
 AVAILABLE_BADGES = [
-    "🔥 Vybe Starter",
+    "🔥 Vibe Starter",
     "✨ Early Adopter",
     "🎙️ Voice Ready",
     "🌟 Main Character",

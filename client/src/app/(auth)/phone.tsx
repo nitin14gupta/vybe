@@ -63,8 +63,8 @@ export default function PhoneScreen() {
             <Text style={styles.legalLink} onPress={() => setLegalUrl(TERMS_URL)}>Terms</Text>
             {' '}and{' '}
             <Text style={styles.legalLink} onPress={() => setLegalUrl(PRIVACY_URL)}>Privacy Policy</Text>
-            {' '}and consent to receive event texts from Vybe. Msg frequency varies; data rates may apply.
-            {' '}For help, email us at support@vybe.in.
+            {' '}and consent to receive event texts from Gorave. Msg frequency varies; data rates may apply.
+            {' '}For help, email us at support@gorave.com.
           </Text>
         </View>
       </KeyboardAvoidingWrapper>

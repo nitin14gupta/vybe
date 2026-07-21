@@ -46,7 +46,7 @@ export default function WelcomeScreen() {
         />
         <View style={[styles.brandRow, { top: insets.top + 12 }]}>
           <LogoMark size={22} />
-          <Text style={styles.brandText}>VYBE</Text>
+          <Text style={styles.brandText}>Gorave</Text>
         </View>
       </View>
 

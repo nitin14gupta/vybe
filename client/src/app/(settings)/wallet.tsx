@@ -60,7 +60,7 @@ export default function WalletScreen() {
   return (
     <View style={s.root}>
       <AppHeader
-        title="Vybe Wallet"
+        title="Gorave Wallet"
         leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
       />
 
@@ -104,7 +104,7 @@ export default function WalletScreen() {
                   <HeadphonesIcon size={15} color={Colors.brandOrange} strokeWidth={1.8} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={s.infoText}>Credits can only be used on Vybe events.</Text>
+                  <Text style={s.infoText}>Credits can only be used on Gorave events.</Text>
                   <Text style={s.infoSub}>Need a bank refund or have a question? <Text style={s.infoLink}>Contact Support →</Text></Text>
                 </View>
               </View>

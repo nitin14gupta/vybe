@@ -1046,10 +1046,9 @@ def cancel_event(event_id: str, background_tasks: BackgroundTasks, current_user:
         for going_uid in going_user_ids:
             notify_event_cancelled_attendee(cur, going_uid, event_id, ev_title)
 
-        # Refund paid attendees to Vybe Wallet
+        # Refund paid attendees to Gorave Wallet
         paid_user_ids = []
         if ev_price > 0:
-            # Refund = ticket price (platform fee absorbed by VYBE on cancellation)
             refund_amount = ev_price
             for att_uid in going_user_ids:
                 paid_user_ids.append(att_uid)
@@ -1085,8 +1084,8 @@ def cancel_event(event_id: str, background_tasks: BackgroundTasks, current_user:
     for att_uid in paid_user_ids:
         background_tasks.add_task(
             send_push, att_uid,
-            "Refund in your Vybe Wallet 💰",
-            f"₹{ev_price} from '{ev_title}' is now in your Vybe Wallet.",
+            "Refund in your Gorave Wallet 💰",
+            f"₹{ev_price} from '{ev_title}' is now in your Gorave Wallet.",
             {"type": "wallet", "event_id": event_id},
         )
 

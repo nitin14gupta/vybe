@@ -181,7 +181,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   bio text,
-  badges text[] DEFAULT ARRAY['🔥 Vybe Starter'::text, '✨ Early Adopter'::text, '🎙️ Voice Ready'::text, '🌟 Main Character'::text],
+  badges text[] DEFAULT ARRAY['🔥 Vibe Starter'::text, '✨ Early Adopter'::text, '🎙️ Voice Ready'::text, '🌟 Main Character'::text],
   username character varying(30),
   CONSTRAINT users_pkey PRIMARY KEY (id),
   CONSTRAINT users_phone_key UNIQUE (phone),
@@ -270,7 +270,7 @@ CREATE TABLE IF NOT EXISTS public.event_reports (
   CONSTRAINT event_reports_reporter_id_fkey FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- ── Vybe Wallet ──────────────────────────────────────────────────────────────
+-- ── Gorave Wallet ──────────────────────────────────────────────────────────────
 ALTER TABLE public.users
   ADD COLUMN IF NOT EXISTS wallet_balance INTEGER NOT NULL DEFAULT 0;
 

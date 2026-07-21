@@ -32,7 +32,7 @@ const STEPS_COLORS: [string, string][] = [
 const STEPS = [
   { title: 'The Basics', sub: 'Tell people what your event is about' },
   { title: 'When & Capacity', sub: 'Set the date, time, and guest limit' },
-  { title: "Where's the VYBE?", sub: 'Help guests find your event' },
+  { title: "Where's the Vibe?", sub: 'Help guests find your event' },
   { title: 'Pricing', sub: 'Set a ticket price or keep it free' },
   { title: 'Photos', sub: 'Make it look good' },
 ]

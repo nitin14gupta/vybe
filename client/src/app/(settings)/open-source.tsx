@@ -24,7 +24,7 @@ export default function OpenSourceScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.card}>
           <Text style={styles.body}>
-            Vybe is built on top of open source software. We're grateful to the
+            Gorave is built on top of open source software. We're grateful to the
             maintainers of these projects (used under their respective MIT, Apache-2.0,
             or BSD licenses):
           </Text>

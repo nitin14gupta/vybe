@@ -4,7 +4,7 @@ export const APP_SCHEME = Constants.expoConfig!.scheme!
 
 export const BUNDLE_ID = Constants.expoConfig!.ios!.bundleIdentifier!
 export const EAS_PROJECT_ID: string = Constants.expoConfig?.extra?.eas?.projectId as string
-export const UNIVERSAL_LINK_DOMAIN = 'vybe.uilora.com'
+export const UNIVERSAL_LINK_DOMAIN = 'link.uilora.com'
 export const API_BASE_URL = Constants.expoConfig!.extra!.apiUrl!
 
 export const ENDPOINTS = {

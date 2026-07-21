@@ -26,7 +26,7 @@ const TOTAL_STEPS = 4
 
 const LOSSES = [
   { icon: Calendar,       text: 'All your event bookings and tickets' },
-  { icon: Wallet,         text: 'Any remaining Vybe Wallet credits' },
+  { icon: Wallet,         text: 'Any remaining Gorave Wallet credits' },
   { icon: MessageCircle,  text: 'All conversations and connections' },
   { icon: ShieldOff,      text: 'Your profile, photos and voice intro' },
 ]
@@ -204,7 +204,7 @@ export default function DeleteAccountScreen() {
             </View>
             <Text style={s.title}>Are you sure?</Text>
             <Text style={s.body}>
-              Deleting your account is permanent. Your profile, photos, events, and Vybe Wallet credits will be removed within 30 days.
+              Deleting your account is permanent. Your profile, photos, events, and Gorave Wallet credits will be removed within 30 days.
             </Text>
             <Text style={s.bodySecond}>
               If you change your mind within 30 days, contact{' '}

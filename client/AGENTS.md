@@ -101,7 +101,7 @@ Base: `https://docs.expo.dev/versions/v56.0.0/`
 | Native Tabs | https://docs.expo.dev/router/advanced/tabs/ |
 | Expo UI | https://docs.expo.dev/versions/v56.0.0/sdk/ui/ |
 
-### Expo SDK Packages — Used in Vybe
+### Expo SDK Packages — Used in Gorave
 | Package | Docs |
 |---|---|
 | expo-audio | https://docs.expo.dev/versions/v56.0.0/sdk/audio/ |

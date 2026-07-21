@@ -7,7 +7,7 @@ import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 const FAQS: { q: string; a: string }[] = [
   {
     q: 'Who can see my profile?',
-    a: 'Other Vybe users can see your profile, photos, interests, and voice intro. Your phone number is never shown.',
+    a: 'Other Gorave users can see your profile, photos, interests, and voice intro. Your phone number is never shown.',
   },
   {
     q: 'How do I change my city?',

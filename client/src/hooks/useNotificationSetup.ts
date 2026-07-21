@@ -32,7 +32,7 @@ export function useNotificationSetup() {
     ;(async () => {
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('vybe-default', {
-          name: 'Vybe notifications',
+          name: 'Gorave notifications',
           importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 250, 250, 250],
           lightColor: '#FF6B35',

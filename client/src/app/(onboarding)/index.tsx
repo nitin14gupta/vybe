@@ -16,7 +16,7 @@ export default function AgeGateScreen() {
         <Text style={styles.lockEmoji}>🔒</Text>
         <Text style={styles.lockedTitle}>Come back when you're 18!</Text>
         <Text style={styles.lockedBody}>
-          VYBE is for adults only. We'll see you on the other side.
+          Gorave is for adults only. We'll see you on the other side.
         </Text>
         <Pressable onPress={() => { hTap(); setDeclined(false) }}>
           <Text style={styles.goBack}>← Go back</Text>
@@ -32,7 +32,7 @@ export default function AgeGateScreen() {
       <Text style={styles.emoji}>🎂</Text>
       <Text style={styles.title}>Are you 18 or older?</Text>
       <Text style={styles.body}>
-        VYBE is only for adults. You must be 18+ to use this app.
+        Gorave is only for adults. You must be 18+ to use this app.
       </Text>
       <View style={styles.actions}>
         <PrimaryButton

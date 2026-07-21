@@ -41,7 +41,7 @@ async def lifespan(app: FastAPI):
     task.cancel()
 
 
-app = FastAPI(title="Vybe API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Gorave API", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

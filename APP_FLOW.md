@@ -113,7 +113,7 @@ default reason. Add a proper usage description before an iOS release.
 - `notifications.tsx` — notification preferences
 - `blocked.tsx` — manage blocked users
 - `my-events.tsx`, `joined-events.tsx` — hosted / attended events lists
-- `wallet.tsx` — Vybe Wallet balance, refund credits, transaction history
+- `wallet.tsx` — Gorave Wallet balance, refund credits, transaction history
 - `help.tsx` — static FAQ (7 Q&As)
 - `feedback.tsx` — free-text feedback form → `ApiService.submitFeedback`
 - `support.tsx` — structured support ticket (topic + message) → `ApiService.submitSupport`, plus a `mailto:support@vybe.in` fallback
@@ -142,7 +142,7 @@ default reason. Add a proper usage description before an iOS release.
 - **Payment methods**: Razorpay (card/UPI/netbanking), UPI QR code, or Vybe
   Wallet balance (can combine wallet + Razorpay for partial payment).
 - **Cancellation / refunds**: if a host cancels an event, attendees are
-  refunded to their **Vybe Wallet** instantly — the platform fee is
+  refunded to their **Gorave Wallet** instantly — the platform fee is
   absorbed by Vybe on cancellation (attendee gets back the full ticket
   price, not the fee they paid on top; see `server/routes/events.py` around
   the cancellation-refund logic).

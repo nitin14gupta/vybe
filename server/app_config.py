@@ -12,4 +12,4 @@ APP_SCHEME = "vybe"
 # client/app.json's iOS associatedDomains / Android intentFilters host —
 # see server/routes/wellknown.py for the universal-link verification files
 # that must be served from this domain.
-UNIVERSAL_LINK_DOMAIN = "vybe.uilora.com"
+UNIVERSAL_LINK_DOMAIN = "link.uilora.com"

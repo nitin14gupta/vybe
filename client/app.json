@@ -1,23 +1,23 @@
 {
   "expo": {
-    "name": "Vybe",
-    "slug": "vybe",
+    "name": "Gorave",
+    "slug": "gorave",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "vybe",
+    "scheme": "gorave",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "icon": "./assets/images/icon.png",
     "ios": {
-      "bundleIdentifier": "in.vybe.app",
+      "bundleIdentifier": "in.gorave.app",
       "supportsTablet": false,
       "associatedDomains": [
-        "applinks:vybe.uilora.com"
+        "applinks:link.uilora.com"
       ],
       "infoPlist": {
-        "NSCameraUsageDescription": "Vybe uses your camera to scan QR tickets at event check-in.",
-        "NSPhotoLibraryUsageDescription": "Vybe uses your photo library so you can choose profile and event photos.",
-        "NSLocationWhenInUseUsageDescription": "Vybe uses your location to show nearby events and how far they are from you.",
+        "NSCameraUsageDescription": "Gorave uses your camera to scan QR tickets at event check-in.",
+        "NSPhotoLibraryUsageDescription": "Gorave uses your photo library so you can choose profile and event photos.",
+        "NSLocationWhenInUseUsageDescription": "Gorave uses your location to show nearby events and how far they are from you.",
         "LSApplicationQueriesSchemes": [
           "tez",
           "phonepe",
@@ -29,7 +29,7 @@
       }
     },
     "android": {
-      "package": "in.vybe.app",
+      "package": "in.gorave.app",
       "softwareKeyboardLayoutMode": "pan",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
@@ -47,7 +47,7 @@
           "data": [
             {
               "scheme": "https",
-              "host": "vybe.uilora.com"
+              "host": "link.uilora.com"
             }
           ],
           "category": [
@@ -88,7 +88,7 @@
       [
         "expo-audio",
         {
-          "microphonePermission": "Allow Vybe to access your microphone to record voice intros.",
+          "microphonePermission": "Allow Gorave to access your microphone to record voice intros.",
           "enableBackgroundPlayback": true,
           "enableBackgroundRecording": false
         }

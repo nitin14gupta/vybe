@@ -66,7 +66,7 @@ export default function SettingsScreen() {
           />
           <SettingRow
             icon={<Wallet size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
-            label="Vybe Wallet"
+            label="Gorave Wallet"
             onPress={() => router.push('/(settings)/wallet' as any)}
             showSeparator={false}
           />

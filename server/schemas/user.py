@@ -3,7 +3,7 @@ from typing import Optional, List
 from datetime import date
 
 
-DEFAULT_BADGES = ['🔥 Vybe Starter', '✨ Early Adopter', '🎙️ Voice Ready', '🌟 Main Character']
+DEFAULT_BADGES = ['🔥 Vibe Starter', '✨ Early Adopter', '🎙️ Voice Ready', '🌟 Main Character']
 
 
 class ProfileCreate(BaseModel):

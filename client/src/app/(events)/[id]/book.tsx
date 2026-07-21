@@ -183,7 +183,7 @@ export default function BookScreen() {
               {walletApplied > 0 && (
                 <>
                   <View style={s.priceDivider} />
-                  <PriceRow label="Vybe Wallet" value={`-₹${walletApplied}`} green />
+                  <PriceRow label="Gorave Wallet" value={`-₹${walletApplied}`} green />
                 </>
               )}
               <View style={s.priceSep} />
@@ -203,7 +203,7 @@ export default function BookScreen() {
                   <Wallet size={17} color={Colors.brandOrange} strokeWidth={1.8} />
                 </View>
                 <View>
-                  <Text style={s.walletLabel}>Vybe Wallet</Text>
+                  <Text style={s.walletLabel}>Gorave Wallet</Text>
                   <Text style={s.walletSub}>₹{walletBalance} available</Text>
                 </View>
               </View>
@@ -227,7 +227,7 @@ export default function BookScreen() {
             {!event.is_free && !isCancelled ? (
               <View style={s.secureRow}>
                 <ShieldCheck size={13} color={Colors.inkDisabled} strokeWidth={1.6} />
-                <Text style={s.secureText}>Secure payment · Instant wallet refund if event is cancelled in your Vybe Wallet</Text>
+                <Text style={s.secureText}>Secure payment · Instant wallet refund if event is cancelled in your Gorave Wallet</Text>
               </View>
             ) : null}
           </View>

@@ -1,7 +1,7 @@
 services:
-  vybe-redis:
+  gorave-redis:
     image: redis:alpine
-    container_name: vybe-redis
+    container_name: gorave-redis
     ports:
       - "6379:6379"
     restart: unless-stopped

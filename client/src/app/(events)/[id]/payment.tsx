@@ -75,7 +75,7 @@ function WalletSuccessOverlay({ amount, onDone }: { amount: number; onDone: () =
         <Animated.View style={[ov.circle, circleStyle]}>
           <Wallet size={36} color="#fff" strokeWidth={2} />
         </Animated.View>
-        <Text style={ov.label}>₹{amount} from Vybe Wallet</Text>
+        <Text style={ov.label}>₹{amount} from Gorave Wallet</Text>
         <Text style={ov.sub}>applied to your booking</Text>
       </View>
     </View>
@@ -206,7 +206,7 @@ export default function PaymentScreen() {
         order_id: order.order_id,
         amount: String((order.amount ?? 0) * 100),
         currency: 'INR',
-        name: 'Vybe',
+        name: 'Gorave',
         description: eventTitle,
         method: 'upi',
         '_[flow]': 'intent',
@@ -238,7 +238,7 @@ export default function PaymentScreen() {
         order_id: order.order_id,
         amount: String((order.amount ?? 0) * 100),
         currency: 'INR',
-        name: 'Vybe',
+        name: 'Gorave',
         description: eventTitle,
         method: 'upi',
         '_[flow]': 'collect',
@@ -268,7 +268,7 @@ export default function PaymentScreen() {
   //       key: order.razorpay_key,
   //       amount: String(order.amount * 100),
   //       currency: 'INR',
-  //       name: 'Vybe',
+  //       name: 'Gorave',
   //       description: eventTitle,
   //       order_id: order.order_id,
   //       prefill: { contact: order.contact ?? '', email: order.email ?? '' },
@@ -339,7 +339,7 @@ export default function PaymentScreen() {
             <View style={s.billDetails}>
               <BillRow label="Ticket price" value={`₹${ticketPrice}`} />
               <BillRow label={`Platform fee (${PLATFORM_FEE_PERCENT_LABEL})`} value={`₹${platformFee}`} />
-              {walletApplied > 0 && <BillRow label="Vybe Wallet applied" value={`-₹${walletApplied}`} green />}
+              {walletApplied > 0 && <BillRow label="Gorave Wallet applied" value={`-₹${walletApplied}`} green />}
               <View style={s.billDivider} />
               <View style={s.billTotalRow}>
                 <Text style={s.billTotalLabel}>Total</Text>
@@ -355,7 +355,7 @@ export default function PaymentScreen() {
         {walletApplied > 0 && (
           <View style={s.walletBanner}>
             <Wallet size={16} color={Colors.brandOrange} strokeWidth={1.8} />
-            <Text style={s.walletBannerText}>₹{walletApplied} from Vybe Wallet will be used</Text>
+            <Text style={s.walletBannerText}>₹{walletApplied} from Gorave Wallet will be used</Text>
           </View>
         )}
 
@@ -513,7 +513,7 @@ export default function PaymentScreen() {
 
         <View style={s.secureRow}>
           <CheckCircle size={13} color={Colors.inkDisabled} strokeWidth={1.6} />
-          <Text style={s.secureText}>Secure payment · Instant wallet refund if event is cancelled in your Vybe Wallet</Text>
+          <Text style={s.secureText}>Secure payment · Instant wallet refund if event is cancelled in your Gorave Wallet</Text>
         </View>
       </ScrollView>
 
