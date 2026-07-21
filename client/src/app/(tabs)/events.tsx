@@ -23,8 +23,8 @@ import { Image } from "expo-image";
 import { Colors, FontFamily, FILTER_CHIPS } from "@/constants";
 import { useEvents } from "@/hooks/useEvents";
 import type { EventSummary } from "@/api/apiService";
-import { EventCard, formatEventDate } from "@/components/EventCard";
-import { EventSearchModal } from "@/components/EventSearchModal";
+import { EventCard, formatEventDate } from "@/components/events/EventCard";
+import { EventSearchModal } from "@/components/events/EventSearchModal";
 import { LocationWarning, CreateEventSheet } from "@/components/ui";
 import { usePermissionSheetStore } from "@/store/permissionSheetStore";
 

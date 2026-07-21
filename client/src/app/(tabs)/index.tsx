@@ -5,6 +5,8 @@ import {
 import { useFocusEffect, router } from 'expo-router'
 import { Heart, Flame, PartyPopper, Search } from 'lucide-react-native'
 import { AppHeader, HeaderIconBtn, CreateEventSheet } from '@/components/ui'
+import { HomeGradientBackdrop } from '@/components/home/HomeGradientBackdrop'
+import { TemplateFan } from '@/components/home/TemplateFan'
 import { useEvents } from '@/hooks/useEvents'
 import { useProfile } from '@/hooks/useProfile'
 import ApiService from '@/api/apiService'
@@ -48,8 +50,11 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.root}>
+      <HomeGradientBackdrop />
+
       <AppHeader
         showLogo
+        transparent
         rightAction={
           <View style={{ flexDirection: 'row', gap: 4 }}>
             <HeaderIconBtn onPress={() => { hTap(); router.push('/(profile)/search' as any) }}>
@@ -66,6 +71,11 @@ export default function HomeScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <TemplateFan />
+        <Pressable style={styles.createBtn} onPress={() => { hTap(); setCreateOpen(true) }}>
+          <Text style={styles.createBtnText}>Create event</Text>
+        </Pressable>
+
         <View>
           <Text style={styles.greeting}>Hey {firstName} 👋</Text>
           <Text style={styles.subGreeting}>What are we vybing with today?</Text>
@@ -85,6 +95,20 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
   content: { paddingHorizontal: 16, paddingBottom: 24, gap: 14 },
+
+  createBtn: {
+    alignSelf: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 28,
+    paddingVertical: 13,
+    borderRadius: Radius.pill,
+    marginTop: 2,
+  },
+  createBtnText: {
+    fontFamily: FontFamily.headingBold,
+    fontSize: 15,
+    color: '#111',
+  },
 
   greeting: {
     fontFamily: FontFamily.headingBold,
