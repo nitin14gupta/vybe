@@ -379,3 +379,20 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS public_key text;
 
 -- ── Discover feed removed — drop its now-unused column ───────────────────────
 ALTER TABLE public.users DROP COLUMN IF EXISTS discoverable;
+
+-- ── Host onboarding: payout details + completion flag ────────────────────────
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS is_host_onboarding_finished boolean DEFAULT false;
+
+CREATE TABLE IF NOT EXISTS public.host_payout_details (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  user_id uuid NOT NULL,
+  account_holder_name_ciphertext text NOT NULL,
+  account_number_ciphertext text NOT NULL,
+  ifsc_code text NOT NULL,
+  bank_name text NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT host_payout_details_pkey PRIMARY KEY (id),
+  CONSTRAINT host_payout_details_user_id_key UNIQUE (user_id),
+  CONSTRAINT host_payout_details_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

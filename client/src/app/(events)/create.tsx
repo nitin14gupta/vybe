@@ -19,6 +19,7 @@ import { useCreateEvent } from '@/hooks/useCreateEvent'
 import ApiService from '@/api/apiService'
 import { useEventDateTimePickers } from '@/hooks/useEventDateTimePickers'
 import { usePillStore } from '@/store/pillStore'
+import { useProfile } from '@/hooks/useProfile'
 import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 
 const STEPS_COLORS: [string, string][] = [
@@ -48,10 +49,25 @@ export default function CreateScreen() {
   const [previewOpen, setPreviewOpen] = useState(false)
   const showPill = usePillStore(s => s.show)
   const [freeSlots, setFreeSlots] = useState<{ used: number; limit: number; resets_on: string } | null>(null)
+  const { profile, loading: profileLoading } = useProfile()
 
   useEffect(() => {
     ApiService.getFreeSlots().then(setFreeSlots).catch(() => { })
   }, [])
+
+  useEffect(() => {
+    if (!profileLoading && profile && !profile.is_host_onboarding_finished) {
+      router.replace('/(host-onboarding)' as any)
+    }
+  }, [profileLoading, profile])
+
+  if (profileLoading || !profile || !profile.is_host_onboarding_finished) {
+    return (
+      <Screen transparent style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <BrandedLoader />
+      </Screen>
+    )
+  }
 
   const validateStep = (): boolean => {
     const errs: Record<string, string> = {}

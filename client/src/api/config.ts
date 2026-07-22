@@ -19,6 +19,7 @@ export const ENDPOINTS = {
   UPDATE_PROFILE: '/users/profile',
   SET_INTERESTS: '/users/interests',
   SET_LOCATION: '/users/location',
+  SET_PAYOUT_DETAILS: '/users/payout-details',
   UPDATE_LIVE_LOCATION: '/users/location/live',
   GET_ME: '/users/me',
 

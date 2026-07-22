@@ -26,6 +26,7 @@ export interface UserResponse {
   interests: string[]
   badges: string[]
   profile_complete: boolean
+  is_host_onboarding_finished: boolean
   photos: PhotoResponse[]
   name_changed_at: string | null
 }
@@ -539,6 +540,15 @@ class ApiService {
     return this.post<{ message: string }>(ENDPOINTS.SET_LOCATION, { city, lat, lng })
   }
 
+  static async savePayoutDetails(payload: {
+    account_holder_name: string
+    account_number: string
+    ifsc_code: string
+    bank_name: string
+  }): Promise<UserResponse> {
+    return this.post<UserResponse>(ENDPOINTS.SET_PAYOUT_DETAILS, payload)
+  }
+
   static async updateLiveLocation(lat: number, lng: number): Promise<{ message: string }> {
     return this.patch<{ message: string }>(ENDPOINTS.UPDATE_LIVE_LOCATION, { lat, lng })
   }
@@ -855,11 +865,6 @@ class ApiService {
   static async deleteAccount(): Promise<{ ok: boolean }> {
     return this.delete(ENDPOINTS.DELETE_ACCOUNT)
   }
-
-  static async setDiscoverable(discoverable: boolean): Promise<{ ok: boolean; discoverable: boolean }> {
-    return this.patch(ENDPOINTS.SET_DISCOVERABLE, { discoverable })
-  }
-
   static async setPublicKey(publicKey: string): Promise<{ ok: boolean }> {
     return this.patch(ENDPOINTS.SET_PUBLIC_KEY, { public_key: publicKey })
   }

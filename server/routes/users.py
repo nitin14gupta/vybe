@@ -5,11 +5,12 @@ from typing import Optional
 import uuid as uuid_lib
 from schemas.user import (
     ProfileCreate, ProfileUpdate, LocationUpdate, LivePingUpdate, InterestsUpdate,
-    UserResponse, ProfileResponse, DEFAULT_BADGES,
+    PayoutDetailsCreate, UserResponse, ProfileResponse, DEFAULT_BADGES,
 )
 from middleware.auth import get_current_user
 from db.config import get_db
 from utils.push import send_push
+from utils.crypto import encrypt
 from routes.notifications import notify_new_follower, notify_report_submitted
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -29,6 +30,7 @@ _USER_SELECT = """
         u.interests,
         COALESCE(u.badges, ARRAY[]::text[]) AS badges,
         u.profile_complete,
+        u.is_host_onboarding_finished,
         u.voice_url,
         u.lat,
         u.lng,
@@ -278,6 +280,34 @@ def set_location(body: LocationUpdate, current_user: dict = Depends(get_current_
         cur.execute(
             "UPDATE users SET city = %s, lat = %s, lng = %s, profile_complete = TRUE WHERE id = %s",
             (body.city, body.lat, body.lng, current_user["id"]),
+        )
+        user = _fetch_user(cur, current_user["id"], current_user["id"])
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return UserResponse(**user)
+
+
+@router.post("/payout-details", response_model=UserResponse)
+def set_payout_details(body: PayoutDetailsCreate, current_user: dict = Depends(get_current_user)):
+    with get_db() as (cur, _):
+        cur.execute(
+            """
+            INSERT INTO host_payout_details
+                (user_id, account_holder_name_ciphertext, account_number_ciphertext, ifsc_code, bank_name)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (user_id) DO UPDATE SET
+                account_holder_name_ciphertext = EXCLUDED.account_holder_name_ciphertext,
+                account_number_ciphertext = EXCLUDED.account_number_ciphertext,
+                ifsc_code = EXCLUDED.ifsc_code,
+                bank_name = EXCLUDED.bank_name,
+                updated_at = NOW()
+            """,
+            (current_user["id"], encrypt(body.account_holder_name), encrypt(body.account_number),
+             body.ifsc_code, body.bank_name),
+        )
+        cur.execute(
+            "UPDATE users SET is_host_onboarding_finished = TRUE WHERE id = %s",
+            (current_user["id"],),
         )
         user = _fetch_user(cur, current_user["id"], current_user["id"])
     if not user:

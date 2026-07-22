@@ -8,7 +8,7 @@ import httpx
 MAX_BYTES = 200_000  # OG tags live in <head>; no need to read a whole page
 FETCH_TIMEOUT = 6.0
 USER_AGENT = (
-    "Mozilla/5.0 (compatible; VybeLinkPreview/1.0; +https://vybe.app)"
+    "Mozilla/5.0 (compatible; VybeLinkPreview/1.0; +https://uilora.com)"
 )
 
 _META_TAG_RE = re.compile(r"<meta\b[^>]*>", re.IGNORECASE)

@@ -85,6 +85,51 @@ class InterestsUpdate(BaseModel):
         return v
 
 
+class PayoutDetailsCreate(BaseModel):
+    account_holder_name: str
+    account_number: str
+    ifsc_code: str
+    bank_name: str
+
+    @field_validator("account_holder_name")
+    @classmethod
+    def validate_account_holder_name(cls, v: str) -> str:
+        v = v.strip()
+        if len(v) < 2:
+            raise ValueError("Account holder name must be at least 2 characters")
+        if len(v) > 100:
+            raise ValueError("Account holder name must be under 100 characters")
+        return v
+
+    @field_validator("account_number")
+    @classmethod
+    def validate_account_number(cls, v: str) -> str:
+        import re
+        v = v.strip()
+        if not re.match(r'^\d{9,18}$', v):
+            raise ValueError("Account number must be 9-18 digits")
+        return v
+
+    @field_validator("ifsc_code")
+    @classmethod
+    def validate_ifsc_code(cls, v: str) -> str:
+        import re
+        v = v.strip().upper()
+        if not re.match(r'^[A-Z]{4}0[A-Z0-9]{6}$', v):
+            raise ValueError("Invalid IFSC code")
+        return v
+
+    @field_validator("bank_name")
+    @classmethod
+    def validate_bank_name(cls, v: str) -> str:
+        v = v.strip()
+        if len(v) < 2:
+            raise ValueError("Bank name must be at least 2 characters")
+        if len(v) > 100:
+            raise ValueError("Bank name must be under 100 characters")
+        return v
+
+
 class PhotoResponse(BaseModel):
     id: str
     url: str
@@ -102,6 +147,7 @@ class UserResponse(BaseModel):
     interests: List[str] = []
     badges: List[str] = []
     profile_complete: bool = False
+    is_host_onboarding_finished: bool = False
     voice_url: Optional[str] = None
     photos: List[PhotoResponse] = []
     vibers_count: int = 0
