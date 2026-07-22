@@ -31,6 +31,17 @@ export interface UserResponse {
   name_changed_at: string | null
 }
 
+export interface PayoutDetailsResponse {
+  payout_method: 'upi' | 'bank' | null
+  upi_id: string | null
+  bank: {
+    account_holder_name: string
+    account_number: string
+    ifsc_code: string
+    bank_name: string
+  } | null
+}
+
 export interface InterestResponse {
   name: string
   emoji: string
@@ -541,12 +552,18 @@ class ApiService {
   }
 
   static async savePayoutDetails(payload: {
-    account_holder_name: string
-    account_number: string
-    ifsc_code: string
-    bank_name: string
+    payout_method: 'upi' | 'bank'
+    upi_id?: string
+    account_holder_name?: string
+    account_number?: string
+    ifsc_code?: string
+    bank_name?: string
   }): Promise<UserResponse> {
     return this.post<UserResponse>(ENDPOINTS.SET_PAYOUT_DETAILS, payload)
+  }
+
+  static async getPayoutDetails(): Promise<PayoutDetailsResponse> {
+    return this.get<PayoutDetailsResponse>(ENDPOINTS.SET_PAYOUT_DETAILS)
   }
 
   static async updateLiveLocation(lat: number, lng: number): Promise<{ message: string }> {

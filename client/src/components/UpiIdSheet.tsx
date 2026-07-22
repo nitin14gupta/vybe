@@ -2,13 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, Pressable, TextInput, ActivityIndicator, Keyboard } from 'react-native'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
-import { CheckCircle2, XCircle, X, Bookmark } from 'lucide-react-native'
-import RazorpayCustomUI from 'react-native-customui'
+import { CheckCircle2, XCircle, X, Bookmark, Eye, EyeOff } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 import { hTap, hSuccess } from '@/lib/haptics'
 import ApiService from '@/api/apiService'
-
-interface VpaResult { name: string; vpa: string }
+import { useVpaValidation, maskName } from '@/hooks/useVpaValidation'
 
 const SNAP_POINTS = ['66%', '82%']
 
@@ -35,15 +33,11 @@ function UpiIdSheetCore({
 }) {
   const ref = useRef<BottomSheetModal>(null)
   const [vpa, setVpa] = useState('')
-  const [vpaResult, setVpaResult] = useState<VpaResult | null>(null)
-  const [vpaError, setVpaError] = useState(false)
-  const [checking, setChecking] = useState(false)
   const [savedVpa, setSavedVpa] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const initializedRef = useRef(false)
+  const [nameRevealed, setNameRevealed] = useState(false)
 
-  const validFormat = /^[\w.\-]+@[\w]+$/.test(vpa.trim())
+  const { validFormat, checking, vpaResult, vpaError } = useVpaValidation(vpa, rzpKey)
   const canPay = validFormat && vpaResult !== null && !vpaError
   const isAlreadySaved = savedVpa !== null && vpa.trim() === savedVpa
 
@@ -55,13 +49,6 @@ function UpiIdSheetCore({
     return () => { show.remove(); hide.remove() }
   }, [])
 
-  useEffect(() => {
-    if (rzpKey && !initializedRef.current) {
-      RazorpayCustomUI.initRazorpay(rzpKey)
-      initializedRef.current = true
-    }
-  }, [rzpKey])
-
   // Load saved UPI ID on mount
   useEffect(() => {
     ApiService.getSavedUpiId().then(saved => {
@@ -71,29 +58,6 @@ function UpiIdSheetCore({
       }
     }).catch(() => {})
   }, [])
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    setVpaResult(null)
-    setVpaError(false)
-    if (!validFormat) return
-    debounceRef.current = setTimeout(async () => {
-      setChecking(true)
-      try {
-        const res: any = await RazorpayCustomUI.isValidVpa(vpa.trim())
-        if (res?.customer_name || res?.name) {
-          setVpaResult({ name: res.customer_name ?? res.name, vpa: vpa.trim() })
-        } else {
-          setVpaError(true)
-        }
-      } catch {
-        setVpaError(true)
-      } finally {
-        setChecking(false)
-      }
-    }, 600)
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-  }, [vpa, validFormat])
 
   const handleSaveAndPay = async () => {
     if (!canPay || !vpaResult) return
@@ -166,7 +130,14 @@ function UpiIdSheetCore({
         {vpaResult && (
           <View style={s.nameRow}>
             <CheckCircle2 size={13} color={Colors.accentGreen} strokeWidth={2} />
-            <Text style={s.nameText}>{vpaResult.name}</Text>
+            <Text style={s.nameText}>
+              {nameRevealed ? vpaResult.name : maskName(vpaResult.name)}
+            </Text>
+            <Pressable onPress={() => { hTap(); setNameRevealed(v => !v) }} hitSlop={8}>
+              {nameRevealed
+                ? <EyeOff size={14} color={Colors.accentGreen} strokeWidth={2} />
+                : <Eye size={14} color={Colors.accentGreen} strokeWidth={2} />}
+            </Pressable>
           </View>
         )}
         {vpaError && (

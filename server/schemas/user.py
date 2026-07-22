@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 from typing import Optional, List
 from datetime import date
 
@@ -86,14 +86,36 @@ class InterestsUpdate(BaseModel):
 
 
 class PayoutDetailsCreate(BaseModel):
-    account_holder_name: str
-    account_number: str
-    ifsc_code: str
-    bank_name: str
+    payout_method: str = "upi"
+    upi_id: Optional[str] = None
+    account_holder_name: Optional[str] = None
+    account_number: Optional[str] = None
+    ifsc_code: Optional[str] = None
+    bank_name: Optional[str] = None
+
+    @field_validator("payout_method")
+    @classmethod
+    def validate_payout_method(cls, v: str) -> str:
+        if v not in ("upi", "bank"):
+            raise ValueError("payout_method must be 'upi' or 'bank'")
+        return v
+
+    @field_validator("upi_id")
+    @classmethod
+    def validate_upi_id(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        import re
+        v = v.strip().lower()
+        if not re.match(r'^[a-z0-9.\-]{2,256}@[a-z]{2,64}$', v):
+            raise ValueError("Invalid UPI ID")
+        return v
 
     @field_validator("account_holder_name")
     @classmethod
-    def validate_account_holder_name(cls, v: str) -> str:
+    def validate_account_holder_name(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
         v = v.strip()
         if len(v) < 2:
             raise ValueError("Account holder name must be at least 2 characters")
@@ -103,7 +125,9 @@ class PayoutDetailsCreate(BaseModel):
 
     @field_validator("account_number")
     @classmethod
-    def validate_account_number(cls, v: str) -> str:
+    def validate_account_number(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
         import re
         v = v.strip()
         if not re.match(r'^\d{9,18}$', v):
@@ -112,7 +136,9 @@ class PayoutDetailsCreate(BaseModel):
 
     @field_validator("ifsc_code")
     @classmethod
-    def validate_ifsc_code(cls, v: str) -> str:
+    def validate_ifsc_code(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
         import re
         v = v.strip().upper()
         if not re.match(r'^[A-Z]{4}0[A-Z0-9]{6}$', v):
@@ -121,13 +147,25 @@ class PayoutDetailsCreate(BaseModel):
 
     @field_validator("bank_name")
     @classmethod
-    def validate_bank_name(cls, v: str) -> str:
+    def validate_bank_name(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
         v = v.strip()
         if len(v) < 2:
             raise ValueError("Bank name must be at least 2 characters")
         if len(v) > 100:
             raise ValueError("Bank name must be under 100 characters")
         return v
+
+    @model_validator(mode="after")
+    def validate_method_fields(self):
+        if self.payout_method == "upi" and not self.upi_id:
+            raise ValueError("upi_id is required for the UPI payout method")
+        if self.payout_method == "bank" and not all(
+            [self.account_holder_name, self.account_number, self.ifsc_code, self.bank_name]
+        ):
+            raise ValueError("All bank fields are required for the bank payout method")
+        return self
 
 
 class PhotoResponse(BaseModel):

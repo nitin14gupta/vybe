@@ -10,8 +10,8 @@ from schemas.user import (
 from middleware.auth import get_current_user
 from db.config import get_db
 from utils.push import send_push
-from utils.crypto import encrypt
-from routes.notifications import notify_new_follower, notify_report_submitted
+from utils.crypto import encrypt, decrypt
+from routes.notifications import notify_new_follower, notify_report_submitted, notify_host_onboarding_complete
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -288,31 +288,91 @@ def set_location(body: LocationUpdate, current_user: dict = Depends(get_current_
 
 
 @router.post("/payout-details", response_model=UserResponse)
-def set_payout_details(body: PayoutDetailsCreate, current_user: dict = Depends(get_current_user)):
+def set_payout_details(
+    body: PayoutDetailsCreate,
+    background_tasks: BackgroundTasks,
+    current_user: dict = Depends(get_current_user),
+):
+    is_upi = body.payout_method == "upi"
     with get_db() as (cur, _):
         cur.execute(
             """
             INSERT INTO host_payout_details
-                (user_id, account_holder_name_ciphertext, account_number_ciphertext, ifsc_code, bank_name)
-            VALUES (%s, %s, %s, %s, %s)
+                (user_id, payout_method, upi_id_ciphertext,
+                 account_holder_name_ciphertext, account_number_ciphertext, ifsc_code, bank_name)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (user_id) DO UPDATE SET
+                payout_method = EXCLUDED.payout_method,
+                upi_id_ciphertext = EXCLUDED.upi_id_ciphertext,
                 account_holder_name_ciphertext = EXCLUDED.account_holder_name_ciphertext,
                 account_number_ciphertext = EXCLUDED.account_number_ciphertext,
                 ifsc_code = EXCLUDED.ifsc_code,
                 bank_name = EXCLUDED.bank_name,
                 updated_at = NOW()
             """,
-            (current_user["id"], encrypt(body.account_holder_name), encrypt(body.account_number),
-             body.ifsc_code, body.bank_name),
+            (
+                current_user["id"], body.payout_method,
+                encrypt(body.upi_id) if is_upi else None,
+                None if is_upi else encrypt(body.account_holder_name),
+                None if is_upi else encrypt(body.account_number),
+                None if is_upi else body.ifsc_code,
+                None if is_upi else body.bank_name,
+            ),
         )
         cur.execute(
             "UPDATE users SET is_host_onboarding_finished = TRUE WHERE id = %s",
             (current_user["id"],),
         )
+        notify_host_onboarding_complete(cur, current_user["id"])
         user = _fetch_user(cur, current_user["id"], current_user["id"])
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
+    background_tasks.add_task(
+        send_push, current_user["id"], "You're all set to host!",
+        "Your payout details are saved — go ahead and create your first event.",
+        {"type": "host_onboarding_complete"},
+    )
     return UserResponse(**user)
+
+
+@router.get("/payout-details")
+def get_payout_details(current_user: dict = Depends(get_current_user)):
+    # Returns the real decrypted value, not a masked one — this is an
+    # authenticated "view my own saved payout info" screen, same as a
+    # banking app revealing a saved account number on request. Masking is a
+    # pure display concern handled client-side with a tap-to-reveal toggle.
+    with get_db() as (cur, _):
+        cur.execute(
+            """
+            SELECT payout_method, upi_id_ciphertext, account_holder_name_ciphertext,
+                   account_number_ciphertext, ifsc_code, bank_name
+            FROM host_payout_details WHERE user_id = %s
+            """,
+            (current_user["id"],),
+        )
+        row = cur.fetchone()
+    if not row:
+        return {"payout_method": None, "upi_id": None, "bank": None}
+
+    if row["payout_method"] == "upi" and row["upi_id_ciphertext"]:
+        return {
+            "payout_method": "upi",
+            "upi_id": decrypt(row["upi_id_ciphertext"]),
+            "bank": None,
+        }
+    if row["payout_method"] == "bank" and row["account_number_ciphertext"]:
+        return {
+            "payout_method": "bank",
+            "upi_id": None,
+            "bank": {
+                "account_holder_name": decrypt(row["account_holder_name_ciphertext"]),
+                "account_number": decrypt(row["account_number_ciphertext"]),
+                "ifsc_code": row["ifsc_code"],
+                "bank_name": row["bank_name"],
+            },
+        }
+    return {"payout_method": row["payout_method"], "upi_id": None, "bank": None}
 
 
 @router.patch("/location/live")

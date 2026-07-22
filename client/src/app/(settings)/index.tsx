@@ -3,7 +3,7 @@ import { router } from 'expo-router'
 import {
   User, Bell, HelpCircle, MessageSquare,
   Info, LogOut, Calendar, Ticket, Wallet, HeadphonesIcon,
-  Trash2, CalendarHeart,
+  Trash2, CalendarHeart, Landmark,
 } from 'lucide-react-native'
 import { Screen, BackButton, SettingRow, ConfirmSheet } from '@/components/ui'
 import { useSettings } from '@/hooks/useSettings'
@@ -68,6 +68,11 @@ export default function SettingsScreen() {
             icon={<Wallet size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
             label="Gorave Wallet"
             onPress={() => router.push('/(settings)/wallet' as any)}
+          />
+          <SettingRow
+            icon={<Landmark size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
+            label="Payout Details"
+            onPress={() => router.push('/(settings)/payout-details' as any)}
             showSeparator={false}
           />
         </View>

@@ -65,6 +65,16 @@ def notify_new_follower(cur, followee_id: str, follower_id: str, follower_name: 
     )
 
 
+def notify_host_onboarding_complete(cur, user_id: str):
+    _insert_notification(
+        cur, user_id, "host_onboarding_complete",
+        title="You're all set to host!",
+        body="Your payout details are saved — go ahead and create your first event.",
+        entity_type="user",
+        entity_id=user_id,
+    )
+
+
 def notify_event_created(cur, host_id: str, event_id: str, event_title: str):
     _insert_notification(
         cur, host_id, "event_created_confirmation",

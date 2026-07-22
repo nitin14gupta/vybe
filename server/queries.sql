@@ -396,3 +396,15 @@ CREATE TABLE IF NOT EXISTS public.host_payout_details (
   CONSTRAINT host_payout_details_user_id_key UNIQUE (user_id),
   CONSTRAINT host_payout_details_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- ── UPI-first payouts: bank fields become optional, add UPI + method ────────
+-- Onboarding only collects UPI for now (lower friction for new hosts with no
+-- earnings yet); bank details stay in the schema for the later "crossed the
+-- TDS threshold" upgrade flow, so no further migration is needed to add it back.
+ALTER TABLE public.host_payout_details
+  ALTER COLUMN account_holder_name_ciphertext DROP NOT NULL,
+  ALTER COLUMN account_number_ciphertext DROP NOT NULL,
+  ALTER COLUMN ifsc_code DROP NOT NULL,
+  ALTER COLUMN bank_name DROP NOT NULL,
+  ADD COLUMN IF NOT EXISTS payout_method text NOT NULL DEFAULT 'upi',
+  ADD COLUMN IF NOT EXISTS upi_id_ciphertext text;
