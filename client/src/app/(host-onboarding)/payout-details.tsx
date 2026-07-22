@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Pressable } from 'react-native'
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native'
 import { router } from 'expo-router'
 import Animated, { FadeInDown } from 'react-native-reanimated'
-import { hTap, hSuccess } from '@/lib/haptics'
-import { Landmark, CheckCircle2, XCircle, Eye, EyeOff } from 'lucide-react-native'
+import { hSuccess } from '@/lib/haptics'
+import { Landmark, CheckCircle2, XCircle } from 'lucide-react-native'
 import { OutlineButton, PrimaryButton, Input, Screen, BrandedLoader, TabSwitcher } from '@/components/ui'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { setCached } from '@/lib/queryCache'
-import { useVpaValidation, maskName } from '@/hooks/useVpaValidation'
+import { useVpaValidation } from '@/hooks/useVpaValidation'
 import { HostBackdrop, HostProgressBar, StepIcon } from '@/components/host-onboarding'
 
 const FINISHING_DELAY_MS = 900
@@ -28,7 +28,6 @@ export default function HostPayoutDetailsScreen() {
   const [rzpKey, setRzpKey] = useState('')
   const [saving, setSaving] = useState(false)
   const [finishing, setFinishing] = useState(false)
-  const [nameRevealed, setNameRevealed] = useState(false)
 
   // Same real VPA verification used on the payment sheet — not just a
   // format check, an actual round-trip that confirms the UPI ID exists and
@@ -125,14 +124,7 @@ export default function HostPayoutDetailsScreen() {
             {!checking && vpaResult && (
               <View style={[styles.vpaRow, styles.vpaRowResolved]}>
                 <CheckCircle2 size={16} color={Colors.accentGreen} strokeWidth={2} />
-                <Text style={styles.vpaRowResolvedText}>
-                  {nameRevealed ? vpaResult.name : maskName(vpaResult.name)}
-                </Text>
-                <Pressable onPress={() => { hTap(); setNameRevealed(v => !v) }} hitSlop={8}>
-                  {nameRevealed
-                    ? <EyeOff size={16} color={Colors.accentGreen} strokeWidth={2} />
-                    : <Eye size={16} color={Colors.accentGreen} strokeWidth={2} />}
-                </Pressable>
+                <Text style={styles.vpaRowResolvedText}>{vpaResult.name}</Text>
               </View>
             )}
             {!checking && vpaError && (

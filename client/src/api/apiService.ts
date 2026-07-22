@@ -33,10 +33,10 @@ export interface UserResponse {
 
 export interface PayoutDetailsResponse {
   payout_method: 'upi' | 'bank' | null
-  upi_id: string | null
-  bank: {
+  upi_id_masked: string | null
+  bank_masked: {
     account_holder_name: string
-    account_number: string
+    account_number_masked: string
     ifsc_code: string
     bank_name: string
   } | null

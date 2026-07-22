@@ -336,12 +336,18 @@ def set_payout_details(
     return UserResponse(**user)
 
 
+def _mask_upi(upi_id: str) -> str:
+    handle, _, domain = upi_id.partition("@")
+    visible = handle[:2]
+    return f"{visible}{'*' * max(len(handle) - 2, 3)}@{domain}"
+
+
+def _mask_account_number(account_number: str) -> str:
+    return f"{'*' * max(len(account_number) - 4, 4)}{account_number[-4:]}"
+
+
 @router.get("/payout-details")
 def get_payout_details(current_user: dict = Depends(get_current_user)):
-    # Returns the real decrypted value, not a masked one — this is an
-    # authenticated "view my own saved payout info" screen, same as a
-    # banking app revealing a saved account number on request. Masking is a
-    # pure display concern handled client-side with a tap-to-reveal toggle.
     with get_db() as (cur, _):
         cur.execute(
             """
@@ -353,26 +359,26 @@ def get_payout_details(current_user: dict = Depends(get_current_user)):
         )
         row = cur.fetchone()
     if not row:
-        return {"payout_method": None, "upi_id": None, "bank": None}
+        return {"payout_method": None, "upi_id_masked": None, "bank_masked": None}
 
     if row["payout_method"] == "upi" and row["upi_id_ciphertext"]:
         return {
             "payout_method": "upi",
-            "upi_id": decrypt(row["upi_id_ciphertext"]),
-            "bank": None,
+            "upi_id_masked": _mask_upi(decrypt(row["upi_id_ciphertext"])),
+            "bank_masked": None,
         }
     if row["payout_method"] == "bank" and row["account_number_ciphertext"]:
         return {
             "payout_method": "bank",
-            "upi_id": None,
-            "bank": {
+            "upi_id_masked": None,
+            "bank_masked": {
                 "account_holder_name": decrypt(row["account_holder_name_ciphertext"]),
-                "account_number": decrypt(row["account_number_ciphertext"]),
+                "account_number_masked": _mask_account_number(decrypt(row["account_number_ciphertext"])),
                 "ifsc_code": row["ifsc_code"],
                 "bank_name": row["bank_name"],
             },
         }
-    return {"payout_method": row["payout_method"], "upi_id": None, "bank": None}
+    return {"payout_method": row["payout_method"], "upi_id_masked": None, "bank_masked": None}
 
 
 @router.patch("/location/live")

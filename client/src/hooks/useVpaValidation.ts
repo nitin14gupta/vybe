@@ -8,14 +8,6 @@ export interface VpaResult {
 
 const VPA_FORMAT_REGEX = /^[\w.\-]+@[\w]+$/
 
-// Masks the verified account holder's name for display (e.g. "NITIN" ->
-// "NI***") — used wherever a resolved VPA name is shown, until the user
-// taps a reveal toggle.
-export function maskName(name: string): string {
-  const visible = name.slice(0, 2).toUpperCase()
-  return `${visible}${'*'.repeat(Math.max(name.length - 2, 3))}`
-}
-
 export function useVpaValidation(vpa: string, rzpKey: string) {
   const [vpaResult, setVpaResult] = useState<VpaResult | null>(null)
   const [vpaError, setVpaError] = useState(false)

@@ -1,26 +1,14 @@
 import { useCallback, useState } from 'react'
-import { View, Text, StyleSheet, ActivityIndicator, Pressable } from 'react-native'
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native'
 import { router, useFocusEffect } from 'expo-router'
-import { ArrowLeft, Landmark, CheckCircle2, Eye, EyeOff } from 'lucide-react-native'
-import { hTap } from '@/lib/haptics'
+import { ArrowLeft, Landmark, CheckCircle2 } from 'lucide-react-native'
 import { AppHeader, HeaderIconBtn } from '@/components/ui'
 import ApiService, { type PayoutDetailsResponse } from '@/api/apiService'
 import { Colors, FontFamily, Radius } from '@/constants'
 
-function maskUpi(upiId: string): string {
-  const [handle, domain] = upiId.split('@')
-  const visible = handle.slice(0, 2)
-  return `${visible}${'*'.repeat(Math.max(handle.length - 2, 3))}@${domain}`
-}
-
-function maskAccountNumber(accountNumber: string): string {
-  return `${'*'.repeat(Math.max(accountNumber.length - 4, 4))}${accountNumber.slice(-4)}`
-}
-
 export default function PayoutDetailsScreen() {
   const [details, setDetails] = useState<PayoutDetailsResponse | null>(null)
   const [loading, setLoading] = useState(true)
-  const [revealed, setRevealed] = useState(false)
 
   useFocusEffect(useCallback(() => {
     ApiService.getPayoutDetails()
@@ -48,20 +36,7 @@ export default function PayoutDetailsScreen() {
         </View>
       ) : (
         <View style={s.content}>
-          <View style={s.sectionHeaderRow}>
-            <Text style={s.sectionLabel}>PAYOUT METHOD</Text>
-            <Pressable
-              style={s.revealBtn}
-              onPress={() => { hTap(); setRevealed(v => !v) }}
-              hitSlop={8}
-            >
-              {revealed
-                ? <EyeOff size={14} color={Colors.brandOrange} strokeWidth={2} />
-                : <Eye size={14} color={Colors.brandOrange} strokeWidth={2} />}
-              <Text style={s.revealBtnText}>{revealed ? 'Hide' : 'Show'}</Text>
-            </Pressable>
-          </View>
-
+          <Text style={s.sectionLabel}>PAYOUT METHOD</Text>
           <View style={s.card}>
             <View style={s.row}>
               <View style={s.iconWrap}>
@@ -71,17 +46,15 @@ export default function PayoutDetailsScreen() {
                 <Text style={s.rowLabel}>
                   {details.payout_method === 'upi' ? 'UPI' : 'Bank Account'}
                 </Text>
-                {details.payout_method === 'upi' && details.upi_id ? (
-                  <Text style={s.rowValue}>
-                    {revealed ? details.upi_id : maskUpi(details.upi_id)}
-                  </Text>
-                ) : details.bank ? (
+                {details.payout_method === 'upi' && details.upi_id_masked ? (
+                  <Text style={s.rowValue}>{details.upi_id_masked}</Text>
+                ) : details.bank_masked ? (
                   <>
-                    <Text style={s.rowValue}>{details.bank.account_holder_name}</Text>
+                    <Text style={s.rowValue}>{details.bank_masked.account_holder_name}</Text>
                     <Text style={s.rowSub}>
-                      {details.bank.bank_name} · {revealed ? details.bank.account_number : maskAccountNumber(details.bank.account_number)}
+                      {details.bank_masked.bank_name} · {details.bank_masked.account_number_masked}
                     </Text>
-                    <Text style={s.rowSub}>{details.bank.ifsc_code}</Text>
+                    <Text style={s.rowSub}>{details.bank_masked.ifsc_code}</Text>
                   </>
                 ) : null}
               </View>
@@ -105,21 +78,14 @@ const s = StyleSheet.create({
     textAlign: 'center', lineHeight: 20,
   },
   content: { padding: 20 },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
   sectionLabel: {
     fontFamily: FontFamily.bodyMedium,
     fontSize: 11,
     letterSpacing: 0.88,
     color: Colors.inkSecondary,
+    marginBottom: 8,
     marginLeft: 4,
   },
-  revealBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 4, paddingVertical: 2 },
-  revealBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: Colors.brandOrange },
   card: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.card,

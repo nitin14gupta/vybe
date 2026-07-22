@@ -2,11 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, Pressable, TextInput, ActivityIndicator, Keyboard } from 'react-native'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
-import { CheckCircle2, XCircle, X, Bookmark, Eye, EyeOff } from 'lucide-react-native'
+import { CheckCircle2, XCircle, X, Bookmark } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 import { hTap, hSuccess } from '@/lib/haptics'
 import ApiService from '@/api/apiService'
-import { useVpaValidation, maskName } from '@/hooks/useVpaValidation'
+import { useVpaValidation } from '@/hooks/useVpaValidation'
 
 const SNAP_POINTS = ['66%', '82%']
 
@@ -35,7 +35,6 @@ function UpiIdSheetCore({
   const [vpa, setVpa] = useState('')
   const [savedVpa, setSavedVpa] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const [nameRevealed, setNameRevealed] = useState(false)
 
   const { validFormat, checking, vpaResult, vpaError } = useVpaValidation(vpa, rzpKey)
   const canPay = validFormat && vpaResult !== null && !vpaError
@@ -130,14 +129,7 @@ function UpiIdSheetCore({
         {vpaResult && (
           <View style={s.nameRow}>
             <CheckCircle2 size={13} color={Colors.accentGreen} strokeWidth={2} />
-            <Text style={s.nameText}>
-              {nameRevealed ? vpaResult.name : maskName(vpaResult.name)}
-            </Text>
-            <Pressable onPress={() => { hTap(); setNameRevealed(v => !v) }} hitSlop={8}>
-              {nameRevealed
-                ? <EyeOff size={14} color={Colors.accentGreen} strokeWidth={2} />
-                : <Eye size={14} color={Colors.accentGreen} strokeWidth={2} />}
-            </Pressable>
+            <Text style={s.nameText}>{vpaResult.name}</Text>
           </View>
         )}
         {vpaError && (
