@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useFocusEffect } from 'expo-router'
 import ApiService from '@/api/apiService'
-import { PLATFORM_FEE_RATE } from '@/constants'
 
 export interface PaymentData {
   eventTitle: string
@@ -30,7 +29,7 @@ export function usePaymentData(eventId: string | undefined): PaymentData {
       .then(([ev, wallet]) => {
         setEventTitle(ev.title)
         setTicketPrice(ev.price_inr)
-        const fee = Math.round(ev.price_inr * PLATFORM_FEE_RATE)
+        const fee = ev.platform_fee_inr
         setPlatformFee(fee)
         setTotal(ev.price_inr + fee)
         setWalletBalance(wallet.balance)

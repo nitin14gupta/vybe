@@ -14,7 +14,7 @@ import RazorpayCustomUI from 'react-native-customui'
 import {
   ArrowLeft, ChevronRight, ChevronDown, ChevronUp, Wallet, CheckCircle, QrCode,
 } from 'lucide-react-native'
-import { Colors, FontFamily, PLATFORM_FEE_PERCENT_LABEL } from '@/constants'
+import { Colors, FontFamily } from '@/constants'
 import { BrandedLoader } from '@/components/ui'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
@@ -338,7 +338,7 @@ export default function PaymentScreen() {
           {billExpanded && (
             <View style={s.billDetails}>
               <BillRow label="Ticket price" value={`₹${ticketPrice}`} />
-              <BillRow label={`Platform fee (${PLATFORM_FEE_PERCENT_LABEL})`} value={`₹${platformFee}`} />
+              <BillRow label="Platform fee" value={`₹${platformFee}`} />
               {walletApplied > 0 && <BillRow label="Gorave Wallet applied" value={`-₹${walletApplied}`} green />}
               <View style={s.billDivider} />
               <View style={s.billTotalRow}>

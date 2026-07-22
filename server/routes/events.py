@@ -5,11 +5,23 @@ from pydantic import BaseModel
 from middleware.auth import get_current_user
 from db.config import get_db
 from utils.push import send_push
+from routes.payments import PLATFORM_FEE_INR, HOST_COMMISSION_RATE
 
 router = APIRouter(prefix="/events", tags=["events"])
 
 # Single source of truth for both create and edit, so the two can't drift apart.
 MIN_TICKET_PRICE_INR = 99
+
+
+def _fee_snapshot(price_inr: int) -> tuple[int, int, int]:
+    """Platform fee, host commission, and total profit for a ticket at this
+    price — computed once at creation/edit time so each event keeps the rates
+    it was created under even if the global fee/commission changes later."""
+    if price_inr == 0:
+        return 0, 0, 0
+    fee = PLATFORM_FEE_INR
+    commission = round(price_inr * HOST_COMMISSION_RATE)
+    return fee, commission, fee + commission
 
 def _calc_age(dob: date) -> int:
     today = date.today()
@@ -97,6 +109,9 @@ class EventSummary(BaseModel):
     location_lng: Optional[float] = None
     price_inr: int
     is_free: bool
+    platform_fee_inr: int = 0
+    host_commission_inr: int = 0
+    platform_profit_inr: int = 0
     spots_left: int
     capacity: int
     distance_km: Optional[int] = None
@@ -281,6 +296,7 @@ def list_events(
             e.date_time::text, e.end_time::text,
             e.location_name, e.location_lat, e.location_lng,
             e.price_inr, (e.price_inr = 0) AS is_free,
+            e.platform_fee_inr, e.host_commission_inr, e.platform_profit_inr,
             e.spots_left, e.capacity, e.age_restriction,
             e.cover_photos,
             {dist_sql} AS distance_km,
@@ -324,6 +340,7 @@ def get_hosted_events(current_user: dict = Depends(get_current_user)):
                 e.date_time::text, e.end_time::text,
                 e.location_name, e.location_lat, e.location_lng,
                 e.price_inr, (e.price_inr = 0) AS is_free,
+            e.platform_fee_inr, e.host_commission_inr, e.platform_profit_inr,
                 e.spots_left, e.capacity, e.age_restriction,
                 e.cover_photos, e.is_cancelled,
                 NULL::int AS distance_km,
@@ -362,6 +379,7 @@ def get_joined_events(current_user: dict = Depends(get_current_user)):
                 e.date_time::text, e.end_time::text,
                 e.location_name, e.location_lat, e.location_lng,
                 e.price_inr, (e.price_inr = 0) AS is_free,
+            e.platform_fee_inr, e.host_commission_inr, e.platform_profit_inr,
                 e.spots_left, e.capacity, e.age_restriction,
                 e.cover_photos, e.is_cancelled,
                 NULL::int AS distance_km,
@@ -426,6 +444,7 @@ def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
                 e.description, e.rules,
                 e.location_name, e.location_lat, e.location_lng,
                 e.price_inr, (e.price_inr = 0) AS is_free,
+            e.platform_fee_inr, e.host_commission_inr, e.platform_profit_inr,
                 e.spots_left, e.capacity, e.age_restriction,
                 e.cover_photos, e.is_cancelled,
                 e.host_id::text,
@@ -538,6 +557,7 @@ def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, curre
         raise HTTPException(status_code=422, detail="Age restriction must be 18, 21, or 25")
 
     cover_photos = body.cover_photos or []
+    fee_inr, commission_inr, profit_inr = _fee_snapshot(body.price_inr)
 
     with get_db() as (cur, conn):
         cur.execute(
@@ -546,12 +566,14 @@ def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, curre
                 host_id, title, description, rules, event_type,
                 date_time, end_time, capacity, spots_left, age_restriction,
                 location_name, location_lat, location_lng,
-                price_inr, cover_photos, is_published
+                price_inr, cover_photos, is_published,
+                platform_fee_inr, host_commission_inr, platform_profit_inr
             ) VALUES (
                 %s, %s, %s, %s, %s,
                 %s, %s, %s, %s, %s,
                 %s, %s, %s,
-                %s, %s::jsonb, TRUE
+                %s, %s::jsonb, TRUE,
+                %s, %s, %s
             )
             RETURNING id::text
             """,
@@ -560,6 +582,7 @@ def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, curre
                 body.date_time, body.end_time, body.capacity, body.capacity, body.age_restriction,
                 body.location_name, body.location_lat, body.location_lng,
                 body.price_inr, __import__('json').dumps(cover_photos),
+                fee_inr, commission_inr, profit_inr,
             ),
         )
         new_id = cur.fetchone()["id"]
@@ -677,6 +700,7 @@ def update_event(event_id: str, body: CreateEventBody, background_tasks: Backgro
     old_capacity = ev["capacity"]
     promoted_users = []
     affected_user_ids = []
+    fee_inr, commission_inr, profit_inr = _fee_snapshot(body.price_inr)
 
     with get_db() as (cur, conn):
         cur.execute(
@@ -688,7 +712,9 @@ def update_event(event_id: str, body: CreateEventBody, background_tasks: Backgro
                 spots_left = GREATEST(0, spots_left + (%s - capacity)),
                 age_restriction=%s,
                 location_name=%s, location_lat=%s, location_lng=%s,
-                price_inr=%s, updated_at=NOW()
+                price_inr=%s,
+                platform_fee_inr=%s, host_commission_inr=%s, platform_profit_inr=%s,
+                updated_at=NOW()
             WHERE id=%s
             """,
             (
@@ -697,7 +723,9 @@ def update_event(event_id: str, body: CreateEventBody, background_tasks: Backgro
                 body.capacity, body.capacity,
                 body.age_restriction,
                 body.location_name, body.location_lat, body.location_lng,
-                body.price_inr, event_id,
+                body.price_inr,
+                fee_inr, commission_inr, profit_inr,
+                event_id,
             ),
         )
         spots_gained = body.capacity - old_capacity

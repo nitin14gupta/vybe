@@ -362,6 +362,24 @@ ALTER TABLE public.messages
   ADD COLUMN IF NOT EXISTS unsent_at TIMESTAMP WITH TIME ZONE,
   ADD COLUMN IF NOT EXISTS deleted_for uuid[] DEFAULT '{}'::uuid[];
 
+-- ── Payment orders: store the platform's cut at time of purchase ────────────
+-- amount_inr already holds the attendee-facing total (ticket + fee); this
+-- records the flat fee itself so historical orders stay correct if the fee
+-- amount ever changes later.
+ALTER TABLE public.payment_orders
+  ADD COLUMN IF NOT EXISTS platform_fee_inr INTEGER NOT NULL DEFAULT 50;
+
+-- ── Events: snapshot the platform's cut at event-creation time ──────────────
+-- platform_fee_inr: flat fee attendees pay on top of the ticket price.
+-- host_commission_inr: cut taken out of the host's ticket price at payout.
+-- platform_profit_inr: the two combined — total platform profit per ticket
+-- sold for this event. All three are computed once at creation/edit time so
+-- they stay correct for this event even if the global fee/rate changes later.
+ALTER TABLE public.events
+  ADD COLUMN IF NOT EXISTS platform_fee_inr INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS host_commission_inr INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS platform_profit_inr INTEGER NOT NULL DEFAULT 0;
+
 CREATE TABLE IF NOT EXISTS public.message_reports (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
   message_id uuid NOT NULL,

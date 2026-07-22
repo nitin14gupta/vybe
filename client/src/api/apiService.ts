@@ -115,6 +115,9 @@ export interface EventSummary {
   location_lng: number | null
   price_inr: number
   is_free: boolean
+  platform_fee_inr: number
+  host_commission_inr: number
+  platform_profit_inr: number
   spots_left: number
   capacity: number
   distance_km: number | null

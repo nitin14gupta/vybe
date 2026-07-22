@@ -19,9 +19,14 @@ from middleware.auth import get_current_user
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
-# Charged on top of the host's ticket price — the host always receives the
-# full ticket price; this is a surcharge added to what the attendee pays.
-PLATFORM_FEE_RATE = 0.10
+# Flat platform fee charged on top of the host's ticket price — what the
+# attendee sees and pays. Separate from the host's commission cut, which is
+# deducted when the host is paid out and never shown to attendees.
+PLATFORM_FEE_INR = 50
+
+# Commission taken out of the host's ticket price when they get paid out.
+# Attendees never see this — they only see PLATFORM_FEE_INR.
+HOST_COMMISSION_RATE = 0.10
 
 _rz_client: Optional[razorpay.Client] = None
 
@@ -82,7 +87,7 @@ def create_order(body: CreateOrderBody, current_user: dict = Depends(get_current
 
     with get_db() as (cur, _):
         cur.execute(
-            "SELECT price_inr, title, spots_left FROM events WHERE id = %s AND is_cancelled = FALSE",
+            "SELECT price_inr, platform_fee_inr, title, spots_left FROM events WHERE id = %s AND is_cancelled = FALSE",
             (body.event_id,),
         )
         ev = cur.fetchone()
@@ -101,7 +106,7 @@ def create_order(body: CreateOrderBody, current_user: dict = Depends(get_current
         contact = f"{country_code}{raw_phone}".replace(" ", "")
 
     ticket_price = ev["price_inr"]
-    platform_fee = round(ticket_price * PLATFORM_FEE_RATE)
+    platform_fee = ev["platform_fee_inr"]
     total = ticket_price + platform_fee
 
     wallet_use = max(0, min(body.wallet_amount, wallet_bal, total))
@@ -129,10 +134,10 @@ def create_order(body: CreateOrderBody, current_user: dict = Depends(get_current
             """
             INSERT INTO payment_orders
                 (user_id, event_id, razorpay_order_id, amount_inr,
-                 wallet_amount_inr, razorpay_amount_inr)
-            VALUES (%s::uuid, %s::uuid, %s, %s, %s, %s)
+                 wallet_amount_inr, razorpay_amount_inr, platform_fee_inr)
+            VALUES (%s::uuid, %s::uuid, %s, %s, %s, %s, %s)
             """,
-            (uid, body.event_id, order["id"], total, wallet_use, razorpay_charge),
+            (uid, body.event_id, order["id"], total, wallet_use, razorpay_charge, platform_fee),
         )
         conn.commit()
 
@@ -192,7 +197,7 @@ def wallet_pay(body: WalletPayBody, current_user: dict = Depends(get_current_use
 
     with get_db() as (cur, _):
         cur.execute(
-            "SELECT title, host_id::text, price_inr, spots_left FROM events WHERE id = %s AND is_cancelled = FALSE",
+            "SELECT title, host_id::text, price_inr, platform_fee_inr, spots_left FROM events WHERE id = %s AND is_cancelled = FALSE",
             (body.event_id,),
         )
         ev = cur.fetchone()
@@ -205,7 +210,7 @@ def wallet_pay(body: WalletPayBody, current_user: dict = Depends(get_current_use
         ev_host_id = ev["host_id"]
         just_sold_out = ev["spots_left"] == 1
         ticket_price = ev["price_inr"]
-        platform_fee = round(ticket_price * PLATFORM_FEE_RATE)
+        platform_fee = ev["platform_fee_inr"]
         total = ticket_price + platform_fee
 
         cur.execute("SELECT wallet_balance, name FROM users WHERE id = %s::uuid", (uid,))
@@ -438,7 +443,7 @@ def create_qr(body: CreateQrBody, current_user: dict = Depends(get_current_user)
 
     with get_db() as (cur, _):
         cur.execute(
-            "SELECT price_inr, title, spots_left FROM events WHERE id = %s AND is_cancelled = FALSE",
+            "SELECT price_inr, platform_fee_inr, title, spots_left FROM events WHERE id = %s AND is_cancelled = FALSE",
             (body.event_id,),
         )
         ev = cur.fetchone()
@@ -452,7 +457,7 @@ def create_qr(body: CreateQrBody, current_user: dict = Depends(get_current_user)
         wallet_bal = user["wallet_balance"] if user else 0
 
     ticket_price = ev["price_inr"]
-    platform_fee = round(ticket_price * PLATFORM_FEE_RATE)
+    platform_fee = ev["platform_fee_inr"]
     total = ticket_price + platform_fee
     wallet_use = max(0, min(body.wallet_amount, wallet_bal, total))
     charge = total - wallet_use
@@ -514,11 +519,11 @@ def create_qr(body: CreateQrBody, current_user: dict = Depends(get_current_user)
             """
             INSERT INTO payment_orders
                 (user_id, event_id, qr_code_id, qr_image_url, qr_expires_at,
-                 amount_inr, wallet_amount_inr, razorpay_amount_inr)
-            VALUES (%s::uuid, %s::uuid, %s, %s, %s, %s, %s, %s)
+                 amount_inr, wallet_amount_inr, razorpay_amount_inr, platform_fee_inr)
+            VALUES (%s::uuid, %s::uuid, %s, %s, %s, %s, %s, %s, %s)
             """,
             (uid, body.event_id, qr_id, image_url,
-             expires_at, total, wallet_use, charge),
+             expires_at, total, wallet_use, charge, platform_fee),
         )
         conn.commit()
 

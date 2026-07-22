@@ -4,7 +4,7 @@ import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, Calendar, Clock, MapPin, Shield, Users } from 'lucide-react-native'
-import { Colors, FontFamily, PLATFORM_FEE_RATE, PLATFORM_FEE_PERCENT_LABEL } from '@/constants'
+import { Colors, FontFamily, PLATFORM_FEE_INR } from '@/constants'
 import { hTap, hSelection } from '@/lib/haptics'
 import { EventCard } from '@/components/events/EventCard'
 import { StaticEventMap } from '@/components/maps'
@@ -217,13 +217,13 @@ export function EventPreviewOverlay({ visible, form, onClose }: Props) {
           <View>
             <Text style={s.stickyPrice}>
               {formatPrice(
-                form.isFree ? 0 : form.priceInr + Math.round(form.priceInr * PLATFORM_FEE_RATE),
+                form.isFree ? 0 : form.priceInr + PLATFORM_FEE_INR,
                 form.isFree,
               )}
             </Text>
             {!form.isFree && form.priceInr > 0 ? (
               <Text style={s.stickyPriceSub}>
-                Attendee pays this total (₹{form.priceInr} + {PLATFORM_FEE_PERCENT_LABEL} fee)
+                Attendee pays this total (₹{form.priceInr} + ₹{PLATFORM_FEE_INR} fee)
               </Text>
             ) : null}
           </View>

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { Plus, X } from 'lucide-react-native'
 import { Image } from 'expo-image'
-import { Colors, PLATFORM_FEE_RATE, PLATFORM_FEE_PERCENT_LABEL } from '@/constants'
+import { Colors, PLATFORM_FEE_INR, HOST_COMMISSION_RATE, HOST_COMMISSION_PERCENT_LABEL } from '@/constants'
 import type { CreateEventForm } from '@/hooks/useCreateEvent'
 import { useEventPhotos } from '@/hooks/useEventPhotos'
 import { ef } from './styles'
@@ -93,9 +93,9 @@ function Inner({ form, set, errors, setErrors, submitError, priceLocked, priceLo
         {!form.isFree && form.priceInr > 0 ? (
           <View style={s.feeBreakdown}>
             <Text style={s.feeBreakdownText}>
-              Attendees pay ₹{form.priceInr + Math.round(form.priceInr * PLATFORM_FEE_RATE)} total
-              (₹{form.priceInr} ticket + {PLATFORM_FEE_PERCENT_LABEL} platform fee). You always receive
-              the full ₹{form.priceInr} you set here.
+              Attendees pay ₹{form.priceInr + PLATFORM_FEE_INR} total
+              (₹{form.priceInr} ticket + ₹{PLATFORM_FEE_INR} platform fee). You receive
+              ₹{form.priceInr - Math.round(form.priceInr * HOST_COMMISSION_RATE)} after our {HOST_COMMISSION_PERCENT_LABEL} platform commission.
             </Text>
           </View>
         ) : null}
