@@ -7,12 +7,10 @@ import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, Mail, ChevronRight } from 'lucide-react-native'
 import { AppHeader, HeaderIconBtn } from '@/components/ui'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, SUPPORT_EMAIL } from '@/constants'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { hTap, hSuccess } from '@/lib/haptics'
-
-const SUPPORT_EMAIL = 'support@vybe.in'
 
 const TOPICS = [
   { id: 'refund',    label: 'Wallet refund to bank',     subject: 'Wallet Refund Request' },

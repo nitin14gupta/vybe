@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Keyboard } from 'react-native'
 import { router } from 'expo-router'
 import { BackButton, PhoneInput, PrimaryButton, KeyboardAvoidingWrapper, InAppBrowserModal, LogoMark } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
-import { Colors, FontFamily, Spacing, TERMS_URL, PRIVACY_URL } from '@/constants'
+import { Colors, FontFamily, Spacing, TERMS_URL, PRIVACY_URL, SUPPORT_EMAIL } from '@/constants'
 import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -64,7 +64,7 @@ export default function PhoneScreen() {
             {' '}and{' '}
             <Text style={styles.legalLink} onPress={() => setLegalUrl(PRIVACY_URL)}>Privacy Policy</Text>
             {' '}and consent to receive event texts from Gorave. Msg frequency varies; data rates may apply.
-            {' '}For help, email us at support@gorave.com.
+            {' '}For help, email us at {SUPPORT_EMAIL}.
           </Text>
         </View>
       </KeyboardAvoidingWrapper>

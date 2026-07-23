@@ -10,6 +10,14 @@ CREATE TABLE IF NOT EXISTS public.alembic_version (
   CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
 );
 
+CREATE TABLE IF NOT EXISTS public.app_feedback (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  user_id uuid NOT NULL,
+  text text NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT app_feedback_pkey PRIMARY KEY (id)
+);
+
 CREATE TABLE IF NOT EXISTS public.conversations (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
   user1_id uuid NOT NULL,
@@ -42,12 +50,25 @@ CREATE TABLE IF NOT EXISTS public.event_attendees (
   status text DEFAULT 'going'::text NOT NULL,
   joined_at timestamp with time zone DEFAULT now(),
   checked_in_at timestamp with time zone,
-  check_in_method text DEFAULT 'qr_scan',
   ticket_token text DEFAULT (gen_random_uuid())::text,
   payment_id text,
+  offer_expires_at timestamp with time zone,
+  blocked_from_rejoin boolean DEFAULT false NOT NULL,
+  check_in_method text DEFAULT 'qr_scan'::text,
   CONSTRAINT event_attendees_pkey PRIMARY KEY (id),
   CONSTRAINT event_attendees_ticket_token_key UNIQUE (ticket_token),
   CONSTRAINT event_attendees_unique UNIQUE (event_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.event_reports (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  event_id uuid NOT NULL,
+  reporter_id uuid NOT NULL,
+  reason text NOT NULL,
+  description text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT event_reports_pkey PRIMARY KEY (id),
+  CONSTRAINT event_reports_unique UNIQUE (event_id, reporter_id)
 );
 
 CREATE TABLE IF NOT EXISTS public.event_reviews (
@@ -83,6 +104,9 @@ CREATE TABLE IF NOT EXISTS public.events (
   is_cancelled boolean DEFAULT false,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
+  platform_fee_inr integer DEFAULT 0 NOT NULL,
+  host_commission_inr integer DEFAULT 0 NOT NULL,
+  platform_profit_inr integer DEFAULT 0 NOT NULL,
   CONSTRAINT events_pkey PRIMARY KEY (id)
 );
 
@@ -96,6 +120,32 @@ CREATE TABLE IF NOT EXISTS public.follows (
   CONSTRAINT follows_follower_id_following_id_key UNIQUE (follower_id, following_id)
 );
 
+CREATE TABLE IF NOT EXISTS public.host_payout_details (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  user_id uuid NOT NULL,
+  account_holder_name_ciphertext text,
+  account_number_ciphertext text,
+  ifsc_code text,
+  bank_name text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  payout_method text DEFAULT 'upi'::text NOT NULL,
+  upi_id_ciphertext text,
+  CONSTRAINT host_payout_details_pkey PRIMARY KEY (id),
+  CONSTRAINT host_payout_details_user_id_key UNIQUE (user_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.message_reports (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  message_id uuid NOT NULL,
+  reporter_id uuid NOT NULL,
+  reason text NOT NULL,
+  description text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT message_reports_pkey PRIMARY KEY (id),
+  CONSTRAINT message_reports_unique UNIQUE (message_id, reporter_id)
+);
+
 CREATE TABLE IF NOT EXISTS public.messages (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
   conversation_id uuid NOT NULL,
@@ -106,6 +156,9 @@ CREATE TABLE IF NOT EXISTS public.messages (
   sent_at timestamp with time zone DEFAULT now(),
   read_at timestamp with time zone,
   reactions jsonb DEFAULT '{}'::jsonb,
+  unsent_at timestamp with time zone,
+  deleted_for uuid[] DEFAULT '{}'::uuid[],
+  edited_at timestamp with time zone,
   CONSTRAINT messages_content_type_check CHECK (content_type = ANY (ARRAY['text'::text, 'event'::text, 'profile'::text, 'image'::text, 'voice'::text, 'video'::text, 'gif'::text])),
   CONSTRAINT messages_pkey PRIMARY KEY (id)
 );
@@ -124,6 +177,27 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   CONSTRAINT notifications_pkey PRIMARY KEY (id)
 );
 
+CREATE TABLE IF NOT EXISTS public.payment_orders (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  user_id uuid NOT NULL,
+  event_id uuid NOT NULL,
+  razorpay_order_id text,
+  amount_inr integer NOT NULL,
+  wallet_amount_inr integer DEFAULT 0 NOT NULL,
+  razorpay_amount_inr integer DEFAULT 0 NOT NULL,
+  status text DEFAULT 'created'::text NOT NULL,
+  razorpay_payment_id text,
+  created_at timestamp with time zone DEFAULT now(),
+  qr_code_id text,
+  qr_image_url text,
+  qr_expires_at timestamp with time zone,
+  platform_fee_inr integer DEFAULT 50 NOT NULL,
+  CONSTRAINT payment_orders_status_check CHECK (status = ANY (ARRAY['created'::text, 'paid'::text, 'failed'::text, 'expired'::text])),
+  CONSTRAINT payment_orders_pkey PRIMARY KEY (id),
+  CONSTRAINT payment_orders_qr_code_id_key UNIQUE (qr_code_id),
+  CONSTRAINT payment_orders_razorpay_order_id_key UNIQUE (razorpay_order_id)
+);
+
 CREATE TABLE IF NOT EXISTS public.refresh_tokens (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
   user_id uuid NOT NULL,
@@ -132,6 +206,26 @@ CREATE TABLE IF NOT EXISTS public.refresh_tokens (
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT refresh_tokens_pkey PRIMARY KEY (id),
   CONSTRAINT refresh_tokens_token_hash_key UNIQUE (token_hash)
+);
+
+CREATE TABLE IF NOT EXISTS public.saved_upi_ids (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  user_id uuid NOT NULL,
+  upi_id text NOT NULL,
+  name text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT saved_upi_ids_pkey PRIMARY KEY (id),
+  CONSTRAINT saved_upi_ids_unique UNIQUE (user_id, upi_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.support_requests (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  user_id uuid NOT NULL,
+  topic text NOT NULL,
+  message text NOT NULL,
+  status text DEFAULT 'open'::text NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT support_requests_pkey PRIMARY KEY (id)
 );
 
 CREATE TABLE IF NOT EXISTS public.user_blocks (
@@ -181,8 +275,16 @@ CREATE TABLE IF NOT EXISTS public.users (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   bio text,
-  badges text[] DEFAULT ARRAY['🔥 Vibe Starter'::text, '✨ Early Adopter'::text, '🎙️ Voice Ready'::text, '🌟 Main Character'::text],
+  badges text[] DEFAULT ARRAY['🔥 Vybe Starter'::text, '✨ Early Adopter'::text, '🎙️ Voice Ready'::text, '🌟 Main Character'::text],
   username character varying(30),
+  name_changed_at timestamp with time zone,
+  username_changes_this_month integer DEFAULT 0 NOT NULL,
+  username_reset_month character varying(7),
+  wallet_balance integer DEFAULT 0 NOT NULL,
+  is_deleted boolean DEFAULT false NOT NULL,
+  deleted_at timestamp with time zone,
+  public_key text,
+  is_host_onboarding_finished boolean DEFAULT false,
   CONSTRAINT users_pkey PRIMARY KEY (id),
   CONSTRAINT users_phone_key UNIQUE (phone),
   CONSTRAINT users_username_key UNIQUE (username)
@@ -204,40 +306,55 @@ CREATE TABLE IF NOT EXISTS public.vibe_requests (
   CONSTRAINT vibe_requests_sender_receiver_key UNIQUE (sender_id, receiver_id)
 );
 
+CREATE TABLE IF NOT EXISTS public.wallet_transactions (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  user_id uuid NOT NULL,
+  amount_inr integer NOT NULL,
+  type text NOT NULL,
+  source text NOT NULL,
+  reference_id uuid,
+  description text,
+  expires_at timestamp with time zone,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT wallet_transactions_source_check CHECK (source = ANY (ARRAY['event_refund'::text, 'ticket_purchase'::text, 'bank_refund_request'::text])),
+  CONSTRAINT wallet_transactions_type_check CHECK (type = ANY (ARRAY['credit'::text, 'debit'::text, 'refund_requested'::text])),
+  CONSTRAINT wallet_transactions_pkey PRIMARY KEY (id)
+);
+
 -- ── Foreign Keys ────────────────────────────────────────────────────────────
+ALTER TABLE public.app_feedback ADD CONSTRAINT app_feedback_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.conversations ADD CONSTRAINT conversations_user1_id_fkey FOREIGN KEY (user1_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.conversations ADD CONSTRAINT conversations_user2_id_fkey FOREIGN KEY (user2_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.device_tokens ADD CONSTRAINT device_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.event_attendees ADD CONSTRAINT event_attendees_event_id_fkey FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE;
 ALTER TABLE public.event_attendees ADD CONSTRAINT event_attendees_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE public.event_reports ADD CONSTRAINT event_reports_event_id_fkey FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE;
+ALTER TABLE public.event_reports ADD CONSTRAINT event_reports_reporter_id_fkey FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.event_reviews ADD CONSTRAINT event_reviews_event_id_fkey FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE;
 ALTER TABLE public.event_reviews ADD CONSTRAINT event_reviews_reviewer_id_fkey FOREIGN KEY (reviewer_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.events ADD CONSTRAINT events_host_id_fkey FOREIGN KEY (host_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.follows ADD CONSTRAINT follows_follower_id_fkey FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.follows ADD CONSTRAINT follows_following_id_fkey FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE public.host_payout_details ADD CONSTRAINT host_payout_details_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE public.message_reports ADD CONSTRAINT message_reports_message_id_fkey FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE;
+ALTER TABLE public.message_reports ADD CONSTRAINT message_reports_reporter_id_fkey FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.messages ADD CONSTRAINT messages_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE;
 ALTER TABLE public.messages ADD CONSTRAINT messages_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.notifications ADD CONSTRAINT notifications_actor_id_fkey FOREIGN KEY (actor_id) REFERENCES users(id) ON DELETE SET NULL;
 ALTER TABLE public.notifications ADD CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE public.payment_orders ADD CONSTRAINT payment_orders_event_id_fkey FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE;
+ALTER TABLE public.payment_orders ADD CONSTRAINT payment_orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.refresh_tokens ADD CONSTRAINT refresh_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE public.saved_upi_ids ADD CONSTRAINT saved_upi_ids_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE public.support_requests ADD CONSTRAINT support_requests_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.user_blocks ADD CONSTRAINT user_blocks_blocked_id_fkey FOREIGN KEY (blocked_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.user_blocks ADD CONSTRAINT user_blocks_blocker_id_fkey FOREIGN KEY (blocker_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.user_photos ADD CONSTRAINT user_photos_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
-
--- ── Waitlist migration ───────────────────────────────────────────────────────
-ALTER TABLE public.event_attendees
-  ADD COLUMN IF NOT EXISTS offer_expires_at TIMESTAMP WITH TIME ZONE,
-  ADD COLUMN IF NOT EXISTS blocked_from_rejoin BOOLEAN NOT NULL DEFAULT FALSE;
-
--- ── Name change tracking + username rate limiting ────────────────────────────
-ALTER TABLE public.users
-  ADD COLUMN IF NOT EXISTS name_changed_at TIMESTAMP WITH TIME ZONE,
-  ADD COLUMN IF NOT EXISTS username_changes_this_month INT NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS username_reset_month VARCHAR(7);
 ALTER TABLE public.user_reports ADD CONSTRAINT user_reports_reported_id_fkey FOREIGN KEY (reported_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.user_reports ADD CONSTRAINT user_reports_reporter_id_fkey FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.vibe_requests ADD CONSTRAINT vibe_requests_receiver_id_fkey FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.vibe_requests ADD CONSTRAINT vibe_requests_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE public.wallet_transactions ADD CONSTRAINT wallet_transactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 -- ── Indexes ─────────────────────────────────────────────────────────────────
 CREATE INDEX idx_device_tokens_user ON public.device_tokens USING btree (user_id);
@@ -255,174 +372,3 @@ CREATE INDEX idx_users_username_trgm ON public.users USING gin (username gin_trg
 
 -- ── Triggers ────────────────────────────────────────────────────────────────
 -- TRIGGER users_updated_at BEFORE UPDATE ON public.users: EXECUTE FUNCTION update_updated_at()
-
--- ── Event reports ────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS public.event_reports (
-  id uuid DEFAULT gen_random_uuid() NOT NULL,
-  event_id uuid NOT NULL,
-  reporter_id uuid NOT NULL,
-  reason text NOT NULL,
-  description text,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT event_reports_pkey PRIMARY KEY (id),
-  CONSTRAINT event_reports_unique UNIQUE (event_id, reporter_id),
-  CONSTRAINT event_reports_event_id_fkey FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
-  CONSTRAINT event_reports_reporter_id_fkey FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
--- ── Gorave Wallet ──────────────────────────────────────────────────────────────
-ALTER TABLE public.users
-  ADD COLUMN IF NOT EXISTS wallet_balance INTEGER NOT NULL DEFAULT 0;
-
-CREATE TABLE IF NOT EXISTS public.wallet_transactions (
-  id uuid DEFAULT gen_random_uuid() NOT NULL,
-  user_id uuid NOT NULL,
-  amount_inr INTEGER NOT NULL,
-  type text NOT NULL,
-  source text NOT NULL,
-  reference_id uuid,
-  description text,
-  expires_at timestamp with time zone,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT wallet_transactions_pkey PRIMARY KEY (id),
-  CONSTRAINT wallet_transactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  CONSTRAINT wallet_transactions_type_check CHECK (type IN ('credit', 'debit', 'refund_requested')),
-  CONSTRAINT wallet_transactions_source_check CHECK (source IN ('event_refund', 'ticket_purchase', 'bank_refund_request'))
-);
-
--- ── Payment orders ───────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS public.payment_orders (
-  id uuid DEFAULT gen_random_uuid() NOT NULL,
-  user_id uuid NOT NULL,
-  event_id uuid NOT NULL,
-  razorpay_order_id text NOT NULL UNIQUE,
-  amount_inr INTEGER NOT NULL,
-  wallet_amount_inr INTEGER NOT NULL DEFAULT 0,
-  razorpay_amount_inr INTEGER NOT NULL DEFAULT 0,
-  status text NOT NULL DEFAULT 'created',
-  razorpay_payment_id text,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT payment_orders_pkey PRIMARY KEY (id),
-  CONSTRAINT payment_orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  CONSTRAINT payment_orders_event_id_fkey FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
-  CONSTRAINT payment_orders_status_check CHECK (status IN ('created', 'paid', 'failed'))
-);
-
--- ── App feedback & support ───────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS public.app_feedback (
-  id uuid DEFAULT gen_random_uuid() NOT NULL,
-  user_id uuid NOT NULL,
-  text text NOT NULL,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT app_feedback_pkey PRIMARY KEY (id),
-  CONSTRAINT app_feedback_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS public.support_requests (
-  id uuid DEFAULT gen_random_uuid() NOT NULL,
-  user_id uuid NOT NULL,
-  topic text NOT NULL,
-  message text NOT NULL,
-  status text NOT NULL DEFAULT 'open',
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT support_requests_pkey PRIMARY KEY (id),
-  CONSTRAINT support_requests_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
--- ── Account deletion ──────────────────────────────────────────────────────────
-ALTER TABLE public.users
-  ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
-  ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;
-
--- ── Saved UPI IDs ─────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS public.saved_upi_ids (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  upi_id text NOT NULL,
-  name text,
-  created_at timestamptz DEFAULT now(),
-  CONSTRAINT saved_upi_ids_unique UNIQUE (user_id, upi_id)
-);
-
--- ── QR payment columns on payment_orders ─────────────────────────────────────
-ALTER TABLE public.payment_orders
-  ADD COLUMN IF NOT EXISTS qr_code_id TEXT UNIQUE,
-  ADD COLUMN IF NOT EXISTS qr_image_url TEXT,
-  ADD COLUMN IF NOT EXISTS qr_expires_at TIMESTAMP WITH TIME ZONE;
-ALTER TABLE public.payment_orders
-  ALTER COLUMN razorpay_order_id DROP NOT NULL;
-
--- ── Payment orders: allow 'expired' status for lapsed QR codes ──────────────
-ALTER TABLE public.payment_orders DROP CONSTRAINT IF EXISTS payment_orders_status_check;
-ALTER TABLE public.payment_orders ADD CONSTRAINT payment_orders_status_check
-  CHECK (status IN ('created', 'paid', 'failed', 'expired'));
-
--- ── Message actions: unsend, delete-for-me, report ───────────────────────────
-ALTER TABLE public.messages
-  ADD COLUMN IF NOT EXISTS unsent_at TIMESTAMP WITH TIME ZONE,
-  ADD COLUMN IF NOT EXISTS deleted_for uuid[] DEFAULT '{}'::uuid[];
-
--- ── Payment orders: store the platform's cut at time of purchase ────────────
--- amount_inr already holds the attendee-facing total (ticket + fee); this
--- records the flat fee itself so historical orders stay correct if the fee
--- amount ever changes later.
-ALTER TABLE public.payment_orders
-  ADD COLUMN IF NOT EXISTS platform_fee_inr INTEGER NOT NULL DEFAULT 50;
-
--- ── Events: snapshot the platform's cut at event-creation time ──────────────
--- platform_fee_inr: flat fee attendees pay on top of the ticket price.
--- host_commission_inr: cut taken out of the host's ticket price at payout.
--- platform_profit_inr: the two combined — total platform profit per ticket
--- sold for this event. All three are computed once at creation/edit time so
--- they stay correct for this event even if the global fee/rate changes later.
-ALTER TABLE public.events
-  ADD COLUMN IF NOT EXISTS platform_fee_inr INTEGER NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS host_commission_inr INTEGER NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS platform_profit_inr INTEGER NOT NULL DEFAULT 0;
-
-CREATE TABLE IF NOT EXISTS public.message_reports (
-  id uuid DEFAULT gen_random_uuid() NOT NULL,
-  message_id uuid NOT NULL,
-  reporter_id uuid NOT NULL,
-  reason text NOT NULL,
-  description text,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT message_reports_pkey PRIMARY KEY (id),
-  CONSTRAINT message_reports_unique UNIQUE (message_id, reporter_id),
-  CONSTRAINT message_reports_message_id_fkey FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
-  CONSTRAINT message_reports_reporter_id_fkey FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE
-);
-ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMP WITH TIME ZONE;
-ALTER TABLE public.users ADD COLUMN IF NOT EXISTS public_key text;
-
--- ── Discover feed removed — drop its now-unused column ───────────────────────
-ALTER TABLE public.users DROP COLUMN IF EXISTS discoverable;
-
--- ── Host onboarding: payout details + completion flag ────────────────────────
-ALTER TABLE public.users ADD COLUMN IF NOT EXISTS is_host_onboarding_finished boolean DEFAULT false;
-
-CREATE TABLE IF NOT EXISTS public.host_payout_details (
-  id uuid DEFAULT gen_random_uuid() NOT NULL,
-  user_id uuid NOT NULL,
-  account_holder_name_ciphertext text NOT NULL,
-  account_number_ciphertext text NOT NULL,
-  ifsc_code text NOT NULL,
-  bank_name text NOT NULL,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT host_payout_details_pkey PRIMARY KEY (id),
-  CONSTRAINT host_payout_details_user_id_key UNIQUE (user_id),
-  CONSTRAINT host_payout_details_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
--- ── UPI-first payouts: bank fields become optional, add UPI + method ────────
--- Onboarding only collects UPI for now (lower friction for new hosts with no
--- earnings yet); bank details stay in the schema for the later "crossed the
--- TDS threshold" upgrade flow, so no further migration is needed to add it back.
-ALTER TABLE public.host_payout_details
-  ALTER COLUMN account_holder_name_ciphertext DROP NOT NULL,
-  ALTER COLUMN account_number_ciphertext DROP NOT NULL,
-  ALTER COLUMN ifsc_code DROP NOT NULL,
-  ALTER COLUMN bank_name DROP NOT NULL,
-  ADD COLUMN IF NOT EXISTS payout_method text NOT NULL DEFAULT 'upi',
-  ADD COLUMN IF NOT EXISTS upi_id_ciphertext text;

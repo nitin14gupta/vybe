@@ -10,7 +10,7 @@ import {
   ArrowLeft, AlertTriangle, Trash2, ShieldOff,
   Wallet, Calendar, MessageCircle, CheckCircle2, Users,
 } from 'lucide-react-native'
-import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { Colors, FontFamily, Spacing, Radius, SUPPORT_EMAIL } from '@/constants'
 import {
   AppHeader, HeaderIconBtn,
   PrimaryButton, OutlineButton, OTPInput,
@@ -132,7 +132,7 @@ export default function DeleteAccountScreen() {
       clearAuth()
       router.replace('/(auth)/phone' as any)
     } catch {
-      showPill('Could not delete account. Please contact support@vybe.in', 'error')
+      showPill(`Could not delete account. Please contact ${SUPPORT_EMAIL}`, 'error')
       setDeleting(false)
     }
   }
@@ -208,7 +208,7 @@ export default function DeleteAccountScreen() {
             </Text>
             <Text style={s.bodySecond}>
               If you change your mind within 30 days, contact{' '}
-              <Text style={s.link}>support@vybe.in</Text>
+              <Text style={s.link}>{SUPPORT_EMAIL}</Text>
               {' '}with your registered phone number and we'll restore your account.
             </Text>
 

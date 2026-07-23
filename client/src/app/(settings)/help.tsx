@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import { router } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
 import { Screen, AppHeader, HeaderIconBtn } from '@/components/ui'
-import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { Colors, FontFamily, Spacing, Radius, SUPPORT_EMAIL } from '@/constants'
 
 const FAQS: { q: string; a: string }[] = [
   {
@@ -31,7 +31,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'How do I delete my account?',
-    a: 'Go to Settings → Delete Account. You\'ll verify your phone number via OTP, then type DELETE to confirm. Your account is removed within 30 days. Changed your mind? Email support@vybe.in within 30 days.',
+    a: `Go to Settings → Delete Account. You'll verify your phone number via OTP, then type DELETE to confirm. Your account is removed within 30 days. Changed your mind? Email ${SUPPORT_EMAIL} within 30 days.`,
   },
 ]
 
@@ -52,7 +52,7 @@ export default function HelpScreen() {
         ))}
 
         <Text style={styles.contact}>
-          Still stuck? Email support@vybe.in — we reply within 24 hours.
+          Still stuck? Email {SUPPORT_EMAIL} — we reply within 24 hours.
         </Text>
       </ScrollView>
     </Screen>

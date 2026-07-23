@@ -1,4 +1,4 @@
-# Vybe — Full App Flow & Legal Reference
+# Gorave — Full App Flow & Legal Reference
 
 Purpose: a single reference document covering every screen, every permission
 requested, the payment/payout mechanics, and every third-party library in use
@@ -6,7 +6,13 @@ requested, the payment/payout mechanics, and every third-party library in use
 implementation requests have one shared source of truth. Update this file
 whenever a screen, permission, or money-flow rule changes.
 
-Last synced with codebase: 2026-07-11.
+App was renamed from Vybe to **Gorave** (bundle id `in.gorave.app`, scheme
+`gorave`) — brand mentions below use the new name. "Vybe Request" (the
+mutual-match request feature between two users) is a separate in-app feature
+name, not the company brand, and is left as-is since renaming it is a code
+change, not a doc change — flag separately if you want that renamed too.
+
+Last synced with codebase: 2026-07-23.
 
 ---
 
@@ -56,11 +62,12 @@ Store review flags this, but functionally it's already wired.
 | Push notifications | Background, post-auth (`useNotificationSetup.ts`) | `expo-notifications` | Chat messages, vybe requests, event reminders |
 | Camera (live view, not capture-to-library) | `(events)/[id]/scanner.tsx` | `expo-camera` (`CameraView`/`useCameraPermissions`) | Host-side QR ticket scanner at event check-in — a real live camera view, distinct from `expo-image-picker`'s system photo picker used for profile/event photos. Kept intentionally. |
 
-
-**Still worth checking before shipping**: `expo-camera` is used but
-`app.json` has no `ios.infoPlist.NSCameraUsageDescription` string configured
-— iOS may reject the build or the permission prompt may show a blank/
-default reason. Add a proper usage description before an iOS release.
+`ios.infoPlist.NSCameraUsageDescription` is set in `app.json`
+("Gorave uses your camera to scan QR tickets at event check-in.") — iOS
+permission prompt shows a proper reason, not a blank/default one. Android
+needs no equivalent usage-description string in `app.json`;
+`expo-camera`'s own `AndroidManifest.xml` declares `android.permission.CAMERA`
+and merges in automatically via autolinking, no config-plugin entry required.
 
 ---
 
@@ -82,7 +89,7 @@ default reason. Add a proper usage description before an iOS release.
 - `profile.tsx` — **My Profile**: own profile view, edit entry point
 
 ### Events (`(events)/`)
-- `create.tsx` — 5-step host wizard: Basics → When/Capacity → Where → Pricing (10% platform fee shown) → Photos → Preview
+- `create.tsx` — 5-step host wizard: Basics → When/Capacity → Where → Pricing (flat ₹50 platform fee + host commission breakdown shown) → Photos → Preview
 - `published.tsx` — post-publish confirmation
 - `[id]/index.tsx` — event detail (share, report, RSVP/book entry)
 - `[id]/book.tsx` — booking screen, price breakdown incl. platform fee
@@ -116,7 +123,7 @@ default reason. Add a proper usage description before an iOS release.
 - `wallet.tsx` — Gorave Wallet balance, refund credits, transaction history
 - `help.tsx` — static FAQ (7 Q&As)
 - `feedback.tsx` — free-text feedback form → `ApiService.submitFeedback`
-- `support.tsx` — structured support ticket (topic + message) → `ApiService.submitSupport`, plus a `mailto:support@vybe.in` fallback
+- `support.tsx` — structured support ticket (topic + message) → `ApiService.submitSupport`, plus a `mailto:` fallback to `SUPPORT_EMAIL`
 - `delete-account.tsx` — 4-step guided deletion: warning → data-loss summary → phone OTP re-verification → type "DELETE" to confirm; blocked entirely if the user has upcoming hosted events (real server-side check, not just UI — see §8a for what deletion actually does today)
 - `about.tsx` — version info, **Privacy Policy / Terms of Use / Open Source Licenses** links (all open the in-app browser or a dedicated screen)
 - `privacy.tsx`, `terms.tsx` — open the in-app browser (WebView) directly to the hosted legal pages; currently pointed at placeholder URLs (see §5)
@@ -128,30 +135,57 @@ default reason. Add a proper usage description before an iOS release.
 
 - **Ticket pricing**: hosts set a price ≥ ₹99 (or free — capped at 2 free
   events/month per host) in event creation Step 4.
-- **Platform fee**: **10%** of the ticket price, added on top of what the
-  attendee pays. Example: host sets ₹10,000 → attendee is charged ₹11,000
-  total (₹10,000 ticket + ₹1,000 fee). The host always receives the full
-  ₹10,000 they set — the fee is a surcharge on the attendee, not a
-  deduction from the host's payout. This is now shown to the host directly
-  in Step 4 (breakdown text) and in the event preview overlay, and to the
-  attendee at booking (`book.tsx`) and payment (`payment.tsx`).
-- Server-side constant: `PLATFORM_FEE_RATE = 0.10` in
-  `server/routes/payments.py`. Client-side mirror (display only, server is
-  authoritative): `PLATFORM_FEE_RATE` / `PLATFORM_FEE_PERCENT_LABEL` in
-  `client/src/constants/fees.ts`.
-- **Payment methods**: Razorpay (card/UPI/netbanking), UPI QR code, or Vybe
-  Wallet balance (can combine wallet + Razorpay for partial payment).
+- **Platform fee (attendee-facing)**: a **flat ₹50**, added on top of the
+  ticket price — no longer a percentage. Example: host sets ₹1,000 →
+  attendee is charged ₹1,050 total (₹1,000 ticket + ₹50 platform fee).
+  Attendees only ever see this flat ₹50 fee; they never see the host's
+  commission cut below.
+- **Host commission (host-facing only)**: **10%** of the ticket price,
+  deducted from the host's payout — not charged to the attendee. Example:
+  a ₹1,000 event nets the host ₹900 after commission (the attendee still
+  only paid ₹1,050 total). Shown to the host in Step 4's breakdown text
+  ("Attendees pay ₹1,050 total... You receive ₹900 after our 10% platform
+  commission") and in the event preview overlay. Attendees never see this
+  number — `book.tsx` and `payment.tsx` only ever show the flat ₹50 fee.
+- **Per-event snapshot, not a live global rate**: both values are computed
+  once — at event creation and again on any edit that changes the price —
+  and stored directly on the `events` row (`platform_fee_inr`,
+  `host_commission_inr`, `platform_profit_inr` = the two summed, i.e. total
+  platform profit per ticket for that event — ₹150 for a ₹1,000 event).
+  This means if the flat fee or commission rate changes later, already-
+  published events keep charging/paying out at the rate they were created
+  under, rather than silently shifting.
+- Server-side constants (source of truth): `PLATFORM_FEE_INR = 50` and
+  `HOST_COMMISSION_RATE = 0.10` in `server/routes/payments.py`, applied via
+  `_fee_snapshot()` in `server/routes/events.py` at create/edit time.
+  `server/routes/payments.py`'s `create_order` / `wallet_pay` / `create_qr`
+  all charge attendees using the event's own stored `platform_fee_inr`
+  column, not the live constant — so a rate change never retroactively
+  alters an already-created event's charge.
+- Client-side mirror (display only, pre-creation preview where no event row
+  exists yet to fetch from): `PLATFORM_FEE_INR`, `HOST_COMMISSION_RATE`,
+  `HOST_COMMISSION_PERCENT_LABEL` in `client/src/constants/fees.ts`, used
+  only by `Step4Pricing.tsx` and `EventPreviewOverlay.tsx` during the
+  create-event flow. Every other screen (`book.tsx`, `payment.tsx` via
+  `usePaymentData.ts`) reads `platform_fee_inr` straight off the event
+  object returned by the API, not a hardcoded constant.
+- **Payment methods**: Razorpay (card/UPI/netbanking), UPI QR code, or
+  Gorave Wallet balance (can combine wallet + Razorpay for partial
+  payment).
 - **Cancellation / refunds**: if a host cancels an event, attendees are
-  refunded to their **Gorave Wallet** instantly — the platform fee is
-  absorbed by Vybe on cancellation (attendee gets back the full ticket
+  refunded to their **Gorave Wallet** instantly — the ₹50 platform fee is
+  absorbed by Gorave on cancellation (attendee gets back the full ticket
   price, not the fee they paid on top; see `server/routes/events.py` around
   the cancellation-refund logic).
 - **Payout to host**: not yet an automated bank-transfer payout system in
   this codebase (no payout endpoint was found) — currently a manual/
-  future process. Terms of Use should state clearly how and when hosts
-  actually receive their revenue (bank transfer cadence, dispute window,
-  KYC requirements) once that process is finalized — this is a gap to
-  close before launch, not just a documentation task.
+  future process. `host_commission_inr`/`platform_profit_inr` on the event
+  row give you the numbers to reconcile a manual payout against, but no
+  code actually moves money to the host yet. Terms of Use should state
+  clearly how and when hosts actually receive their revenue (bank transfer
+  cadence, dispute window, KYC requirements) once that process is
+  finalized — this is a gap to close before launch, not just a
+  documentation task.
 
 ---
 
@@ -162,13 +196,21 @@ default reason. Add a proper usage description before an iOS release.
   removed). Both `(settings)/privacy.tsx` and `(settings)/terms.tsx`, plus
   the consent links on the phone entry screen, now open an **in-app
   browser (WebView)** pointed at:
-  - Terms: `https://www.uilora.com/terms` *(placeholder — swap for Vybe's real hosted page)*
-  - Privacy: `https://www.uilora.com/privacy` *(placeholder — swap for Vybe's real hosted page)*
+  - Terms: `https://www.uilora.com/terms` *(placeholder — swap for Gorave's real hosted page)*
+  - Privacy: `https://www.uilora.com/privacy` *(placeholder — swap for Gorave's real hosted page)*
   - Update both URLs in `client/src/constants/legalLinks.ts` once real pages exist.
+- **Support email — single source of truth**: `SUPPORT_EMAIL` in
+  `client/src/constants/contact.ts` (currently `support@gorave.com`). Every
+  screen that shows or `mailto:`s a support address reads from here —
+  `phone.tsx`, `help.tsx`, `support.tsx`, `about.tsx`, `delete-account.tsx`,
+  `DeletedAccountSheet.tsx`. Previously these were hardcoded independently
+  and had drifted (`support@gorave.in` / `hello@gorave.in` in several places
+  vs. `support@gorave.com` in others) — now there's one constant to change
+  if the domain ever moves again.
 - **Phone screen consent copy** (as implemented):
   > "By clicking Send Code, you agree to our **Terms** and **Privacy
-  > Policy** and consent to receive event texts from Vybe. Msg frequency
-  > varies; data rates may apply. For help, email us at support@vybe.in."
+  > Policy** and consent to receive event texts from Gorave. Msg frequency
+  > varies; data rates may apply. For help, email us at {SUPPORT_EMAIL}."
   - No SMS keyword auto-reply (STOP/HELP) is implemented — support is
     handled via email instead, per your direction.
 
@@ -178,7 +220,7 @@ default reason. Add a proper usage description before an iOS release.
 - Voice intro recordings (optional, skippable)
 - Precise/approximate location (for nearby-events, distance display)
 - Chat messages, media (images/video/voice notes), link previews (server fetches OG metadata server-side)
-- Payment data (handled by Razorpay — clarify Vybe never stores raw card/UPI details, only transaction references)
+- Payment data (handled by Razorpay — clarify Gorave never stores raw card/UPI details, only transaction references)
 - Push notification tokens
 - Follow graph, Vybe requests, blocks/reports (safety data)
 - Event attendance history, reviews given/received

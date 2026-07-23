@@ -7,10 +7,8 @@ import {
 } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { AlertTriangle } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, SUPPORT_EMAIL } from '@/constants'
 import { hTap } from '@/lib/haptics'
-
-const SUPPORT_EMAIL = 'support@vybe.in'
 
 interface Props {
   visible: boolean

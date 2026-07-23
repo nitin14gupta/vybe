@@ -3,7 +3,7 @@ import { router } from 'expo-router'
 import Constants from 'expo-constants'
 import { ArrowLeft, ChevronRight } from 'lucide-react-native'
 import { Screen, AppHeader, HeaderIconBtn, LogoMark } from '@/components/ui'
-import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { Colors, FontFamily, Spacing, Radius, SUPPORT_EMAIL } from '@/constants'
 
 export default function AboutScreen() {
   const version = Constants.expoConfig?.version ?? '1.0.0'
@@ -31,7 +31,7 @@ export default function AboutScreen() {
           <View style={styles.divider} />
           <InfoRow label="Made with" value="Expo + React Native" />
           <View style={styles.divider} />
-          <InfoRow label="Contact" value="hello@vybe.in" />
+          <InfoRow label="Contact" value={SUPPORT_EMAIL} />
         </View>
 
         {/* Legal */}

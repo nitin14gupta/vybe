@@ -1,5 +1,6 @@
 export * from './branding'
 export * from './colors'
+export * from './contact'
 export * from './eventFilters'
 export * from './fees'
 export * from './gradients'
