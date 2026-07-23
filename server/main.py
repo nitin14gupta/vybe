@@ -23,6 +23,8 @@ from routes.admin_wallet import router as admin_wallet_router
 from routes.admin_events import router as admin_events_router
 from routes.admin_reports import router as admin_reports_router
 from routes.admin_dashboard import router as admin_dashboard_router
+from routes.admin_revenue import router as admin_revenue_router
+from routes.admin_audit_log import router as admin_audit_log_router
 from utils.account_purge import purge_expired_deleted_accounts
 from app_config import APP_SCHEME
 
@@ -83,6 +85,8 @@ app.include_router(admin_wallet_router)
 app.include_router(admin_events_router)
 app.include_router(admin_reports_router)
 app.include_router(admin_dashboard_router)
+app.include_router(admin_revenue_router)
+app.include_router(admin_audit_log_router)
 
 
 @app.get("/health")

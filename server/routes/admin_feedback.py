@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 from db.config import get_db
 from middleware.admin_auth import get_current_admin
+from utils.admin_audit import log_action
 
 router = APIRouter(prefix="/admin/feedback", tags=["admin-feedback"])
 
@@ -102,5 +103,7 @@ def update_support_status(
             (body.status, request_id),
         )
         conn.commit()
+
+    log_action(current_admin["id"], "update_support_status", "support_request", request_id, body.status)
 
     return {"ok": True}

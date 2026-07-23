@@ -421,3 +421,21 @@ ALTER TABLE public.users
 ALTER TABLE public.support_requests DROP CONSTRAINT IF EXISTS support_requests_status_check;
 ALTER TABLE public.support_requests ADD CONSTRAINT support_requests_status_check
   CHECK (status IN ('open', 'resolved', 'closed'));
+
+-- ── Admin panel: audit log of moderation actions ─────────────────────────────
+-- Written to by lock/unlock, force-cancel-event, and support-status-update —
+-- see server/utils/admin_audit.py::log_action.
+CREATE TABLE IF NOT EXISTS public.admin_audit_log (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  admin_id uuid NOT NULL,
+  action text NOT NULL,
+  target_type text NOT NULL,
+  target_id uuid,
+  detail text,
+  created_at timestamptz DEFAULT now(),
+  CONSTRAINT admin_audit_log_pkey PRIMARY KEY (id),
+  CONSTRAINT admin_audit_log_admin_id_fkey FOREIGN KEY (admin_id)
+    REFERENCES admin_users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_audit_log_created_at ON public.admin_audit_log USING btree (created_at DESC);

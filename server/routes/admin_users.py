@@ -6,6 +6,7 @@ from db.config import get_db
 from middleware.admin_auth import get_current_admin
 from utils.push import send_push
 from utils.account_purge import PURGE_AFTER_DAYS
+from utils.admin_audit import log_action
 
 router = APIRouter(prefix="/admin/users", tags=["admin-users"])
 
@@ -250,6 +251,8 @@ def lock_user(user_id: str, body: LockBody, current_admin: dict = Depends(get_cu
         cur.execute("DELETE FROM refresh_tokens WHERE user_id = %s::uuid", (user_id,))
         conn.commit()
 
+    log_action(current_admin["id"], "lock_user", "user", user_id, body.reason)
+
     try:
         send_push(user_id, "Account Locked", f"Your account has been locked by the Gorave team. Reason: {body.reason}")
     except Exception:
@@ -272,6 +275,8 @@ def unlock_user(user_id: str, current_admin: dict = Depends(get_current_admin)):
             (user_id,),
         )
         conn.commit()
+
+    log_action(current_admin["id"], "unlock_user", "user", user_id)
 
     try:
         send_push(user_id, "Account Unlocked", "Your account has been unlocked — welcome back to Gorave!")

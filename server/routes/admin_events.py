@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, Query, Depends, BackgroundTasks
 from db.config import get_db
 from middleware.admin_auth import get_current_admin
 from routes.events import _cancel_event_and_refund
+from utils.admin_audit import log_action
 
 router = APIRouter(prefix="/admin/events", tags=["admin-events"])
 
@@ -191,4 +192,5 @@ def force_cancel_event(event_id: str, background_tasks: BackgroundTasks, current
         raise HTTPException(status_code=400, detail="Event is already cancelled")
 
     _cancel_event_and_refund(event_id, background_tasks)
+    log_action(current_admin["id"], "force_cancel_event", "event", event_id)
     return {"ok": True}

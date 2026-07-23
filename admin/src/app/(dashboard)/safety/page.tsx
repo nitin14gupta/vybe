@@ -13,6 +13,7 @@ import { Pagination } from '@/components/ui/Pagination'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { formatDate } from '@/lib/formatters'
 import type { UserReportItem, EventReportItem, MessageReportItem, BlockItem } from '@/types/reports'
+import type { AuditLogItem } from '@/types/audit'
 import type { PaginatedResponse } from '@/types/feedback'
 
 const PAGE_SIZE = 20
@@ -33,12 +34,14 @@ export default function SafetyPage() {
           <TabsTrigger value="events">Event Reports</TabsTrigger>
           <TabsTrigger value="messages">Message Reports</TabsTrigger>
           <TabsTrigger value="blocks">Blocks</TabsTrigger>
+          <TabsTrigger value="activity">Admin Activity</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users"><UserReportsTab /></TabsContent>
         <TabsContent value="events"><EventReportsTab /></TabsContent>
         <TabsContent value="messages"><MessageReportsTab /></TabsContent>
         <TabsContent value="blocks"><BlocksTab /></TabsContent>
+        <TabsContent value="activity"><AdminActivityTab /></TabsContent>
       </Tabs>
     </div>
   )
@@ -211,6 +214,60 @@ function MessageReportsTab() {
               <TD>{formatDate(r.created_at)}</TD>
             </TR>
           ))}
+        </TBody>
+      </Table>
+    </TableShell>
+  )
+}
+
+const ACTION_LABELS: Record<string, string> = {
+  lock_user: 'Locked user',
+  unlock_user: 'Unlocked user',
+  force_cancel_event: 'Force-cancelled event',
+  update_support_status: 'Updated ticket status',
+}
+
+function targetHref(targetType: string, targetId: string | null): string | null {
+  if (!targetId) return null
+  if (targetType === 'user') return `/users/${targetId}`
+  if (targetType === 'event') return `/events/${targetId}`
+  return null
+}
+
+function AdminActivityTab() {
+  const [page, setPage] = useState(1)
+  const { data, isLoading } = usePaginatedReports<AuditLogItem>('admin-audit-log', '/admin/audit-log', page)
+
+  return (
+    <TableShell
+      isLoading={isLoading}
+      empty={!isLoading && data?.items.length === 0}
+      emptyLabel="No admin activity yet"
+      total={data?.total ?? 0}
+      page={data?.page ?? 1}
+      pageSize={data?.page_size ?? PAGE_SIZE}
+      onPageChange={setPage}
+    >
+      <Table>
+        <THead><TR><TH>Admin</TH><TH>Action</TH><TH>Detail</TH><TH>Date</TH></TR></THead>
+        <TBody>
+          {data?.items.map((a) => {
+            const href = targetHref(a.target_type, a.target_id)
+            return (
+              <TR key={a.id}>
+                <TD>{a.admin_name ?? a.admin_email}</TD>
+                <TD>
+                  {href ? (
+                    <Link href={href} className="hover:underline">{ACTION_LABELS[a.action] ?? a.action}</Link>
+                  ) : (
+                    ACTION_LABELS[a.action] ?? a.action
+                  )}
+                </TD>
+                <TD>{a.detail ?? '—'}</TD>
+                <TD>{formatDate(a.created_at)}</TD>
+              </TR>
+            )
+          })}
         </TBody>
       </Table>
     </TableShell>
