@@ -1027,25 +1027,12 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
 
 # ── DELETE /events/{id} ───────────────────────────────────────────────────────
 
-@router.delete("/{event_id}")
-def cancel_event(event_id: str, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
-    with get_db() as (cur, conn):
-        cur.execute(
-            "SELECT host_id::text, date_time FROM events WHERE id = %s",
-            (event_id,),
-        )
-        ev = cur.fetchone()
-    if not ev:
-        raise HTTPException(status_code=404, detail="Event not found")
-    if ev["host_id"] != current_user["id"]:
-        raise HTTPException(status_code=403, detail="Not your event")
-
-    cancel_deadline = ev["date_time"] - timedelta(hours=48)
-    now = datetime.now(timezone.utc)
-    cd = cancel_deadline.replace(tzinfo=timezone.utc) if cancel_deadline.tzinfo is None else cancel_deadline
-    if now > cd:
-        raise HTTPException(status_code=403, detail="Events can only be cancelled up to 48 hours before start")
-
+def _cancel_event_and_refund(event_id: str, background_tasks: BackgroundTasks):
+    """Marks an event cancelled, notifies waitlist/attendees, and refunds paid
+    attendees to their Gorave Wallet. Shared by the host's own cancel route
+    and the admin force-cancel route — callers are responsible for their own
+    authorization/deadline checks before calling this.
+    """
     with get_db() as (cur, conn):
         cur.execute("SELECT title, price_inr FROM events WHERE id = %s", (event_id,))
         ev_title_row = cur.fetchone()
@@ -1117,6 +1104,27 @@ def cancel_event(event_id: str, background_tasks: BackgroundTasks, current_user:
             {"type": "wallet", "event_id": event_id},
         )
 
+
+@router.delete("/{event_id}")
+def cancel_event(event_id: str, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
+    with get_db() as (cur, conn):
+        cur.execute(
+            "SELECT host_id::text, date_time FROM events WHERE id = %s",
+            (event_id,),
+        )
+        ev = cur.fetchone()
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if ev["host_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Not your event")
+
+    cancel_deadline = ev["date_time"] - timedelta(hours=48)
+    now = datetime.now(timezone.utc)
+    cd = cancel_deadline.replace(tzinfo=timezone.utc) if cancel_deadline.tzinfo is None else cancel_deadline
+    if now > cd:
+        raise HTTPException(status_code=403, detail="Events can only be cancelled up to 48 hours before start")
+
+    _cancel_event_and_refund(event_id, background_tasks)
     return {"ok": True}
 
 

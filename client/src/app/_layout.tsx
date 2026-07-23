@@ -15,7 +15,7 @@ import { useVybeFonts } from '@/lib/fonts'
 import { useAuthStore } from '@/store/auth'
 import { tokenStorage } from '@/lib/tokenStorage'
 import ApiService from '@/api/apiService'
-import { PillOverlay, PermissionSheetOverlay } from '@/components/ui'
+import { PillOverlay, PermissionSheetOverlay, AccountLockedOverlay } from '@/components/ui'
 import { useNotificationSetup } from '@/hooks/useNotificationSetup'
 import { useDeepLinkRouter } from '@/hooks/useDeepLinkRouter'
 import { useE2EESetup } from '@/hooks/useE2EESetup'
@@ -102,6 +102,7 @@ export default function RootLayout() {
           <RootNavigator />
           <PillOverlay />
           <PermissionSheetOverlay />
+          <AccountLockedOverlay />
           {!appReady && (
             <View style={StyleSheet.absoluteFill}>
               <AppSplashScreen />

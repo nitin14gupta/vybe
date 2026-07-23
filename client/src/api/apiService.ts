@@ -1,6 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy'
 import { API_BASE_URL, WS_BASE_URL, ENDPOINTS, DEFAULT_HEADERS, createAuthHeader } from './config'
 import { useAuthStore } from '@/store/auth'
+import { useLockStore } from '@/store/lockStore'
 
 // ── Response shapes ──────────────────────────────────────────────────────────
 
@@ -342,6 +343,18 @@ export interface AppNotification {
 // Mutex: only one token refresh in-flight at a time — concurrent 401s share the same promise
 let _refreshPromise: Promise<void> | null = null
 
+// Server sends a structured 403 { detail: { code: 'ACCOUNT_LOCKED', reason } }
+// when a locked user's token is used — flips the global lock overlay on.
+// Returns true if this response was a lock (so callers can skip their own
+// error handling — the overlay takes over from here).
+function checkAccountLocked(status: number, err: any): boolean {
+  if (status === 403 && err?.detail && typeof err.detail === 'object' && err.detail.code === 'ACCOUNT_LOCKED') {
+    useLockStore.getState().lock(err.detail.reason ?? '')
+    return true
+  }
+  return false
+}
+
 class ApiService {
   // ── Private helpers ────────────────────────────────────────────────────────
 
@@ -424,9 +437,12 @@ class ApiService {
       let detail = `Request failed (${response.status})`
       try {
         const err = await response.json()
+        checkAccountLocked(response.status, err)
         // Pydantic v2 returns detail as an array on validation errors
         if (Array.isArray(err.detail)) {
           detail = err.detail.map((d: any) => d.msg ?? String(d)).join(', ')
+        } else if (err.detail && typeof err.detail === 'object') {
+          detail = err.detail.reason ?? err.detail.code ?? detail
         } else {
           detail = String(err.detail ?? err.message ?? detail)
         }
@@ -969,7 +985,11 @@ class ApiService {
 
     if (res.status < 200 || res.status >= 300) {
       let detail = `Upload failed (${res.status})`
-      try { detail = JSON.parse(res.body)?.detail ?? detail } catch { }
+      try {
+        const err = JSON.parse(res.body)
+        checkAccountLocked(res.status, err)
+        detail = err?.detail ?? detail
+      } catch { }
       throw Object.assign(new Error(detail), { status: res.status })
     }
     try {
@@ -994,7 +1014,11 @@ class ApiService {
 
     if (res.status < 200 || res.status >= 300) {
       let detail = `Upload failed (${res.status})`
-      try { detail = JSON.parse(res.body)?.detail ?? detail } catch { }
+      try {
+        const err = JSON.parse(res.body)
+        checkAccountLocked(res.status, err)
+        detail = err?.detail ?? detail
+      } catch { }
       throw new Error(detail)
     }
     try {
@@ -1034,7 +1058,11 @@ class ApiService {
 
     if (result.status < 200 || result.status >= 300) {
       let detail = `Upload failed (${result.status})`
-      try { detail = JSON.parse(result.body)?.detail ?? detail } catch { }
+      try {
+        const err = JSON.parse(result.body)
+        checkAccountLocked(result.status, err)
+        detail = err?.detail ?? detail
+      } catch { }
       throw new Error(detail)
     }
 
@@ -1059,7 +1087,11 @@ class ApiService {
 
     if (result.status < 200 || result.status >= 300) {
       let detail = `Upload failed (${result.status})`
-      try { detail = JSON.parse(result.body)?.detail ?? detail } catch { }
+      try {
+        const err = JSON.parse(result.body)
+        checkAccountLocked(result.status, err)
+        detail = err?.detail ?? detail
+      } catch { }
       throw new Error(detail)
     }
 
@@ -1089,7 +1121,11 @@ class ApiService {
 
     if (result.status < 200 || result.status >= 300) {
       let detail = `Upload failed (${result.status})`
-      try { detail = JSON.parse(result.body)?.detail ?? detail } catch { }
+      try {
+        const err = JSON.parse(result.body)
+        checkAccountLocked(result.status, err)
+        detail = err?.detail ?? detail
+      } catch { }
       throw new Error(detail)
     }
 

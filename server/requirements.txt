@@ -9,7 +9,7 @@ urllib3
 python-multipart
 pydantic[email]
 email-validator
-passlib[bcrypt]
+bcrypt
 python-jose[cryptography]
 cryptography
 httpx

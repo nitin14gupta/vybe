@@ -4,7 +4,7 @@ import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, Calendar, Clock, MapPin, Shield, Users } from 'lucide-react-native'
-import { Colors, FontFamily, PLATFORM_FEE_INR } from '@/constants'
+import { Colors, FontFamily, PLATFORM_FEE_INR, HOST_COMMISSION_RATE } from '@/constants'
 import { hTap, hSelection } from '@/lib/haptics'
 import { EventCard } from '@/components/events/EventCard'
 import { StaticEventMap } from '@/components/maps'
@@ -69,6 +69,9 @@ export function EventPreviewOverlay({ visible, form, onClose }: Props) {
     location_lng: form.locationLng,
     price_inr: form.priceInr,
     is_free: form.isFree,
+    platform_fee_inr: form.isFree ? 0 : PLATFORM_FEE_INR,
+    host_commission_inr: form.isFree ? 0 : Math.round(form.priceInr * HOST_COMMISSION_RATE),
+    platform_profit_inr: form.isFree ? 0 : PLATFORM_FEE_INR + Math.round(form.priceInr * HOST_COMMISSION_RATE),
     spots_left: form.capacity,
     capacity: form.capacity,
     distance_km: null,

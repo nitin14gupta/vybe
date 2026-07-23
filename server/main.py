@@ -1,4 +1,5 @@
 import asyncio
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,8 +16,19 @@ from routes.wallet import router as wallet_router
 from routes.payments import router as payments_router
 from routes.misc import router as misc_router
 from routes.wellknown import router as wellknown_router
+from routes.admin_auth import router as admin_auth_router
+from routes.admin_users import router as admin_users_router
+from routes.admin_feedback import router as admin_feedback_router
+from routes.admin_wallet import router as admin_wallet_router
+from routes.admin_events import router as admin_events_router
+from routes.admin_reports import router as admin_reports_router
+from routes.admin_dashboard import router as admin_dashboard_router
 from utils.account_purge import purge_expired_deleted_accounts
 from app_config import APP_SCHEME
+
+# Comma-separated list of extra origins allowed to call this API — the admin
+# web panel's dev/prod origin(s), e.g. "http://localhost:3000,https://admin.gorave.com"
+ADMIN_ORIGINS = [o.strip() for o in os.getenv("ADMIN_ORIGINS", "").split(",") if o.strip()]
 
 PURGE_INTERVAL_SECONDS = 24 * 60 * 60
 
@@ -45,7 +57,7 @@ app = FastAPI(title="Gorave API", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8081", "http://localhost:19006", f"{APP_SCHEME}://"],
+    allow_origins=["http://localhost:8081", "http://localhost:19006", f"{APP_SCHEME}://", *ADMIN_ORIGINS],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -64,6 +76,13 @@ app.include_router(wallet_router)
 app.include_router(payments_router)
 app.include_router(misc_router)
 app.include_router(wellknown_router)
+app.include_router(admin_auth_router)
+app.include_router(admin_users_router)
+app.include_router(admin_feedback_router)
+app.include_router(admin_wallet_router)
+app.include_router(admin_events_router)
+app.include_router(admin_reports_router)
+app.include_router(admin_dashboard_router)
 
 
 @app.get("/health")

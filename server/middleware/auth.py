@@ -25,7 +25,11 @@ def get_current_user(
 
     with get_db() as (cur, _):
         cur.execute(
-            "SELECT id, phone, profile_complete, is_active, COALESCE(is_deleted, FALSE) AS is_deleted FROM users WHERE id = %s",
+            """
+            SELECT id, phone, profile_complete, is_active, COALESCE(is_deleted, FALSE) AS is_deleted,
+                   COALESCE(is_locked, FALSE) AS is_locked, locked_reason
+            FROM users WHERE id = %s
+            """,
             (user_id,),
         )
         user = cur.fetchone()
@@ -38,5 +42,13 @@ def get_current_user(
 
     if user["is_deleted"]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account has been deleted")
+
+    if user["is_locked"]:
+        # Structured detail (not a plain string) so the mobile client can
+        # distinguish "account locked" from a generic 403 without string-matching.
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "ACCOUNT_LOCKED", "reason": user["locked_reason"]},
+        )
 
     return dict(user)

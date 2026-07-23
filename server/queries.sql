@@ -372,3 +372,52 @@ CREATE INDEX idx_users_username_trgm ON public.users USING gin (username gin_trg
 
 -- ── Triggers ────────────────────────────────────────────────────────────────
 -- TRIGGER users_updated_at BEFORE UPDATE ON public.users: EXECUTE FUNCTION update_updated_at()
+
+-- ── Admin panel: admin accounts, separate from the mobile `users` table ─────
+CREATE TABLE IF NOT EXISTS public.admin_users (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  email text NOT NULL,
+  password_hash text NOT NULL,
+  name text,
+  role text NOT NULL DEFAULT 'admin',
+  is_active boolean NOT NULL DEFAULT TRUE,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  last_login_at timestamptz,
+  CONSTRAINT admin_users_pkey PRIMARY KEY (id),
+  CONSTRAINT admin_users_email_key UNIQUE (email)
+);
+
+CREATE TABLE IF NOT EXISTS public.admin_refresh_tokens (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  admin_id uuid NOT NULL,
+  token_hash character varying(255) NOT NULL,
+  expires_at timestamptz NOT NULL,
+  created_at timestamptz DEFAULT now(),
+  CONSTRAINT admin_refresh_tokens_pkey PRIMARY KEY (id),
+  CONSTRAINT admin_refresh_tokens_token_hash_key UNIQUE (token_hash),
+  CONSTRAINT admin_refresh_tokens_admin_id_fkey FOREIGN KEY (admin_id)
+    REFERENCES admin_users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_refresh_tokens_admin_id ON public.admin_refresh_tokens USING btree (admin_id);
+
+-- ── Admin panel: lock a user's account ───────────────────────────────────────
+-- Locking removes the user's active session (refresh_tokens/device_tokens are
+-- deleted by the lock endpoint) and get_current_user rejects any further API
+-- call from them with a structured 403 until an admin unlocks the account.
+ALTER TABLE public.users
+  ADD COLUMN IF NOT EXISTS is_locked BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS locked_reason TEXT,
+  ADD COLUMN IF NOT EXISTS locked_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS locked_by UUID;
+
+ALTER TABLE public.users DROP CONSTRAINT IF EXISTS users_locked_by_fkey;
+ALTER TABLE public.users
+  ADD CONSTRAINT users_locked_by_fkey FOREIGN KEY (locked_by)
+    REFERENCES admin_users(id) ON DELETE SET NULL;
+
+-- ── Admin panel: constrain support ticket status now that admin manages it ──
+ALTER TABLE public.support_requests DROP CONSTRAINT IF EXISTS support_requests_status_check;
+ALTER TABLE public.support_requests ADD CONSTRAINT support_requests_status_check
+  CHECK (status IN ('open', 'resolved', 'closed'));
