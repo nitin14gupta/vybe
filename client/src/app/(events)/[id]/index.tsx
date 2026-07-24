@@ -310,6 +310,9 @@ export default function EventDetailScreen() {
     try {
       await ApiService.cancelEvent(id!)
       setEvent(prev => prev ? { ...prev, is_cancelled: true } : prev)
+      useRecentEventsStore.getState().remove(id!)
+      showPill('Event cancelled', 'default')
+      router.replace('/(tabs)/events')
     } catch (e: any) {
       showPill("Couldn't cancel this event, try again", 'error')
     }

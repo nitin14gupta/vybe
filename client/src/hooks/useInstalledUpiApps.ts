@@ -7,7 +7,9 @@ import { IOS_UPI_APPS } from '@/constants/upiApps'
 export interface UpiApp {
   app_name: string
   package_name: string
-  app_icon: string  // base64 PNG on Android (read via PackageManager), local asset URI on iOS
+  // base64 PNG on Android (read via PackageManager) or a require()'d bundled
+  // asset id on iOS (rendered via <Image source={number}> — see payment.tsx)
+  app_icon: string | number
 }
 
 async function detectAndroidApps(): Promise<UpiApp[]> {
@@ -31,7 +33,7 @@ async function detectIosApps(): Promise<UpiApp[]> {
     .map(app => ({
       app_name: app.app_name,
       package_name: app.package_name,
-      app_icon: '', // swap in once real bundled icon assets are added
+      app_icon: app.icon ?? '',
     }))
 }
 

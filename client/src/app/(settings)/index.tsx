@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import { router } from 'expo-router'
 import {
-  User, Bell, HelpCircle, MessageSquare,
+  User, Bell, BellRing, HelpCircle, MessageSquare,
   Info, LogOut, Calendar, Ticket, Wallet, HeadphonesIcon,
   Trash2, CalendarHeart, Landmark,
 } from 'lucide-react-native'
@@ -37,6 +37,11 @@ export default function SettingsScreen() {
             icon={<Bell size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
             label="Notifications"
             onPress={() => router.push('/(settings)/notifications')}
+          />
+          <SettingRow
+            icon={<BellRing size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
+            label="Notification Settings"
+            onPress={() => router.push('/(settings)/notification-settings' as any)}
           />
           <SettingRow
             icon={<Bell size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}

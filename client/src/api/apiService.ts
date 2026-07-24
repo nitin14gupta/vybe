@@ -338,6 +338,15 @@ export interface AppNotification {
   cover_photo?: string | null
 }
 
+// Categories a user can toggle off — gates PUSH delivery only, server-side
+// (server/utils/push.py). The in-app notification list is unaffected.
+export interface NotificationPrefs {
+  social: boolean
+  hosting: boolean
+  attending: boolean
+  payments: boolean
+}
+
 // ── ApiService ───────────────────────────────────────────────────────────────
 
 // Mutex: only one token refresh in-flight at a time — concurrent 401s share the same promise
@@ -775,6 +784,14 @@ class ApiService {
   static async markNotificationRead(notifId: string): Promise<void> {
     const endpoint = ENDPOINTS.NOTIFICATION_READ.replace(':id', notifId)
     await this.patch<{ ok: boolean }>(endpoint, {})
+  }
+
+  static async getNotificationPrefs(): Promise<NotificationPrefs> {
+    return this.get<NotificationPrefs>(ENDPOINTS.NOTIFICATION_PREFS)
+  }
+
+  static async updateNotificationPrefs(data: Partial<NotificationPrefs>): Promise<NotificationPrefs> {
+    return this.patch<NotificationPrefs>(ENDPOINTS.NOTIFICATION_PREFS, data)
   }
 
   static async checkUsername(username: string): Promise<{ available: boolean; error?: string }> {

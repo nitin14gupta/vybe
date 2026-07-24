@@ -331,7 +331,7 @@ def set_payout_details(
     background_tasks.add_task(
         send_push, current_user["id"], "You're all set to host!",
         "Your payout details are saved — go ahead and create your first event.",
-        {"type": "host_onboarding_complete"},
+        {"type": "host_onboarding_complete"}, category="hosting",
     )
     return UserResponse(**user)
 
@@ -824,7 +824,7 @@ def follow_user(user_id: str, background_tasks: BackgroundTasks, current_user: d
         send_push, user_id, "New Follower",
         f"{follower_name} started following you",
         {"type": "profile", "user_id": current_user["id"]},
-        follower_avatar,
+        follower_avatar, category="social",
     )
     return {"ok": True}
 

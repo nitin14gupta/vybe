@@ -7,7 +7,7 @@ import { HostingSection } from './HostingSection'
 
 function upcomingSorted(events: EventSummary[]) {
   return events
-    .filter(e => !isEventPast(e))
+    .filter(e => !isEventPast(e) && !e.is_cancelled)
     .sort((a, b) => (parseServerDate(a.date_time)?.getTime() ?? 0) - (parseServerDate(b.date_time)?.getTime() ?? 0))
 }
 

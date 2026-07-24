@@ -191,6 +191,6 @@ def force_cancel_event(event_id: str, background_tasks: BackgroundTasks, current
     if ev["is_cancelled"]:
         raise HTTPException(status_code=400, detail="Event is already cancelled")
 
-    _cancel_event_and_refund(event_id, background_tasks)
+    _cancel_event_and_refund(event_id, background_tasks, cancelled_by_admin=True)
     log_action(current_admin["id"], "force_cancel_event", "event", event_id)
     return {"ok": True}

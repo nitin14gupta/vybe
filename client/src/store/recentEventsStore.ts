@@ -9,6 +9,7 @@ const MAX = 3
 interface RecentEventsStore {
   events: EventSummary[]
   add: (event: EventSummary) => void
+  remove: (eventId: string) => void
   pruneEnded: () => void
 }
 
@@ -22,6 +23,8 @@ export const useRecentEventsStore = create<RecentEventsStore>()(
             .filter((e) => !isEventPast(e))
             .slice(0, MAX),
         })),
+      remove: (eventId) =>
+        set((s) => ({ events: s.events.filter((e) => e.id !== eventId) })),
       pruneEnded: () =>
         set((s) => ({ events: s.events.filter((e) => !isEventPast(e)) })),
     }),

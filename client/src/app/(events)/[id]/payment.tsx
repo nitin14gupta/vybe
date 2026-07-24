@@ -106,8 +106,6 @@ export default function PaymentScreen() {
   const { apps: upiApps, loading: upiAppsLoading } = useInstalledUpiApps()
   const lastPackageName = useLastPaymentStore(s => s.lastPackageName)
   const setLastPackageName = useLastPaymentStore(s => s.setLastPackageName)
-  // Whatever app you actually paid with last time wins the "Recommended" slot;
-  // otherwise GPay if installed; otherwise just the first app we found.
   const recommendedApp =
     upiApps.find(a => a.package_name === lastPackageName) ??
     upiApps.find(a => /google ?pay|gpay/i.test(a.app_name)) ??
@@ -534,6 +532,17 @@ export default function PaymentScreen() {
   )
 }
 
+// Android reports icons as base64 PNG (or occasionally a uri/file path); iOS
+// uses a require()'d bundled asset id (a number) instead — see UpiApp.app_icon.
+function upiIconSource(app_icon: string | number) {
+  if (typeof app_icon === 'number') return app_icon
+  return {
+    uri: (app_icon.startsWith('http') || app_icon.startsWith('file:') || app_icon.startsWith('/'))
+      ? app_icon
+      : `data:image/png;base64,${app_icon}`,
+  }
+}
+
 function UpiAppRow({ app, style, onPress }: { app: UpiApp; style: any; onPress: () => void }) {
   const [iconFailed, setIconFailed] = useState(false)
   const showIcon = !!app.app_icon && !iconFailed
@@ -542,10 +551,7 @@ function UpiAppRow({ app, style, onPress }: { app: UpiApp; style: any; onPress: 
     <Pressable style={style} onPress={onPress}>
       {showIcon ? (
         <Image
-          source={{ uri: (app.app_icon.startsWith('http') || app.app_icon.startsWith('file:') || app.app_icon.startsWith('/'))
-            ? app.app_icon
-            : `data:image/png;base64,${app.app_icon}`
-          }}
+          source={upiIconSource(app.app_icon)}
           style={s.upiAppIcon}
           onError={() => setIconFailed(true)}
         />
@@ -570,10 +576,7 @@ function UpiAppChip({ app, onPress }: { app: UpiApp; onPress: () => void }) {
     <Pressable style={s.upiChip} onPress={onPress}>
       {showIcon ? (
         <Image
-          source={{ uri: (app.app_icon.startsWith('http') || app.app_icon.startsWith('file:') || app.app_icon.startsWith('/'))
-            ? app.app_icon
-            : `data:image/png;base64,${app.app_icon}`
-          }}
+          source={upiIconSource(app.app_icon)}
           style={s.upiChipIcon}
           onError={() => setIconFailed(true)}
         />

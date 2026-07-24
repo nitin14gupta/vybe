@@ -10,6 +10,7 @@
     "icon": "./assets/images/icon.png",
     "ios": {
       "bundleIdentifier": "in.gorave.app",
+      "appleTeamId": "PUT_APPLE_ID",
       "supportsTablet": false,
       "associatedDomains": [
         "applinks:link.uilora.com"
@@ -117,14 +118,17 @@
       "react-native-auto-skeleton",
       "expo-sharing",
       "expo-build-properties",
-      "./plugins/withUpiQueries"
+      "./plugins/withUpiQueries",
+      "expo-web-browser",
+      "@bacons/apple-targets",
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
     "extra": {
-      "apiUrl": "http://192.168.0.102:8000",
+      "apiUrl": "http://192.168.0.101:8000",
       "router": {},
       "eas": {
         "projectId": "da4e0090-c985-42e9-ab31-f6832bcc46e9"

@@ -119,7 +119,7 @@ def send_vibe(body: SendVibeRequest, background_tasks: BackgroundTasks, current_
         send_push, receiver_id, "New Vybe",
         f"{sender_name} sent you a vybe",
         {"type": "vybe"},
-        sender_avatar,
+        sender_avatar, category="social",
     )
     return {"ok": True, "conversation_id": str(conv_id) if conv_id else None}
 
@@ -269,7 +269,7 @@ def respond_to_vibe(
                 send_push, sender_id, "Vybe Accepted",
                 f"{accepter_name} accepted your vybe",
                 {"type": "conversation", "conv_id": str(conv_id) if conv_id else ""},
-                accepter_avatar,
+                accepter_avatar, category="social",
             )
             return {"ok": True, "status": "accepted", "conversation_id": str(conv_id) if conv_id else None}
 

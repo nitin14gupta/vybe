@@ -6,7 +6,7 @@ import {
 import { hTap } from '@/lib/haptics'
 import { router } from 'expo-router'
 import { useFocusEffect } from 'expo-router'
-import { ChevronLeft, Bell, UserPlus, Flame, MessageCircle } from 'lucide-react-native'
+import { ChevronLeft, Bell, UserPlus, Flame, MessageCircle, PartyPopper, ShieldCheck } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import ApiService, { AppNotification } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
@@ -57,6 +57,14 @@ const ACTION_ICON: Record<string, any> = {
   message: MessageCircle,
 }
 
+// Notification types with no actor avatar or event cover photo get a
+// branded fallback glyph instead of a plain bell, so "you're all set to
+// host" etc. feel like a moment rather than a generic ping.
+const TYPE_FALLBACK: Record<string, { Icon: any; bg: string; color: string }> = {
+  host_onboarding_complete: { Icon: PartyPopper, bg: 'rgba(255,107,53,0.16)', color: Colors.brandOrange },
+  report_submitted: { Icon: ShieldCheck, bg: 'rgba(255,107,53,0.16)', color: Colors.brandOrange },
+}
+
 function NotifRow({ item, onPress, onAction }: {
   item: AppNotification
   onPress: () => void
@@ -65,15 +73,20 @@ function NotifRow({ item, onPress, onAction }: {
   const unread = !item.read_at
   const ActionIcon = item.action ? ACTION_ICON[item.action] : null
   const isPrimary = item.action === 'send_vybe' || item.action === 'message'
+  const fallback = TYPE_FALLBACK[item.type]
 
   return (
-    <View style={[s.row, unread && s.rowUnread]}>
+    <View style={s.row}>
       <Pressable style={s.rowMain} onPress={() => { hTap(); onPress() }}>
         <View style={s.avatarWrap}>
           {item.cover_photo ? (
             <Image source={{ uri: item.cover_photo }} style={s.coverThumb} resizeMode="cover" />
           ) : item.actor_avatar ? (
             <Image source={{ uri: item.actor_avatar }} style={s.avatar} />
+          ) : fallback ? (
+            <View style={[s.avatar, s.avatarFallback, { backgroundColor: fallback.bg }]}>
+              <fallback.Icon size={18} color={fallback.color} strokeWidth={1.75} />
+            </View>
           ) : (
             <View style={[s.avatar, s.avatarFallback]}>
               <Bell size={18} color={Colors.inkDisabled} strokeWidth={1.5} />
@@ -82,7 +95,7 @@ function NotifRow({ item, onPress, onAction }: {
           {unread && <View style={s.unreadDot} />}
         </View>
         <View style={s.textBlock}>
-          <Text style={s.title}>{item.title}</Text>
+          <Text style={[s.title, unread && s.titleUnread]}>{item.title}</Text>
           {item.body ? <Text style={s.body}>{item.body}</Text> : null}
           <Text style={s.time}>{timeAgo(item.created_at)}</Text>
         </View>
@@ -256,7 +269,6 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 20, paddingVertical: 14, gap: 10,
   },
-  rowUnread: { backgroundColor: 'rgba(255,107,53,0.07)' },
   rowMain: {
     flex: 1,
     flexDirection: 'row', alignItems: 'flex-start',
@@ -264,11 +276,11 @@ const s = StyleSheet.create({
   },
   avatarWrap: { position: 'relative' },
   avatar: { width: 44, height: 44, borderRadius: 22 },
-  // Event cover photos are 16:9 — a circular crop mangles them, so these get a
-  // small rounded-rect thumbnail instead (cropped via resizeMode="cover").
-  coverThumb: { width: 56, height: 40, borderRadius: 10 },
+  // True 16:9 event cover thumbnail — a circular crop mangles a landscape
+  // photo, so these get a rounded-rect thumbnail instead of the avatar shape.
+  coverThumb: { width: 64, height: 36, borderRadius: 8 },
   avatarFallback: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: Colors.surface,
     alignItems: 'center', justifyContent: 'center',
   },
   unreadDot: {
@@ -280,7 +292,8 @@ const s = StyleSheet.create({
   // minWidth: 0 keeps this from growing past its share when the action button
   // sits alongside it (RN flex-row-with-Text overflow quirk).
   textBlock: { flex: 1, minWidth: 0, gap: 2 },
-  title: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkPrimary, lineHeight: 20 },
+  title: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkSecondary, lineHeight: 20 },
+  titleUnread: { color: Colors.inkPrimary },
   body: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, lineHeight: 18 },
   time: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, marginTop: 2 },
   actionBtnWrap: {

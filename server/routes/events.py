@@ -605,17 +605,20 @@ def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, curre
         follower_ids = [r["follower_id"] for r in cur.fetchall()]
         conn.commit()
 
+    from utils.push import get_event_image_url
+    cover_url = get_event_image_url(new_id)
+
     for fid in follower_ids:
         background_tasks.add_task(
             send_push, fid, f"{host_name} posted an event",
             body.title,
-            {"type": "event", "event_id": new_id},
+            {"type": "event", "event_id": new_id}, cover_url, category="social",
         )
 
     background_tasks.add_task(
         send_push, current_user["id"], "Your event is live!",
         f"{body.title} was posted successfully.",
-        {"type": "event", "event_id": new_id},
+        {"type": "event", "event_id": new_id}, cover_url, category="hosting",
     )
 
     return get_event(new_id, current_user)
@@ -747,12 +750,16 @@ def update_event(event_id: str, body: CreateEventBody, background_tasks: Backgro
 
         conn.commit()
 
+    if affected_user_ids or promoted_users:
+        from utils.push import get_event_image_url
+        cover_url = get_event_image_url(event_id)
+
     if affected_user_ids:
         for a_uid in affected_user_ids:
             background_tasks.add_task(
                 send_push, a_uid, "Event details changed",
                 f"The host updated {body.title}. Check what's new.",
-                {"type": "event", "event_id": event_id},
+                {"type": "event", "event_id": event_id}, cover_url, category="attending",
             )
 
     if promoted_users:
@@ -767,7 +774,7 @@ def update_event(event_id: str, body: CreateEventBody, background_tasks: Backgro
             background_tasks.add_task(
                 send_push, p["user_id"], "A spot opened up!",
                 "You have 1 hour to confirm your spot.",
-                {"type": "event", "event_id": event_id},
+                {"type": "event", "event_id": event_id}, cover_url, category="attending",
             )
 
     return get_event(event_id, current_user)
@@ -917,13 +924,16 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
                         "SELECT 1 FROM user_blocks WHERE (blocker_id=%s::uuid AND blocked_id=%s::uuid) OR (blocker_id=%s::uuid AND blocked_id=%s::uuid)",
                         (host_id, uid, uid, host_id),
                     )
+                    from utils.push import get_event_image_url
+                    cover_url = get_event_image_url(event_id)
+
                     if not cur.fetchone():
                         from routes.notifications import notify_event_rsvp
                         notify_event_rsvp(cur, host_id, uid, attendee_name, event_id, ev_row["title"])
                         background_tasks.add_task(
                             send_push, host_id, "New RSVP",
                             f"{attendee_name} is going to {ev_row['title']}",
-                            {"type": "event", "event_id": event_id},
+                            {"type": "event", "event_id": event_id}, cover_url, category="hosting",
                         )
 
                     if just_sold_out:
@@ -932,7 +942,7 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
                         background_tasks.add_task(
                             send_push, host_id, "Your event sold out!",
                             f"{ev_row['title']} has no spots left.",
-                            {"type": "event", "event_id": event_id},
+                            {"type": "event", "event_id": event_id}, cover_url, category="hosting",
                         )
 
             conn.commit()
@@ -991,13 +1001,14 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
 
             if promoted:
                 from routes.notifications import notify_waitlist_promoted
+                from utils.push import get_event_image_url
                 with get_db() as (cur2, conn2):
                     notify_waitlist_promoted(cur2, promoted["user_id"], event_id, event_title_cancel)
                     conn2.commit()
                 background_tasks.add_task(
                     send_push, promoted["user_id"], "A spot opened up!",
                     f"You have 1 hour to confirm your spot at {event_title_cancel}.",
-                    {"type": "event", "event_id": event_id},
+                    {"type": "event", "event_id": event_id}, get_event_image_url(event_id), category="attending",
                 )
 
             status = "cancelled"
@@ -1005,6 +1016,7 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
         # Queue expiry push notifications (outside transaction)
         if expired_user_ids:
             from routes.notifications import notify_waitlist_expired
+            from utils.push import get_event_image_url
             with get_db() as (cur2, conn2):
                 cur2.execute("SELECT title FROM events WHERE id = %s", (event_id,))
                 ev_title_row = cur2.fetchone()
@@ -1012,11 +1024,12 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
                 for uid in expired_user_ids:
                     notify_waitlist_expired(cur2, uid, event_id, ev_title)
                 conn2.commit()
+            cover_url = get_event_image_url(event_id)
             for uid in expired_user_ids:
                 background_tasks.add_task(
                     send_push, uid, "Spot offer expired",
                     f"Your reserved spot was given to the next person.",
-                    {"type": "event", "event_id": event_id},
+                    {"type": "event", "event_id": event_id}, cover_url, category="attending",
                 )
 
     result = {"ok": True, "status": status}
@@ -1027,17 +1040,18 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
 
 # ── DELETE /events/{id} ───────────────────────────────────────────────────────
 
-def _cancel_event_and_refund(event_id: str, background_tasks: BackgroundTasks):
+def _cancel_event_and_refund(event_id: str, background_tasks: BackgroundTasks, cancelled_by_admin: bool = False):
     """Marks an event cancelled, notifies waitlist/attendees, and refunds paid
     attendees to their Gorave Wallet. Shared by the host's own cancel route
     and the admin force-cancel route — callers are responsible for their own
     authorization/deadline checks before calling this.
     """
     with get_db() as (cur, conn):
-        cur.execute("SELECT title, price_inr FROM events WHERE id = %s", (event_id,))
+        cur.execute("SELECT title, price_inr, host_id::text FROM events WHERE id = %s", (event_id,))
         ev_title_row = cur.fetchone()
         ev_title = ev_title_row["title"] if ev_title_row else ""
         ev_price = ev_title_row["price_inr"] if ev_title_row else 0
+        host_id = ev_title_row["host_id"] if ev_title_row else None
 
         cur.execute("UPDATE events SET is_cancelled = TRUE WHERE id = %s", (event_id,))
 
@@ -1048,9 +1062,12 @@ def _cancel_event_and_refund(event_id: str, background_tasks: BackgroundTasks):
         )
         waitlist_user_ids = [r["user_id"] for r in cur.fetchall()]
 
-        from routes.notifications import notify_waitlist_event_cancelled, notify_event_cancelled_attendee
+        from routes.notifications import notify_waitlist_event_cancelled, notify_event_cancelled_attendee, notify_event_cancelled_host
         for wl_uid in waitlist_user_ids:
             notify_waitlist_event_cancelled(cur, wl_uid, event_id, ev_title)
+
+        if host_id:
+            notify_event_cancelled_host(cur, host_id, event_id, ev_title, by_admin=cancelled_by_admin)
 
         # Confirmed attendees (free or paid) — notify everyone the event was cancelled
         cur.execute(
@@ -1082,18 +1099,33 @@ def _cancel_event_and_refund(event_id: str, background_tasks: BackgroundTasks):
 
         conn.commit()
 
+    from utils.push import get_event_image_url
+    cover_url = get_event_image_url(event_id)
+
+    if host_id:
+        host_push_body = (
+            f"{ev_title} was cancelled by the Gorave team. Attendees have been refunded."
+            if cancelled_by_admin else
+            f"You cancelled {ev_title}. Attendees have been notified and refunded."
+        )
+        background_tasks.add_task(
+            send_push, host_id, "Event cancelled",
+            host_push_body,
+            {"type": "event", "event_id": event_id}, cover_url, category="hosting",
+        )
+
     for wl_uid in waitlist_user_ids:
         background_tasks.add_task(
             send_push, wl_uid, "Event cancelled",
             f"{ev_title} was cancelled. You've been removed from the waitlist.",
-            {"type": "event", "event_id": event_id},
+            {"type": "event", "event_id": event_id}, cover_url, category="attending",
         )
 
     for going_uid in going_user_ids:
         background_tasks.add_task(
             send_push, going_uid, "Event cancelled",
             f"{ev_title} was cancelled by the host.",
-            {"type": "event", "event_id": event_id},
+            {"type": "event", "event_id": event_id}, cover_url, category="attending",
         )
 
     for att_uid in paid_user_ids:
@@ -1101,7 +1133,7 @@ def _cancel_event_and_refund(event_id: str, background_tasks: BackgroundTasks):
             send_push, att_uid,
             "Refund in your Gorave Wallet 💰",
             f"₹{ev_price} from '{ev_title}' is now in your Gorave Wallet.",
-            {"type": "wallet", "event_id": event_id},
+            {"type": "wallet", "event_id": event_id}, category="payments",
         )
 
 
@@ -1168,10 +1200,11 @@ def admit_from_waitlist(event_id: str, background_tasks: BackgroundTasks, curren
         conn.commit()
 
     if promoted:
+        from utils.push import get_event_image_url
         background_tasks.add_task(
             send_push, promoted["user_id"], "A spot opened up!",
             f"You have 1 hour to confirm your spot at {ev['title']}.",
-            {"type": "event", "event_id": event_id},
+            {"type": "event", "event_id": event_id}, get_event_image_url(event_id), category="attending",
         )
 
     return {
@@ -1463,7 +1496,7 @@ def submit_review(event_id: str, body: ReviewBody, background_tasks: BackgroundT
         background_tasks.add_task(
             send_push, host_id_review, "New Review",
             f"{reviewer_name} left a {body.rating}-star review on {event_title_review}",
-            {"type": "event", "event_id": event_id},
+            {"type": "event", "event_id": event_id}, category="hosting",
         )
     return {"ok": True}
 

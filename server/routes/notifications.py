@@ -1,7 +1,10 @@
+import json
 from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
 from typing import Optional
 from middleware.auth import get_current_user
 from db.config import get_db
+from utils.push import NOTIF_CATEGORIES
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -187,6 +190,21 @@ def notify_waitlist_expired(cur, user_id: str, event_id: str, event_title: str):
     )
 
 
+def notify_event_cancelled_host(cur, host_id: str, event_id: str, event_title: str, by_admin: bool = False):
+    body = (
+        f"{event_title} was cancelled by the Gorave team. Attendees have been refunded."
+        if by_admin else
+        f"You cancelled {event_title}. Attendees have been notified and refunded."
+    )
+    _insert_notification(
+        cur, host_id, "event_cancelled_host",
+        title="Event cancelled",
+        body=body,
+        entity_id=event_id,
+        entity_type="event",
+    )
+
+
 def notify_waitlist_event_cancelled(cur, user_id: str, event_id: str, event_title: str):
     _insert_notification(
         cur, user_id, "waitlist_event_cancelled",
@@ -282,13 +300,11 @@ def _enrich_notification(cur, uid: str, row: dict) -> dict:
                 d["action_target_id"] = actor_id
             # else: pending vybe between the two — ambiguous, no button
 
-    elif ntype == "event_created_confirmation":
-        entity_id = d.get("entity_id")
-        if entity_id:
-            cur.execute("SELECT cover_photos FROM events WHERE id = %s", (entity_id,))
-            ev = cur.fetchone()
-            if ev:
-                d["cover_photo"] = _extract_cover_photo(ev["cover_photos"])
+    if d.get("entity_type") == "event" and d.get("entity_id"):
+        cur.execute("SELECT cover_photos FROM events WHERE id = %s", (d["entity_id"],))
+        ev = cur.fetchone()
+        if ev:
+            d["cover_photo"] = _extract_cover_photo(ev["cover_photos"])
 
     return d
 
@@ -362,3 +378,39 @@ def mark_one_read(notif_id: str, current_user: dict = Depends(get_current_user))
         )
         conn.commit()
     return {"ok": True}
+
+
+# ── Push notification category preferences ────────────────────────────────────
+# Controls PUSH delivery only (see utils/push.py's category gate) — the
+# in-app notification list above is unaffected, so cancelling/toggling never
+# hides something the user already relied on seeing in-app.
+
+class NotificationPrefsBody(BaseModel):
+    social: Optional[bool] = None
+    hosting: Optional[bool] = None
+    attending: Optional[bool] = None
+    payments: Optional[bool] = None
+
+
+@router.get("/preferences")
+def get_notification_prefs(current_user: dict = Depends(get_current_user)):
+    with get_db() as (cur, _):
+        cur.execute("SELECT notification_prefs FROM users WHERE id = %s::uuid", (current_user["id"],))
+        row = cur.fetchone()
+    stored = (row["notification_prefs"] if row else None) or {}
+    return {cat: stored.get(cat, True) is not False for cat in NOTIF_CATEGORIES}
+
+
+@router.patch("/preferences")
+def update_notification_prefs(body: NotificationPrefsBody, current_user: dict = Depends(get_current_user)):
+    updates = {k: v for k, v in body.model_dump().items() if v is not None}
+    with get_db() as (cur, conn):
+        cur.execute(
+            "UPDATE users SET notification_prefs = notification_prefs || %s::jsonb WHERE id = %s::uuid "
+            "RETURNING notification_prefs",
+            (json.dumps(updates), current_user["id"]),
+        )
+        row = cur.fetchone()
+        conn.commit()
+    stored = row["notification_prefs"] if row else {}
+    return {cat: stored.get(cat, True) is not False for cat in NOTIF_CATEGORIES}

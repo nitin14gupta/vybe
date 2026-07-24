@@ -256,23 +256,24 @@ def wallet_pay(body: WalletPayBody, current_user: dict = Depends(get_current_use
 
         conn.commit()
 
-    from utils.push import send_push
+    from utils.push import send_push, get_event_image_url
+    cover_url = get_event_image_url(body.event_id)
     if ev_host_id:
         try:
             send_push(ev_host_id, f"{buyer_name} bought a ticket!",
                       f"Someone's going to {ev_title}.",
-                      {"type": "event", "event_id": body.event_id})
+                      {"type": "event", "event_id": body.event_id}, image_url=cover_url, category="hosting")
         except Exception:
             pass
     if just_sold_out and ev_host_id:
         try:
             send_push(ev_host_id, "Your event sold out!", f"{ev_title} has no spots left.",
-                      {"type": "event", "event_id": body.event_id})
+                      {"type": "event", "event_id": body.event_id}, image_url=cover_url, category="hosting")
         except Exception:
             pass
     try:
         send_push(uid, "Payment confirmed!", "Your ticket is ready. 🎉",
-                  {"type": "payment_success", "event_id": body.event_id})
+                  {"type": "payment_success", "event_id": body.event_id}, image_url=cover_url, category="payments")
     except Exception:
         pass
 
@@ -379,9 +380,12 @@ def _finalise_rsvp(*, order_id: str, event_id: str, uid: str, payment_id: str, w
 
         conn.commit()
 
+    from utils.push import get_event_image_url
+    cover_url = get_event_image_url(event_id)
+
     try:
         send_push(uid, "Payment confirmed!", "Your ticket is ready. 🎉",
-                  {"type": "payment_success", "event_id": event_id})
+                  {"type": "payment_success", "event_id": event_id}, image_url=cover_url, category="payments")
     except Exception:
         pass
 
@@ -389,14 +393,14 @@ def _finalise_rsvp(*, order_id: str, event_id: str, uid: str, payment_id: str, w
         try:
             send_push(ev_host_id, f"{buyer_name} bought a ticket!",
                       f"Someone's going to {ev_title}.",
-                      {"type": "event", "event_id": event_id})
+                      {"type": "event", "event_id": event_id}, image_url=cover_url, category="hosting")
         except Exception:
             pass
 
     if just_sold_out and ev_host_id:
         try:
             send_push(ev_host_id, "Your event sold out!", f"{ev_title} has no spots left.",
-                      {"type": "event", "event_id": event_id})
+                      {"type": "event", "event_id": event_id}, image_url=cover_url, category="hosting")
         except Exception:
             pass
 
@@ -652,9 +656,12 @@ def _finalise_qr_rsvp(*, order_db_id: str, qr_code_id: str, event_id: str,
 
         conn.commit()
 
+    from utils.push import get_event_image_url
+    cover_url = get_event_image_url(event_id)
+
     try:
         send_push(uid, "Payment confirmed!", "Your ticket is ready. 🎉",
-                  {"type": "payment_success", "event_id": event_id})
+                  {"type": "payment_success", "event_id": event_id}, image_url=cover_url, category="payments")
     except Exception:
         pass
 
@@ -662,13 +669,13 @@ def _finalise_qr_rsvp(*, order_db_id: str, qr_code_id: str, event_id: str,
         try:
             send_push(ev_host_id, f"{buyer_name} bought a ticket!",
                       f"Someone's going to {ev_title}.",
-                      {"type": "event", "event_id": event_id})
+                      {"type": "event", "event_id": event_id}, image_url=cover_url, category="hosting")
         except Exception:
             pass
 
     if just_sold_out and ev_host_id:
         try:
             send_push(ev_host_id, "Your event sold out!", f"{ev_title} has no spots left.",
-                      {"type": "event", "event_id": event_id})
+                      {"type": "event", "event_id": event_id}, image_url=cover_url, category="hosting")
         except Exception:
             pass

@@ -9,8 +9,9 @@ export interface IosUpiAppDef {
   app_name: string;
   package_name: string;
   scheme: string;
-  // Swap in real bundled icon files (drop them next to this file's
-  // referenced path) — until then these fall back to the letter avatar.
+  // require()'d from assets/images/payments/upi-apps/ — Amazon Pay doesn't
+  // have a bundled icon yet, so it stays null and falls back to the letter
+  // avatar until an icon file is added for it.
   icon: number | null;
 }
 
@@ -19,31 +20,31 @@ export const IOS_UPI_APPS: IosUpiAppDef[] = [
     app_name: "Google Pay",
     package_name: "com.google.android.apps.nbu.paisa.user",
     scheme: "tez",
-    icon: null,
+    icon: require("../../assets/images/payments/upi-apps/gpay.png"),
   },
   {
     app_name: "PhonePe",
     package_name: "com.phonepe.app",
     scheme: "phonepe",
-    icon: null,
+    icon: require("../../assets/images/payments/upi-apps/phonepe.png"),
   },
   {
     app_name: "Paytm",
     package_name: "net.one97.paytm",
     scheme: "paytmmp",
-    icon: null,
+    icon: require("../../assets/images/payments/upi-apps/paytm.png"),
   },
   {
     app_name: "BHIM",
     package_name: "in.org.npci.upiapp",
     scheme: "bhim",
-    icon: null,
+    icon: require("../../assets/images/payments/upi-apps/bhim.png"),
   },
   {
     app_name: "CRED",
     package_name: "com.dreamplug.androidapp",
     scheme: "credpay",
-    icon: null,
+    icon: require("../../assets/images/payments/upi-apps/cred.png"),
   },
   {
     app_name: "Amazon Pay",

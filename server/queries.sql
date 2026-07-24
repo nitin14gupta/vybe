@@ -422,6 +422,12 @@ ALTER TABLE public.support_requests DROP CONSTRAINT IF EXISTS support_requests_s
 ALTER TABLE public.support_requests ADD CONSTRAINT support_requests_status_check
   CHECK (status IN ('open', 'resolved', 'closed'));
 
+-- ── Push notification category preferences ───────────────────────────────────
+-- Sparse jsonb: only stores overrides, e.g. {"social": false}. A missing key
+-- means "on" (default) — see server/utils/push.py category gating.
+ALTER TABLE public.users
+  ADD COLUMN IF NOT EXISTS notification_prefs JSONB NOT NULL DEFAULT '{}'::jsonb;
+
 -- ── Admin panel: audit log of moderation actions ─────────────────────────────
 -- Written to by lock/unlock, force-cancel-event, and support-status-update —
 -- see server/utils/admin_audit.py::log_action.

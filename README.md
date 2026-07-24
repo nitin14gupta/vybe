@@ -1,0 +1,1 @@
+Apple Team ID in app.json under ios.appleTeamId — you skipped this for now; add it whenever you have it (Xcode → Signing & Capabilities, or developer.apple.com → Membership). Builds will warn/fail without it.
