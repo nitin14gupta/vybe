@@ -312,7 +312,6 @@ export default function EventDetailScreen() {
       setEvent(prev => prev ? { ...prev, is_cancelled: true } : prev)
       useRecentEventsStore.getState().remove(id!)
       showPill('Event cancelled', 'default')
-      router.replace('/(tabs)/events')
     } catch (e: any) {
       showPill("Couldn't cancel this event, try again", 'error')
     }
@@ -405,6 +404,10 @@ export default function EventDetailScreen() {
 
   if (lockedReason) {
     return <LockedScreen reason={lockedReason} event={event} onBack={() => setLockedReason(null)} />
+  }
+
+  if (event.is_cancelled) {
+    return <CancelledScreen event={event} isHost={event.host_id === myId} onBack={goBack} />
   }
 
   // True when user must join waitlist: either no seats OR active (non-promoted) waitlist exists
@@ -841,6 +844,42 @@ export default function EventDetailScreen() {
           shareUrl={buildEventShareUrl(event.id)}
         />
       )}
+    </View>
+  )
+}
+
+// ── Cancelled screen ───────────────────────────────────────────────────────────
+
+function CancelledScreen({
+  event,
+  isHost,
+  onBack,
+}: {
+  event: EventDetail
+  isHost: boolean
+  onBack: () => void
+}) {
+  const insets = useSafeAreaInsets()
+  const subtitle = isHost
+    ? 'You cancelled this event. Attendees have been notified, and anyone who paid has been refunded to their Gorave Wallet.'
+    : event.is_free
+      ? 'The host cancelled this event. It is no longer happening.'
+      : 'The host cancelled this event. Your payment has been refunded to your Gorave Wallet.'
+
+  return (
+    <View style={[styles.root, { paddingTop: insets.top + 8, paddingHorizontal: 24 }]}>
+      <Pressable style={styles.lockedBack} onPress={onBack}>
+        <ArrowLeft size={20} color={Colors.inkSecondary} />
+        <Text style={styles.lockedBackText}>Back</Text>
+      </Pressable>
+      <View style={styles.lockedBody}>
+        <View style={[styles.lockedIconWrap, { backgroundColor: 'rgba(255,56,100,0.12)' }]}>
+          <XIcon size={40} color={Colors.brandCoral} strokeWidth={2} />
+        </View>
+        <Text style={styles.lockedTitle}>Event Cancelled</Text>
+        <Text style={styles.deletedBody} numberOfLines={1}>{event.title}</Text>
+        <Text style={[styles.lockedSubtitle, { marginTop: 14 }]}>{subtitle}</Text>
+      </View>
     </View>
   )
 }

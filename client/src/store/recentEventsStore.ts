@@ -17,16 +17,21 @@ export const useRecentEventsStore = create<RecentEventsStore>()(
   persist(
     (set) => ({
       events: [],
-      add: (event) =>
+      add: (event) => {
+        if (event.is_cancelled) {
+          set((s) => ({ events: s.events.filter((e) => e.id !== event.id) }))
+          return
+        }
         set((s) => ({
           events: [event, ...s.events.filter((e) => e.id !== event.id)]
-            .filter((e) => !isEventPast(e))
+            .filter((e) => !isEventPast(e) && !e.is_cancelled)
             .slice(0, MAX),
-        })),
+        }))
+      },
       remove: (eventId) =>
         set((s) => ({ events: s.events.filter((e) => e.id !== eventId) })),
       pruneEnded: () =>
-        set((s) => ({ events: s.events.filter((e) => !isEventPast(e)) })),
+        set((s) => ({ events: s.events.filter((e) => !isEventPast(e) && !e.is_cancelled) })),
     }),
     { name: 'vybe-recent-events', storage: createJSONStorage(() => AsyncStorage) },
   ),
