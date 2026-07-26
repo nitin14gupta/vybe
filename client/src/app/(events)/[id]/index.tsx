@@ -880,6 +880,8 @@ export default function EventDetailScreen() {
           dateTimeLabel={formatDateTime(event.date_time)}
           coverUrl={event.cover_photos?.[0]?.url}
           shareUrl={buildEventShareUrl(event.id)}
+          hostName={event.host_name}
+          hostAvatarUrl={event.host_avatar}
         />
       )}
     </View>

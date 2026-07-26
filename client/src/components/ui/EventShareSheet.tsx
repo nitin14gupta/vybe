@@ -6,13 +6,15 @@ import type { NativeSyntheticEvent, NativeScrollEvent } from 'react-native'
 import { ScrollView } from 'react-native-gesture-handler'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
+import { LinearGradient } from 'expo-linear-gradient'
 import { Download, Share2, MessageCircle } from 'lucide-react-native'
 import { captureRef } from 'react-native-view-shot'
 import { Asset as MediaAsset, requestPermissionsAsync as requestMediaPermissionsAsync } from 'expo-media-library'
-import { hTap, hSuccess } from '@/lib/haptics'
+import { hTap, hSuccess, hSelection } from '@/lib/haptics'
 import { useImageShare } from '@/hooks/useImageShare'
 import { usePillStore } from '@/store/pillStore'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, FLYER_THEMES, type FlyerTheme } from '@/constants'
+import { useFlyerThemeStore } from '@/store/flyerThemeStore'
 import { EventShareCard, SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT } from '@/components/events/EventShareCard'
 import { EventQrShareCard } from '@/components/events/EventQrShareCard'
 import { EventFlyerShareCard } from '@/components/events/EventFlyerShareCard'
@@ -21,7 +23,8 @@ import { ShareToChatSheet } from './ShareToChatSheet'
 const { width: SCREEN_W } = Dimensions.get('window')
 const CARD_GAP = 14
 const SIDE_INSET = (SCREEN_W - SHARE_CARD_WIDTH) / 2
-const SHEET_HEIGHT = 8 + 64 + SHARE_CARD_HEIGHT + 30 + 118 + 24
+const SWATCH_ROW_HEIGHT = 44
+const SHEET_HEIGHT = 8 + 64 + SHARE_CARD_HEIGHT + SWATCH_ROW_HEIGHT + 30 + 118 + 24
 
 interface Props {
   visible: boolean
@@ -31,13 +34,41 @@ interface Props {
   dateTimeLabel: string
   coverUrl?: string | null
   shareUrl: string
+  hostName?: string | null
+  hostAvatarUrl?: string | null
 }
 
 function renderBackdrop(props: BottomSheetBackdropProps) {
   return <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close" opacity={0.6} />
 }
 
-function EventShareSheetCore({ onClose, eventId, title, dateTimeLabel, coverUrl, shareUrl }: Omit<Props, 'visible'>) {
+function ThemeSwatch({ theme, active, onPress }: { theme: FlyerTheme; active: boolean; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} hitSlop={8}>
+      {/* The ring's borderColor toggles (transparent <-> ink) but the border
+          property itself is always present — Android can fail to repaint a
+          view that has overflow:'hidden' + a native gradient child when
+          borderWidth is added/removed on that SAME node, leaving it blank
+          until the next full layout. Keeping the clipped/gradient view's
+          style 100% constant and putting the toggle on this outer ring
+          instead sidesteps that entirely. */}
+      <View style={[s.swatchRing, active ? s.swatchRingActive : s.swatchRingIdle]}>
+        <View style={s.swatchOrb}>
+          <LinearGradient
+            colors={[theme.swatchGlow, theme.bgDeep]}
+            start={{ x: 0.15, y: 0.1 }}
+            end={{ x: 0.9, y: 1 }}
+            style={s.swatchFill}
+          >
+            <View style={s.swatchGloss} />
+          </LinearGradient>
+        </View>
+      </View>
+    </Pressable>
+  )
+}
+
+function EventShareSheetCore({ onClose, eventId, title, dateTimeLabel, coverUrl, shareUrl, hostName, hostAvatarUrl }: Omit<Props, 'visible'>) {
   const sheetRef = useRef<BottomSheetModal>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const [chatShareOpen, setChatShareOpen] = useState(false)
@@ -75,6 +106,9 @@ function EventShareSheetCore({ onClose, eventId, title, dateTimeLabel, coverUrl,
   }
 
   const activeRef = refs[activeIndex] ?? refs[0]
+  const isFlyerSlide = !!coverUrl && activeIndex === refs.length - 1
+  const flyerThemeKey = useFlyerThemeStore(st => st.themeKey)
+  const setFlyerThemeKey = useFlyerThemeStore(st => st.setThemeKey)
 
   const handleShare = async () => {
     hTap()
@@ -160,10 +194,28 @@ function EventShareSheetCore({ onClose, eventId, title, dateTimeLabel, coverUrl,
                 imageUrl={coverUrl}
                 title={title}
                 dateTimeLabel={dateTimeLabel}
+                shareUrl={shareUrl}
+                hostName={hostName}
+                hostAvatarUrl={hostAvatarUrl}
               />
             ) : <View style={s.slidePlaceholder} />
           )}
         </ScrollView>
+
+        <View style={s.swatchRow}>
+          {isFlyerSlide && (
+            <View style={s.swatchTrack}>
+              {FLYER_THEMES.map(t => (
+                <ThemeSwatch
+                  key={t.key}
+                  theme={t}
+                  active={flyerThemeKey === t.key}
+                  onPress={() => { hSelection(); setFlyerThemeKey(t.key) }}
+                />
+              ))}
+            </View>
+          )}
+        </View>
 
         <View style={s.dots}>
           {Array.from({ length: slideCount }).map((_, i) => (
@@ -228,6 +280,54 @@ const s = StyleSheet.create({
   slidePlaceholder: {
     width: SHARE_CARD_WIDTH, height: SHARE_CARD_HEIGHT,
     borderRadius: 20, backgroundColor: '#1a1a1a',
+  },
+  swatchRow: {
+    height: SWATCH_ROW_HEIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  swatchTrack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 24,
+    // backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  swatchRing: {
+    borderRadius: 19,
+    borderWidth: 1,
+  },
+  swatchRingIdle: {
+    borderColor: 'transparent',
+  },
+  swatchRingActive: {
+    borderColor: Colors.inkPrimary,
+  },
+  swatchOrb: {
+    width: 26,
+    height: 26,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  swatchFill: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  swatchGloss: {
+    position: 'absolute',
+    top: 3,
+    left: 4,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.4)',
   },
   dots: {
     flexDirection: 'row',

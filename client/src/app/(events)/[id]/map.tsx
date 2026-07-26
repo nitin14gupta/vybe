@@ -9,10 +9,6 @@ import { BrandedLoader } from '@/components/ui'
 import ApiService, { type EventDetail } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
 
-// Full-screen map for one event — shows the user's live location alongside
-// the event pin with a route line between them (EventsMapView already draws
-// this for the discover tab's multi-event map; here it's just fed a single
-// event and locked onto it via activeEventId).
 export default function EventMapScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const insets = useSafeAreaInsets()
