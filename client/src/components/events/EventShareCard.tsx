@@ -39,7 +39,7 @@ export const EventShareCard = forwardRef<View, Props>(
           </View>
           <View style={s.brandRow}>
             <Image source={Logo} style={s.logo} />
-            <Text style={s.brand}>VYBE</Text>
+            <Text style={s.brand}>GORAVE</Text>
           </View>
         </View>
       </View>

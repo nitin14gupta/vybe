@@ -133,7 +133,7 @@ export default function PublishedScreen() {
       .catch(() => { })
   }, [id])
 
-  const shareText = `Check out "${eventTitle}" on VYBE! 🔥${dateTimeLabel ? `\n${dateTimeLabel}` : ''}`
+  const shareText = `Check out "${eventTitle}" on GORAVE! 🔥${dateTimeLabel ? `\n${dateTimeLabel}` : ''}`
 
   const handleShare = async () => {
     hTap()
@@ -171,7 +171,7 @@ export default function PublishedScreen() {
         <RocketIcon />
 
         <Text style={s.headline}>Your event is live! 🚀</Text>
-        <Text style={s.sub}>Share to get your first guests and start building the vybe.</Text>
+        <Text style={s.sub}>Share to get your first guests and start building the vibe.</Text>
 
         {/* Share card */}
         <BlurView intensity={20} tint="dark" style={s.shareCard}>

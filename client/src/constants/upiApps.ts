@@ -40,16 +40,4 @@ export const IOS_UPI_APPS: IosUpiAppDef[] = [
     scheme: "bhim",
     icon: require("../../assets/images/payments/upi-apps/bhim.png"),
   },
-  {
-    app_name: "CRED",
-    package_name: "com.dreamplug.androidapp",
-    scheme: "credpay",
-    icon: require("../../assets/images/payments/upi-apps/cred.png"),
-  },
-  {
-    app_name: "Amazon Pay",
-    package_name: "in.amazon.mShop.android.shopping",
-    scheme: "amazonpay",
-    icon: null,
-  },
 ];

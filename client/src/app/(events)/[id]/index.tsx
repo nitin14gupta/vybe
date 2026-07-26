@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Dimensions,
   FlatList,
+  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -10,6 +11,7 @@ import {
   Text,
   View,
 } from 'react-native'
+import * as Clipboard from 'expo-clipboard'
 // ActivityIndicator kept for attendees loading spinner
 import { hTap, hSuccess, hSelection } from '@/lib/haptics'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
@@ -44,7 +46,7 @@ import ApiService, { type EventDetail, type EventAttendee, type EventGuest } fro
 import { useAuthStore } from '@/store/auth'
 import { useRecentEventsStore } from '@/store/recentEventsStore'
 import { usePillStore } from '@/store/pillStore'
-import { ConfirmSheet, GuestListSheet, EventShareSheet } from '@/components/ui'
+import { ConfirmSheet, GuestListSheet, EventShareSheet, DotsSheet } from '@/components/ui'
 import { ReportEventSheet } from '@/components/events/ReportEventSheet'
 import { buildEventShareUrl } from '@/lib/deepLink'
 
@@ -200,6 +202,7 @@ export default function EventDetailScreen() {
   const [offerSecondsLeft, setOfferSecondsLeft] = useState<number | null>(null)
 
   const [shareSheetOpen, setShareSheetOpen] = useState(false)
+  const [addressSheetOpen, setAddressSheetOpen] = useState(false)
 
   useFocusEffect(useCallback(() => {
     if (!id) return
@@ -370,6 +373,19 @@ export default function EventDetailScreen() {
     router.push(`/(events)/${id}/waitlist` as any)
   }
 
+  const handleAddressAction = (key: string) => {
+    if (!event) return
+    if (key === 'copy') {
+      Clipboard.setStringAsync(event.location_name ?? '')
+      showPill('Address copied', 'default')
+    } else if (key === 'maps') {
+      const query = event.location_lat != null && event.location_lng != null
+        ? `${event.location_lat},${event.location_lng}`
+        : encodeURIComponent(event.location_name ?? '')
+      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`)
+    }
+  }
+
   const now = new Date()
   const eventStart = event ? parseDate(event.date_time) : null
   const eventEnd = event?.end_time ? parseDate(event.end_time) : null
@@ -524,10 +540,19 @@ export default function EventDetailScreen() {
             {event.location_name && (
               <>
                 <View style={styles.infoDivider} />
-                <View style={styles.infoRow}>
+                <Pressable
+                  style={styles.infoRow}
+                  onPress={() => { hTap(); setAddressSheetOpen(true) }}
+                  onLongPress={() => {
+                    hSuccess()
+                    Clipboard.setStringAsync(event.location_name ?? '')
+                    showPill('Address copied', 'default')
+                  }}
+                >
                   <MapPin size={16} color={Colors.brandOrange} />
                   <Text style={styles.infoText}>{event.location_name}</Text>
-                </View>
+                  <ChevronRight size={16} color={Colors.inkDisabled} strokeWidth={1.8} />
+                </Pressable>
               </>
             )}
             <View style={styles.infoDivider} />
@@ -628,13 +653,16 @@ export default function EventDetailScreen() {
 
           {/* Mini map */}
           {event.location_lat != null && event.location_lng != null && (
-            <View style={styles.miniMapWrap}>
+            <Pressable
+              style={styles.miniMapWrap}
+              onPress={() => { hTap(); router.push(`/(events)/${id}/map` as any) }}
+            >
               <StaticEventMap
                 lat={event.location_lat}
                 lng={event.location_lng}
                 eventType={event.event_type}
               />
-            </View>
+            </Pressable>
           )}
         </ScrollView>
       </View>
@@ -822,6 +850,16 @@ export default function EventDetailScreen() {
         visible={reportOpen}
         eventId={id ?? ''}
         onClose={() => setReportOpen(false)}
+      />
+      <DotsSheet
+        visible={addressSheetOpen}
+        title={event.location_name}
+        actions={[
+          { key: 'copy', label: 'Copy Address' },
+          { key: 'maps', label: 'Open in Google Maps' },
+        ]}
+        onAction={handleAddressAction}
+        onClose={() => setAddressSheetOpen(false)}
       />
       <GuestListSheet
         visible={guestSheetOpen}

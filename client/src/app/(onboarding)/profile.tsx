@@ -42,7 +42,7 @@ export default function ProfileScreen() {
     if (year < 1900 || birth > today) return 'Invalid date'
     let age = today.getFullYear() - birth.getFullYear()
     if (today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) age--
-    if (age < 18) return 'You must be 18 or older to use Vybe'
+    if (age < 18) return 'You must be 18 or older to use Gorave'
     return ''
   }
 
@@ -92,7 +92,7 @@ export default function ProfileScreen() {
       })
       router.push('/(onboarding)/photos')
     } catch (e: any) {
-      const msg = e?.status === 400 ? (e.message || 'You must be 18+ to use Vybe.') : 'Something went wrong. Please try again.'
+      const msg = e?.status === 400 ? (e.message || 'You must be 18+ to use Gorave.') : 'Something went wrong. Please try again.'
       showPill(msg, 'error')
     } finally {
       setLoading(false)

@@ -82,7 +82,7 @@ export default function CompleteScreen() {
             Start discovering events and people near you.
           </Text>
           <View style={styles.btnWrap}>
-            <PrimaryButton label="Explore VYBE" onPress={navigate} />
+            <PrimaryButton label="Explore GORAVE" onPress={navigate} />
           </View>
           <Text style={styles.auto}>Taking you in automatically…</Text>
         </Animated.View>

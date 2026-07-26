@@ -1,23 +1,53 @@
-import { forwardRef } from 'react'
+import { forwardRef, useEffect } from 'react'
 import { View, Text, Image, StyleSheet } from 'react-native'
+import Animated, {
+  useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing,
+} from 'react-native-reanimated'
 import { FontFamily, Logo } from '@/constants'
 import { SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT } from './EventShareCard'
 
-const RSVP_STRIP = Array(8).fill('RSVP ON VYBE').join('   •   ')
+const RSVP_STRIP = Array(12).fill('RSVP ON GORAVE').join('   ')
+const MARQUEE_DURATION = 9000
+
+function StripLabel() {
+  return (
+    <View style={s.stripLabel}>
+      <Text style={s.sideStripText} numberOfLines={1} ellipsizeMode="clip">{RSVP_STRIP}</Text>
+    </View>
+  )
+}
+
+function SideStrip({ reverse }: { reverse?: boolean }) {
+  const translateY = useSharedValue(reverse ? -SHARE_CARD_HEIGHT : 0)
+
+  useEffect(() => {
+    translateY.value = reverse ? -SHARE_CARD_HEIGHT : 0
+    translateY.value = withRepeat(
+      withTiming(reverse ? 0 : -SHARE_CARD_HEIGHT, { duration: MARQUEE_DURATION, easing: Easing.linear }),
+      -1,
+      false,
+    )
+  }, [reverse])
+
+  const colStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }))
+
+  return (
+    <View style={s.sideStrip}>
+      <Animated.View style={colStyle}>
+        <StripLabel />
+        <StripLabel />
+      </Animated.View>
+    </View>
+  )
+}
 
 interface Props {
   imageUrl: string
   title: string
   dateTimeLabel: string
   onImageLoad?: () => void
-}
-
-function SideStrip() {
-  return (
-    <View style={s.sideStrip}>
-      <Text style={s.sideStripText} numberOfLines={1}>{RSVP_STRIP}</Text>
-    </View>
-  )
 }
 
 // Third share-sheet slide — a printed-poster "mat frame" treatment (à la
@@ -41,10 +71,10 @@ export const EventFlyerShareCard = forwardRef<View, Props>(
           <Text style={s.title} numberOfLines={2}>{title}</Text>
           <View style={s.brandRow}>
             <Image source={Logo} style={s.logo} />
-            <Text style={s.brand}>Vybe</Text>
+            <Text style={s.brand}>Gorave</Text>
           </View>
         </View>
-        <SideStrip />
+        <SideStrip reverse />
       </View>
     )
   }
@@ -61,9 +91,14 @@ const s = StyleSheet.create({
   },
   sideStrip: {
     width: 22,
+    height: SHARE_CARD_HEIGHT,
+    overflow: 'hidden',
+  },
+  stripLabel: {
+    width: 22,
+    height: SHARE_CARD_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
   },
   sideStripText: {
     width: SHARE_CARD_HEIGHT,

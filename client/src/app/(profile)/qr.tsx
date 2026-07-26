@@ -18,7 +18,7 @@ export default function ProfileQrScreen() {
 
   const shareUrl = buildProfileShareUrl(userId, username)
   const handle = username ? `@${username}` : (name ?? 'this profile')
-  const { cardRef, handleShare, handleSave } = useQrShare(`Hey, this is my profile on Vybe! Follow me 🔥\n${shareUrl}`)
+  const { cardRef, handleShare, handleSave } = useQrShare(`Hey, this is my profile on Gorave! Follow me 🔥\n${shareUrl}`)
 
   return (
     <View style={s.root}>

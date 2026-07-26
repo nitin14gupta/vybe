@@ -21,7 +21,7 @@ export const EventQrShareCard = forwardRef<View, Props>(({ data, title, dateTime
     <Text style={s.meta}>{dateTimeLabel}</Text>
     <View style={s.brandRow}>
       <Image source={Logo} style={s.logo} />
-      <Text style={s.brand}>VYBE</Text>
+      <Text style={s.brand}>GORAVE</Text>
     </View>
   </View>
 ))
