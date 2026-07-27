@@ -5,6 +5,41 @@
 
 -- ── Tables ──────────────────────────────────────────────────────────────────
 
+CREATE TABLE IF NOT EXISTS public.admin_audit_log (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  admin_id uuid NOT NULL,
+  action text NOT NULL,
+  target_type text NOT NULL,
+  target_id uuid,
+  detail text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT admin_audit_log_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE IF NOT EXISTS public.admin_refresh_tokens (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  admin_id uuid NOT NULL,
+  token_hash character varying(255) NOT NULL,
+  expires_at timestamp with time zone NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT admin_refresh_tokens_pkey PRIMARY KEY (id),
+  CONSTRAINT admin_refresh_tokens_token_hash_key UNIQUE (token_hash)
+);
+
+CREATE TABLE IF NOT EXISTS public.admin_users (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  email text NOT NULL,
+  password_hash text NOT NULL,
+  name text,
+  role text DEFAULT 'admin'::text NOT NULL,
+  is_active boolean DEFAULT true NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  last_login_at timestamp with time zone,
+  CONSTRAINT admin_users_pkey PRIMARY KEY (id),
+  CONSTRAINT admin_users_email_key UNIQUE (email)
+);
+
 CREATE TABLE IF NOT EXISTS public.alembic_version (
   version_num character varying(32) NOT NULL,
   CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
@@ -225,6 +260,7 @@ CREATE TABLE IF NOT EXISTS public.support_requests (
   message text NOT NULL,
   status text DEFAULT 'open'::text NOT NULL,
   created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT support_requests_status_check CHECK (status = ANY (ARRAY['open'::text, 'resolved'::text, 'closed'::text])),
   CONSTRAINT support_requests_pkey PRIMARY KEY (id)
 );
 
@@ -283,8 +319,12 @@ CREATE TABLE IF NOT EXISTS public.users (
   wallet_balance integer DEFAULT 0 NOT NULL,
   is_deleted boolean DEFAULT false NOT NULL,
   deleted_at timestamp with time zone,
-  public_key text,
   is_host_onboarding_finished boolean DEFAULT false,
+  is_locked boolean DEFAULT false NOT NULL,
+  locked_reason text,
+  locked_at timestamp with time zone,
+  locked_by uuid,
+  notification_prefs jsonb DEFAULT '{}'::jsonb NOT NULL,
   CONSTRAINT users_pkey PRIMARY KEY (id),
   CONSTRAINT users_phone_key UNIQUE (phone),
   CONSTRAINT users_username_key UNIQUE (username)
@@ -322,6 +362,8 @@ CREATE TABLE IF NOT EXISTS public.wallet_transactions (
 );
 
 -- ── Foreign Keys ────────────────────────────────────────────────────────────
+ALTER TABLE public.admin_audit_log ADD CONSTRAINT admin_audit_log_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES admin_users(id) ON DELETE CASCADE;
+ALTER TABLE public.admin_refresh_tokens ADD CONSTRAINT admin_refresh_tokens_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES admin_users(id) ON DELETE CASCADE;
 ALTER TABLE public.app_feedback ADD CONSTRAINT app_feedback_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.conversations ADD CONSTRAINT conversations_user1_id_fkey FOREIGN KEY (user1_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.conversations ADD CONSTRAINT conversations_user2_id_fkey FOREIGN KEY (user2_id) REFERENCES users(id) ON DELETE CASCADE;
@@ -352,11 +394,14 @@ ALTER TABLE public.user_blocks ADD CONSTRAINT user_blocks_blocker_id_fkey FOREIG
 ALTER TABLE public.user_photos ADD CONSTRAINT user_photos_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.user_reports ADD CONSTRAINT user_reports_reported_id_fkey FOREIGN KEY (reported_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.user_reports ADD CONSTRAINT user_reports_reporter_id_fkey FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE public.users ADD CONSTRAINT users_locked_by_fkey FOREIGN KEY (locked_by) REFERENCES admin_users(id) ON DELETE SET NULL;
 ALTER TABLE public.vibe_requests ADD CONSTRAINT vibe_requests_receiver_id_fkey FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.vibe_requests ADD CONSTRAINT vibe_requests_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.wallet_transactions ADD CONSTRAINT wallet_transactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 -- ── Indexes ─────────────────────────────────────────────────────────────────
+CREATE INDEX idx_admin_audit_log_created_at ON public.admin_audit_log USING btree (created_at DESC);
+CREATE INDEX idx_admin_refresh_tokens_admin_id ON public.admin_refresh_tokens USING btree (admin_id);
 CREATE INDEX idx_device_tokens_user ON public.device_tokens USING btree (user_id);
 CREATE INDEX events_location_idx ON public.events USING btree (location_lat, location_lng) WHERE (location_lat IS NOT NULL);
 CREATE INDEX idx_follows_follower ON public.follows USING btree (follower_id);
@@ -372,76 +417,3 @@ CREATE INDEX idx_users_username_trgm ON public.users USING gin (username gin_trg
 
 -- ── Triggers ────────────────────────────────────────────────────────────────
 -- TRIGGER users_updated_at BEFORE UPDATE ON public.users: EXECUTE FUNCTION update_updated_at()
-
--- ── Admin panel: admin accounts, separate from the mobile `users` table ─────
-CREATE TABLE IF NOT EXISTS public.admin_users (
-  id uuid DEFAULT gen_random_uuid() NOT NULL,
-  email text NOT NULL,
-  password_hash text NOT NULL,
-  name text,
-  role text NOT NULL DEFAULT 'admin',
-  is_active boolean NOT NULL DEFAULT TRUE,
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now(),
-  last_login_at timestamptz,
-  CONSTRAINT admin_users_pkey PRIMARY KEY (id),
-  CONSTRAINT admin_users_email_key UNIQUE (email)
-);
-
-CREATE TABLE IF NOT EXISTS public.admin_refresh_tokens (
-  id uuid DEFAULT gen_random_uuid() NOT NULL,
-  admin_id uuid NOT NULL,
-  token_hash character varying(255) NOT NULL,
-  expires_at timestamptz NOT NULL,
-  created_at timestamptz DEFAULT now(),
-  CONSTRAINT admin_refresh_tokens_pkey PRIMARY KEY (id),
-  CONSTRAINT admin_refresh_tokens_token_hash_key UNIQUE (token_hash),
-  CONSTRAINT admin_refresh_tokens_admin_id_fkey FOREIGN KEY (admin_id)
-    REFERENCES admin_users(id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_admin_refresh_tokens_admin_id ON public.admin_refresh_tokens USING btree (admin_id);
-
--- ── Admin panel: lock a user's account ───────────────────────────────────────
--- Locking removes the user's active session (refresh_tokens/device_tokens are
--- deleted by the lock endpoint) and get_current_user rejects any further API
--- call from them with a structured 403 until an admin unlocks the account.
-ALTER TABLE public.users
-  ADD COLUMN IF NOT EXISTS is_locked BOOLEAN NOT NULL DEFAULT FALSE,
-  ADD COLUMN IF NOT EXISTS locked_reason TEXT,
-  ADD COLUMN IF NOT EXISTS locked_at TIMESTAMPTZ,
-  ADD COLUMN IF NOT EXISTS locked_by UUID;
-
-ALTER TABLE public.users DROP CONSTRAINT IF EXISTS users_locked_by_fkey;
-ALTER TABLE public.users
-  ADD CONSTRAINT users_locked_by_fkey FOREIGN KEY (locked_by)
-    REFERENCES admin_users(id) ON DELETE SET NULL;
-
--- ── Admin panel: constrain support ticket status now that admin manages it ──
-ALTER TABLE public.support_requests DROP CONSTRAINT IF EXISTS support_requests_status_check;
-ALTER TABLE public.support_requests ADD CONSTRAINT support_requests_status_check
-  CHECK (status IN ('open', 'resolved', 'closed'));
-
--- ── Push notification category preferences ───────────────────────────────────
--- Sparse jsonb: only stores overrides, e.g. {"social": false}. A missing key
--- means "on" (default) — see server/utils/push.py category gating.
-ALTER TABLE public.users
-  ADD COLUMN IF NOT EXISTS notification_prefs JSONB NOT NULL DEFAULT '{}'::jsonb;
-
--- ── Admin panel: audit log of moderation actions ─────────────────────────────
--- Written to by lock/unlock, force-cancel-event, and support-status-update —
--- see server/utils/admin_audit.py::log_action.
-CREATE TABLE IF NOT EXISTS public.admin_audit_log (
-  id uuid DEFAULT gen_random_uuid() NOT NULL,
-  admin_id uuid NOT NULL,
-  action text NOT NULL,
-  target_type text NOT NULL,
-  target_id uuid,
-  detail text,
-  created_at timestamptz DEFAULT now(),
-  CONSTRAINT admin_audit_log_pkey PRIMARY KEY (id),
-  CONSTRAINT admin_audit_log_admin_id_fkey FOREIGN KEY (admin_id)
-    REFERENCES admin_users(id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_admin_audit_log_created_at ON public.admin_audit_log USING btree (created_at DESC);

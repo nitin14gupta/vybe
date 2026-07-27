@@ -108,7 +108,7 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <SettingRow
             icon={<Info size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
-            label="About GOrave"
+            label="About Gorave"
             value={`v${appVersion}`}
             onPress={() => router.push('/(settings)/about')}
             showSeparator={false}
