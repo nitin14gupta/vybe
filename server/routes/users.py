@@ -59,9 +59,17 @@ _USER_SELECT = """
             WHERE blocker_id = u.id AND blocked_id = %s::uuid
         ) AS is_blocked_by_them,
         (SELECT COUNT(*) FROM events e
-         WHERE e.host_id = u.id 
+         WHERE e.host_id = u.id
            AND COALESCE(e.is_cancelled, FALSE) = FALSE
         )::int AS hosted_events_count,
+        (SELECT ROUND(AVG(er.rating)::numeric, 1) FROM event_reviews er
+         JOIN events e ON e.id = er.event_id
+         WHERE e.host_id = u.id
+        ) AS host_avg_rating,
+        (SELECT COUNT(*) FROM event_reviews er
+         JOIN events e ON e.id = er.event_id
+         WHERE e.host_id = u.id
+        )::int AS host_review_count,
         COALESCE(
             json_agg(
                 json_build_object('id', p.id::text, 'url', p.url, 'position', p.position)
@@ -72,6 +80,20 @@ _USER_SELECT = """
     FROM users u
     LEFT JOIN user_photos p ON p.user_id = u.id
 """
+
+
+def compute_host_badges(hosted_events_count: int) -> list[str]:
+    """Dynamic tiered host badge for a given hosted (non-cancelled) event count.
+    Shared between the profile endpoints and the event-detail host badge."""
+    if hosted_events_count >= 75:
+        return ["Legend"]
+    elif hosted_events_count >= 25:
+        return ["Elite"]
+    elif hosted_events_count >= 10:
+        return ["Established"]
+    elif hosted_events_count >= 3:
+        return ["Rising"]
+    return []
 
 
 def _fetch_user(cur, user_id: str, viewer_id: str) -> dict | None:
@@ -88,16 +110,10 @@ def _fetch_user(cur, user_id: str, viewer_id: str) -> dict | None:
     # Calculate dynamic host badge based on hosted events count
     hosted_events_count = d.pop("hosted_events_count", 0)
     badges = d.get("badges") or []
-    if hosted_events_count >= 75:
-        badges.append("Legend")
-    elif hosted_events_count >= 25:
-        badges.append("Elite")
-    elif hosted_events_count >= 10:
-        badges.append("Established")
-    elif hosted_events_count >= 3:
-        badges.append("Rising")
-        
+    badges += compute_host_badges(hosted_events_count)
     d["badges"] = badges
+    d["host_avg_rating"] = float(d["host_avg_rating"]) if d.get("host_avg_rating") is not None else None
+    d["host_review_count"] = d.get("host_review_count") or 0
     d["bio"] = d.get("bio")
     d["photos"] = d.get("photos") or []
     d["vibers_count"] = d.get("vibers_count") or 0

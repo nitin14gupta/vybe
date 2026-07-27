@@ -2,17 +2,8 @@ import React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import MapView, { Marker as GoogleMarker } from 'react-native-maps'
 import { Map, Camera, Marker } from '@maplibre/maplibre-react-native'
-import { Colors } from '@/constants'
+import { Colors, EVENT_EMOJIS } from '@/constants'
 import { MAP_PROVIDER, TILE_STYLE } from '@/constants/mapConfig'
-
-const EVENT_EMOJIS: Record<string, string> = {
-  house_party: '🎉',
-  rooftop: '🌆',
-  game_night: '🎮',
-  dinner: '🍽️',
-  music: '🎵',
-  other: '🔥',
-}
 
 const DARK_MAP_STYLE = [
   { elementType: 'geometry', stylers: [{ color: '#1a1a1a' }] },

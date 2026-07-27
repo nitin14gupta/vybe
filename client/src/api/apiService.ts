@@ -66,6 +66,8 @@ export interface CityResponse {
 export interface ProfileResponse extends UserResponse {
   vibers_count: number
   vibing_count: number
+  host_avg_rating: number | null
+  host_review_count: number
   is_following?: boolean
   is_blocked_by_me?: boolean
   is_blocked_by_them?: boolean
@@ -142,6 +144,7 @@ export interface EventDetail extends EventSummary {
   description: string | null
   rules: string | null
   host_id: string
+  host_badges: string[]
   is_cancelled: boolean
   cancel_deadline: string
   edit_deadline: string

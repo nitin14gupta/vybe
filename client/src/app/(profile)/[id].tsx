@@ -27,6 +27,7 @@ import {
   Check,
   Ghost,
   Clock,
+  Star,
 } from "lucide-react-native";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import {
@@ -40,7 +41,7 @@ import {
   BrandedLoader,
 } from "@/components/ui";
 import ApiService, { ExtendedProfile, EventSummary } from "@/api/apiService";
-import { Colors, FontFamily, Radius } from "@/constants";
+import { Colors, FontFamily, Radius, HOST_BADGES } from "@/constants";
 import { usePillStore } from "@/store/pillStore";
 import { useVybeStore } from "@/store/vybeStore";
 import { useImageViewer } from "@/hooks/useImageViewer";
@@ -49,13 +50,6 @@ import { useCountdown } from "@/hooks/useCountdown";
 import { parseServerDate } from "@/lib/dates";
 
 const { width: W } = Dimensions.get("window");
-
-const HOST_BADGES: Record<string, string> = {
-  Rising: "🛡️",
-  Established: "⭐",
-  Elite: "💎",
-  Legend: "👑",
-};
 
 // ── Mini event card ───────────────────────────────────────────────────────────
 
@@ -469,6 +463,20 @@ export default function UserProfileScreen() {
                 <Text style={s.statValue}>{profile.vibing_count ?? 0}</Text>
                 <Text style={s.statLabel}>Vibing</Text>
               </Pressable>
+              <View style={s.statDivider} />
+              <View style={s.statItem}>
+                <View style={s.ratingRow}>
+                  {profile.host_avg_rating != null && (
+                    <Star size={13} color={Colors.accentGold} fill={Colors.accentGold} strokeWidth={0} />
+                  )}
+                  <Text style={s.statValue}>
+                    {profile.host_avg_rating != null ? profile.host_avg_rating.toFixed(1) : "—"}
+                  </Text>
+                </View>
+                <Text style={s.statLabel}>
+                  {profile.host_review_count ?? 0} review{(profile.host_review_count ?? 0) === 1 ? "" : "s"}
+                </Text>
+              </View>
             </View>
           )}
 
@@ -938,6 +946,7 @@ const s = StyleSheet.create({
     gap: 0,
   },
   statItem: { alignItems: "center", paddingHorizontal: 20, paddingVertical: 6 },
+  ratingRow: { flexDirection: "row", alignItems: "center", gap: 3 },
   statValue: {
     fontFamily: FontFamily.headingBold,
     fontSize: 18,

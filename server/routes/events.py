@@ -6,6 +6,7 @@ from middleware.auth import get_current_user
 from db.config import get_db
 from utils.push import send_push
 from routes.payments import PLATFORM_FEE_INR, HOST_COMMISSION_RATE
+from routes.users import compute_host_badges
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -133,6 +134,7 @@ class EventDetail(EventSummary):
     description: Optional[str] = None
     rules: Optional[str] = None
     host_id: str
+    host_badges: List[str] = []
     is_cancelled: bool
     cancel_deadline: str
     edit_deadline: str
@@ -453,6 +455,9 @@ def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
                 u.name AS host_name,
                 (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
                 COALESCE(u.is_deleted, FALSE) AS host_is_deleted,
+                (SELECT COUNT(*) FROM events he
+                 WHERE he.host_id = u.id AND COALESCE(he.is_cancelled, FALSE) = FALSE
+                )::int AS host_hosted_events_count,
                 (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id = e.id AND ea.status = 'going')::int AS attendee_count,
                 NULL::int AS distance_km,
                 going_ea.ticket_token AS my_ticket_token,
@@ -500,6 +505,7 @@ def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
     # 0 position means not in regular queue (promoted or not on waitlist)
     if not d.get("my_waitlist_position"):
         d["my_waitlist_position"] = None
+    d["host_badges"] = compute_host_badges(d.pop("host_hosted_events_count", 0))
     return d
 
 

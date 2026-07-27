@@ -4,6 +4,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft } from 'lucide-react-native'
 import { EventsMapView } from '@/components/maps'
+import { EventCard } from '@/components/events/EventCard'
 import { useLiveLocation } from '@/hooks/useLiveLocation'
 import { BrandedLoader } from '@/components/ui'
 import ApiService, { type EventDetail } from '@/api/apiService'
@@ -49,6 +50,10 @@ export default function EventMapScreen() {
           <Text style={s.titleText} numberOfLines={1}>{event.location_name ?? event.title}</Text>
         </View>
       </View>
+
+      <View style={[s.cardOverlay, { bottom: insets.bottom + 16 }]}>
+        <EventCard event={event} onPress={() => router.push(`/(events)/${event.id}` as any)} />
+      </View>
     </View>
   )
 }
@@ -83,5 +88,10 @@ const s = StyleSheet.create({
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 14,
     color: '#fff',
+  },
+  cardOverlay: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
   },
 })

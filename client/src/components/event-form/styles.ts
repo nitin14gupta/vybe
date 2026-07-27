@@ -1,15 +1,15 @@
 import { Dimensions, StyleSheet } from 'react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, EVENT_EMOJIS } from '@/constants'
 
 export const W = Dimensions.get('window').width
 
 export const EVENT_TYPES = [
-  { key: 'house_party', label: 'House Party', emoji: '🎉' },
-  { key: 'rooftop',     label: 'Rooftop',     emoji: '🌆' },
-  { key: 'game_night',  label: 'Game Night',  emoji: '🎮' },
-  { key: 'dinner',      label: 'Dinner',      emoji: '🍽️' },
-  { key: 'music',       label: 'Music',       emoji: '🎵' },
-  { key: 'other',       label: 'Other',       emoji: '🔥' },
+  { key: 'house_party', label: 'House Party', emoji: EVENT_EMOJIS.house_party },
+  { key: 'rooftop',     label: 'Rooftop',     emoji: EVENT_EMOJIS.rooftop },
+  { key: 'game_night',  label: 'Game Night',  emoji: EVENT_EMOJIS.game_night },
+  { key: 'dinner',      label: 'Dinner',      emoji: EVENT_EMOJIS.dinner },
+  { key: 'music',       label: 'Music',       emoji: EVENT_EMOJIS.music },
+  { key: 'other',       label: 'Other',       emoji: EVENT_EMOJIS.other },
 ]
 
 export const AGE_OPTIONS: (18 | 21 | 25)[] = [18, 21, 25]

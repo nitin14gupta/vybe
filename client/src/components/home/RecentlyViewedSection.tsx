@@ -1,15 +1,25 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { useFocusEffect } from 'expo-router'
 import { useRecentEventsStore } from '@/store/recentEventsStore'
 import { EventListCard } from '@/components/ui'
 import { Colors, FontFamily } from '@/constants'
 
-export function RecentlyViewedSection() {
+interface Props {
+  /** Reports whether this section has nothing to show — the home screen
+   * combines this with the other two sections' emptiness to decide whether
+   * to show a single "nothing here yet" state, instead of each section
+   * showing its own. */
+  onEmptyChange?: (empty: boolean) => void
+}
+
+export function RecentlyViewedSection({ onEmptyChange }: Props) {
   const events = useRecentEventsStore(s => s.events)
   const pruneEnded = useRecentEventsStore(s => s.pruneEnded)
 
   useFocusEffect(useCallback(() => { pruneEnded() }, [pruneEnded]))
+
+  useEffect(() => { onEmptyChange?.(events.length === 0) }, [events.length])
 
   if (events.length === 0) return null
 

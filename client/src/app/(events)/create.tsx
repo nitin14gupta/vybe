@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { StyleSheet, Text, View, Pressable } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import * as Location from 'expo-location'
 import { useRouter } from 'expo-router'
 import { ChevronLeft, X } from 'lucide-react-native'
 import { hTap, hSuccess } from '@/lib/haptics'
@@ -129,21 +128,11 @@ export default function CreateScreen() {
     setNextLoading(true)
     try {
       if (step < 5) {
-        await Promise.all([
-          (async () => {
-            if (step === 2 && form.locationLat == null) {
-              try {
-                const { status } = await Location.requestForegroundPermissionsAsync()
-                if (status === 'granted') {
-                  const { coords } = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
-                  set('locationLat', coords.latitude)
-                  set('locationLng', coords.longitude)
-                }
-              } catch { }
-            }
-          })(),
-          new Promise(resolve => setTimeout(resolve, MIN_FEEDBACK_MS)),
-        ])
+        // Location for step 3's map pin is fetched by LocationPickerMap itself
+        // once it mounts — doing it here too used to double up the GPS fetch
+        // (permission + fix + reverse-geocode, twice) and blocked this step
+        // transition on a slow/cold GPS fix. Just advance immediately.
+        await new Promise(resolve => setTimeout(resolve, MIN_FEEDBACK_MS))
         setStep(s => (s + 1) as any)
         return
       }

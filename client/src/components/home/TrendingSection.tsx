@@ -11,12 +11,20 @@ const INITIAL_COUNT = 6
 const PAGE_SIZE = 6
 const FETCH_LIMIT = 30
 
+interface Props {
+  /** Reports whether this section has nothing to show, once its fetch
+   * resolves — the home screen combines this with the other two sections'
+   * emptiness to decide whether to show a single "nothing here yet" state,
+   * instead of each section showing its own. */
+  onEmptyChange?: (empty: boolean) => void
+}
+
 // "Trending" has no dedicated backend signal yet — nearby events ranked by
 // current attendee_count is a reasonable stand-in and needs no new endpoint.
 // The API has no offset/page param, so we over-fetch once (FETCH_LIMIT) and
 // reveal more of the already-sorted batch as the user scrolls — simple lazy
 // loading without a second network round-trip per page.
-export function TrendingSection() {
+export function TrendingSection({ onEmptyChange }: Props) {
   const { profile } = useProfile()
   const [allEvents, setAllEvents] = useState<EventSummary[]>([])
   const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT)
@@ -27,6 +35,7 @@ export function TrendingSection() {
         const sorted = [...result].sort((a, b) => b.attendee_count - a.attendee_count)
         setAllEvents(sorted)
         setVisibleCount(INITIAL_COUNT)
+        onEmptyChange?.(sorted.length === 0)
       })
       .catch(() => {})
   }

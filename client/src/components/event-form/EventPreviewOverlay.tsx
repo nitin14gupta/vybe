@@ -4,19 +4,14 @@ import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, Calendar, Clock, MapPin, Shield, Users } from 'lucide-react-native'
-import { Colors, FontFamily, PLATFORM_FEE_INR, HOST_COMMISSION_RATE } from '@/constants'
+import { Colors, FontFamily, PLATFORM_FEE_INR, HOST_COMMISSION_RATE, EVENT_EMOJIS } from '@/constants'
 import { hTap, hSelection } from '@/lib/haptics'
 import { EventCard } from '@/components/events/EventCard'
 import { StaticEventMap } from '@/components/maps'
 import ApiService, { type EventSummary } from '@/api/apiService'
 import type { CreateEventForm } from '@/hooks/useCreateEvent'
-import { EVENT_TYPES } from './styles'
 
 const { width: W } = Dimensions.get('window')
-
-const EVENT_EMOJIS: Record<string, string> = Object.fromEntries(
-  EVENT_TYPES.map(t => [t.key, t.emoji]),
-)
 
 interface Props {
   visible: boolean

@@ -13,7 +13,7 @@ import {
 } from '@maplibre/maplibre-react-native'
 import type { NativeSyntheticEvent } from 'react-native'
 import type { PressEventWithFeatures } from '@maplibre/maplibre-react-native'
-import { Colors } from '@/constants'
+import { Colors, EVENT_EMOJIS } from '@/constants'
 import { MAP_PROVIDER, TILE_STYLE, DEFAULT_MAP_CENTER, type MapBounds } from '@/constants/mapConfig'
 import { useGoogleMaps } from '@/hooks/useGoogleMaps'
 import { useMapLibre, eventsToGeoJSON } from '@/hooks/useMapLibre'
@@ -35,14 +35,6 @@ function routeLineGeoJSON(
   }
 }
 
-const EVENT_EMOJIS: Record<string, string> = {
-  house_party: '🎉',
-  rooftop: '🌆',
-  game_night: '🎮',
-  dinner: '🍽️',
-  music: '🎵',
-  other: '🔥',
-}
 
 const DARK_MAP_STYLE = [
   { elementType: 'geometry', stylers: [{ color: '#1a1a1a' }] },

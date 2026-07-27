@@ -20,7 +20,7 @@ import { Flame, List, Map, Plus, Search } from "lucide-react-native";
 import { hTap, hSelection } from "@/lib/haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
-import { Colors, FontFamily, FILTER_CHIPS } from "@/constants";
+import { Colors, FontFamily, FILTER_CHIPS, EVENT_EMOJIS } from "@/constants";
 import { useEvents } from "@/hooks/useEvents";
 import type { EventSummary } from "@/api/apiService";
 import { EventCard, formatEventDate } from "@/components/events/EventCard";
@@ -34,14 +34,6 @@ const CARD_MARGIN = 10;
 const PREVIEW_MAX = 8;
 const LIST_PAGE = 8;
 
-const EVENT_EMOJIS: Record<string, string> = {
-  house_party: "🎉",
-  rooftop: "🌆",
-  game_night: "🎮",
-  dinner: "🍽️",
-  music: "🎵",
-  other: "🔥",
-};
 
 function formatPrice(price: number, isFree: boolean) {
   if (isFree) return "Free";

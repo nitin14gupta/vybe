@@ -3,8 +3,8 @@ import {
   BackHandler, View, Text, StyleSheet, Pressable, ScrollView,
 } from 'react-native'
 import { useFocusEffect, router } from 'expo-router'
-import { Heart, Flame, PartyPopper, Search } from 'lucide-react-native'
-import { AppHeader, HeaderIconBtn, CreateEventSheet } from '@/components/ui'
+import { Heart, PartyPopper, Search } from 'lucide-react-native'
+import { AppHeader, HeaderIconBtn, CreateEventSheet, EmptyState } from '@/components/ui'
 import { HomeGradientBackdrop } from '@/components/home/HomeGradientBackdrop'
 import { TemplateFan } from '@/components/home/TemplateFan'
 import { MyEventsSection } from '@/components/home/MyEventsSection'
@@ -24,6 +24,11 @@ export default function HomeScreen() {
   const [createOpen, setCreateOpen] = useState(false)
   const lastBackRef = useRef(0)
   const showPill = usePillStore(s => s.show)
+
+  const [myEventsEmpty, setMyEventsEmpty] = useState<boolean | null>(null)
+  const [recentEmpty, setRecentEmpty] = useState<boolean | null>(null)
+  const [trendingEmpty, setTrendingEmpty] = useState<boolean | null>(null)
+  const allEmpty = myEventsEmpty === true && recentEmpty === true && trendingEmpty === true
 
   useFocusEffect(
     useCallback(() => {
@@ -79,9 +84,19 @@ export default function HomeScreen() {
           <Text style={styles.createBtnText}>Create event</Text>
         </Pressable>
 
-        <MyEventsSection />
-        <RecentlyViewedSection />
-        <TrendingSection />
+        <MyEventsSection onEmptyChange={setMyEventsEmpty} />
+        <RecentlyViewedSection onEmptyChange={setRecentEmpty} />
+        <TrendingSection onEmptyChange={setTrendingEmpty} />
+
+        {allEmpty && (
+          <EmptyState
+            icon={<PartyPopper size={44} color={Colors.inkDisabled} strokeWidth={1.2} />}
+            title="Nothing here yet"
+            subtitle="Events you're going to, hosting, or browsing will show up here"
+            ctaLabel="Create Event"
+            onCtaPress={() => router.push('/(events)/create' as any)}
+          />
+        )}
       </ScrollView>
 
       <CreateEventSheet

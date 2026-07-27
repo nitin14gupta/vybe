@@ -80,6 +80,18 @@ export function LocationSearchModal({
                 </View>
               </Pressable>
             )}
+            ListFooterComponent={query.trim() ? (
+              <Pressable
+                style={s.customRow}
+                onPress={() => onSelect({ place_id: 'custom', display_name: query.trim(), lat: null, lon: null })}
+              >
+                <Search size={20} color={Colors.brandOrange} style={{ marginTop: 2, marginRight: 12 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={s.customRowTitle} numberOfLines={2}>Use "{query.trim()}" as my address</Text>
+                  <Text style={s.customRowSub}>Not in the list? Type it out, then drop the pin on the map yourself</Text>
+                </View>
+              </Pressable>
+            ) : null}
           />
         )}
       </Screen>
@@ -130,6 +142,18 @@ const s = StyleSheet.create({
   },
   resultAddress: {
     fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.glassTextDisabled,
+  },
+  customRow: {
+    flexDirection: 'row', alignItems: 'flex-start',
+    paddingVertical: 16, paddingTop: 18,
+    borderTopWidth: 1, borderTopColor: Colors.glassSurface,
+  },
+  customRowTitle: {
+    fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.brandOrange,
+    marginBottom: 4,
+  },
+  customRowSub: {
+    fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.glassTextDisabled,
   },
   skRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, gap: 14 },
   skIcon: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#4a4a4a' },

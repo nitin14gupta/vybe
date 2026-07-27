@@ -41,7 +41,7 @@ import {
   Users,
   X as XIcon,
 } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, EVENT_EMOJIS, HOST_BADGES } from '@/constants'
 import ApiService, { type EventDetail, type EventAttendee, type EventGuest } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
 import { useRecentEventsStore } from '@/store/recentEventsStore'
@@ -102,14 +102,6 @@ function EventOptionsSheet({ visible, id, onEdit, onCancel, onWaitlist, onClose,
 const { width: W } = Dimensions.get('window')
 const HERO_HEIGHT = W * (9 / 16) // true 16:9 — matches EventCard's cover crop
 
-const EVENT_EMOJIS: Record<string, string> = {
-  house_party: '🎉',
-  rooftop: '🌆',
-  game_night: '🎮',
-  dinner: '🍽️',
-  music: '🎵',
-  other: '🔥',
-}
 
 
 function parseDate(iso: string | null | undefined): Date | null {
@@ -570,14 +562,25 @@ export default function EventDetailScreen() {
               style={styles.hostCard}
               onPress={() => router.push(`/(profile)/${event.host_id}` as any)}
             >
-              <View style={[styles.hostAvatar, event.host_is_deleted && styles.hostAvatarDeleted]}>
-                {event.host_is_deleted ? (
-                  <Ghost size={20} color={Colors.inkDisabled} strokeWidth={1.5} />
-                ) : event.host_avatar ? (
-                  <Image source={{ uri: event.host_avatar }} style={styles.hostAvatarImg} contentFit="cover" />
-                ) : (
-                  <Text style={styles.hostAvatarFallback}>{event.host_name[0]}</Text>
-                )}
+              <View style={styles.hostAvatarWrap}>
+                <View style={[styles.hostAvatar, event.host_is_deleted && styles.hostAvatarDeleted]}>
+                  {event.host_is_deleted ? (
+                    <Ghost size={20} color={Colors.inkDisabled} strokeWidth={1.5} />
+                  ) : event.host_avatar ? (
+                    <Image source={{ uri: event.host_avatar }} style={styles.hostAvatarImg} contentFit="cover" />
+                  ) : (
+                    <Text style={styles.hostAvatarFallback}>{event.host_name[0]}</Text>
+                  )}
+                </View>
+                {!event.host_is_deleted && (() => {
+                  const hostBadgeName = event.host_badges?.find(b => HOST_BADGES[b])
+                  const hostBadgeIcon = hostBadgeName ? HOST_BADGES[hostBadgeName] : null
+                  return hostBadgeIcon ? (
+                    <View style={styles.hostBadgeChip}>
+                      <Text style={styles.hostBadgeChipEmoji}>{hostBadgeIcon}</Text>
+                    </View>
+                  ) : null
+                })()}
               </View>
               <View style={styles.hostInfo}>
                 <Text style={styles.hostLabel}>Hosted by</Text>
@@ -867,6 +870,7 @@ export default function EventDetailScreen() {
         guests={guests}
         total={guestTotal}
         waitlist={guestWaitlist}
+        canViewFull={event.host_id === myId || isGoing || hasTicket}
         loading={guestsLoading}
         onClose={() => setGuestSheetOpen(false)}
       />
@@ -1084,6 +1088,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 16,
   },
+  hostAvatarWrap: { position: 'relative' },
   hostAvatar: {
     width: 48,
     height: 48,
@@ -1096,6 +1101,20 @@ const styles = StyleSheet.create({
   hostAvatarImg: { width: '100%', height: '100%' },
   hostAvatarFallback: { color: Colors.inkPrimary, fontFamily: FontFamily.headingBold, fontSize: 18 },
   hostAvatarDeleted: { backgroundColor: Colors.surface },
+  hostBadgeChip: {
+    position: 'absolute',
+    bottom: -3,
+    right: -3,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: Colors.surface,
+    borderWidth: 1.5,
+    borderColor: Colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hostBadgeChipEmoji: { fontSize: 11 },
   hostInfo: { flex: 1 },
   hostLabel: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, marginBottom: 2 },
   hostName: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },

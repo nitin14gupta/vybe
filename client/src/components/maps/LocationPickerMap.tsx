@@ -70,14 +70,19 @@ export function LocationPickerMap({
       return
     }
 
-    // No coords yet — detect GPS, then fly
+    // No coords yet — detect GPS, then fly. This is just a rough starting
+    // pin (the user can drag/search to refine), so use the fastest accuracy
+    // tier and a hard timeout — a slow/cold GPS fix should never block the
+    // map from being usable.
     ; (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync()
         if (status !== 'granted') return
-        const { coords } = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        })
+        const coords = await Promise.race([
+          Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Lowest }).then(r => r.coords),
+          new Promise<null>(resolve => setTimeout(() => resolve(null), 1500)),
+        ])
+        if (!coords) return
         onChange(coords.latitude, coords.longitude)
         flyToCoords(coords.latitude, coords.longitude)
 

@@ -21,7 +21,7 @@ import ReAnimated, {
 import ViewShot, { type ViewShotRef } from 'react-native-view-shot'
 import { Asset as MediaAsset, requestPermissionsAsync as requestMediaPermissionsAsync } from 'expo-media-library'
 import { hTap, hSuccess } from '@/lib/haptics'
-import { Colors, FontFamily, Radius, Spacing, ComponentSize } from '@/constants'
+import { Colors, FontFamily, Radius, Spacing, ComponentSize, EVENT_EMOJIS } from '@/constants'
 import ApiService, { type TicketInfo } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { getOrFetch, peekCached } from '@/lib/queryCache'
@@ -31,15 +31,6 @@ import { EventShareCard } from '@/components/events/EventShareCard'
 import { useImageShare } from '@/hooks/useImageShare'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-const EVENT_EMOJIS: Record<string, string> = {
-  house_party: '🎉',
-  rooftop: '🌆',
-  game_night: '🎮',
-  dinner: '🍽️',
-  music: '🎵',
-  other: '🔥',
-}
 
 function parseTs(iso: string | null | undefined): Date | null {
   if (!iso) return null

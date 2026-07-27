@@ -2,18 +2,9 @@ import type { ReactNode } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Image } from 'expo-image'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, EVENT_EMOJIS } from '@/constants'
 import { parseServerDate } from '@/lib/dates'
 import type { EventSummary } from '@/api/apiService'
-
-const EVENT_EMOJIS: Record<string, string> = {
-  house_party: '🎉',
-  rooftop: '🌆',
-  game_night: '🎮',
-  dinner: '🍽️',
-  music: '🎵',
-  other: '🔥',
-}
 
 export function formatEventDate(iso: string | null | undefined) {
   const d = parseServerDate(iso)

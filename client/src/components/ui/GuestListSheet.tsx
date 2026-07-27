@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Image } from 'expo-image'
 import { router } from 'expo-router'
+import { BlurView } from 'expo-blur'
 import { BottomSheetModal, BottomSheetView, BottomSheetFlatList, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
-import { Heart, Users, X as XIcon } from 'lucide-react-native'
+import { Heart, Lock, Users, X as XIcon } from 'lucide-react-native'
 import { hTap, hSelection } from '@/lib/haptics'
 import { Colors, FontFamily, Spacing } from '@/constants'
 import ApiService, { type EventGuest } from '@/api/apiService'
@@ -13,6 +14,7 @@ import { useAuthStore } from '@/store/auth'
 import { usePillStore } from '@/store/pillStore'
 
 const SNAP_POINTS = ['74%']
+const VISIBLE_COUNT = 3
 
 interface Props {
   visible: boolean
@@ -20,6 +22,10 @@ interface Props {
   guests: EventGuest[]
   total: number
   waitlist?: EventGuest[]
+  /** Full guest list is only shown to attendees who've RSVP'd/have a ticket —
+   * everyone else sees the first few unblurred and the rest teased behind a
+   * blur, so identities are gated behind actually joining the event. */
+  canViewFull?: boolean
   /** Shows a shimmering placeholder grid instead of the real/empty state
    * while the parent's guest fetch is still in flight — the sheet itself
    * still opens immediately (see `useEffect(() => sheetRef.current?.present())`
@@ -135,7 +141,7 @@ const t = StyleSheet.create({
   name: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.inkSecondary, maxWidth: 84, textAlign: 'center' },
 })
 
-function GuestListSheetCore({ eventId, guests, total, waitlist = [], loading, onClose }: Omit<Props, 'visible'>) {
+function GuestListSheetCore({ eventId, guests, total, waitlist = [], canViewFull = true, loading, onClose }: Omit<Props, 'visible'>) {
   const sheetRef = useRef<BottomSheetModal>(null)
   const myId = useAuthStore(s => s.userId)
   const showPill = usePillStore(s => s.show)
@@ -185,24 +191,57 @@ function GuestListSheetCore({ eventId, guests, total, waitlist = [], loading, on
     </View>
   )
 
-  const Footer = waitlist.length > 0 ? (
-    <View style={s.waitlistSection}>
-      <View style={s.waitlistDivider} />
-      <Text style={s.waitlistTitle}>Waitlist · {waitlist.length}</Text>
-      <View style={s.waitlistGrid}>
-        {waitlist.map(g => (
-          <GuestTile
-            key={g.id}
-            guest={g}
-            isMe={g.id === myId}
-            isFollowing={followingIds.has(g.id)}
-            onOpenProfile={handleOpenProfile}
-            onToggleFollow={handleToggleFollow}
-          />
+  const isLocked = !canViewFull && guests.length > VISIBLE_COUNT
+  const visibleGuests = isLocked ? guests.slice(0, VISIBLE_COUNT) : guests
+  const lockedGuests = isLocked ? guests.slice(VISIBLE_COUNT, VISIBLE_COUNT + 3) : []
+  const lockedCount = guests.length - VISIBLE_COUNT
+
+  const LockedTeaser = isLocked ? (
+    <View style={s.lockedSection}>
+      <View style={s.lockedGrid}>
+        {lockedGuests.map(g => (
+          <View key={g.id} style={t.root}>
+            {g.avatar ? (
+              <Image source={{ uri: g.avatar }} style={t.avatar} contentFit="cover" />
+            ) : (
+              <View style={[t.avatar, t.avatarFallback]} />
+            )}
+            <View style={s.lockedNameStub} />
+          </View>
         ))}
+      </View>
+      <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+      <View style={s.lockedOverlay}>
+        <Lock size={22} color={Colors.inkPrimary} strokeWidth={1.8} />
+        <Text style={s.lockedTitle}>+{lockedCount} more guest{lockedCount === 1 ? '' : 's'}</Text>
+        <Text style={s.lockedSub}>Join the event to see who's going</Text>
       </View>
     </View>
   ) : null
+
+  const Footer = (
+    <>
+      {LockedTeaser}
+      {waitlist.length > 0 ? (
+        <View style={s.waitlistSection}>
+          <View style={s.waitlistDivider} />
+          <Text style={s.waitlistTitle}>Waitlist · {waitlist.length}</Text>
+          <View style={s.waitlistGrid}>
+            {waitlist.map(g => (
+              <GuestTile
+                key={g.id}
+                guest={g}
+                isMe={g.id === myId}
+                isFollowing={followingIds.has(g.id)}
+                onOpenProfile={handleOpenProfile}
+                onToggleFollow={handleToggleFollow}
+              />
+            ))}
+          </View>
+        </View>
+      ) : null}
+    </>
+  )
 
   return (
     <BottomSheetModal
@@ -229,7 +268,7 @@ function GuestListSheetCore({ eventId, guests, total, waitlist = [], loading, on
         </BottomSheetView>
       ) : (
         <BottomSheetFlatList
-          data={guests}
+          data={visibleGuests}
           keyExtractor={g => g.id}
           numColumns={3}
           showsVerticalScrollIndicator={false}
@@ -251,9 +290,14 @@ function GuestListSheetCore({ eventId, guests, total, waitlist = [], loading, on
   )
 }
 
-export function GuestListSheet({ visible, eventId, guests, total, waitlist, loading, onClose }: Props) {
+export function GuestListSheet({ visible, eventId, guests, total, waitlist, canViewFull, loading, onClose }: Props) {
   if (!visible) return null
-  return <GuestListSheetCore eventId={eventId} guests={guests} total={total} waitlist={waitlist} loading={loading} onClose={onClose} />
+  return (
+    <GuestListSheetCore
+      eventId={eventId} guests={guests} total={total} waitlist={waitlist}
+      canViewFull={canViewFull} loading={loading} onClose={onClose}
+    />
+  )
 }
 
 const s = StyleSheet.create({
@@ -285,4 +329,20 @@ const s = StyleSheet.create({
     textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 4,
   },
   waitlistGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  lockedSection: {
+    marginTop: 4,
+    borderRadius: 16,
+    overflow: 'hidden',
+    minHeight: 140,
+  },
+  lockedGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12 },
+  lockedNameStub: { width: 48, height: 10, borderRadius: 5, backgroundColor: Colors.elevated },
+  lockedOverlay: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  lockedTitle: { fontFamily: FontFamily.headingBold, fontSize: 15, color: Colors.inkPrimary },
+  lockedSub: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary },
 })

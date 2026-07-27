@@ -6,13 +6,13 @@ import {
 import { Image as ExpoImage } from 'expo-image'
 import { router } from 'expo-router'
 import { hTap } from '@/lib/haptics'
-import { MapPin, Play, Pause, Pencil, Settings, Share, Ticket, Calendar, Plus } from 'lucide-react-native'
+import { MapPin, Play, Pause, Pencil, Settings, Share, Ticket, Calendar, Plus, Star } from 'lucide-react-native'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
 import { InterestChip, PlaybackWave, AppHeader, HeaderIconBtn, BrandedLoader, TabSwitcher, SmallEventCard, OutlineButton } from '@/components/ui'
 import { useProfile } from '@/hooks/useProfile'
 import ApiService, { EventSummary } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
-import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { Colors, FontFamily, Spacing, Radius, HOST_BADGES } from '@/constants'
 import { useImageViewer } from '@/hooks/useImageViewer'
 import { MediaViewerModal } from '@/components/chat/MediaViewerModal'
 
@@ -25,13 +25,6 @@ const GENDER_DISPLAY: Record<string, string> = {
   Woman: 'Female',
   'Non-binary': 'Non-binary',
   'Prefer not to say': '—',
-}
-
-const HOST_BADGES: Record<string, string> = {
-  'Rising': '🛡️',
-  'Established': '⭐',
-  'Elite': '💎',
-  'Legend': '👑',
 }
 
 export default function ProfileScreen() {
@@ -116,7 +109,8 @@ export default function ProfileScreen() {
   const otherBadges = allBadges.filter(b => b !== hostBadgeName)
   const vibers = profile?.vibers_count ?? 0
   const vibing = profile?.vibing_count ?? 0
-  const posts = profile?.photos?.length ?? 0
+  const avgRating = profile?.host_avg_rating ?? null
+  const reviewCount = profile?.host_review_count ?? 0
 
   return (
     <View style={styles.root}>
@@ -207,7 +201,14 @@ export default function ProfileScreen() {
             onPress={() => profile && router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'following', name: encodeURIComponent(profile.name ?? ''), vibersCount: vibers, vibingCount: vibing } } as any)}
           />
           <View style={styles.statDivider} />
-          <StatCol value={posts} label="Posts" sub="photos" />
+          <View style={styles.statCol}>
+            <View style={styles.ratingRow}>
+              {avgRating != null && <Star size={14} color={Colors.accentGold} fill={Colors.accentGold} strokeWidth={0} />}
+              <Text style={styles.statValue}>{avgRating != null ? avgRating.toFixed(1) : '—'}</Text>
+            </View>
+            <Text style={styles.statLabel}>Reviews</Text>
+            <Text style={styles.statSub}>{reviewCount} rating{reviewCount === 1 ? '' : 's'}</Text>
+          </View>
         </View>
 
         {/* ── Bio & Voice Intro ── */}
@@ -454,6 +455,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   statCol: { flex: 1, alignItems: 'center', gap: 2 },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   statValue: {
     fontFamily: FontFamily.headingBold,
     fontSize: 22,

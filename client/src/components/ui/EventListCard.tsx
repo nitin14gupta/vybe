@@ -2,18 +2,10 @@ import { Pressable, View, Text, StyleSheet, Image } from 'react-native'
 import { router } from 'expo-router'
 import { MapPin, ChevronRight, Calendar } from 'lucide-react-native'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
-import { Colors, FontFamily, Radius } from '@/constants'
+import { Colors, FontFamily, Radius, EVENT_EMOJIS } from '@/constants'
 import { formatEventDate } from '@/components/events/EventCard'
 import type { EventSummary } from '@/api/apiService'
 
-const EVENT_EMOJIS: Record<string, string> = {
-  house_party: '🎉',
-  rooftop: '🌆',
-  game_night: '🎮',
-  dinner: '🍽️',
-  music: '🎵',
-  other: '🔥',
-}
 export function EventListCard({ event }: { event: EventSummary }) {
   const cover = event.cover_photos?.[0]?.url
 

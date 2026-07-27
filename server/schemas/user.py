@@ -191,6 +191,8 @@ class UserResponse(BaseModel):
     vibers_count: int = 0
     vibing_count: int = 0
     name_changed_at: Optional[str] = None
+    host_avg_rating: Optional[float] = None
+    host_review_count: int = 0
 
 
 class ProfileResponse(UserResponse):
