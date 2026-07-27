@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { AppState } from 'react-native'
 import ApiService, { Message } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
-import { loadOrCreateKeypair, encryptText, decryptText } from '@/lib/e2ee'
 import { peekCached, setCached } from '@/lib/queryCache'
 
 function messagesCacheKey(conversationId: string) {
@@ -31,29 +30,13 @@ export function useChat(conversationId: string) {
   const loadingMoreRef = useRef(false)
   const isBackgrounded = useRef(false)
   const myId = useAuthStore.getState().userId
-  const partnerKeyRef = useRef<string | null>(null)
-  const decryptMessage = useCallback((msg: Message): Message => {
-    if (msg.content_type !== 'text' || !msg.content) return msg
-    const content = decryptText(msg.content, partnerKeyRef.current)
-    let metadata = msg.metadata
-    const replyTo = metadata?.reply_to
-    if (replyTo?.content) {
-      metadata = { ...metadata, reply_to: { ...replyTo, content: decryptText(replyTo.content, partnerKeyRef.current) } }
-    }
-    return { ...msg, content, metadata }
-  }, [])
 
   // Initial load + mark read
   useEffect(() => {
     noMoreRef.current = false
     ;(async () => {
-      await loadOrCreateKeypair()
-      const [msgs, keyRes] = await Promise.all([
-        ApiService.getMessages(conversationId),
-        ApiService.getPartnerKey(conversationId).catch(() => ({ partner_public_key: null })),
-      ])
-      partnerKeyRef.current = keyRes.partner_public_key
-      setMessages(msgs.map(decryptMessage))
+      const msgs = await ApiService.getMessages(conversationId)
+      setMessages(msgs)
       setLoading(false)
       ApiService.markRead(conversationId).catch(() => {})
       const firstRead = msgs.find(msg => msg.sender_id === myId && msg.read_at != null)
@@ -121,10 +104,7 @@ export function useChat(conversationId: string) {
                 const next = [...prev]
                 pendingTempIds.current.delete(prev[tempIdx].id)
                 if (activeSendTempIdRef.current === prev[tempIdx].id) activeSendTempIdRef.current = null
-                // Keep our own local plaintext content/metadata — the server
-                // echo carries back the ciphertext we sent, no need to
-                // decrypt our own outgoing message.
-                next[tempIdx] = { ...data, content: prev[tempIdx].content, metadata: prev[tempIdx].metadata } as Message
+                next[tempIdx] = { ...data } as Message
                 return next
               }
             }
@@ -135,7 +115,7 @@ export function useChat(conversationId: string) {
                 liveWs.send(JSON.stringify({ type: 'read' }))
               }
             }
-            return [decryptMessage(data as Message), ...prev]
+            return [data as Message, ...prev]
           })
         } else if (data.type === 'error') {
           if (data.code === 'blocked') {
@@ -168,15 +148,13 @@ export function useChat(conversationId: string) {
         } else if (data.type === 'reaction') {
           applyReactionUpdate(data.message_id, data.user_id, data.emoji ?? null)
         } else if (data.type === 'message_unsent') {
-          setMessages(prev => prev.map(m =>
-            m.id === data.message_id
-              ? { ...m, content: null, metadata: null, unsent_at: new Date().toISOString() }
-              : m,
-          ))
+          // Unsend means gone without a trace on both sides — drop it from
+          // the thread entirely rather than swapping in an "unsent" bubble.
+          setMessages(prev => prev.filter(m => m.id !== data.message_id))
         } else if (data.type === 'message_edited') {
           setMessages(prev => prev.map(m =>
             m.id === data.message_id
-              ? { ...m, content: decryptText(data.content, partnerKeyRef.current), edited_at: data.edited_at }
+              ? { ...m, content: data.content, edited_at: data.edited_at }
               : m,
           ))
         }
@@ -243,31 +221,10 @@ export function useChat(conversationId: string) {
     setMessages(prev => [optimistic, ...prev])
     activeSendTempIdRef.current = tempId
 
-    // Encrypt the wire payload only — the optimistic bubble above keeps the
-    // local plaintext for instant display. Text-only for now (see lib/e2ee.ts).
-    let wireContent = content
-    let wireMetadata = metadata
-    if (contentType === 'text') {
-      if (!partnerKeyRef.current) {
-        activeSendTempIdRef.current = null
-        pendingTempIds.current.delete(tempId)
-        setFailedIds(prev => new Set([...prev, tempId]))
-        throw new Error('Partner encryption key not loaded yet')
-      }
-      wireContent = encryptText(content, partnerKeyRef.current)
-      const replyTo = (metadata as any)?.reply_to
-      if (replyTo?.content) {
-        wireMetadata = {
-          ...metadata,
-          reply_to: { ...replyTo, content: encryptText(replyTo.content, partnerKeyRef.current) },
-        }
-      }
-    }
-
     const ws = wsRef.current
     if (ws && ws.readyState === WebSocket.OPEN) {
       try {
-        ws.send(JSON.stringify({ type: 'message', content: wireContent, content_type: contentType, metadata: wireMetadata }))
+        ws.send(JSON.stringify({ type: 'message', content, content_type: contentType, metadata }))
       } catch {
         activeSendTempIdRef.current = null
         pendingTempIds.current.delete(tempId)
@@ -278,15 +235,14 @@ export function useChat(conversationId: string) {
 
     // REST fallback
     try {
-      const msg = await ApiService.sendMessage(conversationId, wireContent, contentType, wireMetadata)
+      const msg = await ApiService.sendMessage(conversationId, content, contentType, metadata)
       activeSendTempIdRef.current = null
       pendingTempIds.current.delete(tempId)
       setMessages(prev => {
         const idx = prev.findIndex(m => m.id === tempId)
-        if (idx === -1) return prev.some(m => m.id === msg.id) ? prev : [decryptMessage(msg), ...prev]
+        if (idx === -1) return prev.some(m => m.id === msg.id) ? prev : [msg, ...prev]
         const next = [...prev]
-        // Keep our own local plaintext content/metadata, same reasoning as the WS path above.
-        next[idx] = { ...msg, content: prev[idx].content, metadata: prev[idx].metadata }
+        next[idx] = msg
         return next
       })
     } catch {
@@ -398,7 +354,7 @@ export function useChat(conversationId: string) {
     try {
       const older = await ApiService.getMessages(conversationId, oldest.sent_at)
       if (older.length > 0) {
-        setMessages(prev => [...prev, ...older.map(decryptMessage)])
+        setMessages(prev => [...prev, ...older])
         return true
       }
       noMoreRef.current = true
@@ -420,10 +376,10 @@ export function useChat(conversationId: string) {
 
   // Local state updates for REST-driven message actions (unsend/delete-for-me).
   // The other participant learns about an unsend via the "message_unsent" WS event above.
+  // Unsend removes the message entirely — no "this message was unsent" trace
+  // for either side, so this is identical to removeMessageLocally below.
   const applyUnsentLocally = useCallback((msgId: string) => {
-    setMessages(prev => prev.map(m =>
-      m.id === msgId ? { ...m, content: null, metadata: null, unsent_at: new Date().toISOString() } : m,
-    ))
+    setMessages(prev => prev.filter(m => m.id !== msgId))
   }, [])
 
   const removeMessageLocally = useCallback((msgId: string) => {
@@ -434,13 +390,8 @@ export function useChat(conversationId: string) {
     setMessages(prev => prev.map(m => (m.id === msgId ? { ...m, content, edited_at: editedAt } : m)))
   }, [])
 
-  // Encrypts the new text before sending the edit — same key material as
-  // sendMessage — then applies the local plaintext version optimistically
-  // (no need to decrypt our own edit echo, same reasoning as sendMessage).
   const editMessageText = useCallback(async (msgId: string, newText: string): Promise<void> => {
-    if (!partnerKeyRef.current) throw new Error('Partner encryption key not loaded yet')
-    const wireContent = encryptText(newText, partnerKeyRef.current)
-    const result = await ApiService.editMessage(msgId, wireContent)
+    const result = await ApiService.editMessage(msgId, newText)
     applyEditLocally(msgId, newText, result.edited_at)
   }, [applyEditLocally])
 

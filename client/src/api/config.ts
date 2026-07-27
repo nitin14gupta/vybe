@@ -69,7 +69,6 @@ export const ENDPOINTS = {
   CONVERSATIONS: '/chat/conversations',
   CONVERSATION_MESSAGES: '/chat/conversations/:id/messages',
   CONVERSATION_READ: '/chat/conversations/:id/read',
-  CONVERSATION_PARTNER_KEY: '/chat/conversations/:id/partner-key',
   LINK_PREVIEW: '/chat/link-preview',
 
   // Block / Report
@@ -119,7 +118,6 @@ export const ENDPOINTS = {
 
   // Account management
   DELETE_ACCOUNT: '/users/me',
-  SET_PUBLIC_KEY: '/users/me/public-key',
 } as const
 
 export const WS_BASE_URL: string =

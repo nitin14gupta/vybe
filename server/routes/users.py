@@ -35,7 +35,6 @@ _USER_SELECT = """
         u.lat,
         u.lng,
         u.name_changed_at::text,
-        u.public_key,
         COALESCE(u.is_deleted, FALSE) AS is_deleted,
         (SELECT COUNT(*) FROM follows f
          JOIN users fu ON fu.id = f.follower_id AND COALESCE(fu.is_deleted, FALSE) = FALSE
@@ -852,25 +851,6 @@ def unfollow_user(user_id: str, current_user: dict = Depends(get_current_user)):
             "DELETE FROM follows WHERE follower_id = %s AND following_id = %s",
             (current_user["id"], user_id),
         )
-    return {"ok": True}
-
-
-# ── End-to-end encryption key ──────────────────────────────────────────────────
-
-class PublicKeyBody(BaseModel):
-    public_key: str
-
-
-@router.patch("/me/public-key", status_code=status.HTTP_200_OK)
-def set_public_key(body: PublicKeyBody, current_user: dict = Depends(get_current_user)):
-    """Stores the client-generated X25519 public key used for end-to-end
-    encrypted chat. The matching private key never leaves the device."""
-    with get_db() as (cur, conn):
-        cur.execute(
-            "UPDATE users SET public_key = %s WHERE id = %s::uuid",
-            (body.public_key, current_user["id"]),
-        )
-        conn.commit()
     return {"ok": True}
 
 

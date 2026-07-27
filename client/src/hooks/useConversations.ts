@@ -2,7 +2,6 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { useFocusEffect } from 'expo-router'
 import ApiService, { Conversation, VybeRequest } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
-import { loadOrCreateKeypair, decryptText } from '@/lib/e2ee'
 import { peekCached, setCached } from '@/lib/queryCache'
 
 const PAGE_SIZE = 20
@@ -12,11 +11,6 @@ interface CachedConversations {
   active: Conversation[]
   locked: Conversation[]
   pending: VybeRequest[]
-}
-
-function decryptPreview(conv: Conversation): Conversation {
-  if (conv.last_message_type !== 'text' || !conv.last_message) return conv
-  return { ...conv, last_message: decryptText(conv.last_message, conv.partner_public_key) }
 }
 
 const byRecent = (a: Conversation, b: Conversation) =>
@@ -38,13 +32,12 @@ export function useConversations() {
   const refresh = useCallback(async () => {
     setError(false)
     try {
-      await loadOrCreateKeypair()
       const [convData, vibeData] = await Promise.all([
         ApiService.getConversations(PAGE_SIZE, 0),
         ApiService.getReceivedVibes(),
       ])
-      const active = [...convData.active].sort(byRecent).map(decryptPreview)
-      const locked = [...convData.locked].sort(byRecent).map(decryptPreview)
+      const active = [...convData.active].sort(byRecent)
+      const locked = [...convData.locked].sort(byRecent)
       const pending = [...vibeData].sort((a, b) => b.created_at.localeCompare(a.created_at))
       setActiveConversations(active)
       setLockedConversations(locked)
@@ -68,7 +61,7 @@ export function useConversations() {
       const convData = await ApiService.getConversations(PAGE_SIZE, activeConversations.length)
       setActiveConversations(prev => {
         const seen = new Set(prev.map(c => c.id))
-        const fresh = convData.active.filter(c => !seen.has(c.id)).map(decryptPreview)
+        const fresh = convData.active.filter(c => !seen.has(c.id))
         return [...prev, ...fresh].sort(byRecent)
       })
       setHasMore(convData.has_more)

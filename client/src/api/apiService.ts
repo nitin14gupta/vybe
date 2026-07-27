@@ -237,12 +237,10 @@ export interface Conversation {
   partner_username: string | null
   partner_avatar: string | null
   partner_is_deleted: boolean
-  partner_public_key: string | null
   last_message: string | null
   last_message_type: string | null
   last_sender_id: string | null
   last_sent_at: string | null
-  last_unsent?: boolean
   unread_count: number
   last_message_at: string | null
   block_status?: 'none' | 'i_blocked' | 'they_blocked'
@@ -697,11 +695,6 @@ class ApiService {
     return this.get<Message[]>(`${endpoint}${qs}`)
   }
 
-  static async getPartnerKey(convId: string): Promise<{ partner_id: string; partner_public_key: string | null }> {
-    const endpoint = ENDPOINTS.CONVERSATION_PARTNER_KEY.replace(':id', convId)
-    return this.get(endpoint)
-  }
-
   static async sendMessage(convId: string, content: string, contentType = 'text', metadata?: object): Promise<Message> {
     const endpoint = ENDPOINTS.CONVERSATION_MESSAGES.replace(':id', convId)
     return this.post<Message>(endpoint, { content, content_type: contentType, metadata })
@@ -899,7 +892,7 @@ class ApiService {
   static async getFreeSlots(): Promise<{ used: number; limit: number; resets_on: string }> {
     return this.get(ENDPOINTS.EVENT_FREE_SLOTS)
   }
-
+  
   static async reportEvent(eventId: string, reason: string, description?: string): Promise<{ ok: boolean }> {
     return this.post(ENDPOINTS.EVENT_REPORT.replace(':id', eventId), { reason, description: description ?? null })
   }
@@ -920,9 +913,6 @@ class ApiService {
 
   static async deleteAccount(): Promise<{ ok: boolean }> {
     return this.delete(ENDPOINTS.DELETE_ACCOUNT)
-  }
-  static async setPublicKey(publicKey: string): Promise<{ ok: boolean }> {
-    return this.patch(ENDPOINTS.SET_PUBLIC_KEY, { public_key: publicKey })
   }
 
 

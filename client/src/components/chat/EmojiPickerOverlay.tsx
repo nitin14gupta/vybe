@@ -23,7 +23,7 @@ interface Props {
   onReply: () => void
   onCopy: () => void
   onReport: () => void
-  /** Unsend — mine only, both-sided (partner sees "message was unsent" too) */
+  /** Unsend — mine only, both-sided (message vanishes for both, no trace) */
   onUnsend: () => void
   /** Delete for me — mine or theirs, one-sided (only disappears from my view) */
   onDeleteForMe: () => void

@@ -179,13 +179,11 @@ def list_conversations(
                 CASE WHEN c.user1_id = %s::uuid THEN u2.username ELSE u1.username END AS partner_username,
                 CASE WHEN c.user1_id = %s::uuid THEN p2.url ELSE p1.url END AS partner_avatar,
                 CASE WHEN c.user1_id = %s::uuid THEN COALESCE(u2.is_deleted, FALSE) ELSE COALESCE(u1.is_deleted, FALSE) END AS partner_is_deleted,
-                CASE WHEN c.user1_id = %s::uuid THEN u2.public_key ELSE u1.public_key END AS partner_public_key,
                 -- Last message
                 m.content AS last_message,
                 m.content_type AS last_message_type,
                 m.sender_id::text AS last_sender_id,
                 m.sent_at AS last_sent_at,
-                (m.unsent_at IS NOT NULL) AS last_unsent,
                 -- Unread count (messages not read by current user sent by partner)
                 (
                     SELECT COUNT(*) FROM messages msg
@@ -219,15 +217,19 @@ def list_conversations(
                 WHERE user_id = c.user2_id ORDER BY position LIMIT 1
             ) p2 ON true
             LEFT JOIN LATERAL (
-                SELECT content, content_type, sender_id, sent_at, unsent_at FROM messages
+                -- Unsent messages are excluded here so the preview falls back
+                -- to the previous message, exactly as if the unsent one was
+                -- never sent at all — no "message was unsent" trace anywhere.
+                SELECT content, content_type, sender_id, sent_at FROM messages
                 WHERE conversation_id = c.id
                   AND NOT (%s::uuid = ANY(COALESCE(deleted_for, '{}'::uuid[])))
+                  AND unsent_at IS NULL
                 ORDER BY sent_at DESC LIMIT 1
             ) m ON true
             WHERE (c.user1_id = %s::uuid OR c.user2_id = %s::uuid)""" + hidden_filter_sql + """
             ORDER BY COALESCE(c.last_message_at, c.created_at) DESC
             """,
-            (uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid) + (() if include_hidden else (uid,)),
+            (uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid) + (() if include_hidden else (uid,)),
         )
         rows = cur.fetchall()
 
@@ -251,19 +253,6 @@ def list_conversations(
         "active_total": len(active_all),
         "has_more": has_more,
     }
-
-
-@router.get("/chat/conversations/{conv_id}/partner-key")
-def get_partner_key(conv_id: str, current_user: dict = Depends(get_current_user)):
-    """Returns the other participant's X25519 public key for end-to-end
-    encrypting/decrypting this conversation's messages client-side."""
-    uid = current_user["id"]
-    with get_db() as (cur, _):
-        conv = _get_conversation(cur, conv_id, uid)
-        partner_id = conv["user2_id"] if conv["user1_id"] == uid else conv["user1_id"]
-        cur.execute("SELECT public_key FROM users WHERE id = %s::uuid", (partner_id,))
-        row = cur.fetchone()
-    return {"partner_id": partner_id, "partner_public_key": row["public_key"] if row else None}
 
 
 @router.get("/chat/conversations/{conv_id}/messages")
@@ -301,6 +290,8 @@ async def list_messages(
         result = cached_result
     else:
         with get_db() as (cur, _):
+            # Unsent messages are excluded entirely — unsend means gone
+            # without a trace for both participants, not a placeholder bubble.
             if before:
                 cur.execute(
                     """
@@ -309,6 +300,7 @@ async def list_messages(
                            unsent_at, edited_at, deleted_for
                     FROM messages
                     WHERE conversation_id = %s::uuid AND sent_at < %s
+                      AND unsent_at IS NULL
                     ORDER BY sent_at DESC
                     LIMIT %s
                     """,
@@ -322,6 +314,7 @@ async def list_messages(
                            unsent_at, edited_at, deleted_for
                     FROM messages
                     WHERE conversation_id = %s::uuid
+                      AND unsent_at IS NULL
                     ORDER BY sent_at DESC
                     LIMIT %s
                     """,
