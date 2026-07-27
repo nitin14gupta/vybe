@@ -58,7 +58,7 @@ export function Step3Where({ form, set, errors, setErrors, disabled, inline = fa
         lat={form.locationLat ?? undefined}
         lng={form.locationLng ?? undefined}
         onChange={(lat, lng) => { set('locationLat', lat); set('locationLng', lng) }}
-        onAddressDetected={address => { if (!form.locationName.trim()) set('locationName', address) }}
+        onAddressDetected={address => set('locationName', address)}
       />
       {!inline && (
         <View style={ef.mapCentrePin} pointerEvents="none">
