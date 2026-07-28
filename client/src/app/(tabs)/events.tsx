@@ -14,6 +14,7 @@ import {
   Linking,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { HomeGradientBackdrop } from "@/components/home/HomeGradientBackdrop";
 import { EventsMapView } from "@/components/maps";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Flame, List, Map, Plus, Search } from "lucide-react-native";
@@ -224,10 +225,20 @@ export default function EventsScreen() {
           style={{ flex: 1 }}
         />
 
-        {/* Gradient at top so header text is readable over map tiles */}
+        {/* Aurora glow — same backdrop colors as home, dialed way down so it reads as a soft overlay, not a cover over the map */}
+        <HomeGradientBackdrop opacity={0.28} height={insets.top + 110} />
         <LinearGradient
-          colors={["rgba(10,10,10,0.9)", "rgba(10,10,10,0.45)", "transparent"]}
-          style={[styles.topGradient, { height: insets.top + 92 }]}
+          colors={[Colors.brandCoral, "transparent"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.leftGlow}
+          pointerEvents="none"
+        />
+        <LinearGradient
+          colors={[Colors.brandOrange, "transparent"]}
+          start={{ x: 1, y: 0 }}
+          end={{ x: 0, y: 0 }}
+          style={styles.rightGlow}
           pointerEvents="none"
         />
 
@@ -464,7 +475,8 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
 
   // Map mode — floating header
-  topGradient: { position: "absolute", top: 0, left: 0, right: 0 },
+  leftGlow: { position: "absolute", top: 0, bottom: 0, left: 0, width: 90, opacity: 0.28 },
+  rightGlow: { position: "absolute", top: 0, bottom: 0, right: 0, width: 90, opacity: 0.28 },
   floatHeader: {
     position: "absolute",
     top: 0,

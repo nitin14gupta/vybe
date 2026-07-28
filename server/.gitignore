@@ -36,6 +36,9 @@ htmlcov/
 .env
 .env.local
 
+# Firebase credentials — never commit, grants full admin access to the project
+*firebase-adminsdk*.json
+
 # SQLite
 *.sqlite3
 *.db

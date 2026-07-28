@@ -13,7 +13,7 @@ const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient)
 const PALETTE_A = [Colors.brandCoral, Colors.brandOrange, Colors.background]
 const PALETTE_B = [Colors.brandOrange, Colors.brandCoral, Colors.background]
 
-export function HomeGradientBackdrop() {
+export function HomeGradientBackdrop({ opacity = 1, height = HEIGHT }: { opacity?: number; height?: number }) {
   const progress = useSharedValue(0)
 
   useEffect(() => {
@@ -37,7 +37,7 @@ export function HomeGradientBackdrop() {
       animatedProps={animatedProps}
       colors={PALETTE_A as unknown as [string, string, string]}
       locations={[0, 0, 1]}
-      style={s.root}
+      style={[s.root, { height, opacity }]}
       pointerEvents="none"
     />
   )
@@ -47,6 +47,5 @@ const s = StyleSheet.create({
   root: {
     position: 'absolute',
     top: 0, left: 0, right: 0,
-    height: HEIGHT,
   },
 })

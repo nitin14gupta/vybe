@@ -1,0 +1,23 @@
+# EAS Build upload scope — trims the archive to what the remote build actually
+# needs. node_modules is reinstalled on the build server from package-lock.json,
+# so shipping the local copy is pure upload time with no benefit.
+node_modules/
+.git/
+.expo/
+.vscode/
+.claude/
+
+# Docs — not needed to build the app
+AGENTS.md
+DESIGN.md
+README.md
+
+# Native credentials that must never leave this machine
+*firebase-adminsdk*.json
+google-services.json
+GoogleService-Info.plist
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision

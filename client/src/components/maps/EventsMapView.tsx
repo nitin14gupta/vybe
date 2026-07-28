@@ -1,7 +1,8 @@
 import React, { useMemo, useEffect } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
+import { Image } from 'expo-image'
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated'
-import MapView, { Marker, Polyline } from 'react-native-maps'
+import MapView, { Marker } from 'react-native-maps'
 import Svg, { Defs, RadialGradient, Stop, Path } from 'react-native-svg'
 import {
   Map,
@@ -11,30 +12,12 @@ import {
   GeoJSONSource,
   Layer,
 } from '@maplibre/maplibre-react-native'
-import type { NativeSyntheticEvent } from 'react-native'
-import type { PressEventWithFeatures } from '@maplibre/maplibre-react-native'
 import { Colors, EVENT_EMOJIS } from '@/constants'
 import { MAP_PROVIDER, TILE_STYLE, DEFAULT_MAP_CENTER, type MapBounds } from '@/constants/mapConfig'
 import { useGoogleMaps } from '@/hooks/useGoogleMaps'
 import { useMapLibre, eventsToGeoJSON } from '@/hooks/useMapLibre'
 import type { EventSummary } from '@/api/apiService'
 import type { ViewStyle } from 'react-native'
-import type { FeatureCollection } from 'geojson'
-
-function routeLineGeoJSON(
-  userLat: number, userLng: number,
-  eventLat: number, eventLng: number,
-): FeatureCollection {
-  return {
-    type: 'FeatureCollection',
-    features: [{
-      type: 'Feature',
-      geometry: { type: 'LineString', coordinates: [[userLng, userLat], [eventLng, eventLat]] },
-      properties: {},
-    }],
-  }
-}
-
 
 const DARK_MAP_STYLE = [
   { elementType: 'geometry', stylers: [{ color: '#1a1a1a' }] },
@@ -61,7 +44,6 @@ interface GoogleProps {
 
 function EventsMapGoogle({ events, userLat, userLng, userHeading, activeEventId, onEventSelect }: GoogleProps) {
   const { mapRef } = useGoogleMaps()
-  const activeEvent = activeEventId ? events.find(e => e.id === activeEventId) : null
 
   return (
     <MapView
@@ -88,26 +70,13 @@ function EventsMapGoogle({ events, userLat, userLng, userHeading, activeEventId,
         </Marker>
       )}
 
-      {/* Route line from user → selected event */}
-      {activeEvent && userLat != null && userLng != null &&
-        activeEvent.location_lat != null && activeEvent.location_lng != null && (
-          <Polyline
-            coordinates={[
-              { latitude: userLat, longitude: userLng },
-              { latitude: activeEvent.location_lat, longitude: activeEvent.location_lng },
-            ]}
-            strokeColor={Colors.brandCoral}
-            strokeWidth={2.5}
-            lineDashPattern={[8, 5]}
-          />
-        )}
       {events.map((ev, idx) =>
         ev.location_lat != null && ev.location_lng != null ? (
           <Marker
             key={ev.id}
             coordinate={{ latitude: ev.location_lat, longitude: ev.location_lng }}
             onPress={() => onEventSelect(ev, idx)}
-            anchor={{ x: 0.5, y: 1 }}
+            anchor={{ x: 0.5, y: 0.5 }}
           >
             <EventMapPin event={ev} active={ev.id === activeEventId} />
           </Marker>
@@ -133,65 +102,22 @@ function EventsMapLibre({ events, userLat, userLng, userHeading, activeEventId, 
   const { mapRef, handleRegionDidChange } = useMapLibre(onBoundsChange)
   const geojson = useMemo(() => eventsToGeoJSON(events), [events])
 
-  const activeEvent = useMemo(
-    () => (activeEventId ? events.find(e => e.id === activeEventId) : null),
-    [activeEventId, events],
-  )
-
-  const routeLine = useMemo((): FeatureCollection | null => {
-    if (!activeEvent || userLat == null || userLng == null) return null
-    if (activeEvent.location_lat == null || activeEvent.location_lng == null) return null
-    return routeLineGeoJSON(userLat, userLng, activeEvent.location_lat, activeEvent.location_lng)
-  }, [activeEvent, userLat, userLng])
-
-  const handleSourcePress = (event: NativeSyntheticEvent<PressEventWithFeatures>) => {
-    const feature = event.nativeEvent.features?.[0]
-    if (!feature) return
-    const id = feature.properties?.id as string
-    const idx = events.findIndex(ev => ev.id === id)
-    if (idx >= 0) onEventSelect(events[idx], idx)
-  }
-
-  // Heatmap — multi-color spectrum teal→blue→purple→red→orange
+  // Heatmap — soft ambient glow beneath the pins, toned down now that pins
+  // carry the event photo and no longer need the circle layer for legibility.
   const heatmapPaint = {
     'heatmap-weight': 1,
-    'heatmap-radius': 60,
-    'heatmap-intensity': 1.5,
+    'heatmap-radius': 46,
+    'heatmap-intensity': 1.1,
     'heatmap-color': [
       'interpolate', ['linear'], ['heatmap-density'],
       0, 'rgba(0,0,0,0)',
-      0.15, 'rgba(29,233,182,0.25)',
-      0.35, 'rgba(79,195,247,0.55)',
-      0.60, 'rgba(206,147,216,0.75)',
-      0.82, 'rgba(255,82,82,0.85)',
-      1.0, 'rgba(255,107,53,0.95)',
+      0.15, 'rgba(29,233,182,0.18)',
+      0.35, 'rgba(79,195,247,0.35)',
+      0.60, 'rgba(206,147,216,0.5)',
+      0.82, 'rgba(255,82,82,0.55)',
+      1.0, 'rgba(255,107,53,0.6)',
     ] as any,
-    'heatmap-opacity': 0.85,
-  }
-
-  const circlePaint = {
-    'circle-radius': [
-      'case',
-      ['==', ['get', 'id'], activeEventId ?? ''],
-      14,
-      11,
-    ] as any,
-    'circle-color': [
-      'case',
-      ['==', ['get', 'id'], activeEventId ?? ''],
-      Colors.brandCoral,
-      Colors.brandOrange,
-    ] as any,
-    'circle-stroke-width': 3,
-    'circle-stroke-color': '#fff',
-    'circle-opacity': 1,
-  }
-
-  const linePaint = {
-    'line-color': Colors.brandCoral,
-    'line-width': 2.5,
-    'line-dasharray': [6, 4],
-    'line-opacity': 0.9,
+    'heatmap-opacity': 0.7,
   }
 
   return (
@@ -218,22 +144,25 @@ function EventsMapLibre({ events, userLat, userLng, userHeading, activeEventId, 
         </LibreMarker>
       )}
 
-      {/* Dashed route line from user → selected event */}
-      {routeLine && (
-        <GeoJSONSource id="route-source" data={routeLine}>
-          <Layer id="route-line" type="line" source="route-source" paint={linePaint} />
-        </GeoJSONSource>
-      )}
-
-      {/* Heatmap glow layer — same data, separate source so no press fires on the glow */}
+      {/* Heatmap glow layer — ambient warmth under the pins */}
       <GeoJSONSource id="events-heat-source" data={geojson}>
         <Layer id="events-heatmap" type="heatmap" source="events-heat-source" paint={heatmapPaint} />
       </GeoJSONSource>
 
-      {/* Tappable pin circles — press fires onEventSelect */}
-      <GeoJSONSource id="events-source" data={geojson} onPress={handleSourcePress}>
-        <Layer id="events-circles" type="circle" source="events-source" paint={circlePaint} />
-      </GeoJSONSource>
+      {/* Photo pins — one real marker per event, centered on the coordinate */}
+      {events.map((ev, idx) =>
+        ev.location_lat != null && ev.location_lng != null ? (
+          <LibreMarker
+            key={ev.id}
+            id={ev.id}
+            lngLat={[ev.location_lng, ev.location_lat]}
+            anchor="center"
+            onPress={() => onEventSelect(ev, idx)}
+          >
+            <EventMapPin event={ev} active={ev.id === activeEventId} />
+          </LibreMarker>
+        ) : null,
+      )}
     </Map>
   )
 }
@@ -397,52 +326,54 @@ const c = StyleSheet.create({
   },
 })
 
+// Event marker — just the event's own 16:9 photo, centered on the coordinate.
 function EventMapPin({ event, active }: { event: EventSummary; active: boolean }) {
+  const cover = event.cover_photos?.[0]?.url
   const emoji = EVENT_EMOJIS[event.event_type] ?? '🔥'
   return (
     <View style={p.wrap}>
       <View style={[p.bubble, active && p.bubbleActive]}>
-        <Text style={p.emoji}>{emoji}</Text>
+        {cover ? (
+          <Image source={{ uri: cover }} style={p.photo} contentFit="cover" />
+        ) : (
+          <View style={[p.photo, p.photoFallback]}>
+            <Text style={p.emoji}>{emoji}</Text>
+          </View>
+        )}
       </View>
-      <View style={[p.tail, active && p.tailActive]} />
     </View>
   )
 }
 
+const PIN_W = 72
+const PIN_H = Math.round((PIN_W * 9) / 16)
+const PIN_RADIUS = 10
+
 const p = StyleSheet.create({
   wrap: { alignItems: 'center' },
   bubble: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.surface,
-    borderWidth: 2.5,
-    borderColor: Colors.brandOrange,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: PIN_W,
+    height: PIN_H,
+    borderRadius: PIN_RADIUS,
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.4,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
     elevation: 6,
   },
   bubbleActive: {
-    backgroundColor: 'rgba(255,107,53,0.18)',
-    borderColor: Colors.brandCoral,
-    transform: [{ scale: 1.15 }],
+    transform: [{ scale: 1.12 }],
   },
-  tail: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 7,
-    borderRightWidth: 7,
-    borderTopWidth: 10,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: Colors.brandOrange,
-    marginTop: -1,
+  photo: {
+    width: '100%',
+    height: '100%',
   },
-  tailActive: { borderTopColor: Colors.brandCoral },
+  photoFallback: {
+    backgroundColor: Colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   emoji: { fontSize: 20 },
 })
 
