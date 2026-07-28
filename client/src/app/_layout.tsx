@@ -15,9 +15,10 @@ import { useVybeFonts } from '@/lib/fonts'
 import { useAuthStore } from '@/store/auth'
 import { tokenStorage } from '@/lib/tokenStorage'
 import ApiService from '@/api/apiService'
-import { PillOverlay, PermissionSheetOverlay, AccountLockedOverlay } from '@/components/ui'
+import { PillOverlay, PermissionSheetOverlay, AccountLockedOverlay, NoInternetBanner } from '@/components/ui'
 import { useNotificationSetup } from '@/hooks/useNotificationSetup'
 import { useDeepLinkRouter } from '@/hooks/useDeepLinkRouter'
+import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -54,6 +55,7 @@ export default function RootLayout() {
   const { setAuth } = useAuthStore()
   useNotificationSetup()
   useDeepLinkRouter()
+  useNetworkStatus()
 
   useEffect(() => {
     async function bootstrap() {
@@ -101,6 +103,7 @@ export default function RootLayout() {
           <PillOverlay />
           <PermissionSheetOverlay />
           <AccountLockedOverlay />
+          <NoInternetBanner />
           {!appReady && (
             <View style={StyleSheet.absoluteFill}>
               <AppSplashScreen />
