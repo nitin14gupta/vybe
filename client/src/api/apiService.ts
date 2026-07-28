@@ -2,6 +2,7 @@ import * as FileSystem from 'expo-file-system/legacy'
 import { API_BASE_URL, WS_BASE_URL, ENDPOINTS, DEFAULT_HEADERS, createAuthHeader } from './config'
 import { useAuthStore } from '@/store/auth'
 import { useLockStore } from '@/store/lockStore'
+import { useMaintenanceStore } from '@/store/maintenanceStore'
 
 // ── Response shapes ──────────────────────────────────────────────────────────
 
@@ -365,6 +366,18 @@ function checkAccountLocked(status: number, err: any): boolean {
   return false
 }
 
+// Server sends a structured 503 { detail: { code: 'MAINTENANCE', message } }
+// for every route while main.py's maintenance_mode middleware is on — flips
+// the global full-screen maintenance overlay on. Returns true so callers can
+// skip their own error handling, same convention as checkAccountLocked.
+function checkMaintenanceMode(status: number, err: any): boolean {
+  if (status === 503 && err?.detail && typeof err.detail === 'object' && err.detail.code === 'MAINTENANCE') {
+    useMaintenanceStore.getState().activate(err.detail.message ?? '')
+    return true
+  }
+  return false
+}
+
 class ApiService {
   // ── Private helpers ────────────────────────────────────────────────────────
 
@@ -448,6 +461,7 @@ class ApiService {
       try {
         const err = await response.json()
         checkAccountLocked(response.status, err)
+        checkMaintenanceMode(response.status, err)
         // Pydantic v2 returns detail as an array on validation errors
         if (Array.isArray(err.detail)) {
           detail = err.detail.map((d: any) => d.msg ?? String(d)).join(', ')
@@ -998,6 +1012,7 @@ class ApiService {
       try {
         const err = JSON.parse(res.body)
         checkAccountLocked(res.status, err)
+        checkMaintenanceMode(res.status, err)
         detail = err?.detail ?? detail
       } catch { }
       throw Object.assign(new Error(detail), { status: res.status })
@@ -1027,6 +1042,7 @@ class ApiService {
       try {
         const err = JSON.parse(res.body)
         checkAccountLocked(res.status, err)
+        checkMaintenanceMode(res.status, err)
         detail = err?.detail ?? detail
       } catch { }
       throw new Error(detail)
@@ -1071,6 +1087,7 @@ class ApiService {
       try {
         const err = JSON.parse(result.body)
         checkAccountLocked(result.status, err)
+        checkMaintenanceMode(result.status, err)
         detail = err?.detail ?? detail
       } catch { }
       throw new Error(detail)
@@ -1100,6 +1117,7 @@ class ApiService {
       try {
         const err = JSON.parse(result.body)
         checkAccountLocked(result.status, err)
+        checkMaintenanceMode(result.status, err)
         detail = err?.detail ?? detail
       } catch { }
       throw new Error(detail)
@@ -1134,6 +1152,7 @@ class ApiService {
       try {
         const err = JSON.parse(result.body)
         checkAccountLocked(result.status, err)
+        checkMaintenanceMode(result.status, err)
         detail = err?.detail ?? detail
       } catch { }
       throw new Error(detail)

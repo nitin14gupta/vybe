@@ -59,7 +59,13 @@
         "googleMaps": {
           "apiKey": "AIzaSyAzBgikYrIER9BsmcxOF330T_zX2jMdVQg"
         }
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+      ]
     },
     "web": {
       "output": "static",
@@ -129,7 +135,20 @@
       "apiUrl": "http://192.168.0.104:8000",
       "router": {},
       "eas": {
-        "projectId": "da4e0090-c985-42e9-ab31-f6832bcc46e9"
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "bundleIdentifier": "in.gorave.app.notification-service",
+                  "targetName": "notificationservice",
+                  "entitlements": {}
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "473a8414-fc2e-4b35-8dc2-15ee025e7568"
       }
     }
   }

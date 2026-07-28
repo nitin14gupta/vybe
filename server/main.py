@@ -1,8 +1,9 @@
 import asyncio
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from routes.auth import router as auth_router
 from routes.users import router as users_router
 from routes.upload import router as upload_router
@@ -64,6 +65,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+_MAINTENANCE_EXEMPT_PREFIXES = ("/admin", "/health", "/docs", "/openapi.json", "/redoc")
+
+
+@app.middleware("http")
+async def maintenance_mode(request: Request, call_next):
+    # Read fresh each request (not cached at import) so restarting the
+    # process after editing MAINTENANCE_MODE in .env takes effect immediately.
+    if os.getenv("MAINTENANCE_MODE", "false").lower() == "true" and not request.url.path.startswith(_MAINTENANCE_EXEMPT_PREFIXES):
+        return JSONResponse(
+            status_code=503,
+            content={"detail": {"code": "MAINTENANCE", "message": os.getenv("MAINTENANCE_MESSAGE") or "Gorave is undergoing scheduled maintenance. We'll be back shortly."}},
+        )
+    return await call_next(request)
 
 app.include_router(auth_router)
 app.include_router(users_router)

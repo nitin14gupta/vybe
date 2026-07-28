@@ -15,7 +15,7 @@ import { useVybeFonts } from '@/lib/fonts'
 import { useAuthStore } from '@/store/auth'
 import { tokenStorage } from '@/lib/tokenStorage'
 import ApiService from '@/api/apiService'
-import { PillOverlay, PermissionSheetOverlay, AccountLockedOverlay, NoInternetBanner } from '@/components/ui'
+import { PillOverlay, PermissionSheetOverlay, AccountLockedOverlay, MaintenanceOverlay, NoInternetBanner } from '@/components/ui'
 import { useNotificationSetup } from '@/hooks/useNotificationSetup'
 import { useDeepLinkRouter } from '@/hooks/useDeepLinkRouter'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
@@ -104,6 +104,7 @@ export default function RootLayout() {
           <PermissionSheetOverlay />
           <AccountLockedOverlay />
           <NoInternetBanner />
+          <MaintenanceOverlay />
           {!appReady && (
             <View style={StyleSheet.absoluteFill}>
               <AppSplashScreen />

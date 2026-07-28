@@ -3,11 +3,11 @@ client/app.json. Update here, not in the individual files that use them.
 """
 
 # ios.bundleIdentifier and android.package in client/app.json (same value for both)
-BUNDLE_ID = "in.vybe.app"
+BUNDLE_ID = "in.gorave.app"
 ANDROID_PACKAGE = BUNDLE_ID
 
-# client/app.json's "scheme" — the custom URL scheme (vybe://...)
-APP_SCHEME = "vybe"
+# client/app.json's "scheme" — the custom URL scheme (gorave://...)
+APP_SCHEME = "gorave"
 
 # client/app.json's iOS associatedDomains / Android intentFilters host —
 # see server/routes/wellknown.py for the universal-link verification files
