@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { PrimaryButton, TextLinkButton, Screen, LogoMark } from '@/components/ui'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { prefetchTemplateImages } from '@/lib/templateImages'
 
 const { height } = Dimensions.get('window')
 
@@ -22,6 +23,7 @@ export default function WelcomeScreen() {
   useEffect(() => {
     cardY.value = withDelay(80, withTiming(0, { duration: 400 }))
     cardOpacity.value = withDelay(80, withTiming(1, { duration: 400 }))
+    prefetchTemplateImages()
   }, [])
 
   const cardStyle = useAnimatedStyle(() => ({

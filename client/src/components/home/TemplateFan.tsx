@@ -5,26 +5,13 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withTiming, Easing,
   type SharedValue,
 } from 'react-native-reanimated'
+import { TEMPLATE_IMAGE_URIS } from '@/lib/templateImages'
 
 const AnimatedTemplateImage = Animated.createAnimatedComponent(Image)
 
-// 7 template images.
-const TEMPLATE_IMAGES = [
-  require('../../../assets/images/templates/beack.webp'),
-  require('../../../assets/images/templates/christmas.webp'),
-  require('../../../assets/images/templates/halloween.webp'),
-  require('../../../assets/images/templates/houseparty.webp'),
-  require('../../../assets/images/templates/nightout.webp'),
-  require('../../../assets/images/templates/retro.webp'),
-  require('../../../assets/images/templates/wooden.webp'),
-]
+const TEMPLATE_IMAGES = TEMPLATE_IMAGE_URIS.map(uri => ({ uri }))
 
 const N = TEMPLATE_IMAGES.length
-// 3 full loops = 21 physical cards. Only ~9 are ever visible at once — the
-// rest sit off in the wrapped-around background as a reservoir, so a user
-// can spin the same direction many times in a row before the wraparound
-// (which is mathematically seamless anyway — see centeredMod) is even
-// something that could happen mid-view.
 const LOOPS = 3
 const PHYSICAL_COUNT = N * LOOPS
 
@@ -35,17 +22,6 @@ const SPIN_MS = 340
 const VISIBLE_HALF = 4
 const FADE_PAST = 1
 
-// Wraps x into the range (-m/2, m/2] — e.g. centeredMod(19, 21) = -2, not 19.
-// This is the whole trick: each physical card p has a PERMANENTLY FIXED
-// image (TEMPLATE_IMAGES[p % N], assigned once, never swapped as a prop —
-// that swap was the source of the flash in the previous version). Spinning
-// only ever changes `center` (a shared value). A card's on-screen offset is
-// centeredMod(p - center, PHYSICAL_COUNT) — as center increases past
-// PHYSICAL_COUNT, this wraps the card's rendered position back around to
-// the other side. Because PHYSICAL_COUNT is a multiple of N, wrapping a
-// card by PHYSICAL_COUNT slots always lands it on a card showing the SAME
-// image sequence, so the wrap is invisible even in principle — there's no
-// "reassign the image" step left to race against anything.
 function centeredMod(x: number, m: number) {
   'worklet'
   let r = ((x % m) + m) % m

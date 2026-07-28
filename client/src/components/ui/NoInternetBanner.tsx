@@ -46,7 +46,7 @@ export function NoInternetBanner() {
         <WifiOff size={16} color={Colors.inkPrimary} strokeWidth={2} />
       </View>
       <Text style={s.text} numberOfLines={2}>
-        You&apos;re offline — showing cached content
+        You&apos;re offline
       </Text>
       <Pressable style={s.retryBtn} onPress={onRetry} disabled={checking} hitSlop={8}>
         <RefreshCw size={14} color={Colors.brandOrange} strokeWidth={2.2} />
