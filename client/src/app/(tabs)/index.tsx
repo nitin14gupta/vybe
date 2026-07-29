@@ -58,7 +58,6 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.root}>
-      <HomeGradientBackdrop />
 
       <AppHeader
         showLogo

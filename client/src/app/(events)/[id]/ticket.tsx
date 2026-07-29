@@ -157,7 +157,7 @@ function SaveButton({ onPress }: { onPress: () => void }) {
           end={{ x: 1, y: 0 }}
           style={s.saveGradient}
         >
-          <Download size={18} color={Colors.background} strokeWidth={2.2} />
+          <Download size={18} color={Colors.inkPrimary} strokeWidth={2.2} />
           <Text style={s.saveBtnText}>Save to Photos</Text>
         </LinearGradient>
     </Pressable>
@@ -503,7 +503,7 @@ const s = StyleSheet.create({
   saveBtnText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 16,
-    color: Colors.background,
+    color: Colors.inkPrimary,
     letterSpacing: 0.1,
   },
 
