@@ -1,15 +1,15 @@
 import { Dimensions, StyleSheet } from 'react-native'
-import { Colors, FontFamily, EVENT_EMOJIS } from '@/constants'
+import { Colors, FontFamily, EVENT_ICONS } from '@/constants'
 
 export const W = Dimensions.get('window').width
 
 export const EVENT_TYPES = [
-  { key: 'house_party', label: 'House Party', emoji: EVENT_EMOJIS.house_party },
-  { key: 'rooftop',     label: 'Rooftop',     emoji: EVENT_EMOJIS.rooftop },
-  { key: 'game_night',  label: 'Game Night',  emoji: EVENT_EMOJIS.game_night },
-  { key: 'dinner',      label: 'Dinner',      emoji: EVENT_EMOJIS.dinner },
-  { key: 'music',       label: 'Music',       emoji: EVENT_EMOJIS.music },
-  { key: 'other',       label: 'Other',       emoji: EVENT_EMOJIS.other },
+  { key: 'house_party', label: 'House Party', icon: EVENT_ICONS.house_party },
+  { key: 'rooftop',     label: 'Rooftop',     icon: EVENT_ICONS.rooftop },
+  { key: 'game_night',  label: 'Game Night',  icon: EVENT_ICONS.game_night },
+  { key: 'dinner',      label: 'Dinner',      icon: EVENT_ICONS.dinner },
+  { key: 'music',       label: 'Music',       icon: EVENT_ICONS.music },
+  { key: 'other',       label: 'Other',       icon: EVENT_ICONS.other },
 ]
 
 export const AGE_OPTIONS: (18 | 21 | 25)[] = [18, 21, 25]
@@ -174,8 +174,6 @@ export const ef = StyleSheet.create({
     fontFamily: FontFamily.bodyRegular,
     fontSize: 12,
     color: 'rgba(255,255,255,0.6)',
-    marginTop: 8,
-    marginBottom: 12,
   },
   indiaBanner: {
     backgroundColor: 'rgba(255,184,48,0.15)',

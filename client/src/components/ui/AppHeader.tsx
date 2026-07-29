@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   logo: {
     fontFamily: FontFamily.headingBold,
     fontSize: 22,
-    color: Colors.brandOrange,
+    color: Colors.inkPrimary,
     letterSpacing: -0.5,
   },
   title: {

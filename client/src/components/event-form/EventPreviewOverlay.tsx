@@ -4,7 +4,7 @@ import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, Calendar, Clock, MapPin, Shield, Users } from 'lucide-react-native'
-import { Colors, FontFamily, PLATFORM_FEE_INR, HOST_COMMISSION_RATE, EVENT_EMOJIS } from '@/constants'
+import { Colors, FontFamily, PLATFORM_FEE_INR, HOST_COMMISSION_RATE, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constants'
 import { hTap, hSelection } from '@/lib/haptics'
 import { EventCard } from '@/components/events/EventCard'
 import { StaticEventMap } from '@/components/maps'
@@ -121,16 +121,23 @@ export function EventPreviewOverlay({ visible, form, onClose }: Props) {
               <Image source={{ uri: heroPhoto }} style={StyleSheet.absoluteFill} contentFit="cover" />
             ) : (
               <LinearGradient colors={['#1A1A1A', '#111111']} style={[StyleSheet.absoluteFill, s.heroPlaceholder]}>
-                <Text style={s.heroEmoji}>{EVENT_EMOJIS[form.eventType] ?? '🔥'}</Text>
+                {(() => {
+                  const TypeIcon = EVENT_ICONS[form.eventType] ?? EVENT_ICON_FALLBACK
+                  return <TypeIcon size={40} color={Colors.inkDisabled} strokeWidth={1.5} />
+                })()}
               </LinearGradient>
             )}
           </View>
 
           <View style={s.pageContent}>
             <View style={s.categoryRow}>
-              <Text style={s.categoryChip}>
-                {EVENT_EMOJIS[form.eventType] ?? '🔥'} {(form.eventType || 'other').replace('_', ' ')}
-              </Text>
+              <View style={s.categoryChip}>
+                {(() => {
+                  const TypeIcon = EVENT_ICONS[form.eventType] ?? EVENT_ICON_FALLBACK
+                  return <TypeIcon size={12} color={Colors.brandOrange} strokeWidth={2} />
+                })()}
+                <Text style={s.categoryChipText}>{(form.eventType || 'other').replace('_', ' ')}</Text>
+              </View>
               {form.ageRestriction && (
                 <View style={s.ageBadge}>
                   <Shield size={12} color={Colors.inkSecondary} />
@@ -268,15 +275,15 @@ const s = StyleSheet.create({
 
   hero: { width: W, backgroundColor: Colors.surface },
   heroPlaceholder: { alignItems: 'center', justifyContent: 'center' },
-  heroEmoji: { fontSize: 64 },
 
   pageContent: { padding: 20, paddingBottom: 140 },
   categoryRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   categoryChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
     backgroundColor: 'rgba(255,107,53,0.15)',
     borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4,
-    color: Colors.brandOrange, fontFamily: FontFamily.bodyMedium, fontSize: 12, textTransform: 'capitalize',
   },
+  categoryChipText: { color: Colors.brandOrange, fontFamily: FontFamily.bodyMedium, fontSize: 12, textTransform: 'capitalize' },
   ageBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.surface, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
   ageBadgeText: { color: Colors.inkSecondary, fontFamily: FontFamily.bodyMedium, fontSize: 12 },
 

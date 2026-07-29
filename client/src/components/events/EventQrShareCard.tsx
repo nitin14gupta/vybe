@@ -1,6 +1,6 @@
 import { forwardRef } from 'react'
 import { View, Text, Image, StyleSheet } from 'react-native'
-import { Colors, FontFamily, Logo } from '@/constants'
+import { Colors, FontFamily, LogoBlack } from '@/constants'
 import { StyledQr } from '@/components/ui/QrCard'
 import { SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT } from './EventShareCard'
 
@@ -10,8 +10,6 @@ interface Props {
   dateTimeLabel: string
 }
 
-// Second share-sheet slide — a scannable link to the event, same visual
-// language as the profile QrCard but sized to match the other share slides.
 export const EventQrShareCard = forwardRef<View, Props>(({ data, title, dateTimeLabel }, ref) => (
   <View ref={ref} collapsable={false} style={s.card}>
     <View style={s.qrWrap}>
@@ -20,7 +18,7 @@ export const EventQrShareCard = forwardRef<View, Props>(({ data, title, dateTime
     <Text style={s.title} numberOfLines={2}>{title}</Text>
     <Text style={s.meta}>{dateTimeLabel}</Text>
     <View style={s.brandRow}>
-      <Image source={Logo} style={s.logo} />
+      <Image source={LogoBlack} style={s.logo} />
       <Text style={s.brand}>GORAVE</Text>
     </View>
   </View>
@@ -67,6 +65,6 @@ const s = StyleSheet.create({
     fontFamily: FontFamily.headingBold,
     fontSize: 12,
     letterSpacing: 2,
-    color: Colors.brandOrange,
+    color: Colors.background,
   },
 })

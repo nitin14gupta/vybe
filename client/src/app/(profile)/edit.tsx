@@ -4,7 +4,7 @@ import { router, useFocusEffect } from 'expo-router'
 import { Image } from 'expo-image'
 import { hSuccess, hSelection } from '@/lib/haptics'
 import { Mic, Square, Play, Pause, RotateCcw, Plus } from 'lucide-react-native'
-import { BackButton, Input, InterestChip, PrimaryButton, Screen, RecordingWave, PlaybackWave, BioInput } from '@/components/ui'
+import { BackButton, Input, InterestChip, PrimaryButton, Screen, RecordingWave, PlaybackWave, BioInput, BrandedLoader } from '@/components/ui'
 import { useEditProfile } from '@/hooks/useEditProfile'
 import { useInterests } from '@/hooks/useInterests'
 import { useVoiceEdit } from '@/hooks/useVoiceEdit'
@@ -62,7 +62,7 @@ export default function EditProfileScreen() {
   if (loading) {
     return (
       <Screen>
-        <View style={styles.loader}><ActivityIndicator color={Colors.brandOrange} /></View>
+        <View style={styles.loader}><BrandedLoader /></View>
       </Screen>
     )
   }

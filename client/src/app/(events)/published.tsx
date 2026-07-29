@@ -11,7 +11,7 @@ import { hTap, hSuccess } from '@/lib/haptics'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import Svg, { Path, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg'
-import { Link2 } from 'lucide-react-native'
+import { Link2, Rocket } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Colors, FontFamily } from '@/constants'
 import { ConfettiRain } from '@/components/ui'
@@ -85,7 +85,7 @@ function RocketIcon() {
   return (
     <Animated.View style={[s.rocketWrap, { transform: [{ translateY: floatAnim }] }]}>
       <BlurView intensity={40} tint="light" style={s.rocketCircle}>
-        <Text style={s.rocketEmoji}>🚀</Text>
+        <Rocket size={40} color="#fff" strokeWidth={1.75} />
       </BlurView>
     </Animated.View>
   )
@@ -170,7 +170,10 @@ export default function PublishedScreen() {
       <View style={s.content}>
         <RocketIcon />
 
-        <Text style={s.headline}>Your event is live! 🚀</Text>
+        <View style={s.headlineRow}>
+          <Text style={s.headline}>Your event is live!</Text>
+          <Rocket size={24} color={Colors.brandOrange} strokeWidth={2} />
+        </View>
         <Text style={s.sub}>Share to get your first guests and start building the vibe.</Text>
 
         {/* Share card */}
@@ -251,15 +254,13 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     overflow: 'hidden',
   },
-  rocketEmoji: { fontSize: 44 },
-
   // Text
+  headlineRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 10 },
   headline: {
     fontFamily: FontFamily.headingBold,
     fontSize: 28,
     color: Colors.brandOrange,
     textAlign: 'center',
-    marginBottom: 10,
     letterSpacing: -0.5,
   },
   sub: {

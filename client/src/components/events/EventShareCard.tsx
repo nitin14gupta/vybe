@@ -60,5 +60,5 @@ const s = StyleSheet.create({
     gap: 6,
     marginTop: 16,
   },
-  brand: { fontFamily: FontFamily.headingBold, fontSize: 12, letterSpacing: 2, color: Colors.brandOrange, marginTop: 4 },
+  brand: { fontFamily: FontFamily.headingBold, fontSize: 12, letterSpacing: 2, color: Colors.inkPrimary, marginTop: 4 },
 })

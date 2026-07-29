@@ -4,6 +4,7 @@ import { KeyboardGestureArea, KeyboardStickyView } from 'react-native-keyboard-c
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams } from 'expo-router'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
+import { Mic } from 'lucide-react-native'
 import { BlockSheet, ReportSheet } from '@/components/ui'
 import { Colors, FontFamily } from '@/constants'
 import { useChatScreen } from '@/hooks/useChatScreen'
@@ -32,8 +33,9 @@ type ListItem =
 function VoiceIndicator() {
   return (
     <View style={s.voiceIndicatorWrap}>
-      <View style={s.voiceIndicatorBubble}>
-        <Text style={s.voiceIndicatorText}>🎤 Recording…</Text>
+      <View style={[s.voiceIndicatorBubble, s.voiceIndicatorRow]}>
+        <Mic size={14} color={Colors.brandOrange} strokeWidth={2} />
+        <Text style={s.voiceIndicatorText}>Recording…</Text>
       </View>
     </View>
   )
@@ -375,5 +377,6 @@ const s = StyleSheet.create({
     borderRadius: 16, borderBottomLeftRadius: 4,
     paddingHorizontal: 14, paddingVertical: 10,
   },
+  voiceIndicatorRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   voiceIndicatorText: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.brandOrange },
 })

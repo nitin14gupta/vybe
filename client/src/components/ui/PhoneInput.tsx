@@ -32,7 +32,7 @@ export function PhoneInput({ value, onChangeText, error, autoFocus }: Props) {
         <View style={styles.prefix}>
           <Text style={styles.flag}>🇮🇳</Text>
           <Text style={styles.code}>+91</Text>
-          <ChevronDown size={14} color={Colors.inkSecondary} strokeWidth={2} />
+          {/* <ChevronDown size={14} color={Colors.inkSecondary} strokeWidth={2} /> */}
         </View>
         <View style={styles.divider} />
         <TextInput

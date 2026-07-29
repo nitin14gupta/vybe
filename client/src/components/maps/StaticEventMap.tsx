@@ -1,8 +1,9 @@
 import React from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import MapView, { Marker as GoogleMarker } from 'react-native-maps'
 import { Map, Camera, Marker } from '@maplibre/maplibre-react-native'
-import { Colors, EVENT_EMOJIS } from '@/constants'
+import { MapPin as MapPinIcon } from 'lucide-react-native'
+import { Colors, EVENT_ICONS } from '@/constants'
 import { MAP_PROVIDER, TILE_STYLE } from '@/constants/mapConfig'
 
 const DARK_MAP_STYLE = [
@@ -26,7 +27,7 @@ export function StaticEventMap({
   eventType = 'other',
   provider = MAP_PROVIDER,
 }: StaticEventMapProps) {
-  const emoji = EVENT_EMOJIS[eventType] ?? '📍'
+  const TypeIcon = EVENT_ICONS[eventType] ?? MapPinIcon
 
   if (provider === 'google') {
     return (
@@ -40,7 +41,7 @@ export function StaticEventMap({
       >
         <GoogleMarker coordinate={{ latitude: lat, longitude: lng }}>
           <View style={s.pin}>
-            <Text style={{ fontSize: 18 }}>{emoji}</Text>
+            <TypeIcon size={16} color={Colors.brandOrange} strokeWidth={2} />
           </View>
         </GoogleMarker>
       </MapView>
@@ -62,7 +63,7 @@ export function StaticEventMap({
       {/* Marker.lngLat = [longitude, latitude] */}
       <Marker lngLat={[lng, lat]}>
         <View style={s.pin}>
-          <Text style={{ fontSize: 18 }}>{emoji}</Text>
+          <TypeIcon size={16} color={Colors.brandOrange} strokeWidth={2} />
         </View>
       </Marker>
     </Map>

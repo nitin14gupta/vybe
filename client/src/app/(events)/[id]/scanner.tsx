@@ -12,7 +12,7 @@ import {
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { ArrowLeft, CheckCircle, QrCode, Search, UserCheck, Users } from 'lucide-react-native'
+import { AlertTriangle, ArrowLeft, CheckCircle, QrCode, Search, UserCheck, Users, XCircle } from 'lucide-react-native'
 import { Image } from 'expo-image'
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated'
 import { hTap, hSuccess } from '@/lib/haptics'
@@ -173,11 +173,20 @@ export default function ScannerScreen() {
                 ]}
               >
                 {scanResult.already_checked_in ? (
-                  <Text style={s.resultText}>⚠️ {scanResult.name} already checked in</Text>
+                  <>
+                    <AlertTriangle size={16} color="#fff" strokeWidth={2} />
+                    <Text style={s.resultText}>{scanResult.name} already checked in</Text>
+                  </>
                 ) : scanResult.ok ? (
-                  <Text style={s.resultText}>✓ {scanResult.name} checked in!</Text>
+                  <>
+                    <CheckCircle size={16} color="#fff" strokeWidth={2} />
+                    <Text style={s.resultText}>{scanResult.name} checked in!</Text>
+                  </>
                 ) : (
-                  <Text style={s.resultText}>❌ {scanResult.error ?? 'Invalid ticket'}</Text>
+                  <>
+                    <XCircle size={16} color="#fff" strokeWidth={2} />
+                    <Text style={s.resultText}>{scanResult.error ?? 'Invalid ticket'}</Text>
+                  </>
                 )}
               </Animated.View>
             )}
@@ -337,7 +346,10 @@ const s = StyleSheet.create({
     right: 0,
     paddingVertical: 12,
     paddingHorizontal: 16,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
   },
   resultSuccess: { backgroundColor: 'rgba(0,196,140,0.9)' },
   resultWarning: { backgroundColor: 'rgba(255,107,53,0.9)' },

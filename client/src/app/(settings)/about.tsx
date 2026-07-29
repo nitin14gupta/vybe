@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native'
 import { router } from 'expo-router'
 import Constants from 'expo-constants'
-import { ArrowLeft, ChevronRight } from 'lucide-react-native'
+import { ArrowLeft, ChevronRight, Heart } from 'lucide-react-native'
 import { Screen, AppHeader, HeaderIconBtn, LogoMark } from '@/components/ui'
 import { Colors, FontFamily, Spacing, Radius, SUPPORT_EMAIL } from '@/constants'
 
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   wordmark: {
     fontFamily: FontFamily.displayExtraBold,
     fontSize: 52,
-    color: Colors.brandOrange,
+    color: Colors.inkPrimary,
     letterSpacing: -1,
   },
   tagline: {

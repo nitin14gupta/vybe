@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
+import { Lock, Cake } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
 import { PrimaryButton, OutlineButton, Screen, LogoMark } from '@/components/ui'
 import { Colors, FontFamily, Spacing } from '@/constants'
@@ -13,7 +14,9 @@ export default function AgeGateScreen() {
     return (
       <Screen transparent style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
         <LiquidPlasmaBackground />
-        <Text style={styles.lockEmoji}>🔒</Text>
+        <View style={styles.lockEmoji}>
+          <Lock size={64} color={Colors.inkSecondary} strokeWidth={1.5} />
+        </View>
         <Text style={styles.lockedTitle}>Come back when you're 18!</Text>
         <Text style={styles.lockedBody}>
           Gorave is for adults only. We'll see you on the other side.
@@ -29,7 +32,9 @@ export default function AgeGateScreen() {
     <Screen transparent style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 }}>
       <LiquidPlasmaBackground />
       <LogoMark size={30} opacity={0.9} style={{ marginBottom: 24 }} />
-      <Text style={styles.emoji}>🎂</Text>
+      <View style={styles.emoji}>
+        <Cake size={64} color={Colors.brandOrange} strokeWidth={1.5} />
+      </View>
       <Text style={styles.title}>Are you 18 or older?</Text>
       <Text style={styles.body}>
         Gorave is only for adults. You must be 18+ to use this app.
@@ -52,9 +57,8 @@ export default function AgeGateScreen() {
 
 const styles = StyleSheet.create({
   emoji: {
-    fontSize: 80,
     marginBottom: 28,
-    textAlign: 'center',
+    alignItems: 'center',
   },
   title: {
     fontFamily: FontFamily.headingBold,
@@ -77,10 +81,8 @@ const styles = StyleSheet.create({
   },
   btn: {},
   lockEmoji: {
-    fontSize: 72,
     marginBottom: 22,
-    textAlign: 'center',
-    lineHeight: 80,
+    alignItems: 'center',
   },
   lockedTitle: {
     fontFamily: FontFamily.headingBold,

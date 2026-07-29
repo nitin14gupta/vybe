@@ -19,12 +19,6 @@ export function relativeDayLabel(date: Date): string {
   return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 }
 
-// Every event you're actually going to (RSVP'd/ticketed, not yet ended) —
-// a "you're going" reminder, separate from RecentlyViewedSection which just
-// tracks what you've looked at. Nobody has more than a handful of these at
-// once, so fetching them all and scrolling horizontally needs no paging.
-// Presentational only — MyEventsSection fetches and orders it against
-// HostingSection by whichever has the nearer date.
 export function UpNextSection({ events }: { events: EventSummary[] }) {
   if (events.length === 0) return null
 
@@ -49,7 +43,7 @@ export function UpNextSection({ events }: { events: EventSummary[] }) {
                     <Text style={s.ticketFooterText}>
                       {d ? relativeDayLabel(d) : ''} · View Ticket
                     </Text>
-                    <ChevronRight size={15} color={Colors.brandOrange} strokeWidth={2} />
+                    <ChevronRight size={15} color={Colors.inkSecondary} strokeWidth={2} />
                   </Pressable>
                 }
               />
@@ -71,10 +65,8 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: 'rgba(255,107,53,0.1)',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,107,53,0.2)',
+    backgroundColor: Colors.elevated,
     paddingVertical: 12,
   },
-  ticketFooterText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.brandOrange },
+  ticketFooterText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.inkPrimary },
 })

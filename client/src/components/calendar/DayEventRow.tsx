@@ -2,7 +2,7 @@ import { Pressable, View, Text, StyleSheet, Image } from 'react-native'
 import { router } from 'expo-router'
 import { MapPin, ChevronRight } from 'lucide-react-native'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
-import { Colors, FontFamily, Radius, EVENT_EMOJIS } from '@/constants'
+import { Colors, FontFamily, Radius, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constants'
 import { formatEventDate } from '@/components/events/EventCard'
 import type { EventSummary } from '@/api/apiService'
 
@@ -15,6 +15,7 @@ import type { EventSummary } from '@/api/apiService'
 // loop to pin down, so: don't reintroduce it here.
 export function DayEventRow({ event }: { event: EventSummary }) {
   const cover = event.cover_photos?.[0]?.url
+  const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
 
   return (
     <Pressable style={s.row} onPress={() => router.push(`/(events)/${event.id}` as any)}>
@@ -23,7 +24,7 @@ export function DayEventRow({ event }: { event: EventSummary }) {
           <Image source={{ uri: cover }} style={s.thumbImg} resizeMode="cover" />
         ) : (
           <View style={[s.thumbImg, s.thumbFallback]}>
-            <Text style={s.thumbEmoji}>{EVENT_EMOJIS[event.event_type] ?? '🔥'}</Text>
+            <TypeIcon size={20} color={Colors.inkDisabled} strokeWidth={1.5} />
           </View>
         )}
       </View>
@@ -79,7 +80,6 @@ const s = StyleSheet.create({
   thumb: { width: 100, height: 56, borderRadius: 10, overflow: 'hidden' },
   thumbImg: { width: '100%', height: '100%' },
   thumbFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
-  thumbEmoji: { fontSize: 22 },
 
   info: { flex: 1, minWidth: 0, gap: 4 },
   title: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.inkPrimary },

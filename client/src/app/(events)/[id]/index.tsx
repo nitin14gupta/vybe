@@ -32,6 +32,7 @@ import {
   Ghost,
   MapPin,
   MoreVertical,
+  PartyPopper,
   Pencil,
   QrCode,
   ScanLine,
@@ -41,7 +42,7 @@ import {
   Users,
   X as XIcon,
 } from 'lucide-react-native'
-import { Colors, FontFamily, EVENT_EMOJIS, HOST_BADGES } from '@/constants'
+import { Colors, FontFamily, EVENT_ICONS, EVENT_ICON_FALLBACK, HOST_BADGE_ICONS } from '@/constants'
 import ApiService, { type EventDetail, type EventAttendee, type EventGuest } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
 import { useRecentEventsStore } from '@/store/recentEventsStore'
@@ -457,7 +458,10 @@ export default function EventDetailScreen() {
             colors={['#1A1A1A', '#111111']}
             style={[{ width: W, height: HERO_HEIGHT }, styles.heroPlaceholder]}
           >
-            <Text style={styles.heroEmoji}>{EVENT_EMOJIS[event.event_type] ?? '🔥'}</Text>
+            {(() => {
+              const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
+              return <TypeIcon size={44} color={Colors.inkDisabled} strokeWidth={1.5} />
+            })()}
           </LinearGradient>
         )}
 
@@ -502,7 +506,13 @@ export default function EventDetailScreen() {
         >
           {/* Category + title */}
           <View style={styles.categoryRow}>
-            <Text style={styles.categoryChip}>{EVENT_EMOJIS[event.event_type]} {event.event_type.replace('_', ' ')}</Text>
+            <View style={styles.categoryChip}>
+              {(() => {
+                const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
+                return <TypeIcon size={12} color={Colors.brandOrange} strokeWidth={2} />
+              })()}
+              <Text style={styles.categoryChipText}>{event.event_type.replace('_', ' ')}</Text>
+            </View>
             {event.age_restriction && (
               <View style={styles.ageBadge}>
                 <Shield size={12} color={Colors.inkSecondary} />
@@ -573,11 +583,11 @@ export default function EventDetailScreen() {
                   )}
                 </View>
                 {!event.host_is_deleted && (() => {
-                  const hostBadgeName = event.host_badges?.find(b => HOST_BADGES[b])
-                  const hostBadgeIcon = hostBadgeName ? HOST_BADGES[hostBadgeName] : null
-                  return hostBadgeIcon ? (
+                  const hostBadgeName = event.host_badges?.find(b => HOST_BADGE_ICONS[b])
+                  const HostBadgeIcon = hostBadgeName ? HOST_BADGE_ICONS[hostBadgeName] : null
+                  return HostBadgeIcon ? (
                     <View style={styles.hostBadgeChip}>
-                      <Text style={styles.hostBadgeChipEmoji}>{hostBadgeIcon}</Text>
+                      <HostBadgeIcon size={11} color={Colors.brandOrange} strokeWidth={2} />
                     </View>
                   ) : null
                 })()}
@@ -774,7 +784,10 @@ export default function EventDetailScreen() {
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                   style={styles.offerGradient}
                 >
-                  <Text style={styles.offerTitle}>Spot Reserved! 🎉</Text>
+                  <View style={styles.offerTitleRow}>
+                    <Text style={styles.offerTitle}>Spot Reserved!</Text>
+                    <PartyPopper size={13} color="#fff" strokeWidth={2} />
+                  </View>
                   <Text style={styles.offerTimer}>
                     Confirm by {offerSecondsLeft != null ? fmtCountdown(offerSecondsLeft) : '...'}
                   </Text>
@@ -997,7 +1010,6 @@ const styles = StyleSheet.create({
 
   hero: { height: HERO_HEIGHT, backgroundColor: Colors.surface },
   heroPlaceholder: { alignItems: 'center', justifyContent: 'center' },
-  heroEmoji: { fontSize: 72 },
   heroScrim: {
     position: 'absolute',
     top: 0, left: 0, right: 0,
@@ -1049,10 +1061,15 @@ const styles = StyleSheet.create({
 
   categoryRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     backgroundColor: 'rgba(255,107,53,0.15)',
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
+  },
+  categoryChipText: {
     color: Colors.brandOrange,
     fontFamily: FontFamily.bodyMedium,
     fontSize: 12,
@@ -1114,7 +1131,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  hostBadgeChipEmoji: { fontSize: 11 },
   hostInfo: { flex: 1 },
   hostLabel: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, marginBottom: 2 },
   hostName: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
@@ -1256,6 +1272,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 2,
   },
+  offerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   offerTitle: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,

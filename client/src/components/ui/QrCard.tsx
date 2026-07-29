@@ -1,7 +1,7 @@
 import { forwardRef } from 'react'
 import { View, Text, StyleSheet, type ImageSourcePropType } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
-import { FontFamily, Logo } from '@/constants'
+import { FontFamily, LogoBlack } from '@/constants'
 
 interface StyledQrProps {
   data: string
@@ -14,7 +14,7 @@ interface StyledQrProps {
 }
 
 export function StyledQr({
-  data, size = 176, padding = 0, logoSource = Logo, showLogo = true,
+  data, size = 176, padding = 0, logoSource = LogoBlack, showLogo = true,
   errorCorrectionLevel = 'H',
 }: StyledQrProps) {
   return (
@@ -47,7 +47,7 @@ interface QrCardProps {
 // Reusable "big scannable QR in a white card" — used for profile share codes
 // today; drop into event/ticket share screens the same way (pass a different
 // `data` deep link + title/subtitle).
-export const QrCard = forwardRef<View, QrCardProps>(({ data, title, subtitle, size = 252, logoSource = Logo }, ref) => (
+export const QrCard = forwardRef<View, QrCardProps>(({ data, title, subtitle, size = 252, logoSource = LogoBlack }, ref) => (
   <View ref={ref} collapsable={false} style={s.card}>
     <StyledQr data={data} size={size} logoSource={logoSource} />
     <Text style={s.title} numberOfLines={1}>{title}</Text>

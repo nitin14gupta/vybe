@@ -2,7 +2,8 @@ import type { ReactNode } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Image } from 'expo-image'
-import { Colors, FontFamily, EVENT_EMOJIS } from '@/constants'
+import { MapPin, Flame } from 'lucide-react-native'
+import { Colors, FontFamily, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constants'
 import { parseServerDate } from '@/lib/dates'
 import type { EventSummary } from '@/api/apiService'
 
@@ -37,6 +38,7 @@ interface Props {
 export function EventCard({ event, onPress, showHost, isPast, isCancelled, footer }: Props) {
   const cover = event.cover_photos?.[0]?.url
   const spotsLow = event.spots_left > 0 && event.spots_left <= 10
+  const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
 
   return (
     <Pressable style={[s.card, isPast && s.cardPast]} onPress={onPress}>
@@ -46,7 +48,7 @@ export function EventCard({ event, onPress, showHost, isPast, isCancelled, foote
           <Image source={{ uri: cover }} style={StyleSheet.absoluteFill} contentFit="cover" />
         ) : (
           <LinearGradient colors={['#1a1a1a', '#0d0d0d']} style={[StyleSheet.absoluteFill, s.placeholder]}>
-            <Text style={s.placeholderEmoji}>{EVENT_EMOJIS[event.event_type] ?? '🔥'}</Text>
+            <TypeIcon size={40} color={Colors.inkDisabled} strokeWidth={1.5} />
           </LinearGradient>
         )}
 
@@ -88,9 +90,15 @@ export function EventCard({ event, onPress, showHost, isPast, isCancelled, foote
       {/* Meta row */}
       <View style={s.meta}>
         <View style={s.metaLeft}>
-          <Text style={s.eventType}>{EVENT_EMOJIS[event.event_type] ?? '🔥'} {event.event_type.replace('_', ' ')}</Text>
+          <View style={s.eventTypeRow}>
+            <TypeIcon size={12} color={Colors.inkSecondary} strokeWidth={2} />
+            <Text style={s.eventType}>{event.event_type.replace('_', ' ')}</Text>
+          </View>
           {event.location_name ? (
-            <Text style={s.location} numberOfLines={1}>📍 {event.location_name}</Text>
+            <View style={s.eventTypeRow}>
+              <MapPin size={12} color={Colors.inkSecondary} strokeWidth={2} />
+              <Text style={s.location} numberOfLines={1}>{event.location_name}</Text>
+            </View>
           ) : null}
         </View>
         <View style={s.metaRight}>
@@ -103,7 +111,8 @@ export function EventCard({ event, onPress, showHost, isPast, isCancelled, foote
 
       {spotsLow && !isPast && !isCancelled && (
         <View style={s.spotsBar}>
-          <Text style={s.spotsText}>🔥 Only {event.spots_left} spots left</Text>
+          <Flame size={13} color={Colors.brandOrange} strokeWidth={2} />
+          <Text style={s.spotsText}>Only {event.spots_left} spots left</Text>
         </View>
       )}
 
@@ -127,7 +136,6 @@ const s = StyleSheet.create({
 
   imageWrap: { width: '100%', aspectRatio: 16 / 9, position: 'relative', overflow: 'hidden' },
   placeholder: { alignItems: 'center', justifyContent: 'center' },
-  placeholderEmoji: { fontSize: 52, textAlign: 'center' },
   gradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 130 },
 
   priceBadge: {
@@ -158,12 +166,14 @@ const s = StyleSheet.create({
   },
   metaLeft: { flex: 1, gap: 3 },
   metaRight: { alignItems: 'flex-end', gap: 3 },
+  eventTypeRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   eventType: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.inkSecondary, textTransform: 'capitalize' },
   location: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary },
   dist: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.inkDisabled },
   attendees: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled },
 
   spotsBar: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: 'rgba(255,107,53,0.1)',
     borderTopWidth: 1, borderTopColor: 'rgba(255,107,53,0.2)',
     paddingHorizontal: 14, paddingVertical: 8,

@@ -41,7 +41,7 @@ import {
   BrandedLoader,
 } from "@/components/ui";
 import ApiService, { ExtendedProfile, EventSummary } from "@/api/apiService";
-import { Colors, FontFamily, Radius, HOST_BADGES } from "@/constants";
+import { Colors, FontFamily, Radius, HOST_BADGE_ICONS } from "@/constants";
 import { usePillStore } from "@/store/pillStore";
 import { useVybeStore } from "@/store/vybeStore";
 import { useImageViewer } from "@/hooks/useImageViewer";
@@ -313,8 +313,8 @@ export default function UserProfileScreen() {
     : null;
 
   const allBadges = profile.badges ?? [];
-  const hostBadgeName = allBadges.find((b) => HOST_BADGES[b]);
-  const hostBadgeIcon = hostBadgeName ? HOST_BADGES[hostBadgeName] : null;
+  const hostBadgeName = allBadges.find((b) => HOST_BADGE_ICONS[b]);
+  const HostBadgeIcon = hostBadgeName ? HOST_BADGE_ICONS[hostBadgeName] : null;
   const otherBadges = allBadges.filter((b) => b !== hostBadgeName);
 
   return (
@@ -408,8 +408,8 @@ export default function UserProfileScreen() {
                 {profile.name ?? "User"}
                 {age ? `, ${age}` : ""}
               </Text>
-              {hostBadgeIcon && (
-                <Text style={s.hostBadgeIcon}>{hostBadgeIcon}</Text>
+              {HostBadgeIcon && (
+                <HostBadgeIcon size={20} color={Colors.accentGold} strokeWidth={2} style={s.hostBadgeIcon} />
               )}
             </View>
             {profile.mutual_count > 0 && (
@@ -525,13 +525,11 @@ export default function UserProfileScreen() {
               (profile.interests?.length ?? 0) > 0) && (
               <View style={s.chipsRow}>
                 {profile.badges?.map((badge) => {
-                  const icon = HOST_BADGES[badge];
+                  const Icon = HOST_BADGE_ICONS[badge];
                   return (
                     <View key={badge} style={s.badgeChip}>
-                      {icon && (
-                        <Text style={{ fontSize: 14, marginRight: 4 }}>
-                          {icon}
-                        </Text>
+                      {Icon && (
+                        <Icon size={13} color={Colors.accentGold} strokeWidth={2} style={{ marginRight: 4 }} />
                       )}
                       <Text style={s.badgeText}>{badge}</Text>
                     </View>

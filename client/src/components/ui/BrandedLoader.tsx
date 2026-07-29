@@ -10,9 +10,6 @@ interface Props {
   size?: number
 }
 
-// Drop-in replacement for a plain ActivityIndicator on screens where a load
-// can take a beat (profile, events) — a gently pulsing logo instead of a
-// generic spinner.
 export function BrandedLoader({ size = 36 }: Props) {
   const opacity = useSharedValue(0.35)
 

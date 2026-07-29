@@ -21,7 +21,7 @@ import { Flame, List, Map, Plus, Search } from "lucide-react-native";
 import { hTap, hSelection } from "@/lib/haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
-import { Colors, FontFamily, FILTER_CHIPS, EVENT_EMOJIS } from "@/constants";
+import { Colors, FontFamily, FILTER_CHIPS, EVENT_ICONS, EVENT_ICON_FALLBACK } from "@/constants";
 import { useEvents } from "@/hooks/useEvents";
 import type { EventSummary } from "@/api/apiService";
 import { EventCard, formatEventDate } from "@/components/events/EventCard";
@@ -53,6 +53,7 @@ function PreviewCard({
   onPress: () => void;
 }) {
   const cover = event.cover_photos?.[0]?.url;
+  const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK;
   return (
     <Pressable
       style={[styles.previewCard, active && styles.previewCardActive]}
@@ -63,7 +64,7 @@ function PreviewCard({
           <Image source={{ uri: cover }} style={styles.previewImage} contentFit="cover" />
         ) : (
           <View style={[styles.previewImage, styles.previewPlaceholder]}>
-            <Text style={styles.eventEmoji}>{EVENT_EMOJIS[event.event_type] ?? "🔥"}</Text>
+            <TypeIcon size={28} color={Colors.inkDisabled} strokeWidth={1.5} />
           </View>
         )}
         <View style={styles.previewPriceBadge}>
@@ -601,7 +602,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  eventEmoji: { fontSize: 34 },
   previewPriceBadge: {
     position: "absolute",
     top: 8,

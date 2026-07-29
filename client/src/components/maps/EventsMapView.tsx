@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect } from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import { Image } from 'expo-image'
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated'
 import MapView, { Marker } from 'react-native-maps'
@@ -12,7 +12,7 @@ import {
   GeoJSONSource,
   Layer,
 } from '@maplibre/maplibre-react-native'
-import { Colors, EVENT_EMOJIS } from '@/constants'
+import { Colors, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constants'
 import { MAP_PROVIDER, TILE_STYLE, DEFAULT_MAP_CENTER, type MapBounds } from '@/constants/mapConfig'
 import { useGoogleMaps } from '@/hooks/useGoogleMaps'
 import { useMapLibre, eventsToGeoJSON } from '@/hooks/useMapLibre'
@@ -329,7 +329,7 @@ const c = StyleSheet.create({
 // Event marker — just the event's own 16:9 photo, centered on the coordinate.
 function EventMapPin({ event, active }: { event: EventSummary; active: boolean }) {
   const cover = event.cover_photos?.[0]?.url
-  const emoji = EVENT_EMOJIS[event.event_type] ?? '🔥'
+  const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
   return (
     <View style={p.wrap}>
       <View style={[p.bubble, active && p.bubbleActive]}>
@@ -337,7 +337,7 @@ function EventMapPin({ event, active }: { event: EventSummary; active: boolean }
           <Image source={{ uri: cover }} style={p.photo} contentFit="cover" />
         ) : (
           <View style={[p.photo, p.photoFallback]}>
-            <Text style={p.emoji}>{emoji}</Text>
+            <TypeIcon size={18} color={Colors.inkDisabled} strokeWidth={1.5} />
           </View>
         )}
       </View>
@@ -374,7 +374,6 @@ const p = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emoji: { fontSize: 20 },
 })
 
 const s = StyleSheet.create({})

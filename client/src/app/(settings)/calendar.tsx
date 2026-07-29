@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native'
 import { router } from 'expo-router'
 import {
-  ChevronLeft, ChevronRight, Search,
+  ArrowLeft, ChevronLeft, ChevronRight, Search,
   CalendarHeart, Ticket as TicketIcon,
 } from 'lucide-react-native'
 import {
@@ -90,7 +90,7 @@ export default function CalendarScreen() {
     <View style={s.root}>
       <AppHeader
         title="Calendar"
-        leftAction={<HeaderIconBtn onPress={() => router.back()}><ChevronLeft size={20} color={Colors.inkPrimary} strokeWidth={2.2} /></HeaderIconBtn>}
+        leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
         rightAction={<HeaderIconBtn onPress={() => { hTap(); setSearchOpen(true) }}><Search size={19} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
       />
 

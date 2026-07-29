@@ -12,7 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { StatusBar } from 'expo-status-bar'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { ArrowLeft, Calendar, Download, MapPin, Share2 } from 'lucide-react-native'
+import { ArrowLeft, Calendar, Download, MapPin, PartyPopper, Share2 } from 'lucide-react-native'
 import ReAnimated, {
   useSharedValue,
   useAnimatedStyle,
@@ -21,7 +21,7 @@ import ReAnimated, {
 import ViewShot, { type ViewShotRef } from 'react-native-view-shot'
 import { Asset as MediaAsset, requestPermissionsAsync as requestMediaPermissionsAsync } from 'expo-media-library'
 import { hTap, hSuccess } from '@/lib/haptics'
-import { Colors, FontFamily, Radius, Spacing, ComponentSize, EVENT_EMOJIS } from '@/constants'
+import { Colors, FontFamily, Radius, Spacing, ComponentSize } from '@/constants'
 import ApiService, { type TicketInfo } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { getOrFetch, peekCached } from '@/lib/queryCache'
@@ -75,7 +75,10 @@ function HeadingBlock() {
 
   return (
     <Animated.View style={[s.headingBlock, { opacity, transform: [{ translateY: fadeY }] }]}>
-      <Text style={s.headline}>You're going! 🎉</Text>
+      <View style={s.headlineRow}>
+        <Text style={s.headline}>You're going!</Text>
+        <PartyPopper size={22} color={Colors.brandOrange} strokeWidth={2} />
+      </View>
       <Text style={s.sub}>Your ticket is ready — show it at the door.</Text>
     </Animated.View>
   )
@@ -84,8 +87,6 @@ function HeadingBlock() {
 // ── Ticket card ───────────────────────────────────────────────────────────────
 
 function TicketCard({ ticket }: { ticket: TicketInfo }) {
-  const emoji = EVENT_EMOJIS[ticket.event_type] ?? '🔥'
-
   return (
     <View style={s.card}>
       {/* Info */}
@@ -377,6 +378,7 @@ const s = StyleSheet.create({
 
   // Heading
   headingBlock: { alignItems: 'center', gap: 6, width: '100%' },
+  headlineRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headline: {
     fontFamily: FontFamily.displayExtraBold,
     fontSize: 32,

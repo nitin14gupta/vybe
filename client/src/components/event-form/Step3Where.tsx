@@ -1,6 +1,6 @@
 import React from 'react'
 import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native'
-import { MapPin } from 'lucide-react-native'
+import { AlertTriangle, MapPin } from 'lucide-react-native'
 import { Colors } from '@/constants'
 import { LocationPickerMap } from '@/components/maps'
 import { useLocationSearch } from '@/hooks/useLocationSearch'
@@ -43,10 +43,14 @@ export function Step3Where({ form, set, errors, setErrors, disabled, inline = fa
         </Text>
       </Pressable>
       {errors.locationName ? <Text style={ef.errorText}>{errors.locationName}</Text> : null}
-      <Text style={ef.locationNote}>📍 Exact address is only shown to confirmed guests</Text>
+      <View style={s.locationNoteRow}>
+        <MapPin size={12} color={Colors.inkSecondary} strokeWidth={2} />
+        <Text style={ef.locationNote}>Exact address is only shown to confirmed guests</Text>
+      </View>
       {isOutsideIndia && (
-        <View style={ef.indiaBanner}>
-          <Text style={ef.indiaBannerText}>⚠️ Location appears to be outside India — are you sure?</Text>
+        <View style={[ef.indiaBanner, s.indiaBannerRow]}>
+          <AlertTriangle size={14} color={Colors.accentGold} strokeWidth={2} />
+          <Text style={ef.indiaBannerText}>Location appears to be outside India — are you sure?</Text>
         </View>
       )}
     </>
@@ -132,4 +136,6 @@ const s = StyleSheet.create({
     overflow: 'hidden',
     marginTop: 12,
   },
+  locationNoteRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, marginBottom: 12 },
+  indiaBannerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 })

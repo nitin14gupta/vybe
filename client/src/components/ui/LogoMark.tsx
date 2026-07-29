@@ -11,7 +11,7 @@ interface Props {
 // One place for "drop the logo mark somewhere small" — headers, empty
 // states, splash. Swap the underlying asset in constants/branding.ts and
 // every usage updates together.
-export function LogoMark({ size = 24, opacity = 1, style }: Props) {
+export function LogoMark({ size = 66, opacity = 1, style }: Props) {
   return (
     <Image
       source={Logo}

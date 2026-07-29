@@ -12,16 +12,9 @@ function upcomingSorted(events: EventSummary[]) {
 }
 
 interface Props {
-  /** Reports whether this section has nothing to show, once its fetch
-   * resolves — the home screen combines this with the other two sections'
-   * emptiness to decide whether to show a single "nothing here yet" state,
-   * instead of each section showing its own. */
   onEmptyChange?: (empty: boolean) => void
 }
 
-// Fetches both "going" and "hosting" lists once, then orders the two
-// sections by whichever has the nearer upcoming date — e.g. a hosted event
-// on the 27th shows above a joined event on the 29th, and vice versa.
 export function MyEventsSection({ onEmptyChange }: Props) {
   const [joined, setJoined] = useState<EventSummary[]>([])
   const [hosted, setHosted] = useState<EventSummary[]>([])

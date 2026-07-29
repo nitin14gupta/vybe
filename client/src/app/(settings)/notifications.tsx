@@ -6,12 +6,12 @@ import {
 import { hTap } from '@/lib/haptics'
 import { router } from 'expo-router'
 import { useFocusEffect } from 'expo-router'
-import { ChevronLeft, Bell, UserPlus, Flame, MessageCircle, PartyPopper, ShieldCheck } from 'lucide-react-native'
+import { ArrowLeft, Bell, UserPlus, Flame, MessageCircle, PartyPopper, ShieldCheck } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import ApiService, { AppNotification } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
 import { notifEntityToTarget, targetToHref } from '@/lib/deepLink'
-import { OutlineButton, PrimaryButton } from '@/components/ui'
+import { AppHeader, HeaderIconBtn, OutlineButton, PrimaryButton } from '@/components/ui'
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
@@ -194,14 +194,11 @@ export default function NotificationsScreen() {
   const sections = groupByDate(notifs)
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
-      <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-          <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
-        </Pressable>
-        <Text style={s.headerTitle}>Notifications</Text>
-        <View style={s.backBtn} />
-      </View>
+    <View style={s.root}>
+      <AppHeader
+        title="Notifications"
+        leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
+      />
 
       {loading ? (
         <View style={s.center}>
@@ -244,12 +241,6 @@ export default function NotificationsScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingBottom: 14
-  },
-  backBtn: { padding: 4, width: 32 },
-  headerTitle: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32 },
   emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
   emptySub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center' },

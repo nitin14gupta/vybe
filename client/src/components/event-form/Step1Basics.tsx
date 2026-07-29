@@ -41,7 +41,7 @@ function Inner({ form, set, errors, setErrors, disabled }: Omit<Props, 'scrollab
             style={[ef.typeChip, form.eventType === t.key && ef.typeChipActive]}
             onPress={() => { if (!disabled) { set('eventType', t.key); setErrors(e => ({ ...e, eventType: '' })) } }}
           >
-            <Text style={ef.typeEmoji}>{t.emoji}</Text>
+            <t.icon size={16} color={form.eventType === t.key ? '#fff' : Colors.glassTextSecondary} strokeWidth={2} />
             <Text style={[ef.typeLabel, form.eventType === t.key && ef.typeLabelActive]}>{t.label}</Text>
           </Pressable>
         ))}

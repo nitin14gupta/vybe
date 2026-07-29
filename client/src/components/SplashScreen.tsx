@@ -77,8 +77,8 @@ const s = StyleSheet.create({
     marginTop: -9,
   },
   logoGlow: {
-    width: 104,
-    height: 104,
+    width: 144,
+    height: 144,
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',

@@ -35,7 +35,7 @@ export function HostingSection({ events }: { events: EventSummary[] }) {
                     <Text style={s.manageFooterText}>
                       {d ? relativeDayLabel(d) : ''} · Manage
                     </Text>
-                    <ChevronRight size={15} color={Colors.brandOrange} strokeWidth={2} />
+                    <ChevronRight size={15} color={Colors.inkSecondary} strokeWidth={2} />
                   </Pressable>
                 }
               />
@@ -57,10 +57,8 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: 'rgba(255,107,53,0.1)',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,107,53,0.2)',
+    backgroundColor: Colors.elevated,
     paddingVertical: 12,
   },
-  manageFooterText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.brandOrange },
+  manageFooterText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.inkPrimary },
 })

@@ -5,19 +5,17 @@ import {
 } from 'react-native'
 import { router } from 'expo-router'
 import { useFocusEffect } from 'expo-router'
-import { Users, X } from 'lucide-react-native'
+import { ArrowLeft, Users, X } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Colors, FontFamily } from '@/constants'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import ApiService from '@/api/apiService'
 import type { DiscoverUser } from '@/api/apiService'
 import { useSearchHistoryStore } from '@/store/searchHistoryStore'
 import type { SearchHistoryUser } from '@/store/searchHistoryStore'
-import { SearchBar } from '@/components/ui'
+import { AppHeader, HeaderIconBtn, SearchBar } from '@/components/ui'
 
 export default function SearchScreen() {
-  const insets = useSafeAreaInsets()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<DiscoverUser[]>([])
   const [loading, setLoading] = useState(false)
@@ -88,11 +86,11 @@ export default function SearchScreen() {
   const showHistory = !searched && query === '' && history.length > 0
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={s.header}>
-        <Text style={s.title}>Search</Text>
-      </View>
+    <View style={s.root}>
+      <AppHeader
+        title="Search"
+        leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
+      />
 
       {/* Search bar */}
       <View style={s.searchWrap}>
@@ -237,8 +235,6 @@ function UserRow({ user, onTap }: { user: DiscoverUser; onTap: () => void }) {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
-  header: { paddingHorizontal: 20, paddingBottom: 8 },
-  title: { fontFamily: FontFamily.headingBold, fontSize: 28, color: Colors.inkPrimary },
 
   searchWrap: { paddingHorizontal: 20, paddingBottom: 12 },
 

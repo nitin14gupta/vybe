@@ -11,7 +11,8 @@ import {
 import { FlashList } from '@shopify/flash-list'
 import { useLocalSearchParams } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { ArrowUpDown, ChevronLeft, Search, Users, X as XIcon } from 'lucide-react-native'
+import { ArrowLeft, ArrowUpDown, Search, Users, X as XIcon } from 'lucide-react-native'
+import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { Colors, FontFamily } from '@/constants'
 import { ReportSheet, BlockSheet, SortSheet, DotsSheet, ConfirmSheet } from '@/components/ui'
 import type { SortOption } from '@/components/ui'
@@ -133,7 +134,7 @@ export default function FollowsScreen() {
       {/* ── Header ── */}
       <View style={s.header}>
         <Pressable onPress={goBack} style={s.backBtn} hitSlop={8} android_ripple={null}>
-          <ChevronLeft size={24} color={Colors.inkPrimary} strokeWidth={2} />
+          <ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} />
         </Pressable>
         <Text style={s.headerName} numberOfLines={1}>{displayName || 'Profile'}</Text>
         <View style={{ width: 36 }} />
@@ -184,9 +185,17 @@ export default function FollowsScreen() {
 
       {/* ── List ── */}
       {active.loading ? (
-        <View style={s.center}>
-          <ActivityIndicator size="large" color={Colors.brandOrange} />
-        </View>
+        <AutoSkeletonView isLoading animationType="gradient" defaultRadius={7} gradientColors={['#1e1e1e', '#2e2e2e']}>
+          {Array.from({ length: 7 }).map((_, i) => (
+            <View key={i} style={s.skRow}>
+              <View style={s.skAvatar} />
+              <View style={s.skInfo}>
+                <View style={s.skLineName} />
+                <View style={s.skLineUser} />
+              </View>
+            </View>
+          ))}
+        </AutoSkeletonView>
       ) : active.error && sortedUsers.length === 0 ? (
         <View style={s.center}>
           <Text style={s.emptyTitle}>Something went wrong</Text>
@@ -386,6 +395,13 @@ const s = StyleSheet.create({
   // List
   sep: { height: 1, backgroundColor: Colors.divider, marginLeft: 76 },
   loadingMore: { paddingVertical: 20, alignItems: 'center' },
+
+  // Loading skeleton
+  skRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, gap: 14 },
+  skAvatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#2a2a2a' },
+  skInfo: { flex: 1, gap: 8 },
+  skLineName: { height: 14, width: '55%', borderRadius: 7, backgroundColor: '#2a2a2a' },
+  skLineUser: { height: 12, width: '35%', borderRadius: 6, backgroundColor: '#2a2a2a' },
 
   // Empty / error
   emptyTitle: {

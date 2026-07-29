@@ -8,7 +8,7 @@ import Animated, {
   withDelay,
   withSpring,
 } from 'react-native-reanimated'
-import { Check } from 'lucide-react-native'
+import { Check, Flame } from 'lucide-react-native'
 import { CannonConfetti } from 'react-native-fast-confetti'
 import { PrimaryButton, Screen } from '@/components/ui'
 import { useOnboardingStore } from '@/store/onboarding'
@@ -77,7 +77,10 @@ export default function CompleteScreen() {
         </Animated.View>
 
         <Animated.View style={[styles.textBlock, contentStyle]}>
-          <Text style={styles.title}>You're all set,{'\n'}{firstName}! 🔥</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>You're all set,{'\n'}{firstName}!</Text>
+            <Flame size={26} color={Colors.brandOrange} strokeWidth={2} />
+          </View>
           <Text style={styles.subtitle}>
             Start discovering events and people near you.
           </Text>
@@ -115,13 +118,13 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   textBlock: { alignItems: 'center', width: '100%' },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 8, marginBottom: 14 },
   title: {
     fontFamily: FontFamily.displayExtraBold,
     fontSize: 30,
     letterSpacing: -0.6,
     color: Colors.inkPrimary,
     lineHeight: 36,
-    marginBottom: 14,
     textAlign: 'center',
   },
   subtitle: {

@@ -12,7 +12,7 @@ import { InterestChip, PlaybackWave, AppHeader, HeaderIconBtn, BrandedLoader, Ta
 import { useProfile } from '@/hooks/useProfile'
 import ApiService, { EventSummary } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
-import { Colors, FontFamily, Spacing, Radius, HOST_BADGES } from '@/constants'
+import { Colors, FontFamily, Spacing, Radius, HOST_BADGE_ICONS } from '@/constants'
 import { useImageViewer } from '@/hooks/useImageViewer'
 import { MediaViewerModal } from '@/components/chat/MediaViewerModal'
 
@@ -104,8 +104,8 @@ export default function ProfileScreen() {
   const city = profile?.city ?? null
   const bio = profile?.bio ?? null
   const allBadges = profile?.badges ?? []
-  const hostBadgeName = allBadges.find(b => HOST_BADGES[b])
-  const hostBadgeIcon = hostBadgeName ? HOST_BADGES[hostBadgeName] : null
+  const hostBadgeName = allBadges.find(b => HOST_BADGE_ICONS[b])
+  const HostBadgeIcon = hostBadgeName ? HOST_BADGE_ICONS[hostBadgeName] : null
   const otherBadges = allBadges.filter(b => b !== hostBadgeName)
   const vibers = profile?.vibers_count ?? 0
   const vibing = profile?.vibing_count ?? 0
@@ -141,8 +141,8 @@ export default function ProfileScreen() {
 
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 8 }}>
             <Text style={[styles.nameLarge, { marginBottom: 0 }]} numberOfLines={1}>{name}</Text>
-            {hostBadgeIcon && (
-              <Text style={{ fontSize: 24, marginLeft: -2 }}>{hostBadgeIcon}</Text>
+            {HostBadgeIcon && (
+              <HostBadgeIcon size={20} color={Colors.accentGold} strokeWidth={2} style={{ marginLeft: -2 }} />
             )}
           </View>
 
@@ -240,10 +240,10 @@ export default function ProfileScreen() {
             <Text style={styles.sectionTitle}>My Details</Text>
             <View style={styles.chipsWrap}>
               {otherBadges.map(badge => {
-                const icon = HOST_BADGES[badge]
+                const Icon = HOST_BADGE_ICONS[badge]
                 return (
                   <View key={badge} style={styles.badgeChip}>
-                    {icon && <Text style={{ fontSize: 14, marginRight: 4 }}>{icon}</Text>}
+                    {Icon && <Icon size={13} color={Colors.accentGold} strokeWidth={2} style={{ marginRight: 4 }} />}
                     <Text style={styles.badgeText}>{badge}</Text>
                   </View>
                 )
