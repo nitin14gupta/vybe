@@ -15,6 +15,7 @@ from pathlib import Path
 
 import psycopg2
 import psycopg2.extras
+from psycopg2.extras import Json
 from dotenv import load_dotenv
 
 SCRIPT_DIR = Path(__file__).parent
@@ -149,17 +150,51 @@ def dump_tables(cur, out, tables):
     return fk_statements
 
 
+BATCH_SIZE = 200
+
+
 def dump_data(cur, out, tables):
+    """Plain INSERT INTO ... VALUES (...) statements — pastes directly into
+    TablePlus/DBeaver/pgAdmin, unlike COPY FROM stdin which only works
+    through psql's own stdin-streaming protocol."""
     out.write("\n-- ── Data ─────────────────────────────────────────────────────────\n")
     for tname in tables:
-        cur.execute(f'SELECT count(*) AS n FROM public."{tname}"')
-        n = cur.fetchone()["n"]
-        if n == 0:
+        cols = fetch(
+            cur,
+            """
+            SELECT attname FROM pg_attribute
+            WHERE attrelid = %s::regclass AND attnum > 0 AND NOT attisdropped
+            ORDER BY attnum
+            """,
+            (f"public.{tname}",),
+        )
+        col_names = [c["attname"] for c in cols]
+        col_list = ", ".join(f'"{c}"' for c in col_names)
+
+        cur.execute(f'SELECT {col_list} FROM public."{tname}"')
+        rows = cur.fetchall()
+        if not rows:
             continue
-        out.write(f"\nCOPY public.{tname} FROM stdin;\n")
-        cur.copy_expert(f'COPY public."{tname}" TO STDOUT', out)
-        out.write("\\.\n")
-        print(f"  {tname}: {n} rows")
+
+        out.write(f"\n-- {tname} ({len(rows)} rows)\n")
+        for i in range(0, len(rows), BATCH_SIZE):
+            batch = rows[i:i + BATCH_SIZE]
+            value_tuples = [
+                cur.mogrify(
+                    "(" + ", ".join(["%s"] * len(col_names)) + ")",
+                    tuple(
+                        Json(row[c]) if isinstance(row[c], (dict, list)) else row[c]
+                        for c in col_names
+                    ),
+                ).decode("utf-8")
+                for row in batch
+            ]
+            out.write(
+                f"INSERT INTO public.{tname} ({col_list}) VALUES\n"
+                + ",\n".join(value_tuples)
+                + ";\n"
+            )
+        print(f"  {tname}: {len(rows)} rows")
 
 
 def dump_fks(out, fk_statements):
