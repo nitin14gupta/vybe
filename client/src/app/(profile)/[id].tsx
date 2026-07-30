@@ -546,7 +546,12 @@ export default function UserProfileScreen() {
                   if (voiceStatus.playing) {
                     voicePlayer.pause();
                   } else {
-                    voicePlayer.seekTo(0);
+                    if (
+                      voiceStatus.duration > 0 &&
+                      voiceStatus.currentTime >= voiceStatus.duration - 0.05
+                    ) {
+                      voicePlayer.seekTo(0);
+                    }
                     voicePlayer.play();
                   }
                 }}

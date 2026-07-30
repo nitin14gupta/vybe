@@ -75,7 +75,17 @@ export default function ProfileScreen() {
 
   const toggleVoice = () => {
     hTap()
-    if (status.playing) { player.pause() } else { player.seekTo(0); player.play() }
+    if (status.playing) {
+      player.pause()
+    } else {
+      // Only seek back to the start once playback has actually finished —
+      // seeking on every tap adds a ~1s rebuffer stall for no reason when
+      // resuming from a fresh or paused state.
+      if (status.duration > 0 && status.currentTime >= status.duration - 0.05) {
+        player.seekTo(0)
+      }
+      player.play()
+    }
   }
 
   if (loading) {

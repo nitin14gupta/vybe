@@ -68,7 +68,9 @@ export function useVoiceEdit(existingUrl?: string | null) {
     if (playing) {
       player.pause()
     } else {
-      player.seekTo(0)
+      if (playerStatus.duration > 0 && playerStatus.currentTime >= playerStatus.duration - 0.05) {
+        player.seekTo(0)
+      }
       player.play()
     }
   }

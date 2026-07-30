@@ -3,8 +3,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { router, useFocusEffect } from 'expo-router'
 import { Image } from 'expo-image'
 import { hSuccess, hSelection } from '@/lib/haptics'
-import { Mic, Square, Play, Pause, RotateCcw, Plus } from 'lucide-react-native'
-import { BackButton, Input, InterestChip, PrimaryButton, Screen, RecordingWave, PlaybackWave, BioInput, BrandedLoader } from '@/components/ui'
+import { Mic, Square, RotateCcw, Plus } from 'lucide-react-native'
+import { BackButton, Input, InterestChip, PrimaryButton, Screen, RecordingWave, PlaybackWave, VoicePlayButton, BioInput, BrandedLoader } from '@/components/ui'
 import { useEditProfile } from '@/hooks/useEditProfile'
 import { useInterests } from '@/hooks/useInterests'
 import { useVoiceEdit } from '@/hooks/useVoiceEdit'
@@ -285,12 +285,7 @@ function VoiceSection({
       <View style={{ gap: 6 }}>
         {saveError ? <Text style={styles.voiceError}>{saveError}</Text> : null}
         <View style={styles.voiceBox}>
-          <Pressable onPress={handlePlayPause} style={styles.voicePlayBtn}>
-            {playing
-              ? <Pause size={16} color={Colors.background} strokeWidth={2.5} />
-              : <Play size={16} color={Colors.background} strokeWidth={2.5} />
-            }
-          </Pressable>
+          <VoicePlayButton playing={playing} onPress={handlePlayPause} />
           <View style={styles.voiceWaveWrap}>
             <PlaybackWave isActive={playing} compact />
           </View>
@@ -307,12 +302,7 @@ function VoiceSection({
     return (
       <View style={{ gap: 8 }}>
         <View style={styles.voiceBox}>
-          <Pressable onPress={handlePlayPause} style={styles.voicePlayBtn}>
-            {playing
-              ? <Pause size={16} color={Colors.background} strokeWidth={2.5} />
-              : <Play size={16} color={Colors.background} strokeWidth={2.5} />
-            }
-          </Pressable>
+          <VoicePlayButton playing={playing} onPress={handlePlayPause} />
           <View style={styles.voiceWaveWrap}>
             <PlaybackWave isActive={playing} compact />
           </View>
@@ -542,14 +532,6 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: Colors.brandCoral,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  voicePlayBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.brandOrange,
     alignItems: 'center',
     justifyContent: 'center',
   },
