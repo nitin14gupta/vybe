@@ -4,6 +4,7 @@ import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { hSuccess, hError, hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
+import { PrimaryButton } from './PrimaryButton'
 
 interface Props {
   visible: boolean
@@ -37,12 +38,20 @@ function ConfirmSheetCore({ title, body, confirmLabel, destructive, onConfirm, o
       <BottomSheetView style={s.content}>
         <Text style={s.title}>{title}</Text>
         <Text style={s.body}>{body}</Text>
-        <Pressable
-          style={[s.btn, destructive ? s.btnDestructive : s.btnConfirm]}
-          onPress={() => { destructive ? hError() : hSuccess(); onConfirm(); onClose() }}
-        >
-          <Text style={[s.btnText, destructive && s.btnTextDestructive]}>{confirmLabel}</Text>
-        </Pressable>
+        {destructive ? (
+          <Pressable
+            style={[s.btn, s.btnDestructive]}
+            onPress={() => { hError(); onConfirm(); onClose() }}
+          >
+            <Text style={[s.btnText, s.btnTextDestructive]}>{confirmLabel}</Text>
+          </Pressable>
+        ) : (
+          <PrimaryButton
+            label={confirmLabel}
+            onPress={() => { hSuccess(); onConfirm(); onClose() }}
+            style={s.btn}
+          />
+        )}
         <Pressable style={s.cancelBtn} onPress={() => { hTap(); onClose() }}>
           <Text style={s.cancelText}>Cancel</Text>
         </Pressable>
@@ -63,7 +72,6 @@ const s = StyleSheet.create({
   title: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary, textAlign: 'center' },
   body: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center', lineHeight: 20 },
   btn: { height: 52, borderRadius: 999, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
-  btnConfirm: { backgroundColor: Colors.brandOrange },
   btnDestructive: { backgroundColor: 'rgba(200,50,50,0.15)', borderWidth: 1, borderColor: 'rgba(200,50,50,0.4)' },
   btnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 16, color: '#111' },
   btnTextDestructive: { color: '#e05555' },

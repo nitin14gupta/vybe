@@ -9,6 +9,7 @@ import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { AlertTriangle } from 'lucide-react-native'
 import { Colors, FontFamily, SUPPORT_EMAIL } from '@/constants'
 import { hTap } from '@/lib/haptics'
+import { PrimaryButton } from './PrimaryButton'
 
 interface Props {
   visible: boolean
@@ -69,9 +70,9 @@ function DeletedAccountSheetCore({ deletedOn, onClose }: Omit<Props, 'visible'>)
           Changed your mind? Contact us within 30 days and we'll restore everything.
         </Text>
 
-        <Pressable style={s.contactBtn} onPress={handleContact}>
-          <Text style={s.contactText}>Contact Support to Recover</Text>
-        </Pressable>
+        <View style={s.contactBtn}>
+          <PrimaryButton label="Contact Support to Recover" onPress={handleContact} />
+        </View>
 
         <Pressable style={s.dismissBtn} onPress={() => { hTap(); onClose() }}>
           <Text style={s.dismissText}>OK, understood</Text>
@@ -123,20 +124,7 @@ const s = StyleSheet.create({
     lineHeight: 19,
   },
 
-  contactBtn: {
-    width: '100%',
-    height: 52,
-    borderRadius: 999,
-    backgroundColor: Colors.brandOrange,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-  },
-  contactText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 15,
-    color: '#111',
-  },
+  contactBtn: { width: '100%', marginTop: 8 },
   dismissBtn: {
     height: 44,
     alignItems: 'center',

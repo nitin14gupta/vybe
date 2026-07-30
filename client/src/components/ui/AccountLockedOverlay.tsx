@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react'
-import { View, Text, StyleSheet, Pressable } from 'react-native'
+import { View, Text, StyleSheet } from 'react-native'
 import {
   BottomSheetModal,
   BottomSheetView,
@@ -11,6 +11,7 @@ import { Colors, FontFamily } from '@/constants'
 import { useLockStore } from '@/store/lockStore'
 import { useAuth } from '@/hooks/useAuth'
 import { hTap } from '@/lib/haptics'
+import { PrimaryButton } from './PrimaryButton'
 
 function renderBackdrop(props: BottomSheetBackdropProps) {
   // pressBehavior="none" — unlike DeletedAccountSheet, this backdrop cannot
@@ -66,9 +67,13 @@ function AccountLockedOverlayCore({ reason }: { reason: string }) {
           If you think this is a mistake, contact support after logging out.
         </Text>
 
-        <Pressable style={s.logoutBtn} onPress={onLogOut} disabled={loggingOut}>
-          <Text style={s.logoutText}>{loggingOut ? 'Logging out…' : 'Log Out'}</Text>
-        </Pressable>
+        <View style={s.logoutBtn}>
+          <PrimaryButton
+            label={loggingOut ? 'Logging out…' : 'Log Out'}
+            onPress={onLogOut}
+            loading={loggingOut}
+          />
+        </View>
       </BottomSheetView>
     </BottomSheetModal>
   )
@@ -116,16 +121,6 @@ const s = StyleSheet.create({
 
   logoutBtn: {
     width: '100%',
-    height: 52,
-    borderRadius: 999,
-    backgroundColor: Colors.brandOrange,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginTop: 8,
-  },
-  logoutText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 15,
-    color: '#111',
   },
 })

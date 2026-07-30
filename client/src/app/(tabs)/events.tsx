@@ -26,7 +26,7 @@ import { useEvents } from "@/hooks/useEvents";
 import type { EventSummary } from "@/api/apiService";
 import { EventCard, formatEventDate } from "@/components/events/EventCard";
 import { EventSearchModal } from "@/components/events/EventSearchModal";
-import { LocationWarning, CreateEventSheet } from "@/components/ui";
+import { LocationWarning, CreateEventSheet, PrimaryButton } from "@/components/ui";
 import { usePermissionSheetStore } from "@/store/permissionSheetStore";
 
 const { width: W } = Dimensions.get("window");
@@ -287,9 +287,7 @@ export default function EventsScreen() {
           <View style={styles.mapEmpty} pointerEvents="box-none">
             <View style={styles.mapEmptyCard}>
               <Text style={styles.mapEmptyTitle}>Couldn't load events</Text>
-              <Pressable onPress={() => { hTap(); reload() }} style={styles.mapEmptyCta}>
-                <Text style={styles.mapEmptyCtaText}>Retry</Text>
-              </Pressable>
+              <PrimaryButton label="Retry" size="small" style={styles.mapEmptyCta} onPress={() => { hTap(); reload() }} />
             </View>
           </View>
         )}
@@ -300,12 +298,12 @@ export default function EventsScreen() {
             <View style={styles.mapEmptyCard}>
               <Flame size={28} color={Colors.brandOrange} strokeWidth={1.5} />
               <Text style={styles.mapEmptyTitle}>No events nearby</Text>
-              <Pressable
-                onPress={() => router.push("/(events)/create" as any)}
+              <PrimaryButton
+                label="Create one"
+                size="small"
                 style={styles.mapEmptyCta}
-              >
-                <Text style={styles.mapEmptyCtaText}>Create one</Text>
-              </Pressable>
+                onPress={() => router.push("/(events)/create" as any)}
+              />
             </View>
           </View>
         )}
@@ -420,22 +418,20 @@ export default function EventsScreen() {
         <View style={[styles.listEmpty, { flex: 1 }]}>
           <Text style={styles.listEmptyTitle}>Couldn't load events</Text>
           <Text style={styles.listEmptySub}>Check your connection and try again</Text>
-          <Pressable onPress={() => { hTap(); reload() }} style={styles.listEmptyCta}>
-            <Text style={styles.listEmptyCtaText}>Retry</Text>
-          </Pressable>
+          <PrimaryButton label="Retry" size="small" style={styles.listEmptyCta} onPress={() => { hTap(); reload() }} />
         </View>
       ) : isEmpty ? (
         <View style={[styles.listEmpty, { flex: 1 }]}>
           <Flame size={48} color={Colors.inkDisabled} strokeWidth={1.2} />
           <Text style={styles.listEmptyTitle}>No events nearby yet</Text>
           <Text style={styles.listEmptySub}>Be the first to host one</Text>
-          <Pressable
-            onPress={() => router.push("/(events)/create" as any)}
+          <PrimaryButton
+            label="Create Event"
+            size="small"
             style={styles.listEmptyCta}
-          >
-            <Plus size={16} color={Colors.brandOrange} />
-            <Text style={styles.listEmptyCtaText}>Create Event</Text>
-          </Pressable>
+            icon={<Plus size={16} color={Colors.background} strokeWidth={2.5} />}
+            onPress={() => router.push("/(events)/create" as any)}
+          />
         </View>
       ) : (
         <FlatList
@@ -562,14 +558,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 40,
   },
   mapEmptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
-  mapEmptyCta: {
-    backgroundColor: Colors.brandOrange,
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginTop: 4,
-  },
-  mapEmptyCtaText: { color: "#fff", fontFamily: FontFamily.bodySemiBold, fontSize: 14 },
+  mapEmptyCta: { marginTop: 4 },
 
   // Preview strip
   previewStrip: {
@@ -694,13 +683,7 @@ const styles = StyleSheet.create({
   listEmpty: { flex: 1, alignItems: "center", justifyContent: "center", gap: 10 },
   listEmptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary },
   listEmptySub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary },
-  listEmptyCta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 8,
-  },
-  listEmptyCtaText: { color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
+  listEmptyCta: { marginTop: 8 },
 
   // Load more / end
   loadMoreBtn: {

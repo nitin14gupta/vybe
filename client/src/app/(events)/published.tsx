@@ -10,11 +10,11 @@ import {
 import { hTap, hSuccess } from '@/lib/haptics'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import Svg, { Path, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg'
-import { Link2, Rocket } from 'lucide-react-native'
+import { Link2, MessageCircle, Rocket, Share2 } from 'lucide-react-native'
+import * as Clipboard from 'expo-clipboard'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Colors, FontFamily } from '@/constants'
-import { ConfettiRain } from '@/components/ui'
+import { ConfettiRain, ShareToChatSheet } from '@/components/ui'
 import { usePillStore } from '@/store/pillStore'
 import ApiService from '@/api/apiService'
 import { EventShareCard } from '@/components/events/EventShareCard'
@@ -42,32 +42,6 @@ function formatDateTime(iso: string | null | undefined) {
   })
 }
 
-// ── Social icons ──────────────────────────────────────────────────────────────
-
-function WhatsAppIcon() {
-  return (
-    <Svg width={26} height={26} viewBox="0 0 24 24">
-      <Path fill="#fff" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-      <Path fill="#fff" d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.657 1.438 5.168L2 22l4.978-1.405A9.953 9.953 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18a7.946 7.946 0 01-4.33-1.284l-.31-.184-3.22.909.915-3.164-.202-.325A7.944 7.944 0 014 12c0-4.418 3.582-8 8-8s8 3.582 8 8-3.582 8-8 8z" />
-    </Svg>
-  )
-}
-
-function InstagramIcon() {
-  return (
-    <Svg width={26} height={26} viewBox="0 0 24 24">
-      <Defs>
-        <SvgGradient id="ig2" x1="0%" y1="100%" x2="100%" y2="0%">
-          <Stop offset="0%" stopColor="#f09433" />
-          <Stop offset="50%" stopColor="#dc2743" />
-          <Stop offset="100%" stopColor="#bc1888" />
-        </SvgGradient>
-      </Defs>
-      <Path fill="#fff" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
-    </Svg>
-  )
-}
-
 // ── Pulsing rocket icon ───────────────────────────────────────────────────────
 
 function RocketIcon() {
@@ -84,9 +58,7 @@ function RocketIcon() {
 
   return (
     <Animated.View style={[s.rocketWrap, { transform: [{ translateY: floatAnim }] }]}>
-      <BlurView intensity={40} tint="light" style={s.rocketCircle}>
-        <Rocket size={40} color="#fff" strokeWidth={1.75} />
-      </BlurView>
+      <Rocket size={64} color="#fff" strokeWidth={1.5} />
     </Animated.View>
   )
 }
@@ -120,6 +92,7 @@ export default function PublishedScreen() {
 
   const [coverUrl, setCoverUrl] = useState('')
   const [dateTimeLabel, setDateTimeLabel] = useState('')
+  const [chatShareOpen, setChatShareOpen] = useState(false)
   const shareCardRef = useRef<View>(null)
   const { shareImage } = useImageShare()
 
@@ -133,6 +106,7 @@ export default function PublishedScreen() {
       .catch(() => { })
   }, [id])
 
+  const shareUrl = buildEventShareUrl(id)
   const shareText = `Check out "${eventTitle}" on GORAVE! 🔥${dateTimeLabel ? `\n${dateTimeLabel}` : ''}`
 
   const handleShare = async () => {
@@ -144,12 +118,15 @@ export default function PublishedScreen() {
     await Share.share({ message: shareText })
   }
 
-  const shareWhatsApp = handleShare
-  const shareInstagram = handleShare
-
-  const copyLink = () => {
+  const shareInChat = () => {
     hTap()
-    Share.share({ message: buildEventShareUrl(id) })
+    setChatShareOpen(true)
+  }
+
+  const copyLink = async () => {
+    hTap()
+    await Clipboard.setStringAsync(shareUrl)
+    showPill('Link copied!', 'default')
   }
 
   const goToMyEvents = () => {
@@ -172,7 +149,7 @@ export default function PublishedScreen() {
 
         <View style={s.headlineRow}>
           <Text style={s.headline}>Your event is live!</Text>
-          <Rocket size={24} color={Colors.brandOrange} strokeWidth={2} />
+          {/* <Rocket size={24} color={Colors.brandOrange} strokeWidth={2} /> */}
         </View>
         <Text style={s.sub}>Share to get your first guests and start building the vibe.</Text>
 
@@ -181,14 +158,14 @@ export default function PublishedScreen() {
           <Text style={s.shareCardLabel}>SHARE WITH FRIENDS</Text>
           <View style={s.shareRow}>
             <ShareBtn
-              icon={<View style={[s.shareBtnIconInner, { backgroundColor: '#25D366' }]}><WhatsAppIcon /></View>}
-              label="WhatsApp"
-              onPress={shareWhatsApp}
+              icon={<View style={[s.shareBtnIconInner, { backgroundColor: 'rgba(255,255,255,0.1)' }]}><Share2 size={22} color="#fff" strokeWidth={1.8} /></View>}
+              label="Share"
+              onPress={handleShare}
             />
             <ShareBtn
-              icon={<View style={[s.shareBtnIconInner, { backgroundColor: '#E1306C' }]}><InstagramIcon /></View>}
-              label="Instagram"
-              onPress={shareInstagram}
+              icon={<View style={[s.shareBtnIconInner, { backgroundColor: 'rgba(255,255,255,0.1)' }]}><MessageCircle size={22} color="#fff" strokeWidth={1.8} /></View>}
+              label="Share in Chat"
+              onPress={shareInChat}
             />
             <ShareBtn
               icon={<View style={[s.shareBtnIconInner, { backgroundColor: 'rgba(255,255,255,0.1)' }]}><Link2 size={22} color="#fff" strokeWidth={1.8} /></View>}
@@ -214,6 +191,16 @@ export default function PublishedScreen() {
           <Text style={s.skipText}>Skip for now</Text>
         </Pressable>
       </View>
+
+      <ShareToChatSheet
+        visible={chatShareOpen}
+        onClose={() => setChatShareOpen(false)}
+        contentType="event"
+        metadata={{ event_id: id, title: eventTitle, date: dateTimeLabel, cover_url: coverUrl || null }}
+        previewTitle={eventTitle}
+        previewSubtitle={dateTimeLabel}
+        previewImage={coverUrl || null}
+      />
 
       {/* Off-screen — captured and shared as an image, never shown to the user */}
       {coverUrl && (
@@ -247,19 +234,12 @@ const s = StyleSheet.create({
 
   // Rocket
   rocketWrap: { marginBottom: 32, alignItems: 'center', justifyContent: 'center' },
-  rocketCircle: {
-    width: 100, height: 100, borderRadius: 50,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)',
-    alignItems: 'center', justifyContent: 'center',
-    overflow: 'hidden',
-  },
   // Text
   headlineRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 10 },
   headline: {
     fontFamily: FontFamily.headingBold,
     fontSize: 28,
-    color: Colors.brandOrange,
+    color: Colors.inkPrimary,
     textAlign: 'center',
     letterSpacing: -0.5,
   },

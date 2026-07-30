@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import {
-  Modal, View, Text, Image, Pressable, StyleSheet, ScrollView,
+  Modal, View, Text, Image, StyleSheet, ScrollView,
 } from 'react-native'
 import { X, Heart } from 'lucide-react-native'
 import { hSuccess, hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import { VybeIcebreakerModal } from './VybeIcebreakerModal'
+import { PrimaryButton } from './PrimaryButton'
+import { OutlineButton } from './OutlineButton'
 import type { VybeRequest } from '@/api/apiService'
 
 interface Props {
@@ -81,15 +83,20 @@ export function VybeReviewModal({ visible, request, onAccept, onPass, onClose }:
 
             {/* Actions */}
             <View style={styles.actions}>
-              <Pressable style={styles.passBtn} onPress={handlePass}>
-                <X size={20} color={Colors.inkSecondary} strokeWidth={2} />
-                <Text style={styles.passText}>Pass</Text>
-              </Pressable>
-
-              <Pressable style={styles.acceptBtn} onPress={handleAcceptPress}>
-                <Heart size={18} color="#111" fill="#111" />
-                <Text style={styles.acceptText}>Accept</Text>
-              </Pressable>
+              <View style={{ flex: 1 }}>
+                <OutlineButton
+                  label="Pass"
+                  onPress={handlePass}
+                  icon={<X size={20} color={Colors.inkSecondary} strokeWidth={2} />}
+                />
+              </View>
+              <View style={{ flex: 2 }}>
+                <PrimaryButton
+                  label="Accept"
+                  onPress={handleAcceptPress}
+                  icon={<Heart size={18} color={Colors.background} fill={Colors.background} />}
+                />
+              </View>
             </View>
           </View>
         </View>
@@ -208,36 +215,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     marginTop: 8,
-  },
-  passBtn: {
-    flex: 1,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  passText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 15,
-    color: Colors.inkSecondary,
-  },
-  acceptBtn: {
-    flex: 2,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: Colors.brandOrange,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  acceptText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 16,
-    color: '#111',
   },
 })

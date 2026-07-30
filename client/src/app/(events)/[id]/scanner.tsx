@@ -19,6 +19,7 @@ import { hTap, hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import ApiService, { type EventAttendee } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
+import { PrimaryButton } from '@/components/ui'
 
 type ScanResult = { ok: boolean; already_checked_in?: boolean; name: string; username?: string | null; error?: string }
 
@@ -201,9 +202,7 @@ export default function ScannerScreen() {
           <View style={[s.camera, s.noPermission]}>
             <QrCode size={40} color={Colors.inkDisabled} />
             <Text style={s.noPermText}>Camera access needed to scan QR codes</Text>
-            <Pressable style={s.permBtn} onPress={() => { hTap(); requestPermission() }}>
-              <Text style={s.permBtnText}>Grant Permission</Text>
-            </Pressable>
+            <PrimaryButton label="Grant Permission" size="small" onPress={() => { hTap(); requestPermission() }} />
           </View>
         )}
       </View>
@@ -267,20 +266,14 @@ export default function ScannerScreen() {
                     <Text style={s.checkedInText}>In</Text>
                   </View>
                 ) : (
-                  <Pressable
-                    style={s.checkinBtn}
-                    onPress={() => { hSuccess(); handleManualCheckin(item) }}
+                  <PrimaryButton
+                    label="Check In"
+                    size="small"
+                    loading={checkingIn === item.id}
                     disabled={!!checkingIn}
-                  >
-                    {checkingIn === item.id ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <>
-                        <UserCheck size={14} color="#fff" />
-                        <Text style={s.checkinBtnText}>Check In</Text>
-                      </>
-                    )}
-                  </Pressable>
+                    icon={<UserCheck size={14} color={Colors.background} />}
+                    onPress={() => { hSuccess(); handleManualCheckin(item) }}
+                  />
                 )}
               </View>
             )
@@ -310,8 +303,6 @@ const s = StyleSheet.create({
   camera: { flex: 1 },
   noPermission: { alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.elevated, gap: 12 },
   noPermText: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center', paddingHorizontal: 32 },
-  permBtn: { backgroundColor: Colors.brandOrange, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 },
-  permBtnText: { color: '#fff', fontFamily: FontFamily.bodySemiBold, fontSize: 14 },
 
   scanFrame: {
     position: 'absolute',
@@ -398,11 +389,4 @@ const s = StyleSheet.create({
   rowSub: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary },
   checkedInTag: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(0,196,140,0.12)', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 4 },
   checkedInText: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.accentGreen },
-  checkinBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: Colors.brandOrange,
-    paddingHorizontal: 10, paddingVertical: 6,
-    borderRadius: 10,
-  },
-  checkinBtnText: { color: '#fff', fontFamily: FontFamily.bodyMedium, fontSize: 12 },
 })

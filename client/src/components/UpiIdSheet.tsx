@@ -7,6 +7,7 @@ import { Colors, FontFamily } from '@/constants'
 import { hTap, hSuccess } from '@/lib/haptics'
 import ApiService from '@/api/apiService'
 import { useVpaValidation } from '@/hooks/useVpaValidation'
+import { PrimaryButton, OutlineButton } from '@/components/ui'
 
 const SNAP_POINTS = ['66%', '82%']
 
@@ -141,32 +142,19 @@ function UpiIdSheetCore({
 
         {canPay && !isAlreadySaved ? (
           <View style={s.btnRow}>
-            <Pressable
-              style={[s.payBtn, s.payBtnOutline, { flex: 1 }]}
-              onPress={() => { hSuccess(); onPay(vpa.trim()) }}
-            >
-              <Text style={s.payBtnOutlineText}>Pay</Text>
-            </Pressable>
-            <Pressable
-              style={[s.payBtn, { flex: 1.4 }]}
-              onPress={handleSaveAndPay}
-              disabled={saving}
-            >
-              {saving ? (
-                <ActivityIndicator size="small" color="#111" />
-              ) : (
-                <Text style={s.payBtnText}>Save &amp; Pay</Text>
-              )}
-            </Pressable>
+            <View style={{ flex: 1 }}>
+              <OutlineButton label="Pay" onPress={() => { hSuccess(); onPay(vpa.trim()) }} />
+            </View>
+            <View style={{ flex: 1.4 }}>
+              <PrimaryButton label="Save & Pay" onPress={handleSaveAndPay} loading={saving} />
+            </View>
           </View>
         ) : (
-          <Pressable
-            style={[s.payBtn, !canPay && s.payBtnDisabled]}
+          <PrimaryButton
+            label={canPay ? 'Pay' : 'Verify UPI ID first'}
             onPress={() => { if (canPay) { hSuccess(); onPay(vpa.trim()) } }}
             disabled={!canPay}
-          >
-            <Text style={s.payBtnText}>{canPay ? 'Pay' : 'Verify UPI ID first'}</Text>
-          </Pressable>
+          />
         )}
       </BottomSheetView>
     </BottomSheetModal>
@@ -220,9 +208,4 @@ const s = StyleSheet.create({
   hint: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkDisabled, marginBottom: 20 },
 
   btnRow: { flexDirection: 'row', gap: 10 },
-  payBtn: { height: 56, borderRadius: 28, backgroundColor: Colors.brandOrange, alignItems: 'center', justifyContent: 'center' },
-  payBtnOutline: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: Colors.brandOrange },
-  payBtnDisabled: { opacity: 0.4 },
-  payBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: '#111', letterSpacing: 0.3 },
-  payBtnOutlineText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.brandOrange, letterSpacing: 0.3 },
 })

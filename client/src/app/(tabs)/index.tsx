@@ -1,10 +1,10 @@
 import { useCallback, useRef, useState } from 'react'
 import {
-  BackHandler, View, Text, StyleSheet, Pressable, ScrollView,
+  BackHandler, View, Text, StyleSheet, ScrollView,
 } from 'react-native'
 import { useFocusEffect, router } from 'expo-router'
 import { Heart, PartyPopper, Search } from 'lucide-react-native'
-import { AppHeader, HeaderIconBtn, CreateEventSheet, EmptyState } from '@/components/ui'
+import { AppHeader, HeaderIconBtn, CreateEventSheet, EmptyState, PrimaryButton } from '@/components/ui'
 import { HomeGradientBackdrop } from '@/components/home/HomeGradientBackdrop'
 import { TemplateFan } from '@/components/home/TemplateFan'
 import { MyEventsSection } from '@/components/home/MyEventsSection'
@@ -79,9 +79,12 @@ export default function HomeScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <TemplateFan />
-        <Pressable style={styles.createBtn} onPress={() => { hTap(); setCreateOpen(true) }}>
-          <Text style={styles.createBtnText}>Create event</Text>
-        </Pressable>
+        <PrimaryButton
+          label="Create event"
+          size="small"
+          style={styles.createBtn}
+          onPress={() => { hTap(); setCreateOpen(true) }}
+        />
 
         <MyEventsSection onEmptyChange={setMyEventsEmpty} />
         <RecentlyViewedSection onEmptyChange={setRecentEmpty} />
@@ -113,16 +116,7 @@ const styles = StyleSheet.create({
 
   createBtn: {
     alignSelf: 'center',
-    backgroundColor: '#fff',
-    paddingHorizontal: 28,
-    paddingVertical: 13,
-    borderRadius: Radius.pill,
     marginTop: 2,
-  },
-  createBtnText: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 15,
-    color: '#111',
   },
 
   greeting: {

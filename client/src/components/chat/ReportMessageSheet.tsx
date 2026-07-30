@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
-import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { X } from 'lucide-react-native'
 import { hSelection, hSuccess, hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
+import { PrimaryButton } from '@/components/ui'
 
 const REASONS = ['Spam', 'Harassment', 'Hate speech or symbols', 'Nudity or sexual content', 'Scam or fraud', 'Other']
 
@@ -80,9 +81,7 @@ function ReportMessageSheetCore({ onSubmit, onClose }: Omit<Props, 'visible'>) {
                 </Pressable>
               ))}
             </View>
-            <Pressable style={[s.submitBtn, !selected && s.submitBtnDisabled]} onPress={handleSubmit} disabled={!selected || loading}>
-              {loading ? <ActivityIndicator color="#111" size="small" /> : <Text style={s.submitBtnText}>Submit Report</Text>}
-            </Pressable>
+            <PrimaryButton label="Submit Report" onPress={handleSubmit} disabled={!selected} loading={loading} />
           </>
         )}
       </BottomSheetView>
@@ -109,9 +108,6 @@ const s = StyleSheet.create({
   radio: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
   radioSelected: { borderColor: Colors.brandOrange },
   radioDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: Colors.brandOrange },
-  submitBtn: { height: 56, borderRadius: 28, backgroundColor: Colors.brandOrange, alignItems: 'center', justifyContent: 'center' },
-  submitBtnDisabled: { opacity: 0.45 },
-  submitBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: '#111', letterSpacing: 1.2 },
   doneBox: { alignItems: 'center', paddingVertical: 32, gap: 12 },
   doneIcon: { fontSize: 40 },
   doneText: { fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkSecondary, textAlign: 'center' },

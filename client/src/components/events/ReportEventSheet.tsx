@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { View, Text, StyleSheet, Pressable, TextInput, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { X } from 'lucide-react-native'
@@ -7,6 +7,7 @@ import { hSelection, hSuccess, hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
+import { PrimaryButton } from '@/components/ui'
 
 const REASONS: { key: string; label: string }[] = [
   { key: 'fake_scam', label: 'Fake or scam' },
@@ -118,16 +119,12 @@ function ReportEventSheetCore({ eventId, onClose }: Omit<Props, 'visible'>) {
             />
             <Text style={s.charCount}>{description.length}/200</Text>
 
-            <Pressable
-              style={[s.submitBtn, !selected && s.submitBtnDisabled]}
+            <PrimaryButton
+              label="Submit Report"
               onPress={handleSubmit}
-              disabled={!selected || loading}
-            >
-              {loading
-                ? <ActivityIndicator color="#111" size="small" />
-                : <Text style={s.submitBtnText}>Submit Report</Text>
-              }
-            </Pressable>
+              disabled={!selected}
+              loading={loading}
+            />
           </>
         )}
       </BottomSheetScrollView>
@@ -168,9 +165,6 @@ const s = StyleSheet.create({
     marginBottom: 4,
   },
   charCount: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkDisabled, textAlign: 'right', marginBottom: 20 },
-  submitBtn: { height: 56, borderRadius: 28, backgroundColor: Colors.brandOrange, alignItems: 'center', justifyContent: 'center' },
-  submitBtnDisabled: { opacity: 0.45 },
-  submitBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: '#111', letterSpacing: 1.2 },
   doneBox: { alignItems: 'center', paddingVertical: 32, gap: 12 },
   doneIcon: { fontSize: 40 },
   doneText: { fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkSecondary, textAlign: 'center' },

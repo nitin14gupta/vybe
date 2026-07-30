@@ -6,9 +6,9 @@ import {
 import { Image as ExpoImage } from 'expo-image'
 import { router } from 'expo-router'
 import { hTap } from '@/lib/haptics'
-import { MapPin, Play, Pause, Pencil, Settings, Share, Ticket, Calendar, Plus, Star } from 'lucide-react-native'
+import { MapPin, Pencil, Settings, Share, Ticket, Calendar, Plus, Star } from 'lucide-react-native'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
-import { InterestChip, PlaybackWave, AppHeader, HeaderIconBtn, BrandedLoader, TabSwitcher, SmallEventCard, OutlineButton } from '@/components/ui'
+import { InterestChip, PlaybackWave, VoicePlayButton, AppHeader, HeaderIconBtn, BrandedLoader, TabSwitcher, SmallEventCard, OutlineButton, PrimaryButton } from '@/components/ui'
 import { useProfile } from '@/hooks/useProfile'
 import ApiService, { EventSummary } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
@@ -167,26 +167,26 @@ export default function ProfileScreen() {
             <Pencil size={18} color={Colors.inkPrimary} strokeWidth={1.8} />
             <Text style={styles.actionBtnTextSecondary}>Edit Profile</Text>
           </Pressable>
-          <Pressable
-            onPress={() => {
-              hTap()
-              router.push({
-                pathname: '/(profile)/qr',
-                params: {
-                  userId: profile.id,
-                  username: profile.username ?? '',
-                  name: profile.name ?? '',
-                  avatar: profile.photos?.[0]?.url ?? '',
-                  city: profile.city ?? '',
-                  interests: (profile.interests ?? []).join(','),
-                },
-              } as any)
-            }}
-            style={styles.actionBtnPrimary}
-          >
-            <Share size={18} color={'#111'} strokeWidth={2} />
-            <Text style={styles.actionBtnTextPrimary}>Share Profile</Text>
-          </Pressable>
+          <View style={{ flex: 1 }}>
+            <PrimaryButton
+              label="Share Profile"
+              icon={<Share size={18} color={Colors.background} strokeWidth={2} />}
+              onPress={() => {
+                hTap()
+                router.push({
+                  pathname: '/(profile)/qr',
+                  params: {
+                    userId: profile.id,
+                    username: profile.username ?? '',
+                    name: profile.name ?? '',
+                    avatar: profile.photos?.[0]?.url ?? '',
+                    city: profile.city ?? '',
+                    interests: (profile.interests ?? []).join(','),
+                  },
+                } as any)
+              }}
+            />
+          </View>
         </View>
 
         {/* ── Stats Row ── */}
@@ -219,12 +219,7 @@ export default function ProfileScreen() {
 
             {profile?.voice_url ? (
               <View style={styles.voiceCard}>
-                <Pressable onPress={toggleVoice} style={styles.voicePlayBtn}>
-                  {status.playing
-                    ? <Pause size={15} color={Colors.background} strokeWidth={2.5} />
-                    : <Play size={15} color={Colors.background} strokeWidth={2.5} />
-                  }
-                </Pressable>
+                <VoicePlayButton playing={status.playing} onPress={toggleVoice} />
                 <View style={styles.voiceWave}>
                   <PlaybackWave isActive={status.playing} compact />
                 </View>
@@ -272,19 +267,25 @@ export default function ProfileScreen() {
                 <Ticket size={52} color={Colors.inkDisabled} strokeWidth={1.2} />
                 <Text style={styles.emptyTitle}>No upcoming tickets</Text>
                 <Text style={styles.emptySub}>Events you RSVP to will appear here</Text>
-                <Pressable style={styles.emptyCtaBtn} onPress={() => router.push('/(tabs)/events' as any)}>
-                  <Text style={styles.emptyCtaBtnText}>Browse Events</Text>
-                </Pressable>
+                <PrimaryButton
+                  label="Browse Events"
+                  size="small"
+                  style={styles.emptyCtaBtn}
+                  onPress={() => router.push('/(tabs)/events' as any)}
+                />
               </View>
             ) : activeTab === 'hosted' && eventsHosted.length === 0 ? (
               <View style={styles.emptyCenter}>
                 <Calendar size={52} color={Colors.inkDisabled} strokeWidth={1.2} />
                 <Text style={styles.emptyTitle}>No upcoming events</Text>
                 <Text style={styles.emptySub}>Events you host will appear here</Text>
-                <Pressable style={styles.emptyCtaBtn} onPress={() => router.push('/(events)/create' as any)}>
-                  <Plus size={16} color="#111" strokeWidth={2.5} />
-                  <Text style={styles.emptyCtaBtnText}>Create Event</Text>
-                </Pressable>
+                <PrimaryButton
+                  label="Create Event"
+                  size="small"
+                  style={styles.emptyCtaBtn}
+                  icon={<Plus size={16} color={Colors.background} strokeWidth={2.5} />}
+                  onPress={() => router.push('/(events)/create' as any)}
+                />
               </View>
             ) : (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, marginTop: 12 }}>
@@ -428,22 +429,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.inkPrimary,
   },
-  actionBtnPrimary: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: Colors.brandOrange,
-    height: 52,
-    borderRadius: 26,
-  },
-  actionBtnTextPrimary: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 15,
-    color: '#111',
-  },
-
   // ── Stats Row ──
   statsCard: {
     flexDirection: 'row',
@@ -528,11 +513,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  voicePlayBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: Colors.brandOrange,
-    alignItems: 'center', justifyContent: 'center',
-  },
   voiceWave: { flex: 1, overflow: 'hidden' },
   voiceLabel: {
     fontFamily: FontFamily.bodyRegular,
@@ -567,19 +547,5 @@ const styles = StyleSheet.create({
     color: Colors.inkSecondary,
     textAlign: 'center'
   },
-  emptyCtaBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 8,
-    backgroundColor: Colors.brandOrange,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
-  },
-  emptyCtaBtnText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 15,
-    color: '#111'
-  },
+  emptyCtaBtn: { marginTop: 8 },
 })

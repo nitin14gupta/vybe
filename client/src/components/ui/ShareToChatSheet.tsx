@@ -12,15 +12,13 @@ import { usePillStore } from '@/store/pillStore'
 import { useChatShareTargets } from '@/hooks/useChatShareTargets'
 import ApiService, { type Conversation } from '@/api/apiService'
 import { SearchBar } from './SearchBar'
+import { PrimaryButton } from './PrimaryButton'
 
 const SNAP_POINTS = ['74%']
 
 interface Props {
   visible: boolean
   onClose: () => void
-  /** What kind of card gets dropped into the chat — matches MessageBubble's
-   * EventCard / ProfileCard content types, which already know how to render
-   * these metadata shapes. */
   contentType: 'event' | 'profile'
   metadata: Record<string, any>
   previewTitle: string
@@ -176,16 +174,13 @@ function ShareToChatSheetCore({
         </View>
       )}
       <View style={st.footer}>
-        <Pressable
-          style={[st.sendBtn, selected.size === 0 && st.sendBtnDisabled]}
-          disabled={selected.size === 0 || sending}
+        <PrimaryButton
+          label={selected.size > 0 ? `Send to ${selected.size}` : 'Select people to send'}
+          disabled={selected.size === 0}
+          loading={sending}
           onPress={handleSend}
-        >
-          <Send size={18} color="#111" strokeWidth={2.2} />
-          <Text style={st.sendBtnText}>
-            {sending ? 'Sending…' : selected.size > 0 ? `Send to ${selected.size}` : 'Select people to send'}
-          </Text>
-        </Pressable>
+          icon={<Send size={18} color={Colors.background} strokeWidth={2.2} />}
+        />
       </View>
     </View>
   )
@@ -269,11 +264,4 @@ const st = StyleSheet.create({
 
   loadingMoreRow: { paddingVertical: 12, alignItems: 'center' },
   footer: { paddingHorizontal: 8, paddingTop: 10, paddingBottom: 12 },
-  sendBtn: {
-    height: 50, borderRadius: 25,
-    backgroundColor: Colors.brandOrange,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-  },
-  sendBtnDisabled: { opacity: 0.4 },
-  sendBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: '#111' },
 })

@@ -6,6 +6,7 @@ import { Flame } from 'lucide-react-native'
 import { hMedium, hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import type { DiscoverUser } from '@/api/apiService'
+import { PrimaryButton } from './PrimaryButton'
 
 const MAX_CHARS = 150
 const SNAP_POINTS = ['86%', '85%']
@@ -109,14 +110,13 @@ function VybeRequestModalCore({ user, onSend, onClose }: Omit<Props, 'visible'>)
           </Text>
         </View>
 
-        <Pressable
-          style={[s.sendBtn, !canSend && s.sendBtnDisabled]}
+        <PrimaryButton
+          label="Send Vybe"
           onPress={handleSend}
           disabled={!canSend}
-        >
-          <Flame size={16} color="#111" fill="#111" />
-          <Text style={s.sendBtnText}>Send Vybe</Text>
-        </Pressable>
+          icon={<Flame size={16} color={Colors.background} fill={Colors.background} />}
+          style={s.sendBtn}
+        />
 
         <Pressable onPress={handleClose} style={s.cancelBtn}>
           <Text style={s.cancelText}>Cancel</Text>
@@ -149,9 +149,7 @@ const s = StyleSheet.create({
   input: { fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkPrimary, lineHeight: 22, flex: 1 },
   charCount: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, textAlign: 'right', marginTop: 6 },
   charCountWarn: { color: Colors.brandCoral },
-  sendBtn: { height: 52, borderRadius: 26, backgroundColor: Colors.brandOrange, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 },
-  sendBtnDisabled: { opacity: 0.4 },
-  sendBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 16, color: '#111' },
+  sendBtn: { marginBottom: 12 },
   cancelBtn: { alignItems: 'center', paddingVertical: 10 },
   cancelText: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary },
 })

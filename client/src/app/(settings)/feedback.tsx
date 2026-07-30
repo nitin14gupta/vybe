@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { View, Text, StyleSheet, Pressable, TextInput, ScrollView } from 'react-native'
+import { View, Text, StyleSheet, TextInput, ScrollView } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, Send } from 'lucide-react-native'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
-import { AppHeader, HeaderIconBtn } from '@/components/ui'
+import { AppHeader, HeaderIconBtn, PrimaryButton } from '@/components/ui'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { hSuccess, hTap } from '@/lib/haptics'
@@ -64,14 +64,13 @@ export default function FeedbackScreen() {
           <Text style={s.charCount}>{text.length}/1000</Text>
         </View>
 
-        <Pressable
-          style={[s.sendBtn, !canSend && s.sendBtnDisabled]}
+        <PrimaryButton
+          label="Send Feedback"
           onPress={handleSubmit}
-          disabled={!canSend || submitting}
-        >
-          <Send size={16} color="#111" strokeWidth={2} />
-          <Text style={s.sendText}>{submitting ? 'Sending…' : 'Send Feedback'}</Text>
-        </Pressable>
+          disabled={!canSend}
+          loading={submitting}
+          icon={<Send size={16} color={Colors.background} strokeWidth={2} />}
+        />
       </ScrollView>
     </View>
   )
@@ -89,7 +88,4 @@ const s = StyleSheet.create({
   textarea: { minHeight: 160, fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkPrimary, lineHeight: 22 },
   charCount: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, textAlign: 'right', marginTop: 8 },
 
-  sendBtn: { height: 56, borderRadius: 28, backgroundColor: Colors.brandOrange, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  sendBtnDisabled: { opacity: 0.4 },
-  sendText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: '#111' },
 })

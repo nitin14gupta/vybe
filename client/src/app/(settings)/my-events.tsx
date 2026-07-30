@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, Refresh
 import { router, useFocusEffect } from 'expo-router'
 import { ArrowLeft, Calendar, Plus, Star, ChevronRight } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
-import { AppHeader, HeaderIconBtn } from '@/components/ui'
+import { AppHeader, HeaderIconBtn, PrimaryButton } from '@/components/ui'
 import ApiService from '@/api/apiService'
 import type { EventSummary } from '@/api/apiService'
 import { EventCard } from '@/components/events/EventCard'
@@ -81,10 +81,13 @@ export default function MyEventsScreen() {
               : "Events you've hosted will show up here"}
           </Text>
           {tab === 'upcoming' && (
-            <Pressable style={s.ctaBtn} onPress={() => router.push('/(events)/create' as any)}>
-              <Plus size={16} color="#111" strokeWidth={2.5} />
-              <Text style={s.ctaBtnText}>Create Event</Text>
-            </Pressable>
+            <PrimaryButton
+              label="Create Event"
+              size="small"
+              style={s.ctaBtn}
+              icon={<Plus size={16} color={Colors.background} strokeWidth={2.5} />}
+              onPress={() => router.push('/(events)/create' as any)}
+            />
           )}
         </View>
       ) : (
@@ -127,11 +130,7 @@ const s = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32 },
   emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
   emptySub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center' },
-  ctaBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8,
-    backgroundColor: Colors.brandOrange, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24,
-  },
-  ctaBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: '#111' },
+  ctaBtn: { marginTop: 8 },
   listContent: { padding: 16, gap: 16 },
 
   tabs: {

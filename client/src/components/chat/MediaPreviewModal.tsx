@@ -6,6 +6,7 @@ import { VideoView, useVideoPlayer } from 'expo-video'
 import { X, Send, Play, Check, Crop } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 import { ImageCropperModal } from '@/components/ui/ImageCropperModal'
+import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import type { PendingMedia } from '@/hooks/useMediaPicker'
 
 const { width: SW } = Dimensions.get('window')
@@ -138,14 +139,17 @@ export function MediaPreviewModal({ media, onSend, onCancel, onRemove, onUpdate,
           <Text style={mp.hint}>
             {multi ? `${media.length} selected` : titleLabel}
           </Text>
-          <Pressable style={mp.sendBtn} onPress={onSend}>
-            {actionLabel === 'Add' ? (
-              <Check size={19} color="#111" strokeWidth={2.5} />
-            ) : (
-              <Send size={19} color="#111" strokeWidth={2.5} fill="#111" />
-            )}
-            <Text style={mp.sendLabel}>{actionLabel}{multi ? ` ${media.length}` : ''}</Text>
-          </Pressable>
+          <View style={mp.sendBtn}>
+            <PrimaryButton
+              label={`${actionLabel}${multi ? ` ${media.length}` : ''}`}
+              onPress={onSend}
+              icon={actionLabel === 'Add' ? (
+                <Check size={19} color={Colors.background} strokeWidth={2.5} />
+              ) : (
+                <Send size={19} color={Colors.background} strokeWidth={2.5} fill={Colors.background} />
+              )}
+            />
+          </View>
         </View>
       </View>
 
@@ -246,24 +250,5 @@ const mp = StyleSheet.create({
     color: 'rgba(255,255,255,0.45)',
     letterSpacing: 0.2,
   },
-  sendBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    width: '100%',
-    backgroundColor: Colors.brandOrange,
-    paddingVertical: 15,
-    borderRadius: 99,
-    shadowColor: Colors.brandOrange,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
-    elevation: 6,
-  },
-  sendLabel: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 17,
-    color: '#111',
-  },
+  sendBtn: { width: '100%' },
 })

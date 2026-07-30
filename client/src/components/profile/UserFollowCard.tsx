@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Image } from 'expo-image'
 import { MoreVertical } from 'lucide-react-native'
 import { router } from 'expo-router'
 import { Colors, FontFamily } from '@/constants'
+import { PrimaryButton, OutlineButton } from '@/components/ui'
 import type { FollowUser } from '@/api/apiService'
 
 interface Props {
@@ -31,43 +32,29 @@ export function UserFollowCard({ user, type, isMyProfile, onFollow, onUnfollow, 
     if (user.is_me) return null
 
     if (isMyProfile && type === 'followers') {
-      return (
-        <Pressable
-          style={[s.btn, s.btnOutline]}
-          android_ripple={{ color: 'rgba(255,255,255,0.06)' }}
-          onPress={() => onRemove(user.id)}
-        >
-          <Text style={s.btnOutlineText}>Remove</Text>
-        </Pressable>
-      )
+      return <OutlineButton label="Remove" size="small" style={s.btnWidth} onPress={() => onRemove(user.id)} />
     }
 
     if (isMyProfile && type === 'following') {
-      return (
-        <Pressable
-          style={[s.btn, s.btnOutline]}
-          android_ripple={{ color: 'rgba(255,255,255,0.06)' }}
-          onPress={() => onUnfollow(user.id)}
-        >
-          <Text style={s.btnOutlineText}>Unfollow</Text>
-        </Pressable>
-      )
+      return <OutlineButton label="Unfollow" size="small" style={s.btnWidth} onPress={() => onUnfollow(user.id)} />
     }
 
-    return (
-      <Pressable
-        style={[s.btn, user.is_following ? s.btnOutline : s.btnFill]}
-        android_ripple={{ color: 'rgba(255,255,255,0.06)' }}
-        onPress={() => handleAction(() => user.is_following ? onUnfollow(user.id) : onFollow(user.id))}
-        disabled={actionLoading}
-      >
-        {actionLoading
-          ? <ActivityIndicator size="small" color={user.is_following ? Colors.inkPrimary : '#fff'} />
-          : <Text style={user.is_following ? s.btnOutlineText : s.btnFillText}>
-              {user.is_following ? 'Following' : 'Follow'}
-            </Text>
-        }
-      </Pressable>
+    return user.is_following ? (
+      <OutlineButton
+        label="Following"
+        size="small"
+        style={s.btnWidth}
+        loading={actionLoading}
+        onPress={() => handleAction(() => onUnfollow(user.id))}
+      />
+    ) : (
+      <PrimaryButton
+        label="Follow"
+        size="small"
+        style={s.btnWidth}
+        loading={actionLoading}
+        onPress={() => handleAction(() => onFollow(user.id))}
+      />
     )
   }
 
@@ -172,33 +159,7 @@ const s = StyleSheet.create({
     gap: 6,
     flexShrink: 0,
   },
-  btn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 18,
-    minWidth: 92,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 36,
-  },
-  btnFill: {
-    backgroundColor: Colors.brandOrange,
-  },
-  btnFillText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 14,
-    color: '#111',
-  },
-  btnOutline: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: Colors.divider,
-  },
-  btnOutlineText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 14,
-    color: Colors.inkPrimary,
-  },
+  btnWidth: { minWidth: 92 },
   dotsBtn: {
     width: 36,
     height: 36,

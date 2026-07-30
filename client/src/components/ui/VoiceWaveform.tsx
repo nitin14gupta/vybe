@@ -86,7 +86,10 @@ export function PlaybackWave({
   compact?: boolean
   color?: string
 }) {
-  const barColor = color ?? Colors.brandOrange
+  // Bars sit dim/neutral at rest and only pick up the brand color while
+  // actually playing — a static wall of orange even when paused was the
+  // "everything's orange" flatness we were trying to get away from.
+  const barColor = isActive ? (color ?? Colors.brandOrange) : Colors.inkDisabled
   return (
     <View style={[styles.row, compact && styles.compact]}>
       {WAVE_HEIGHTS.map((h, i) => (

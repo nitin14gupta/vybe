@@ -8,7 +8,7 @@ import { Flame, RefreshCw, Ghost, Search } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
-import { VybeInboxSheet, VybeIcebreakerModal, LogoMark, ProfileMenuSheet } from '@/components/ui'
+import { VybeInboxSheet, VybeIcebreakerModal, LogoMark, ProfileMenuSheet, PrimaryButton } from '@/components/ui'
 import { ChatSearchModal } from '@/components/chat/ChatSearchModal'
 import { usePillStore } from '@/store/pillStore'
 import { useConversations } from '@/hooks/useConversations'
@@ -257,9 +257,7 @@ export default function ChatScreen() {
           <LogoMark size={72} opacity={0.1} style={{ marginBottom: 4 }} />
           <Text style={s.emptyTitle}>No chats yet</Text>
           <Text style={s.emptySub}>Send a Vybe to spark a conversation</Text>
-          <Pressable onPress={() => router.navigate('/(tabs)/')} style={s.exploreBtn}>
-            <Text style={s.exploreBtnText}>Explore</Text>
-          </Pressable>
+          <PrimaryButton label="Explore" size="small" style={s.exploreBtn} onPress={() => router.navigate('/(tabs)/')} />
         </View>
       ) : (
         <FlatList
@@ -411,14 +409,7 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.brandOrange,
   },
   retryBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandOrange },
-  exploreBtn: {
-    marginTop: 12,
-    paddingHorizontal: 28,
-    paddingVertical: 12,
-    borderRadius: 24,
-    backgroundColor: Colors.brandOrange,
-  },
-  exploreBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: '#111' },
+  exploreBtn: { marginTop: 12 },
   listContent: { paddingBottom: 32 },
 
   // Pending strip

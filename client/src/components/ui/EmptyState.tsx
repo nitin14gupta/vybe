@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
-import { View, Text, StyleSheet, Pressable } from 'react-native'
-import { Colors, FontFamily, Radius } from '@/constants'
+import { View, Text, StyleSheet } from 'react-native'
+import { Colors, FontFamily } from '@/constants'
+import { PrimaryButton } from './PrimaryButton'
 
 interface Props {
   icon: ReactNode
@@ -18,9 +19,7 @@ export function EmptyState({ icon, title, subtitle, ctaLabel, onCtaPress, compac
       <Text style={s.title}>{title}</Text>
       {subtitle ? <Text style={s.subtitle}>{subtitle}</Text> : null}
       {ctaLabel && onCtaPress ? (
-        <Pressable style={s.cta} onPress={onCtaPress}>
-          <Text style={s.ctaText}>{ctaLabel}</Text>
-        </Pressable>
+        <PrimaryButton label={ctaLabel} onPress={onCtaPress} size="small" style={s.cta} />
       ) : null}
     </View>
   )
@@ -31,12 +30,5 @@ const s = StyleSheet.create({
   wrapCompact: { paddingVertical: 24 },
   title: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary, textAlign: 'center' },
   subtitle: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, textAlign: 'center' },
-  cta: {
-    marginTop: 4,
-    backgroundColor: Colors.brandOrange,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: Radius.pill,
-  },
-  ctaText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: '#111' },
+  cta: { marginTop: 4 },
 })

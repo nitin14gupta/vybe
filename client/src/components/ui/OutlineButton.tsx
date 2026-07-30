@@ -25,8 +25,9 @@ export function OutlineButton({ label, onPress, disabled, loading, icon, style, 
       onPressIn={() => { if (!disabled) { scale.value = withSpring(0.97, { duration: 120 }); hTap() } }}
       onPressOut={() => { scale.value = withSpring(1, { duration: 120 }) }}
       disabled={disabled || loading}
+      style={style}
     >
-      <Animated.View style={[styles.btn, isSmall && styles.btnSmall, style, animStyle]}>
+      <Animated.View style={[styles.btn, isSmall && styles.btnSmall, animStyle]}>
         {loading ? (
           <ActivityIndicator color={Colors.inkPrimary} size="small" />
         ) : (

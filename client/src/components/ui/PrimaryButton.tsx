@@ -39,8 +39,9 @@ export function PrimaryButton({ label, onPress, disabled, loading, icon, style, 
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={disabled || loading}
+      style={style}
     >
-      <Animated.View style={[animStyle, style]}>
+      <Animated.View style={animStyle}>
         {disabled && !loading ? (
           <Animated.View style={[styles.disabled, isSmall && styles.gradientSmall]}>
             <Text style={[styles.disabledText, isSmall && styles.textSmall]}>{label}</Text>

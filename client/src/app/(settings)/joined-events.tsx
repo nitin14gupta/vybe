@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, Refresh
 import { router, useFocusEffect } from 'expo-router'
 import { ArrowLeft, Ticket, QrCode, ChevronRight, Ban } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
-import { AppHeader, HeaderIconBtn } from '@/components/ui'
+import { AppHeader, HeaderIconBtn, PrimaryButton } from '@/components/ui'
 import ApiService from '@/api/apiService'
 import type { EventSummary } from '@/api/apiService'
 import { EventCard } from '@/components/events/EventCard'
@@ -80,9 +80,7 @@ export default function JoinedEventsScreen() {
               : "Events you've attended will show up here"}
           </Text>
           {tab === 'upcoming' && (
-            <Pressable style={s.ctaBtn} onPress={() => router.navigate('/(tabs)/events')}>
-              <Text style={s.ctaBtnText}>Browse Events</Text>
-            </Pressable>
+            <PrimaryButton label="Browse Events" size="small" style={s.ctaBtn} onPress={() => router.navigate('/(tabs)/events')} />
           )}
         </View>
       ) : (
@@ -132,11 +130,7 @@ const s = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32 },
   emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
   emptySub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center' },
-  ctaBtn: {
-    marginTop: 8, backgroundColor: Colors.brandOrange,
-    paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24,
-  },
-  ctaBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: '#111' },
+  ctaBtn: { marginTop: 8 },
   listContent: { padding: 16, gap: 16 },
 
   tabs: {

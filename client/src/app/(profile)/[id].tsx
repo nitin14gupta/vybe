@@ -15,15 +15,13 @@ import { router, useLocalSearchParams } from "expo-router";
 import { hTap, hMedium, hSuccess } from "@/lib/haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  ChevronLeft,
+  ArrowLeft,
   MoreVertical,
   Flame,
   UserPlus,
   UserCheck,
   MessageCircle,
   Ban,
-  Play,
-  Pause,
   Check,
   Ghost,
   Clock,
@@ -34,11 +32,14 @@ import {
   VybeRequestModal,
   VybeIcebreakerModal,
   PlaybackWave,
+  VoicePlayButton,
   ProfileMenuSheet,
   InterestChip,
   TabSwitcher,
   SmallEventCard,
   BrandedLoader,
+  PrimaryButton,
+  OutlineButton,
 } from "@/components/ui";
 import ApiService, { ExtendedProfile, EventSummary } from "@/api/apiService";
 import { Colors, FontFamily, Radius, HOST_BADGE_ICONS } from "@/constants";
@@ -63,9 +64,6 @@ function formatCooldown(seconds: number): string {
   return `${Math.max(minutes, 1)}m`;
 }
 
-// Shown instead of "Send Vybe" while a per-pair cooldown is active (24h after
-// a first pass, 7 days after a second) — ticks down locally and flips back
-// to a normal Send Vybe button on expiry without needing a re-fetch.
 function CooldownPill({
   cooldownUntil,
   onExpiredPress,
@@ -81,10 +79,13 @@ function CooldownPill({
 
   if (isExpired) {
     return (
-      <Pressable style={[s.ctaBtn, s.ctaBtnPrimary]} onPress={onExpiredPress}>
-        <Flame size={18} color="#111" fill="#111" strokeWidth={2} />
-        <Text style={s.ctaBtnPrimaryText}>Send Vybe</Text>
-      </Pressable>
+      <View style={{ flex: 1.6 }}>
+        <PrimaryButton
+          label="Send Vybe"
+          onPress={onExpiredPress}
+          icon={<Flame size={18} color={Colors.background} fill={Colors.background} strokeWidth={2} />}
+        />
+      </View>
     );
   }
 
@@ -262,7 +263,7 @@ export default function UserProfileScreen() {
             { position: "absolute", top: insets.top + 8, left: 0 },
           ]}
         >
-          <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
+          <ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} />
         </Pressable>
         <View style={s.deletedIconWrap}>
           <Ghost size={40} color={Colors.inkDisabled} strokeWidth={1.5} />
@@ -285,7 +286,7 @@ export default function UserProfileScreen() {
             { position: "absolute", top: insets.top + 8, left: 0 },
           ]}
         >
-          <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
+          <ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} />
         </Pressable>
         <View style={s.deletedIconWrap}>
           <Ghost size={40} color={Colors.inkDisabled} strokeWidth={1.5} />
@@ -326,7 +327,7 @@ export default function UserProfileScreen() {
           style={s.headerCircleBtn}
           hitSlop={8}
         >
-          <ChevronLeft size={22} color="#fff" strokeWidth={2.5} />
+          <ArrowLeft size={20} color="#fff" strokeWidth={2.2} />
         </Pressable>
         <Pressable
           onPress={() => {
@@ -480,18 +481,6 @@ export default function UserProfileScreen() {
             </View>
           )}
 
-          {/* Vybe status badge */}
-          {/* {isConnected && (
-            <View style={[s.statusBadge, s.statusBadgeConnected]}>
-              <Text style={s.statusBadgeText}>✓ Connected</Text>
-            </View>
-          )}
-          {isPending && !isConnected && (
-            <View style={[s.statusBadge, s.statusBadgePending]}>
-              <Text style={s.statusBadgeText}>Vybe Pending</Text>
-            </View>
-          )} */}
-
           {/* Blocked overlay */}
           {blockedByMe && (
             <View style={s.blockedOverlay}>
@@ -502,15 +491,15 @@ export default function UserProfileScreen() {
               <Text style={s.blockedSub}>
                 Unblock to see their profile and content
               </Text>
-              <Pressable
+              <OutlineButton
+                label="Unblock"
+                size="small"
                 style={s.unblockBtn}
                 onPress={() => {
                   hSuccess();
                   handleUnblock();
                 }}
-              >
-                <Text style={s.unblockBtnText}>Unblock</Text>
-              </Pressable>
+              />
             </View>
           )}
 
@@ -549,8 +538,9 @@ export default function UserProfileScreen() {
 
           {/* Voice intro */}
           {!blockedByMe && profile.voice_url ? (
-            <View style={s.voiceWrap}>
-              <Pressable
+            <View style={s.voiceCard}>
+              <VoicePlayButton
+                playing={voiceStatus.playing}
                 onPress={() => {
                   hTap();
                   if (voiceStatus.playing) {
@@ -560,20 +550,11 @@ export default function UserProfileScreen() {
                     voicePlayer.play();
                   }
                 }}
-                style={s.voicePlayBtn}
-                android_ripple={null}
-              >
-                {voiceStatus.playing ? (
-                  <Pause
-                    size={15}
-                    color={Colors.background}
-                    strokeWidth={2.5}
-                  />
-                ) : (
-                  <Play size={15} color={Colors.background} strokeWidth={2.5} />
-                )}
-              </Pressable>
-              <PlaybackWave isActive={voiceStatus.playing} compact />
+              />
+              <View style={s.voiceWave}>
+                <PlaybackWave isActive={voiceStatus.playing} compact />
+              </View>
+              <Text style={s.voiceLabel}>Voice intro</Text>
             </View>
           ) : null}
 
@@ -630,30 +611,30 @@ export default function UserProfileScreen() {
       {!blockedByMe && (
         <View style={[s.ctaBar, { paddingBottom: insets.bottom + 8 }]}>
           {isConnected ? (
-            <Pressable
-              style={[s.ctaBtn, s.ctaBtnPrimary, { flex: 1 }]}
-              onPress={() => {
-                if (profile.conversation_id) {
-                  router.push(`/(chat)/${profile.conversation_id}` as any);
-                } else {
-                  showPill("Send them a vybe first to start chatting", "error");
-                }
-              }}
-            >
-              <MessageCircle size={18} color="#111" strokeWidth={2} />
-              <Text style={s.ctaBtnPrimaryText}>Message</Text>
-            </Pressable>
+            <View style={{ flex: 1 }}>
+              <PrimaryButton
+                label="Message"
+                icon={<MessageCircle size={18} color={Colors.background} strokeWidth={2} />}
+                onPress={() => {
+                  if (profile.conversation_id) {
+                    router.push(`/(chat)/${profile.conversation_id}` as any);
+                  } else {
+                    showPill("Send them a vybe first to start chatting", "error");
+                  }
+                }}
+              />
+            </View>
           ) : theySentVybe ? (
-            <Pressable
-              style={[s.ctaBtn, s.ctaBtnPrimary, { flex: 1.6 }]}
-              onPress={() => {
-                hSuccess();
-                setAcceptModalOpen(true);
-              }}
-            >
-              <Check size={18} color="#111" strokeWidth={2.5} />
-              <Text style={s.ctaBtnPrimaryText}>Accept Vybe</Text>
-            </Pressable>
+            <View style={{ flex: 1.6 }}>
+              <PrimaryButton
+                label="Accept Vybe"
+                icon={<Check size={18} color={Colors.background} strokeWidth={2.5} />}
+                onPress={() => {
+                  hSuccess();
+                  setAcceptModalOpen(true);
+                }}
+              />
+            </View>
           ) : isPending ? (
             <Pressable style={[s.ctaBtn, s.ctaBtnPending]} disabled>
               <Flame
@@ -673,16 +654,16 @@ export default function UserProfileScreen() {
               }}
             />
           ) : (
-            <Pressable
-              style={[s.ctaBtn, s.ctaBtnPrimary]}
-              onPress={() => {
-                hMedium();
-                setVybeModalOpen(true);
-              }}
-            >
-              <Flame size={18} color="#111" fill="#111" strokeWidth={2} />
-              <Text style={s.ctaBtnPrimaryText}>Send Vybe</Text>
-            </Pressable>
+            <View style={{ flex: 1.6 }}>
+              <PrimaryButton
+                label="Send Vybe"
+                icon={<Flame size={18} color={Colors.background} fill={Colors.background} strokeWidth={2} />}
+                onPress={() => {
+                  hMedium();
+                  setVybeModalOpen(true);
+                }}
+              />
+            </View>
           )}
 
           <Pressable
@@ -823,8 +804,8 @@ const s = StyleSheet.create({
   headerCircleBtn: {
     width: 38,
     height: 38,
-    borderRadius: 19,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    // borderRadius: 19,
+    // backgroundColor: "rgba(0,0,0,0.5)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -884,19 +865,7 @@ const s = StyleSheet.create({
     color: Colors.inkSecondary,
     textAlign: "center",
   },
-  unblockBtn: {
-    marginTop: 8,
-    paddingHorizontal: 28,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.brandOrange,
-  },
-  unblockBtnText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 14,
-    color: Colors.brandOrange,
-  },
+  unblockBtn: { marginTop: 8 },
 
   // Body
   body: { padding: 20, gap: 16 },
@@ -917,7 +886,7 @@ const s = StyleSheet.create({
     fontSize: 26,
     color: Colors.inkPrimary,
   },
-  hostBadgeIcon: { fontSize: 24, marginLeft: -2 },
+  hostBadgeIcon: { marginLeft: -2 },
   mutual: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 12,
@@ -958,28 +927,6 @@ const s = StyleSheet.create({
   },
   statDivider: { width: 1, height: 28, backgroundColor: Colors.divider },
 
-  // Status badge
-  statusBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  statusBadgeConnected: {
-    borderColor: "#4CAF50",
-    backgroundColor: "rgba(76,175,80,0.12)",
-  },
-  statusBadgePending: {
-    borderColor: Colors.brandOrange,
-    backgroundColor: "rgba(255,107,53,0.12)",
-  },
-  statusBadgeText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 12,
-    color: Colors.inkPrimary,
-  },
-
   // Bio
   bio: {
     fontFamily: FontFamily.bodyRegular,
@@ -1005,19 +952,21 @@ const s = StyleSheet.create({
   },
 
   // Voice
-  voiceWrap: {
+  voiceCard: {
     marginTop: 4,
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.card,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  voicePlayBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.brandOrange,
-    alignItems: "center",
-    justifyContent: "center",
+  voiceWave: { flex: 1, overflow: "hidden" },
+  voiceLabel: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 12,
+    color: Colors.inkDisabled,
   },
 
   // Events
@@ -1053,16 +1002,10 @@ const s = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
   },
-  ctaBtnPrimary: { flex: 1.6, backgroundColor: Colors.brandOrange },
-  ctaBtnPrimaryText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 16,
-    color: "#111",
-  },
   ctaBtnSecondary: {
     flex: 1,
     borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.2)",
+    borderColor: Colors.divider,
     backgroundColor: "transparent",
   },
   ctaBtnSecondaryText: {
@@ -1072,16 +1015,13 @@ const s = StyleSheet.create({
   },
   ctaBtnPending: {
     flex: 1.6,
-    borderWidth: 1.5,
-    borderColor: Colors.brandOrange,
-    backgroundColor: "rgba(255,107,53,0.08)",
+    backgroundColor: Colors.elevated,
   },
   ctaBtnPendingText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 16,
     color: Colors.brandOrange,
   },
-  ctaBtnDisabled: { opacity: 0.5, backgroundColor: "#333" },
   ctaBtnFollowing: { borderColor: Colors.brandOrange },
   ctaBtnFollowingText: { color: Colors.brandOrange },
 });

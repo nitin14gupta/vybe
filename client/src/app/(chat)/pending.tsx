@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, Pressable, Image } from 'react-native'
+import { View, Text, StyleSheet, Pressable, Image, ScrollView } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
-import { ChevronLeft, Clock, Flame } from 'lucide-react-native'
+import { ArrowLeft, Clock, Flame } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
+import { PrimaryButton } from '@/components/ui'
 
 export default function PendingChatScreen() {
   const insets = useSafeAreaInsets()
@@ -26,56 +27,63 @@ export default function PendingChatScreen() {
       {/* Header */}
       <View style={s.header}>
         <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-          <ChevronLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
+          <ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} />
         </Pressable>
         <Text style={s.headerName} numberOfLines={1}>{name}</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ width: 36 }} />
       </View>
 
-      {/* Avatar area */}
-      <View style={s.avatarSection}>
-        <Pressable onPress={goToProfile} style={s.avatarRing} hitSlop={6}>
-          {partnerAvatar ? (
-            <Image source={{ uri: partnerAvatar }} style={s.avatar} />
-          ) : (
-            <View style={[s.avatar, s.avatarFallback]}>
-              <Text style={s.avatarInitial}>{name.charAt(0).toUpperCase()}</Text>
+      <ScrollView
+        contentContainerStyle={[s.scrollContent, { paddingBottom: insets.bottom + 24 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Avatar area */}
+        <View style={s.avatarSection}>
+          <Pressable onPress={goToProfile} style={s.avatarRing} hitSlop={6}>
+            {partnerAvatar ? (
+              <Image source={{ uri: partnerAvatar }} style={s.avatar} />
+            ) : (
+              <View style={[s.avatar, s.avatarFallback]}>
+                <Text style={s.avatarInitial}>{name.charAt(0).toUpperCase()}</Text>
+              </View>
+            )}
+            <View style={s.flameBadge}>
+              <Flame size={16} color="#111" fill="#111" />
             </View>
-          )}
-          <View style={s.flameBadge}>
-            <Flame size={16} color="#111" fill="#111" />
-          </View>
-        </Pressable>
-      </View>
-
-      {/* Status card */}
-      <View style={s.card}>
-        <View style={s.iconRow}>
-          <Clock size={32} color={Colors.brandOrange} strokeWidth={1.5} />
+          </Pressable>
         </View>
-        <Text style={s.heading}>Vybe sent to {name}</Text>
-        <Text style={s.sub}>
-          Your vybe is waiting for {name} to accept. Once they accept, you'll both
-          be asked to write an icebreaker to start the conversation.
+
+        {/* Status card */}
+        <View style={s.card}>
+          <View style={s.iconRow}>
+            <Clock size={32} color={Colors.brandOrange} strokeWidth={1.5} />
+          </View>
+          <Text style={s.heading}>Vybe sent to {name}</Text>
+          <Text style={s.sub}>
+            Your vybe is waiting for {name} to accept. Once they accept, you'll both
+            be asked to write an icebreaker to start the conversation.
+          </Text>
+
+          {message ? (
+            <View style={s.msgBox}>
+              <Text style={s.msgLabel}>YOUR MESSAGE</Text>
+              <Text style={s.msgText}>"{message}"</Text>
+            </View>
+          ) : null}
+        </View>
+
+        {/* Tip */}
+        <Text style={s.tip}>
+          You'll get a notification when {name} responds
         </Text>
 
-        {message ? (
-          <View style={s.msgBox}>
-            <Text style={s.msgLabel}>YOUR MESSAGE</Text>
-            <Text style={s.msgText}>"{message}"</Text>
-          </View>
-        ) : null}
-      </View>
-
-      {/* Tip */}
-      <Text style={s.tip}>
-        You'll get a notification when {name} responds
-      </Text>
-
-      {/* Go back to explore */}
-      <Pressable style={s.discoverBtn} onPress={() => router.navigate('/(tabs)/')}>
-        <Text style={s.discoverBtnText}>Explore more people</Text>
-      </Pressable>
+        {/* Go back to explore */}
+        <PrimaryButton
+          label="Explore more people"
+          onPress={() => router.navigate('/(tabs)/')}
+          style={s.discoverBtn}
+        />
+      </ScrollView>
     </View>
   )
 }
@@ -88,7 +96,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
   },
-  backBtn: { padding: 4 },
+  backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   headerName: {
     flex: 1,
     fontFamily: FontFamily.headingBold,
@@ -96,6 +104,7 @@ const s = StyleSheet.create({
     color: Colors.inkPrimary,
     textAlign: 'center',
   },
+  scrollContent: { flexGrow: 1 },
   avatarSection: { alignItems: 'center', paddingVertical: 32 },
   avatarRing: {
     width: 100,
@@ -130,8 +139,6 @@ const s = StyleSheet.create({
     marginHorizontal: 24,
     backgroundColor: Colors.surface,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,107,53,0.2)',
     padding: 24,
     alignItems: 'center',
     gap: 12,
@@ -190,16 +197,5 @@ const s = StyleSheet.create({
   discoverBtn: {
     marginHorizontal: 24,
     marginTop: 24,
-    paddingVertical: 14,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255,107,53,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,107,53,0.3)',
-    alignItems: 'center',
-  },
-  discoverBtnText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 15,
-    color: Colors.brandOrange,
   },
 })

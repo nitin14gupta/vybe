@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import {
   View, Text, StyleSheet, Pressable, TextInput,
-  ScrollView, Linking, ActivityIndicator,
+  ScrollView, Linking,
 } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, Mail, ChevronRight } from 'lucide-react-native'
-import { AppHeader, HeaderIconBtn } from '@/components/ui'
+import { AppHeader, HeaderIconBtn, PrimaryButton } from '@/components/ui'
 import { Colors, FontFamily, SUPPORT_EMAIL } from '@/constants'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
@@ -130,19 +130,14 @@ export default function SupportScreen() {
         )}
 
         {/* Send button */}
-        <Pressable
-          style={[s.sendBtn, !canSend && s.sendBtnDisabled]}
+        <PrimaryButton
+          label="Send via Email"
           onPress={handleSend}
-          disabled={!canSend || sending}
-        >
-          {sending
-            ? <ActivityIndicator color="#111" />
-            : <>
-                <Mail size={16} color="#111" strokeWidth={2} />
-                <Text style={s.sendText}>Send via Email</Text>
-              </>
-          }
-        </Pressable>
+          disabled={!canSend}
+          loading={sending}
+          icon={<Mail size={16} color={Colors.background} strokeWidth={2} />}
+          style={s.sendBtn}
+        />
 
         <Text style={s.directEmail}>
           Or write directly to{' '}
@@ -187,9 +182,7 @@ const s = StyleSheet.create({
   noteCard: { backgroundColor: 'rgba(255,107,53,0.07)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,107,53,0.18)', padding: 14 },
   noteText: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, lineHeight: 19 },
 
-  sendBtn: { height: 56, borderRadius: 28, backgroundColor: Colors.brandOrange, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 },
-  sendBtnDisabled: { opacity: 0.4 },
-  sendText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: '#111' },
+  sendBtn: { marginTop: 4 },
 
   directEmail: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkDisabled, textAlign: 'center', marginTop: 4 },
   emailLink: { color: Colors.brandOrange, fontFamily: FontFamily.bodyMedium },

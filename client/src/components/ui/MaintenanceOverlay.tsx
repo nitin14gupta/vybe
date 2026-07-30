@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Wrench } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 import { useMaintenanceStore } from '@/store/maintenanceStore'
 import { API_BASE_URL } from '@/api/config'
 import { hTap } from '@/lib/haptics'
+import { PrimaryButton } from './PrimaryButton'
 
 function MaintenanceOverlayCore({ message }: { message: string }) {
   const insets = useSafeAreaInsets()
@@ -36,9 +37,12 @@ function MaintenanceOverlayCore({ message }: { message: string }) {
         {message || "Gorave is undergoing scheduled maintenance. We'll be back shortly."}
       </Text>
 
-      <Pressable style={s.retryBtn} onPress={onRetry} disabled={checking}>
-        <Text style={s.retryText}>{checking ? 'Checking…' : 'Try Again'}</Text>
-      </Pressable>
+      <PrimaryButton
+        label="Try Again"
+        onPress={onRetry}
+        loading={checking}
+        style={s.retryBtn}
+      />
     </View>
   )
 }
@@ -83,19 +87,5 @@ const s = StyleSheet.create({
     lineHeight: 21,
   },
 
-  retryBtn: {
-    marginTop: 16,
-    minWidth: 160,
-    height: 52,
-    borderRadius: 999,
-    backgroundColor: Colors.brandOrange,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  retryText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 15,
-    color: '#111',
-  },
+  retryBtn: { marginTop: 16, minWidth: 160 },
 })
