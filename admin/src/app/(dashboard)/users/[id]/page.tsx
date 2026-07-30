@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/Table'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { ImageModal } from '@/components/ui/ImageModal'
+import { IconChip } from '@/components/ui/IconChip'
 import { formatDate, formatInr, formatRelative } from '@/lib/formatters'
 import { useToast } from '@/hooks/useToast'
 import type { UserDetail } from '@/types/user'
@@ -73,7 +74,7 @@ export default function UserDetailPage() {
     <div className="flex flex-col gap-4">
       <button
         onClick={() => router.push('/users')}
-        className="flex w-fit items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+        className="font-sketch flex w-fit items-center gap-1.5 text-base text-zinc-500 hover:text-zinc-900"
       >
         <ArrowLeft className="h-4 w-4" /> Back to Users
       </button>
@@ -84,7 +85,7 @@ export default function UserDetailPage() {
             <Avatar src={data.photos[0]?.url} name={user.name} size={56} />
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                <h1 className="font-sketch text-xl font-bold text-zinc-900">
                   {user.name ?? 'Unnamed'}
                 </h1>
                 {user.is_locked ? (
@@ -95,17 +96,17 @@ export default function UserDetailPage() {
                   <Badge variant="success">Active</Badge>
                 )}
               </div>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              <p className="text-sm text-zinc-500">
                 {user.username ? `@${user.username} · ` : ''}
                 {user.country_code}{user.phone} · {user.city ?? 'No city set'}
               </p>
               {user.is_locked && user.locked_reason && (
-                <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                <p className="mt-1 text-xs text-red-600">
                   Locked {formatDate(user.locked_at)} — {user.locked_reason}
                 </p>
               )}
               {user.is_deleted && (
-                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="mt-1 text-xs text-zinc-500">
                   Requested deletion {formatDate(user.deleted_at)}
                   {user.purge_at && <> — permanently erased {formatRelative(user.purge_at)} (on {formatDate(user.purge_at)})</>}
                 </p>
@@ -419,12 +420,12 @@ function SupportTab({ data }: { data: UserDetail }) {
         <CardContent className="flex flex-col gap-3">
           {data.support_requests.length === 0 && <p className="text-sm text-zinc-400">None</p>}
           {data.support_requests.map((s) => (
-            <div key={s.id} className="rounded-lg border border-zinc-200 p-3 text-sm dark:border-zinc-800">
+            <div key={s.id} className="border-2 border-zinc-900 p-3 text-sm rounded-[14px]">
               <div className="mb-1 flex items-center justify-between">
                 <span className="font-medium">{s.topic}</span>
                 <Badge variant={s.status === 'open' ? 'warning' : 'neutral'}>{s.status}</Badge>
               </div>
-              <p className="text-zinc-500 dark:text-zinc-400">{s.message}</p>
+              <p className="text-zinc-500">{s.message}</p>
               <p className="mt-1 text-xs text-zinc-400">{formatDate(s.created_at)}</p>
             </div>
           ))}
@@ -438,8 +439,8 @@ function SupportTab({ data }: { data: UserDetail }) {
         <CardContent className="flex flex-col gap-3">
           {data.app_feedback.length === 0 && <p className="text-sm text-zinc-400">None</p>}
           {data.app_feedback.map((f) => (
-            <div key={f.id} className="rounded-lg border border-zinc-200 p-3 text-sm dark:border-zinc-800">
-              <p className="text-zinc-500 dark:text-zinc-400">{f.text}</p>
+            <div key={f.id} className="border-2 border-zinc-900 p-3 text-sm rounded-[14px]">
+              <p className="text-zinc-500">{f.text}</p>
               <p className="mt-1 text-xs text-zinc-400">{formatDate(f.created_at)}</p>
             </div>
           ))}
@@ -493,7 +494,7 @@ function Field({ label, value, full }: { label: string; value: string; full?: bo
   return (
     <div className={full ? 'col-span-2' : undefined}>
       <p className="text-xs text-zinc-400">{label}</p>
-      <p className="text-zinc-900 dark:text-zinc-100">{value}</p>
+      <p className="text-zinc-900">{value}</p>
     </div>
   )
 }

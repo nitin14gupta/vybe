@@ -63,7 +63,7 @@ export default function EventDetailPage() {
     <div className="flex flex-col gap-4">
       <button
         onClick={() => router.push('/events')}
-        className="flex w-fit items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+        className="flex w-fit items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900"
       >
         <ArrowLeft className="h-4 w-4" /> Back to Events
       </button>
@@ -82,7 +82,7 @@ export default function EventDetailPage() {
           <CardContent className="flex h-full flex-col justify-between gap-4">
             <div>
               <div className="mb-1 flex flex-wrap items-center gap-2">
-                <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{event.title}</h1>
+                <h1 className="text-lg font-semibold text-zinc-900">{event.title}</h1>
                 {event.is_cancelled ? (
                   <Badge variant="danger">Cancelled</Badge>
                 ) : (() => {
@@ -95,16 +95,16 @@ export default function EventDetailPage() {
                 })()}
                 <Badge variant="neutral" className="capitalize">{event.event_type}</Badge>
               </div>
-              <p className="flex items-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-400">
+              <p className="flex items-center gap-1.5 text-sm text-zinc-500">
                 <Calendar className="h-4 w-4" /> {formatDate(event.date_time)}
                 {event.end_time && ` → ${formatDate(event.end_time)}`}
               </p>
               {event.location_name && (
-                <p className="mt-1 flex items-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-400">
+                <p className="mt-1 flex items-center gap-1.5 text-sm text-zinc-500">
                   <MapPin className="h-4 w-4" /> {event.location_name}
                 </p>
               )}
-              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              <p className="mt-1 text-sm text-zinc-500">
                 Hosted by{' '}
                 <Link href={`/users/${event.host_id}`} className="font-medium text-orange-600 hover:underline">
                   {event.host_name ?? 'Unknown'}
@@ -112,7 +112,7 @@ export default function EventDetailPage() {
                 {' · '}{event.host_phone}
               </p>
               {event.description && (
-                <p className="mt-3 whitespace-pre-line text-sm text-zinc-600 dark:text-zinc-300">{event.description}</p>
+                <p className="mt-3 whitespace-pre-line text-sm text-zinc-600">{event.description}</p>
               )}
             </div>
 
@@ -204,7 +204,7 @@ export default function EventDetailPage() {
                     <Link href={`/users/${r.user_id}`} className="font-medium hover:underline">{r.name ?? 'Unnamed'}</Link>
                     <Badge variant="warning">{r.rating} ★</Badge>
                   </div>
-                  {r.body && <p className="text-sm text-zinc-600 dark:text-zinc-300">{r.body}</p>}
+                  {r.body && <p className="text-sm text-zinc-600">{r.body}</p>}
                   <p className="mt-1 text-xs text-zinc-400">{formatDate(r.created_at)}</p>
                 </CardContent>
               </Card>
@@ -249,12 +249,12 @@ export default function EventDetailPage() {
 function MiniStat({ label, value, icon: Icon }: { label: string; value: string; icon: typeof Users }) {
   return (
     <Card className="flex items-center gap-3 p-4">
-      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400">
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
         <Icon className="h-4 w-4" />
       </div>
       <div>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">{label}</p>
-        <p className="font-semibold text-zinc-900 dark:text-zinc-100">{value}</p>
+        <p className="text-xs text-zinc-500">{label}</p>
+        <p className="font-semibold text-zinc-900">{value}</p>
       </div>
     </Card>
   )
@@ -264,7 +264,7 @@ function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="text-xs text-zinc-400">{label}</p>
-      <p className="font-medium text-zinc-900 dark:text-zinc-100">{value}</p>
+      <p className="font-medium text-zinc-900">{value}</p>
     </div>
   )
 }

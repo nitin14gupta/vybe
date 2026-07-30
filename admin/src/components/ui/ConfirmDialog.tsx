@@ -4,6 +4,7 @@ import { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import { Button } from './Button'
+import { WOBBLE_CARD } from '@/lib/sketch'
 
 interface ConfirmDialogProps {
   open: boolean
@@ -46,32 +47,28 @@ export function ConfirmDialog({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl border border-zinc-200 bg-white p-5 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+        <Dialog.Content
+          className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2 border-2 border-zinc-900 bg-white p-5 shadow-[6px_6px_0px_0px_#18181b]"
+          style={{ borderRadius: WOBBLE_CARD }}
+        >
           <div className="mb-3 flex items-start justify-between">
-            <Dialog.Title className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-              {title}
-            </Dialog.Title>
-            <Dialog.Close className="rounded-md p-1 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+            <Dialog.Title className="font-sketch text-xl font-bold text-zinc-900">{title}</Dialog.Title>
+            <Dialog.Close className="rounded-full p-1 text-zinc-400 hover:bg-zinc-100">
               <X className="h-4 w-4" />
             </Dialog.Close>
           </div>
 
-          {description && (
-            <Dialog.Description className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
-              {description}
-            </Dialog.Description>
-          )}
+          {description && <Dialog.Description className="mb-3 text-sm text-zinc-500">{description}</Dialog.Description>}
 
           {requireReason && (
             <div className="mb-4">
-              <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                {reasonLabel}
-              </label>
+              <label className="font-sketch mb-1.5 block text-base text-zinc-700">{reasonLabel}</label>
               <textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 rows={3}
-                className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 dark:border-zinc-700 dark:bg-zinc-800"
+                className="font-sketch w-full border-2 border-zinc-900 bg-white px-3 py-2 text-base outline-none focus:-translate-y-0.5 focus:shadow-[3px_3px_0px_0px_#18181b]"
+                style={{ borderRadius: WOBBLE_CARD }}
                 placeholder="e.g. Multiple community guideline violations"
               />
             </div>

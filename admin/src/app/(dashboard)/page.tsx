@@ -11,7 +11,6 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { apiClient } from '@/lib/apiClient'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { chartColors, STATUS_COLOR } from '@/lib/chartColors'
 import { formatInr } from '@/lib/formatters'
 import type { DashboardResponse } from '@/types/dashboard'
@@ -23,8 +22,7 @@ function formatDayTick(day: string) {
 
 export default function DashboardPage() {
   const { admin } = useAdminAuth()
-  const isDark = useMediaQuery('(prefers-color-scheme: dark)')
-  const c = chartColors(isDark)
+  const c = chartColors(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-dashboard'],
@@ -36,10 +34,10 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+        <h1 className="font-sketch text-3xl font-bold text-zinc-900 underline decoration-emerald-400 decoration-wavy decoration-2 underline-offset-4">
           Welcome{admin?.name ? `, ${admin.name}` : ''}
         </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="font-sketch mt-1 text-base text-zinc-500">
           Here&apos;s a snapshot of what&apos;s happening on Gorave.
         </p>
       </div>
@@ -71,7 +69,7 @@ export default function DashboardPage() {
                   />
                   <YAxis allowDecimals={false} tick={{ fill: c.muted, fontSize: 12 }} axisLine={false} tickLine={false} />
                   <Tooltip
-                    contentStyle={{ background: c.surface, border: `1px solid ${c.gridline}`, borderRadius: 8, fontSize: 13 }}
+                    contentStyle={{ background: c.surface, border: '2px solid #18181b', borderRadius: 10, fontSize: 13, fontFamily: 'var(--font-architects-daughter)' }}
                     labelFormatter={(label) => formatDayTick(String(label))}
                     labelStyle={{ color: c.textSecondary }}
                   />
@@ -105,7 +103,8 @@ export default function DashboardPage() {
                     tickFormatter={(v: string) => v.replace(/_/g, ' ')}
                   />
                   <Tooltip
-                    contentStyle={{ background: c.surface, border: `1px solid ${c.gridline}`, borderRadius: 8, fontSize: 13 }}
+                    cursor={{ fill: 'rgba(251,191,36,0.18)' }}
+                    contentStyle={{ background: c.surface, border: '2px solid #18181b', borderRadius: 10, fontSize: 13, fontFamily: 'var(--font-architects-daughter)' }}
                     labelStyle={{ color: c.textSecondary }}
                     formatter={(value) => [value, 'Events']}
                   />
@@ -136,7 +135,7 @@ export default function DashboardPage() {
                     tickFormatter={(v: number) => `₹${v}`}
                   />
                   <Tooltip
-                    contentStyle={{ background: c.surface, border: `1px solid ${c.gridline}`, borderRadius: 8, fontSize: 13 }}
+                    contentStyle={{ background: c.surface, border: '2px solid #18181b', borderRadius: 10, fontSize: 13, fontFamily: 'var(--font-architects-daughter)' }}
                     labelFormatter={(label) => formatDayTick(String(label))}
                     labelStyle={{ color: c.textSecondary }}
                     formatter={(value) => [`₹${Number(value).toLocaleString()}`, undefined]}
@@ -169,7 +168,8 @@ export default function DashboardPage() {
                     tickFormatter={(v: string) => v[0].toUpperCase() + v.slice(1)}
                   />
                   <Tooltip
-                    contentStyle={{ background: c.surface, border: `1px solid ${c.gridline}`, borderRadius: 8, fontSize: 13 }}
+                    cursor={{ fill: 'rgba(251,191,36,0.18)' }}
+                    contentStyle={{ background: c.surface, border: '2px solid #18181b', borderRadius: 10, fontSize: 13, fontFamily: 'var(--font-architects-daughter)' }}
                     labelStyle={{ color: c.textSecondary }}
                     formatter={(value) => [value, 'Tickets']}
                   />

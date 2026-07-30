@@ -11,6 +11,9 @@ import { Pagination } from '@/components/ui/Pagination'
 import { Avatar } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { Input } from '@/components/ui/Input'
+import { FilterChip } from '@/components/ui/FilterChip'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { formatDate, formatRelative } from '@/lib/formatters'
 import type { UserListResponse } from '@/types/user'
 
@@ -38,40 +41,30 @@ export default function UsersPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Users</h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          {data ? `${data.total.toLocaleString()} total` : 'Loading…'}
-        </p>
-      </div>
+      <PageHeader title="Users" subtitle={data ? `${data.total.toLocaleString()} total` : 'Loading…'} />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-2">
           {STATUS_TABS.map((t) => (
-            <button
+            <FilterChip
               key={t.value}
+              label={t.label}
+              active={status === t.value}
               onClick={() => { setStatus(t.value); setPage(1) }}
-              className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                status === t.value
-                  ? 'bg-orange-600 text-white'
-                  : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
-              }`}
-            >
-              {t.label}
-            </button>
+            />
           ))}
         </div>
 
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-          <input
+          <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <Input
             value={q}
             onChange={(e) => {
               setQ(e.target.value)
               setPage(1)
             }}
             placeholder="Search by name, username or phone"
-            className="w-64 rounded-lg border border-zinc-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 dark:border-zinc-700 dark:bg-zinc-900"
+            className="w-64 pl-9"
           />
         </div>
       </div>
@@ -104,11 +97,11 @@ export default function UsersPage() {
                       <Link href={`/users/${u.id}`} className="flex items-center gap-3">
                         <Avatar src={u.avatar} name={u.name} size={32} />
                         <div>
-                          <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                          <p className="font-medium text-zinc-900">
                             {u.name ?? 'Unnamed'}
                           </p>
                           {u.username && (
-                            <p className="text-xs text-zinc-500 dark:text-zinc-400">@{u.username}</p>
+                            <p className="text-xs text-zinc-500">@{u.username}</p>
                           )}
                         </div>
                       </Link>

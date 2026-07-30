@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Loader2, Lock } from 'lucide-react'
+import { Lock } from 'lucide-react'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
 import { useToast } from '@/hooks/useToast'
-import { Button } from '@/components/ui/Button'
+import { SketchCard, SketchTape, SketchInput, SketchButton } from '@/components/ui/sketch/Sketch'
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -42,48 +42,55 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-1 items-center justify-center bg-zinc-50 px-4 dark:bg-zinc-950">
-      <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mb-6 flex flex-col items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-600 text-white">
-            <Lock className="h-5 w-5" />
+    <div className="bg-paper flex min-h-screen flex-1 items-center justify-center px-4 py-12">
+      <SketchCard rotate className="w-full max-w-sm p-8 pt-10">
+        <SketchTape />
+
+        <div className="mb-8 flex flex-col items-center gap-3">
+          <div
+            className="flex h-14 w-14 items-center justify-center border-2 border-zinc-900 bg-amber-300 text-zinc-900"
+            style={{ borderRadius: '50% 45% 55% 50% / 50% 55% 45% 50%' }}
+          >
+            <Lock className="h-6 w-6" />
           </div>
           <div className="text-center">
-            <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Gorave Admin</h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">Sign in to continue</p>
+            <h1 className="font-sketch text-3xl font-bold text-zinc-900 underline decoration-emerald-400 decoration-wavy decoration-2 underline-offset-4">
+              Gorave Admin
+            </h1>
+            <p className="font-sketch mt-2 text-base text-zinc-500">Sign in to keep things running</p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Email</label>
-            <input
+            <label className="font-sketch mb-1.5 block text-base text-zinc-700">Email</label>
+            <SketchInput
               type="email"
               autoComplete="email"
-              {...register('email')}
-              className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
               placeholder="you@gorave.com"
+              error={errors.email?.message}
+              {...register('email')}
             />
-            {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>}
+            {errors.email && <p className="font-sketch mt-1 text-sm text-red-600">{errors.email.message}</p>}
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Password</label>
-            <input
+            <label className="font-sketch mb-1.5 block text-base text-zinc-700">Password</label>
+            <SketchInput
               type="password"
               autoComplete="current-password"
-              {...register('password')}
-              className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
               placeholder="••••••••"
+              error={errors.password?.message}
+              {...register('password')}
             />
-            {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>}
+            {errors.password && <p className="font-sketch mt-1 text-sm text-red-600">{errors.password.message}</p>}
           </div>
 
-          <Button type="submit" size="lg" className="mt-2 w-full" disabled={submitting}>
-            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Sign in'}
-          </Button>
+          <SketchButton type="submit" loading={submitting} className="mt-2">
+            Sign in
+          </SketchButton>
         </form>
-      </div>
+      </SketchCard>
     </div>
   )
 }

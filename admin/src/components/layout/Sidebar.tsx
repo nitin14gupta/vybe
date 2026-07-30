@@ -20,10 +20,10 @@ function NavLinks({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: 
             href={href}
             onClick={onNavigate}
             className={cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+              'font-sketch flex items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-base font-bold transition-all',
               active
-                ? 'bg-orange-600 text-white'
-                : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800',
+                ? 'border-zinc-900 bg-amber-300 text-zinc-900 shadow-[3px_3px_0px_0px_#18181b]'
+                : 'border-transparent text-zinc-600 hover:border-zinc-900 hover:bg-white',
               collapsed && 'justify-center px-0',
             )}
             title={collapsed ? label : undefined}
@@ -48,18 +48,22 @@ export function Sidebar() {
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          'hidden shrink-0 flex-col border-r border-zinc-200 bg-white py-4 transition-all duration-200 md:flex dark:border-zinc-800 dark:bg-zinc-950',
+          'bg-paper hidden shrink-0 flex-col border-r-2 border-zinc-900 py-4 transition-all duration-200 md:flex',
           collapsed ? 'w-[68px]' : 'w-60',
         )}
       >
         <div className={cn('mb-4 flex items-center px-4', collapsed && 'justify-center px-0')}>
-          {!collapsed && <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Gorave Admin</span>}
+          {!collapsed && (
+            <span className="font-sketch text-xl font-bold text-zinc-900 underline decoration-amber-400 decoration-wavy decoration-2 underline-offset-4">
+              Gorave Admin
+            </span>
+          )}
         </div>
         <NavLinks collapsed={collapsed} />
         <div className="px-3 pt-2">
           <button
             onClick={toggleCollapsed}
-            className="flex w-full items-center justify-center gap-2 rounded-lg py-2 text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-zinc-500 hover:bg-zinc-900/5"
           >
             {collapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
           </button>
@@ -70,10 +74,12 @@ export function Sidebar() {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute left-0 top-0 flex h-full w-64 flex-col bg-white py-4 dark:bg-zinc-950">
+          <aside className="bg-paper absolute left-0 top-0 flex h-full w-64 flex-col border-r-2 border-zinc-900 py-4">
             <div className="mb-4 flex items-center justify-between px-4">
-              <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Gorave Admin</span>
-              <button onClick={() => setMobileOpen(false)} className="rounded-lg p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+              <span className="font-sketch text-xl font-bold text-zinc-900 underline decoration-amber-400 decoration-wavy decoration-2 underline-offset-4">
+                Gorave Admin
+              </span>
+              <button onClick={() => setMobileOpen(false)} className="rounded-full p-1.5 hover:bg-zinc-900/5">
                 <X className="h-5 w-5" />
               </button>
             </div>

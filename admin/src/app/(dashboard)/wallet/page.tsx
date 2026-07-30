@@ -11,6 +11,9 @@ import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/Table'
 import { Pagination } from '@/components/ui/Pagination'
 import { Badge } from '@/components/ui/Badge'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { formatDate, formatInr } from '@/lib/formatters'
 import type { WalletTransactionItem, WalletStats } from '@/types/wallet'
 import type { PaginatedResponse } from '@/types/feedback'
@@ -43,10 +46,7 @@ export default function WalletPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Wallet</h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">Gorave Wallet balances and transactions across all users.</p>
-      </div>
+      <PageHeader title="Wallet" subtitle="Gorave Wallet balances and transactions across all users." />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard label="Total wallet liability" value={stats ? formatInr(stats.total_liability) : '—'} icon={Wallet} />
@@ -64,30 +64,22 @@ export default function WalletPage() {
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-          <input
+          <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <Input
             value={q}
             onChange={(e) => { setQ(e.target.value); setPage(1) }}
             placeholder="Search by user name or phone"
-            className="w-64 rounded-lg border border-zinc-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 dark:border-zinc-700 dark:bg-zinc-900"
+            className="w-64 pl-9"
           />
         </div>
-        <select
-          value={type}
-          onChange={(e) => { setType(e.target.value); setPage(1) }}
-          className="h-9 rounded-lg border border-zinc-200 bg-white px-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900"
-        >
+        <Select value={type} onChange={(e) => { setType(e.target.value); setPage(1) }}>
           <option value="">All types</option>
           {TYPES.map((t) => <option key={t} value={t}>{t.replace(/_/g, ' ')}</option>)}
-        </select>
-        <select
-          value={source}
-          onChange={(e) => { setSource(e.target.value); setPage(1) }}
-          className="h-9 rounded-lg border border-zinc-200 bg-white px-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900"
-        >
+        </Select>
+        <Select value={source} onChange={(e) => { setSource(e.target.value); setPage(1) }}>
           <option value="">All sources</option>
           {SOURCES.map((s) => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
-        </select>
+        </Select>
       </div>
 
       <Card className="p-0">

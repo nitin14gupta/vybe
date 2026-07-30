@@ -15,7 +15,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
 import { Badge } from '@/components/ui/Badge'
 import { Pagination } from '@/components/ui/Pagination'
 import { Skeleton } from '@/components/ui/Skeleton'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { Input } from '@/components/ui/Input'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { chartColors } from '@/lib/chartColors'
 import { formatInr } from '@/lib/formatters'
 import type { RevenueStats, RevenueByDay, HostPayoutItem, LeaderboardResponse } from '@/types/revenue'
@@ -30,12 +31,7 @@ function formatDayTick(day: string) {
 export default function RevenuePage() {
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Revenue</h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          What Gorave actually earns, what hosts are owed, and who&apos;s driving it.
-        </p>
-      </div>
+      <PageHeader title="Revenue" subtitle="What Gorave actually earns, what hosts are owed, and who's driving it." />
 
       <Tabs defaultValue="overview">
         <TabsList>
@@ -53,8 +49,7 @@ export default function RevenuePage() {
 }
 
 function OverviewTab() {
-  const isDark = useMediaQuery('(prefers-color-scheme: dark)')
-  const c = chartColors(isDark)
+  const c = chartColors(false)
 
   const { data: stats } = useQuery({
     queryKey: ['admin-revenue-stats'],
@@ -91,7 +86,7 @@ function OverviewTab() {
                   tickFormatter={(v: number) => `₹${v}`}
                 />
                 <Tooltip
-                  contentStyle={{ background: c.surface, border: `1px solid ${c.gridline}`, borderRadius: 8, fontSize: 13 }}
+                  contentStyle={{ background: c.surface, border: '2px solid #18181b', borderRadius: 10, fontSize: 13, fontFamily: 'var(--font-architects-daughter)' }}
                   labelFormatter={(label) => formatDayTick(String(label))}
                   labelStyle={{ color: c.textSecondary }}
                   formatter={(value) => [`₹${Number(value).toLocaleString()}`, undefined]}
@@ -127,12 +122,12 @@ function PayoutsTab() {
         Net payable = gross ticket revenue minus Gorave&apos;s commission, across non-cancelled paid events. No automated payout system exists yet — use this to settle hosts manually.
       </p>
       <div className="relative max-w-sm">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-        <input
+        <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+        <Input
           value={q}
           onChange={(e) => { setQ(e.target.value); setPage(1) }}
           placeholder="Search by host name or phone"
-          className="w-full rounded-lg border border-zinc-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 dark:border-zinc-700 dark:bg-zinc-900"
+          className="pl-9"
         />
       </div>
 

@@ -4,23 +4,25 @@ import { forwardRef, type ButtonHTMLAttributes } from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
+import { WOBBLE_CONTROL } from '@/lib/sketch'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap border-2 border-zinc-900 font-sketch font-bold transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none disabled:translate-y-0',
   {
     variants: {
       variant: {
-        primary: 'bg-orange-600 text-white hover:bg-orange-500',
+        primary:
+          'bg-amber-300 text-zinc-900 shadow-[3px_3px_0px_0px_#18181b] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_#18181b] active:translate-y-0 active:shadow-[1px_1px_0px_0px_#18181b]',
         secondary:
-          'bg-zinc-100 text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700',
-        ghost: 'hover:bg-zinc-100 dark:hover:bg-zinc-800',
-        destructive: 'bg-red-600 text-white hover:bg-red-500',
-        outline:
-          'border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800',
+          'bg-white text-zinc-900 shadow-[3px_3px_0px_0px_#18181b] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_#18181b] active:translate-y-0 active:shadow-[1px_1px_0px_0px_#18181b]',
+        ghost: 'border-transparent shadow-none hover:bg-zinc-100 active:translate-y-0',
+        destructive:
+          'bg-red-200 text-red-900 shadow-[3px_3px_0px_0px_#18181b] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_0px_#18181b] active:translate-y-0 active:shadow-[1px_1px_0px_0px_#18181b]',
+        outline: 'border-dashed bg-white text-zinc-700 shadow-none hover:bg-zinc-50',
       },
       size: {
         sm: 'h-8 px-3 text-xs',
-        md: 'h-10 px-4',
+        md: 'h-10 px-4 text-sm',
         lg: 'h-12 px-6 text-base',
         icon: 'h-9 w-9',
       },
@@ -36,10 +38,11 @@ interface ButtonProps
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, loading, disabled, children, ...props }, ref) => (
+  ({ className, variant, size, loading, disabled, children, style, ...props }, ref) => (
     <button
       ref={ref}
       className={cn(buttonVariants({ variant, size }), className)}
+      style={{ borderRadius: WOBBLE_CONTROL, ...style }}
       disabled={disabled || loading}
       {...props}
     >

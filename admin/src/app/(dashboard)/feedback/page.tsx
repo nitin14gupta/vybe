@@ -10,6 +10,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
 import { Badge } from '@/components/ui/Badge'
 import { Pagination } from '@/components/ui/Pagination'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { Select } from '@/components/ui/Select'
+import { FilterChip } from '@/components/ui/FilterChip'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { formatDate } from '@/lib/formatters'
 import { useToast } from '@/hooks/useToast'
 import type { AppFeedbackItem, SupportRequestItem, PaginatedResponse } from '@/types/feedback'
@@ -20,12 +24,7 @@ const STATUSES = ['open', 'resolved', 'closed'] as const
 export default function FeedbackPage() {
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Feedback</h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          App feedback and support tickets from users.
-        </p>
-      </div>
+      <PageHeader title="Feedback" subtitle="App feedback and support tickets from users." />
 
       <Tabs defaultValue="support">
         <TabsList>
@@ -101,10 +100,10 @@ function SupportRequestsTab() {
               <CardContent className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex-1">
                   <div className="mb-1 flex items-center gap-2">
-                    <span className="font-medium text-zinc-900 dark:text-zinc-100">{r.topic}</span>
+                    <span className="font-medium text-zinc-900">{r.topic}</span>
                     <Badge variant={statusBadgeVariant(r.status)}>{r.status}</Badge>
                   </div>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-300">{r.message}</p>
+                  <p className="text-sm text-zinc-600">{r.message}</p>
                   <p className="mt-2 text-xs text-zinc-400">
                     <Link href={`/users/${r.user_id}`} className="hover:underline">
                       {r.user_name ?? 'Unnamed'} · {r.user_phone}
@@ -112,15 +111,11 @@ function SupportRequestsTab() {
                     {' · '}{formatDate(r.created_at)}
                   </p>
                 </div>
-                <select
-                  value={r.status}
-                  onChange={(e) => updateStatus(r.id, e.target.value)}
-                  className="h-9 shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-sm outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-800"
-                >
+                <Select value={r.status} onChange={(e) => updateStatus(r.id, e.target.value)}>
                   {STATUSES.map((s) => (
                     <option key={s} value={s}>{s[0].toUpperCase() + s.slice(1)}</option>
                   ))}
-                </select>
+                </Select>
               </CardContent>
             </Card>
           ))}
@@ -158,7 +153,7 @@ function AppFeedbackTab() {
           {data?.items.map((f) => (
             <Card key={f.id}>
               <CardContent>
-                <p className="text-sm text-zinc-600 dark:text-zinc-300">{f.text}</p>
+                <p className="text-sm text-zinc-600">{f.text}</p>
                 <p className="mt-2 text-xs text-zinc-400">
                   <Link href={`/users/${f.user_id}`} className="hover:underline">
                     {f.user_name ?? 'Unnamed'} · {f.user_phone}
@@ -174,30 +169,6 @@ function AppFeedbackTab() {
       {data && data.total > 0 && (
         <Pagination page={data.page} pageSize={data.page_size} total={data.total} onPageChange={setPage} />
       )}
-    </div>
-  )
-}
-
-function FilterChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-        active
-          ? 'bg-orange-600 text-white'
-          : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
-      }`}
-    >
-      {label}
-    </button>
-  )
-}
-
-function EmptyState({ icon: Icon, label }: { icon: typeof Inbox; label: string }) {
-  return (
-    <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-zinc-200 py-12 text-zinc-400 dark:border-zinc-800">
-      <Icon className="h-8 w-8" />
-      <p className="text-sm">{label}</p>
     </div>
   )
 }

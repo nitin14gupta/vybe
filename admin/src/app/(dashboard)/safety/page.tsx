@@ -11,6 +11,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
 import { Badge } from '@/components/ui/Badge'
 import { Pagination } from '@/components/ui/Pagination'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { formatDate } from '@/lib/formatters'
 import type { UserReportItem, EventReportItem, MessageReportItem, BlockItem } from '@/types/reports'
 import type { AuditLogItem } from '@/types/audit'
@@ -21,12 +23,7 @@ const PAGE_SIZE = 20
 export default function SafetyPage() {
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Safety</h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Reports and blocks across the platform, for moderation review.
-        </p>
-      </div>
+      <PageHeader title="Safety" subtitle="Reports and blocks across the platform, for moderation review." />
 
       <Tabs defaultValue="users">
         <TabsList>
@@ -81,12 +78,7 @@ function TableShell({
     )
   }
   if (empty) {
-    return (
-      <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-zinc-200 py-12 text-zinc-400 dark:border-zinc-800">
-        <ShieldAlert className="h-8 w-8" />
-        <p className="text-sm">{emptyLabel}</p>
-      </div>
-    )
+    return <EmptyState icon={ShieldAlert} label={emptyLabel} />
   }
   return (
     <Card className="p-0">

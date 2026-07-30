@@ -7,9 +7,9 @@ import { cn } from '@/lib/utils'
 
 const ICONS = { default: Info, success: CheckCircle2, error: XCircle }
 const STYLES = {
-  default: 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900',
-  success: 'bg-emerald-600 text-white',
-  error: 'bg-red-600 text-white',
+  default: 'bg-white text-zinc-900',
+  success: 'bg-emerald-200 text-emerald-900',
+  error: 'bg-red-200 text-red-900',
 }
 
 export function ToastOverlay() {
@@ -28,7 +28,7 @@ export function ToastOverlay() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -16, scale: 0.95 }}
               className={cn(
-                'pointer-events-auto flex max-w-md items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium shadow-lg',
+                'font-sketch pointer-events-auto flex max-w-md items-center gap-2 rounded-full border-2 border-zinc-900 px-4 py-2.5 text-sm font-bold shadow-[3px_3px_0px_0px_#18181b]',
                 STYLES[toast.type],
               )}
             >
