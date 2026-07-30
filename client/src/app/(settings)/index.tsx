@@ -3,7 +3,7 @@ import { router } from 'expo-router'
 import {
   User, Bell, BellRing, HelpCircle, MessageSquare,
   Info, LogOut, Calendar, Ticket, Wallet, HeadphonesIcon,
-  Trash2, CalendarHeart, Landmark,
+  Trash2, CalendarHeart, Landmark, Sparkles,
 } from 'lucide-react-native'
 import { Screen, BackButton, SettingRow, ConfirmSheet } from '@/components/ui'
 import { useSettings } from '@/hooks/useSettings'
@@ -111,6 +111,11 @@ export default function SettingsScreen() {
             label="About Gorave"
             value={`v${appVersion}`}
             onPress={() => router.push('/(settings)/about')}
+          />
+          <SettingRow
+            icon={<Sparkles size={18} color={Colors.inkSecondary} strokeWidth={1.5} />}
+            label="Background"
+            onPress={() => router.push('/(settings)/background' as any)}
             showSeparator={false}
           />
         </View>

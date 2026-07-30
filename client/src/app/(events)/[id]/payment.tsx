@@ -23,8 +23,8 @@ import { usePaymentData } from '@/hooks/usePaymentData'
 import { useInstalledUpiApps } from '@/hooks/useInstalledUpiApps'
 import type { UpiApp } from '@/hooks/useInstalledUpiApps'
 import { useLastPaymentStore } from '@/store/lastPaymentStore'
-import { UpiIdSheet } from '@/components/UpiIdSheet'
-import { PaymentFailedSheet } from '@/components/PaymentFailedSheet'
+import { UpiIdSheet } from '@/components/upi/UpiIdSheet'
+import { PaymentFailedSheet } from '@/components/upi/PaymentFailedSheet'
 
 // ── Wallet success overlay ────────────────────────────────────────────────────
 

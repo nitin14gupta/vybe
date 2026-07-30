@@ -10,11 +10,22 @@ const source = Skia.RuntimeEffect.Make(`
   uniform vec2 iResolution;
   uniform vec3 color1;
   uniform vec3 color2;
+  uniform float flowVertical;
 
   half4 main(vec2 fragCoord) {
-    vec2 uv = fragCoord / iResolution.xy;
+    vec2 screenUV = fragCoord / iResolution.xy;
+    vec2 uv = screenUV;
 
     float speed = iTime * 0.4;
+    // Rotate the coordinate space 90° so the same wave math reads as
+    // vertical drift instead of its native right-to-left one, and reverse
+    // the phase so it travels bottom-to-top — opt-in via flowVertical so
+    // existing screens are untouched.
+    if (flowVertical > 0.5) {
+      uv = vec2(uv.y, uv.x);
+      speed = -speed;
+    }
+
     vec2 p = uv * 3.0;
     for (int i = 1; i < 5; i++) {
         p.x += 0.3 / float(i) * sin(float(i) * 3.0 * p.y + speed);
@@ -22,9 +33,18 @@ const source = Skia.RuntimeEffect.Make(`
     }
 
     float f = 0.5 + 0.5 * sin(p.x + p.y);
-    vec3 finalColor = mix(color1, color2, f);
+    vec3 finalColor = mix(color1, color2, f) * 0.5;
 
-    return half4(finalColor * 0.5, 1.0);
+    // Anchor the effect to the bottom edge instead of filling the whole
+    // screen uniformly — fades to black by ~40% down from the top, full
+    // strength by the bottom, so it reads as rising up from the bottom
+    // rather than a flat wash of color everywhere.
+    if (flowVertical > 0.5) {
+      float mask = smoothstep(0.0, 0.6, screenUV.y);
+      finalColor *= mask;
+    }
+
+    return half4(finalColor, 1.0);
   }
 `)!
 
@@ -46,9 +66,11 @@ function hexToRgb(hex: string): [number, number, number] {
 
 interface Props {
   colors?: [string, string]
+  /** Flow bottom-to-top instead of the default right-to-left drift. */
+  vertical?: boolean
 }
 
-export default function LiquidPlasmaBackground({ colors }: Props = {}) {
+export default function LiquidPlasmaBackground({ colors, vertical = false }: Props = {}) {
   const time = useSharedValue(0)
   
   const targetC1 = colors ? hexToRgb(colors[0]) : hexToRgb('#111111')
@@ -75,6 +97,7 @@ export default function LiquidPlasmaBackground({ colors }: Props = {}) {
     iResolution: [width, height],
     color1: c1.value,
     color2: c2.value,
+    flowVertical: vertical ? 1 : 0,
   }))
 
   return (
