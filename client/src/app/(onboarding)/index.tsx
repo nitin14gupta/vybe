@@ -5,15 +5,13 @@ import { Lock, Cake } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
 import { PrimaryButton, OutlineButton, Screen, LogoMark } from '@/components/ui'
 import { Colors, FontFamily, Spacing } from '@/constants'
-import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 
 export default function AgeGateScreen() {
   const [declined, setDeclined] = useState(false)
 
   if (declined) {
     return (
-      <Screen transparent style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
-        <LiquidPlasmaBackground />
+      <Screen style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
         <View style={styles.lockEmoji}>
           <Lock size={64} color={Colors.inkSecondary} strokeWidth={1.5} />
         </View>
@@ -29,8 +27,7 @@ export default function AgeGateScreen() {
   }
 
   return (
-    <Screen transparent style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 }}>
-      <LiquidPlasmaBackground />
+    <Screen style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 }}>
       <LogoMark size={30} opacity={0.9} style={{ marginBottom: 24 }} />
       <View style={styles.emoji}>
         <Cake size={64} color={Colors.brandOrange} strokeWidth={1.5} />

@@ -20,7 +20,6 @@ import ApiService from '@/api/apiService'
 import { EventShareCard } from '@/components/events/EventShareCard'
 import { useImageShare } from '@/hooks/useImageShare'
 import { buildEventShareUrl } from '@/lib/deepLink'
-import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 import { BlurView } from 'expo-blur'
 
 function parseDate(iso: string | null | undefined): Date | null {
@@ -141,7 +140,6 @@ export default function PublishedScreen() {
 
   return (
     <View style={[s.root, { paddingBottom: insets.bottom + 16 }]}>
-      <LiquidPlasmaBackground colors={['#1a1605', '#d41b81']} />
       <ConfettiRain />
 
       <View style={s.content}>

@@ -4,7 +4,6 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { hTap } from '@/lib/haptics'
 import { Pencil } from 'lucide-react-native'
 import { BackButton, OTPInput, PrimaryButton, Screen, KeyboardAvoidingWrapper, DeletedAccountSheet, LogoMark } from '@/components/ui'
-import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 import { useAuth } from '@/hooks/useAuth'
 import { useCountdown } from '@/hooks/useCountdown'
 import { Colors, FontFamily, Spacing } from '@/constants'
@@ -70,8 +69,7 @@ export default function OTPScreen() {
   }
 
   return (
-    <Screen transparent>
-      <LiquidPlasmaBackground />
+    <Screen>
       <DeletedAccountSheet
         visible={deletedOn !== null}
         deletedOn={deletedOn ?? ''}

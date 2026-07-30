@@ -8,7 +8,6 @@ import { createProfile } from '@/api/user'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 import { usePillStore } from '@/store/pillStore'
 import { CalendarDays } from 'lucide-react-native'
-import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 
 
 const MIN_DOB_DATE = new Date(new Date().setFullYear(new Date().getFullYear() - 100))
@@ -100,8 +99,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <Screen transparent>
-      <LiquidPlasmaBackground />
+    <Screen>
       <View style={styles.topSpacer} />
       <ProgressBar step={1} />
       <View style={styles.header}>

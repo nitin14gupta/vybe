@@ -4,7 +4,6 @@ import { router } from 'expo-router'
 import { BackButton, PhoneInput, PrimaryButton, KeyboardAvoidingWrapper, InAppBrowserModal, LogoMark } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
 import { Colors, FontFamily, Spacing, TERMS_URL, PRIVACY_URL, SUPPORT_EMAIL } from '@/constants'
-import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function PhoneScreen() {
@@ -33,7 +32,6 @@ export default function PhoneScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <LiquidPlasmaBackground />
       <View style={styles.topRow}>
         <BackButton transparent onPress={() => router.back()} />
         <LogoMark size={20} opacity={0.7} style={styles.topLogo} />
@@ -81,6 +79,7 @@ export default function PhoneScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.background,
   },
   topRow: {
     flexDirection: 'row',

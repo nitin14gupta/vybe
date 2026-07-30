@@ -19,15 +19,6 @@ import ApiService from '@/api/apiService'
 import { useEventDateTimePickers } from '@/hooks/useEventDateTimePickers'
 import { usePillStore } from '@/store/pillStore'
 import { useProfile } from '@/hooks/useProfile'
-import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
-
-const STEPS_COLORS: [string, string][] = [
-  ['#111111', '#FF3864'], // 1: Coral
-  ['#0a0f25', '#1a5bdf'], // 2: Blue
-  ['#1a0525', '#b73c10ff'], // 3: Purple
-  ['#1a2a1f', '#00b86b'], // 4: Green
-  ['#1a1605', '#d41b81'], // 5: Deep Gold & Magenta
-]
 
 const STEPS = [
   { title: 'The Basics', sub: 'Tell people what your event is about' },
@@ -62,7 +53,7 @@ export default function CreateScreen() {
 
   if (profileLoading || !profile || !profile.is_host_onboarding_finished) {
     return (
-      <Screen transparent style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <Screen style={{ alignItems: 'center', justifyContent: 'center' }}>
         <BrandedLoader />
       </Screen>
     )
@@ -154,8 +145,7 @@ export default function CreateScreen() {
   const back = () => { if (step > 1) setStep((step - 1) as any) }
 
   return (
-    <Screen bottom={false} transparent>
-      <LiquidPlasmaBackground colors={STEPS_COLORS[step - 1]} />
+    <Screen bottom={false}>
       <View style={s.header}>
         <Pressable
           style={s.iconBtn}

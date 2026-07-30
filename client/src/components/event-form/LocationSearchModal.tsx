@@ -3,7 +3,6 @@ import { StyleSheet, Text, TextInput, View, Modal, FlatList, Pressable } from 'r
 import { MapPin, X, Search } from 'lucide-react-native'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { Colors, FontFamily } from '@/constants'
-import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 import { Screen } from '@/components/ui'
 
 interface LocationSearchModalProps {
@@ -27,9 +26,7 @@ export function LocationSearchModal({
 }: LocationSearchModalProps) {
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <Screen bottom={false} transparent>
-        <LiquidPlasmaBackground colors={['#1a0525', '#b73c10ff']} />
-        
+      <Screen bottom={false}>
         <View style={s.modalHeader}>
           <Pressable onPress={onClose} style={s.iconBtn}>
             <X size={20} color="#fff" />

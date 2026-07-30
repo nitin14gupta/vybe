@@ -4,7 +4,6 @@ import { OutlineButton, ProgressBar, PrimaryButton, Screen, PhotoSlot } from '@/
 import { MediaPreviewModal } from '@/components/chat/MediaPreviewModal'
 import { usePhotos } from '@/hooks/usePhotos'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
-import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 import { ITEM_SIZE } from '@/components/ui/PhotoSlot'
 
 
@@ -25,8 +24,7 @@ export default function PhotosScreen() {
   } = usePhotos()
 
   return (
-    <Screen transparent>
-      <LiquidPlasmaBackground />
+    <Screen>
       <ProgressBar step={2} />
 
       <View style={styles.header}>
