@@ -106,11 +106,14 @@ def _fetch_user(cur, user_id: str, viewer_id: str) -> dict | None:
     d = dict(row)
     d["interests"] = d["interests"] or []
     
-    # Calculate dynamic host badge based on hosted events count
+    # Host tier (Rising/Established/Elite/Legend) is computed, not stored —
+    # keep it in its own field, separate from the user's selectable `badges`.
+    # These used to be merged into `badges`, which meant the edit-profile
+    # screen (which reads `badges` to seed its editor and writes it straight
+    # back on save) could literally persist "Rising" etc. into the DB column.
     hosted_events_count = d.pop("hosted_events_count", 0)
-    badges = d.get("badges") or []
-    badges += compute_host_badges(hosted_events_count)
-    d["badges"] = badges
+    d["badges"] = d.get("badges") or []
+    d["host_badges"] = compute_host_badges(hosted_events_count)
     d["host_avg_rating"] = float(d["host_avg_rating"]) if d.get("host_avg_rating") is not None else None
     d["host_review_count"] = d.get("host_review_count") or 0
     d["bio"] = d.get("bio")

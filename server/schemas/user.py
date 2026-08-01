@@ -184,6 +184,7 @@ class UserResponse(BaseModel):
     city: Optional[str] = None
     interests: List[str] = []
     badges: List[str] = []
+    host_badges: List[str] = []
     profile_complete: bool = False
     is_host_onboarding_finished: bool = False
     voice_url: Optional[str] = None

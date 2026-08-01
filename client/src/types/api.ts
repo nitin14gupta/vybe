@@ -25,6 +25,7 @@ export interface UserResponse {
   voice_url: string | null
   interests: string[]
   badges: string[]
+  host_badges: string[]
   profile_complete: boolean
   is_host_onboarding_finished: boolean
   photos: PhotoResponse[]

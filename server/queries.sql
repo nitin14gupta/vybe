@@ -311,7 +311,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   bio text,
-  badges text[] DEFAULT ARRAY['🔥 Vybe Starter'::text, '✨ Early Adopter'::text, '🎙️ Voice Ready'::text, '🌟 Main Character'::text],
+  badges text[] DEFAULT ARRAY['🔥 Vibe Starter'::text, '✨ Early Adopter'::text, '🎙️ Voice Ready'::text, '🌟 Main Character'::text],
   username character varying(30),
   name_changed_at timestamp with time zone,
   username_changes_this_month integer DEFAULT 0 NOT NULL,
