@@ -1,11 +1,54 @@
 import type { ReactNode } from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Image } from 'expo-image'
 import { MapPin, Flame } from 'lucide-react-native'
 import { Colors, FontFamily, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constants'
 import { parseServerDate } from '@/lib/dates'
 import type { EventSummary } from '@/api/apiService'
+
+export function HostPill({
+  name,
+  avatar,
+  compact,
+  style,
+}: {
+  name: string
+  avatar: string | null
+  compact?: boolean
+  style?: StyleProp<ViewStyle>
+}) {
+  return (
+    <View style={[hp.pill, compact && hp.pillCompact, style]}>
+      {avatar ? (
+        <Image source={{ uri: avatar }} style={[hp.avatar, compact && hp.avatarCompact]} />
+      ) : (
+        <View style={[hp.avatar, compact && hp.avatarCompact, hp.avatarFallback]}>
+          <Text style={[hp.initial, compact && hp.initialCompact]}>{name.charAt(0).toUpperCase()}</Text>
+        </View>
+      )}
+      <Text style={[hp.text, compact && hp.textCompact]} numberOfLines={1}>{name}</Text>
+    </View>
+  )
+}
+
+const hp = StyleSheet.create({
+  pill: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: 'rgba(17,17,17,0.72)',
+    borderRadius: 20, paddingLeft: 4, paddingRight: 10, paddingVertical: 4,
+  },
+  pillCompact: {
+    gap: 5, borderRadius: 16, paddingLeft: 3, paddingRight: 8, paddingVertical: 3,
+  },
+  avatar: { width: 20, height: 20, borderRadius: 10 },
+  avatarCompact: { width: 16, height: 16, borderRadius: 8 },
+  avatarFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
+  initial: { fontFamily: FontFamily.headingBold, fontSize: 11, color: '#fff' },
+  initialCompact: { fontSize: 9 },
+  text: { fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: '#fff' },
+  textCompact: { fontSize: 10 },
+})
 
 export function formatEventDate(iso: string | null | undefined) {
   const d = parseServerDate(iso)
@@ -66,16 +109,7 @@ export function EventCard({ event, onPress, showHost, isPast, isCancelled, foote
 
         {/* Host pill — avatar + name, Partiful-style organizer credit */}
         {event.host_name && !event.host_is_deleted ? (
-          <View style={s.hostPill}>
-            {event.host_avatar ? (
-              <Image source={{ uri: event.host_avatar }} style={s.hostPillAvatar} />
-            ) : (
-              <View style={[s.hostPillAvatar, s.hostPillAvatarFallback]}>
-                <Text style={s.hostPillInitial}>{event.host_name.charAt(0).toUpperCase()}</Text>
-              </View>
-            )}
-            <Text style={s.hostPillText} numberOfLines={1}>{event.host_name}</Text>
-          </View>
+          <HostPill name={event.host_name} avatar={event.host_avatar} style={s.hostPillPos} />
         ) : null}
 
         {/* Status badges */}
@@ -160,20 +194,10 @@ const s = StyleSheet.create({
   priceBadgeFree: { backgroundColor: Colors.accentGreen },
   priceText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: '#fff' },
 
-  hostPill: {
+  hostPillPos: {
     position: 'absolute', top: 12, left: 12,
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: 'rgba(17,17,17,0.72)',
-    borderRadius: 20, paddingLeft: 4, paddingRight: 10, paddingVertical: 4,
     maxWidth: '65%',
   },
-  hostPillAvatar: { width: 20, height: 20, borderRadius: 10 },
-  // Neutral dark circle + white initial — matches the app's existing
-  // no-photo avatar convention (e.g. ChatHeader), not an attention-grabbing
-  // brand color that would compete with the price badge on the same card.
-  hostPillAvatarFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
-  hostPillInitial: { fontFamily: FontFamily.headingBold, fontSize: 11, color: '#fff' },
-  hostPillText: { fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: '#fff' },
 
   // Sits below the host pill (top:12 + ~28px height + gap) rather than
   // sharing its corner — Cancelled/Past events still show who hosted them.

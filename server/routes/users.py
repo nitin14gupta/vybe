@@ -9,7 +9,7 @@ from schemas.user import (
 )
 from middleware.auth import get_current_user
 from db.config import get_db
-from utils.push import send_push
+from utils.push import send_push, get_user_avatar_url
 from utils.crypto import encrypt, decrypt
 from routes.notifications import notify_new_follower, notify_report_submitted, notify_host_onboarding_complete
 
@@ -346,10 +346,11 @@ def set_payout_details(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    avatar_url = get_user_avatar_url(current_user["id"])
     background_tasks.add_task(
         send_push, current_user["id"], "You're all set to host!",
         "Your payout details are saved — go ahead and create your first event.",
-        {"type": "host_onboarding_complete"}, category="hosting",
+        {"type": "host_onboarding_complete"}, avatar_url, category="hosting",
     )
     return UserResponse(**user)
 

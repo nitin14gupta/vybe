@@ -69,10 +69,14 @@ def notify_new_follower(cur, followee_id: str, follower_id: str, follower_name: 
 
 
 def notify_host_onboarding_complete(cur, user_id: str):
+    """actor_id is set to the user themselves so the notification list's
+    existing actor_avatar join surfaces their own profile photo instead of
+    a static icon — same pattern as notify_host_badge_earned below."""
     _insert_notification(
         cur, user_id, "host_onboarding_complete",
         title="You're all set to host!",
         body="Your payout details are saved — go ahead and create your first event.",
+        actor_id=user_id,
         entity_type="user",
         entity_id=user_id,
     )
