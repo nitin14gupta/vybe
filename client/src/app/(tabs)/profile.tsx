@@ -113,10 +113,9 @@ export default function ProfileScreen() {
   const gender = profile?.gender ? GENDER_DISPLAY[profile.gender] ?? profile.gender : null
   const city = profile?.city ?? null
   const bio = profile?.bio ?? null
-  const allBadges = profile?.badges ?? []
-  const hostBadgeName = allBadges.find(b => HOST_BADGE_ICONS[b])
+  const otherBadges = profile?.badges ?? []
+  const hostBadgeName = profile?.host_badges?.[0] ?? null
   const HostBadgeIcon = hostBadgeName ? HOST_BADGE_ICONS[hostBadgeName] : null
-  const otherBadges = allBadges.filter(b => b !== hostBadgeName)
   const vibers = profile?.vibers_count ?? 0
   const vibing = profile?.vibing_count ?? 0
   const avgRating = profile?.host_avg_rating ?? null
@@ -244,15 +243,11 @@ export default function ProfileScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>My Details</Text>
             <View style={styles.chipsWrap}>
-              {otherBadges.map(badge => {
-                const Icon = HOST_BADGE_ICONS[badge]
-                return (
-                  <View key={badge} style={styles.badgeChip}>
-                    {Icon && <Icon size={13} color={Colors.accentGold} strokeWidth={2} style={{ marginRight: 4 }} />}
-                    <Text style={styles.badgeText}>{badge}</Text>
-                  </View>
-                )
-              })}
+              {otherBadges.map(badge => (
+                <View key={badge} style={styles.badgeChip}>
+                  <Text style={styles.badgeText}>{badge}</Text>
+                </View>
+              ))}
               {profile?.interests?.map(tag => (
                 <InterestChip key={tag} label={tag} emoji="" selected onPress={() => { }} />
               ))}

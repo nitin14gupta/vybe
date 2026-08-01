@@ -570,7 +570,7 @@ export default function EventDetailScreen() {
           {event.host_name && (
             <Pressable
               style={styles.hostCard}
-              onPress={() => router.push(`/(profile)/${event.host_id}` as any)}
+              onPress={() => router.push(event.host_id === myId ? '/(tabs)/profile' : `/(profile)/${event.host_id}` as any)}
             >
               <View style={styles.hostAvatarWrap}>
                 <View style={[styles.hostAvatar, event.host_is_deleted && styles.hostAvatarDeleted]}>

@@ -313,10 +313,8 @@ export default function UserProfileScreen() {
     ? Math.floor((Date.now() - new Date(profile.dob).getTime()) / 3.156e10)
     : null;
 
-  const allBadges = profile.badges ?? [];
-  const hostBadgeName = allBadges.find((b) => HOST_BADGE_ICONS[b]);
+  const hostBadgeName = profile.host_badges?.[0] ?? null;
   const HostBadgeIcon = hostBadgeName ? HOST_BADGE_ICONS[hostBadgeName] : null;
-  const otherBadges = allBadges.filter((b) => b !== hostBadgeName);
 
   return (
     <View style={[s.root, { paddingBottom: insets.bottom }]}>
@@ -513,17 +511,11 @@ export default function UserProfileScreen() {
             ((profile.badges?.length ?? 0) > 0 ||
               (profile.interests?.length ?? 0) > 0) && (
               <View style={s.chipsRow}>
-                {profile.badges?.map((badge) => {
-                  const Icon = HOST_BADGE_ICONS[badge];
-                  return (
-                    <View key={badge} style={s.badgeChip}>
-                      {Icon && (
-                        <Icon size={13} color={Colors.accentGold} strokeWidth={2} style={{ marginRight: 4 }} />
-                      )}
-                      <Text style={s.badgeText}>{badge}</Text>
-                    </View>
-                  );
-                })}
+                {profile.badges?.map((badge) => (
+                  <View key={badge} style={s.badgeChip}>
+                    <Text style={s.badgeText}>{badge}</Text>
+                  </View>
+                ))}
                 {profile.interests?.map((tag) => (
                   <InterestChip
                     key={tag}
