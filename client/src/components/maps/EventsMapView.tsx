@@ -1,8 +1,8 @@
-import React, { useMemo, useEffect } from 'react'
+import React, { useMemo, useEffect, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { Image } from 'expo-image'
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated'
-import MapView, { Marker } from 'react-native-maps'
+import MapView, { Marker, type Region } from 'react-native-maps'
 import Svg, { Defs, RadialGradient, Stop, Path } from 'react-native-svg'
 import {
   Map,
@@ -44,6 +44,8 @@ interface GoogleProps {
 
 function EventsMapGoogle({ events, userLat, userLng, userHeading, activeEventId, onEventSelect }: GoogleProps) {
   const { mapRef } = useGoogleMaps()
+  const [zoom, setZoom] = useState(DEFAULT_ZOOM)
+  const pinScale = pinScaleForZoom(zoom)
 
   return (
     <MapView
@@ -58,6 +60,7 @@ function EventsMapGoogle({ events, userLat, userLng, userHeading, activeEventId,
       customMapStyle={DARK_MAP_STYLE}
       showsUserLocation
       showsMyLocationButton={false}
+      onRegionChange={(region: Region) => setZoom(zoomFromLongitudeDelta(region.longitudeDelta))}
     >
       {/* Direction cone — shows which way the device is facing */}
       {userLat != null && userLng != null && userHeading != null && (
@@ -78,7 +81,7 @@ function EventsMapGoogle({ events, userLat, userLng, userHeading, activeEventId,
             onPress={() => onEventSelect(ev, idx)}
             anchor={{ x: 0.5, y: 0.5 }}
           >
-            <EventMapPin event={ev} active={ev.id === activeEventId} />
+            <EventMapPin event={ev} active={ev.id === activeEventId} scale={pinScale} />
           </Marker>
         ) : null,
       )}
@@ -99,8 +102,9 @@ interface LibreProps {
 }
 
 function EventsMapLibre({ events, userLat, userLng, userHeading, activeEventId, onEventSelect, onBoundsChange }: LibreProps) {
-  const { mapRef, handleRegionDidChange } = useMapLibre(onBoundsChange)
+  const { mapRef, handleRegionIsChanging, handleRegionDidChange, zoom } = useMapLibre(onBoundsChange)
   const geojson = useMemo(() => eventsToGeoJSON(events), [events])
+  const pinScale = pinScaleForZoom(zoom)
 
   // Heatmap — soft ambient glow beneath the pins, toned down now that pins
   // carry the event photo and no longer need the circle layer for legibility.
@@ -125,6 +129,7 @@ function EventsMapLibre({ events, userLat, userLng, userHeading, activeEventId, 
       ref={mapRef}
       style={{ flex: 1 }}
       mapStyle={TILE_STYLE.dark}
+      onRegionIsChanging={handleRegionIsChanging}
       onRegionDidChange={handleRegionDidChange}
       logo={false}
       attribution={false}
@@ -159,7 +164,7 @@ function EventsMapLibre({ events, userLat, userLng, userHeading, activeEventId, 
             anchor="center"
             onPress={() => onEventSelect(ev, idx)}
           >
-            <EventMapPin event={ev} active={ev.id === activeEventId} />
+            <EventMapPin event={ev} active={ev.id === activeEventId} scale={pinScale} />
           </LibreMarker>
         ) : null,
       )}
@@ -326,13 +331,46 @@ const c = StyleSheet.create({
   },
 })
 
+const DEFAULT_ZOOM = 11
+const ZOOM_MIN = 3
+const ZOOM_MAX = 15
+const PIN_SCALE_MIN = 0.45
+const PIN_SCALE_MAX = 1.15
+
+function pinScaleForZoom(zoom: number) {
+  const t = Math.min(1, Math.max(0, (zoom - ZOOM_MIN) / (ZOOM_MAX - ZOOM_MIN)))
+  return PIN_SCALE_MIN + t * (PIN_SCALE_MAX - PIN_SCALE_MIN)
+}
+
+// react-native-maps only reports the visible region (lat/lng deltas), not a
+// zoom level — approximate one from longitudeDelta so it can drive the same
+// pinScaleForZoom curve used by the MapLibre provider.
+function zoomFromLongitudeDelta(longitudeDelta: number) {
+  if (!longitudeDelta || longitudeDelta <= 0) return DEFAULT_ZOOM
+  return Math.log2(360 / longitudeDelta)
+}
+
 // Event marker — just the event's own 16:9 photo, centered on the coordinate.
-function EventMapPin({ event, active }: { event: EventSummary; active: boolean }) {
+// The bubble's layout size stays fixed (PIN_W × PIN_H) so the marker's anchor
+// point never shifts — the zoom-driven size change is done purely as a
+// `transform: scale`, animated with Reanimated so it eases smoothly toward
+// each new target instead of snapping every time the zoom level updates.
+function EventMapPin({ event, active, scale }: { event: EventSummary; active: boolean; scale: number }) {
   const cover = event.cover_photos?.[0]?.url
   const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
+  const scaleSV = useSharedValue(scale)
+
+  useEffect(() => {
+    scaleSV.value = withTiming(scale, { duration: 220, easing: Easing.out(Easing.quad) })
+  }, [scale])
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scaleSV.value * (active ? 1.12 : 1) }],
+  }))
+
   return (
     <View style={p.wrap}>
-      <View style={[p.bubble, active && p.bubbleActive]}>
+      <Animated.View style={[p.bubble, animatedStyle]}>
         {cover ? (
           <Image source={{ uri: cover }} style={p.photo} contentFit="cover" />
         ) : (
@@ -340,7 +378,7 @@ function EventMapPin({ event, active }: { event: EventSummary; active: boolean }
             <TypeIcon size={18} color={Colors.inkDisabled} strokeWidth={1.5} />
           </View>
         )}
-      </View>
+      </Animated.View>
     </View>
   )
 }
@@ -361,9 +399,6 @@ const p = StyleSheet.create({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
     elevation: 6,
-  },
-  bubbleActive: {
-    transform: [{ scale: 1.12 }],
   },
   photo: {
     width: '100%',

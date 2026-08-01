@@ -7,14 +7,22 @@ import type { MapBounds } from '@/constants'
 
 // v11 uses named exports only — no default MapLibreGL object, no setAccessToken needed.
 
+const DEFAULT_ZOOM = 11
+
 export function useMapLibre(onBoundsChange?: (bounds: MapBounds) => void) {
   const mapRef = useRef<MapRef>(null)
   const [activeEventId, setActiveEventId] = useState<string | null>(null)
+  const [zoom, setZoom] = useState(DEFAULT_ZOOM)
+
+  const handleRegionIsChanging = (event: NativeSyntheticEvent<ViewStateChangeEvent>) => {
+    const { zoom: nextZoom } = event.nativeEvent
+    if (typeof nextZoom === 'number') setZoom(nextZoom)
+  }
 
   const handleRegionDidChange = (event: NativeSyntheticEvent<ViewStateChangeEvent>) => {
-    if (!onBoundsChange) return
-    const { userInteraction, bounds } = event.nativeEvent
-    if (!userInteraction || !bounds) return
+    const { userInteraction, bounds, zoom: nextZoom } = event.nativeEvent
+    if (typeof nextZoom === 'number') setZoom(nextZoom)
+    if (!onBoundsChange || !userInteraction || !bounds) return
     // LngLatBounds = [west, south, east, north]
     onBoundsChange({
       minLng: bounds[0],
@@ -24,7 +32,7 @@ export function useMapLibre(onBoundsChange?: (bounds: MapBounds) => void) {
     })
   }
 
-  return { mapRef, activeEventId, setActiveEventId, handleRegionDidChange }
+  return { mapRef, activeEventId, setActiveEventId, zoom, handleRegionIsChanging, handleRegionDidChange }
 }
 
 // Converts EventSummary[] to a GeoJSON FeatureCollection for MapLibre GeoJSONSource.

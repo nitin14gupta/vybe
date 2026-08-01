@@ -72,6 +72,18 @@ function PreviewCard({
             {formatPrice(event.price_inr, event.is_free)}
           </Text>
         </View>
+        {event.host_name && !event.host_is_deleted ? (
+          <View style={styles.previewHostPill}>
+            {event.host_avatar ? (
+              <Image source={{ uri: event.host_avatar }} style={styles.previewHostAvatar} />
+            ) : (
+              <View style={[styles.previewHostAvatar, styles.previewHostAvatarFallback]}>
+                <Text style={styles.previewHostInitial}>{event.host_name.charAt(0).toUpperCase()}</Text>
+              </View>
+            )}
+            <Text style={styles.previewHostText} numberOfLines={1}>{event.host_name}</Text>
+          </View>
+        ) : null}
       </View>
       <View style={styles.previewBody}>
         <Text style={styles.previewTitle} numberOfLines={2}>{event.title}</Text>
@@ -605,6 +617,24 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 12,
   },
+  previewHostPill: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(17,17,17,0.72)",
+    borderRadius: 16,
+    paddingLeft: 3,
+    paddingRight: 8,
+    paddingVertical: 3,
+    maxWidth: "70%",
+  },
+  previewHostAvatar: { width: 16, height: 16, borderRadius: 8 },
+  previewHostAvatarFallback: { backgroundColor: "#2a2a2a", alignItems: "center", justifyContent: "center" },
+  previewHostInitial: { fontFamily: FontFamily.headingBold, fontSize: 9, color: "#fff" },
+  previewHostText: { fontFamily: FontFamily.bodySemiBold, fontSize: 10, color: "#fff" },
   previewBody: { padding: 10 },
   previewTitle: {
     fontFamily: FontFamily.headingBold,
