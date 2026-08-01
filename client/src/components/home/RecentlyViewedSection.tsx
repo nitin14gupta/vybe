@@ -6,10 +6,6 @@ import { EventListCard } from '@/components/ui'
 import { Colors, FontFamily } from '@/constants'
 
 interface Props {
-  /** Reports whether this section has nothing to show — the home screen
-   * combines this with the other two sections' emptiness to decide whether
-   * to show a single "nothing here yet" state, instead of each section
-   * showing its own. */
   onEmptyChange?: (empty: boolean) => void
 }
 

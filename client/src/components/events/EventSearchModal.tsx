@@ -2,11 +2,9 @@ import { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, Modal, FlatList, ScrollView, Pressable } from 'react-native'
 import { router } from 'expo-router'
 import { X, Flame, SlidersHorizontal } from 'lucide-react-native'
-import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { hTap, hSelection } from '@/lib/haptics'
 import { Colors, FontFamily, FILTER_CHIPS, matchesChip } from '@/constants'
-import { Screen, SearchBar } from '@/components/ui'
-import { EventCard } from './EventCard'
+import { Screen, SearchBar, EventListCard, EventListCardSkeleton } from '@/components/ui'
 import { useEventSearch } from '@/hooks/useEventSearch'
 import type { EventSummary } from '@/api/apiService'
 
@@ -47,7 +45,7 @@ export function EventSearchModal({ visible, onClose, nearbyEvents, lat, lng, nea
 
   const renderCard = (item: EventSummary) => (
     <View style={s.cardWrap}>
-      <EventCard event={item} onPress={() => openEvent(item.id)} showHost />
+      <EventListCard event={item} onPress={() => openEvent(item.id)} />
     </View>
   )
 
@@ -101,13 +99,11 @@ export function EventSearchModal({ visible, onClose, nearbyEvents, lat, lng, nea
 
         {isSearching ? (
           loading ? (
-            <AutoSkeletonView isLoading animationType="gradient" defaultRadius={14} gradientColors={['#1e1e1e', '#2e2e2e']}>
-              <View style={s.listContent}>
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <View key={i} style={s.skCard} />
-                ))}
-              </View>
-            </AutoSkeletonView>
+            <View style={s.listContent}>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <EventListCardSkeleton key={i} />
+              ))}
+            </View>
           ) : searchError ? (
             <View style={s.center}>
               <Text style={s.emptyTitle}>Search failed</Text>
@@ -200,15 +196,14 @@ const s = StyleSheet.create({
   chipText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: '#fff' },
   chipTextActive: { color: '#fff', fontFamily: FontFamily.bodySemiBold },
 
-  listContent: { paddingHorizontal: 16, paddingBottom: 40, gap: 16 },
-  section: { gap: 12 },
+  listContent: { paddingHorizontal: 16, paddingBottom: 40, gap: 10 },
+  section: { gap: 10 },
   sectionTitle: {
     fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.glassTextSecondary,
     textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4,
   },
 
   cardWrap: { marginBottom: 4 },
-  skCard: { height: 220, borderRadius: 20, marginBottom: 16 },
 
   center: { alignItems: 'center', justifyContent: 'center', gap: 10, padding: 40 },
   emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 18, color: '#fff' },

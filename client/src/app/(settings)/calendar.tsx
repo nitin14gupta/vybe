@@ -1,17 +1,20 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { router } from 'expo-router'
 import {
-  ArrowLeft, ChevronLeft, ChevronRight, Search,
+  ArrowLeft, ChevronLeft, ChevronRight, SlidersHorizontal,
   CalendarHeart, Ticket as TicketIcon,
 } from 'lucide-react-native'
 import {
   AppHeader, HeaderIconBtn, CreateEventSheet,
   PrimaryButton, OutlineButton,
 } from '@/components/ui'
-import { EventSearchModal } from '@/components/events/EventSearchModal'
+// import { EventSearchModal } from '@/components/events/EventSearchModal'
 import { DayEventRow, DayEventRowSkeleton } from '@/components/calendar/DayEventRow'
-import { useCalendarEvents, dateKey } from '@/hooks/useCalendarEvents'
+import { CalendarFilterSheet } from '@/components/calendar/CalendarFilterSheet'
+import { FilterUpdatedToast } from '@/components/calendar/FilterUpdatedToast'
+import { useCalendarEvents, dateKey, DEFAULT_CALENDAR_FILTERS, type CalendarFilters } from '@/hooks/useCalendarEvents'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 import { hTap } from '@/lib/haptics'
 
@@ -26,6 +29,8 @@ function startOfDay(d: Date): Date {
   c.setHours(0, 0, 0, 0)
   return c
 }
+const CALENDAR_FILTERS_KEY = 'calendar_filters'
+
 function ordinal(n: number): string {
   const v = n % 100
   if (v >= 11 && v <= 13) return `${n}th`
@@ -41,10 +46,30 @@ export default function CalendarScreen() {
   const today = useMemo(() => startOfDay(new Date()), [])
   const [visibleMonth, setVisibleMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1))
   const [selectedDate, setSelectedDate] = useState(today)
-  const [searchOpen, setSearchOpen] = useState(false)
+  // const [searchOpen, setSearchOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [filters, setFilters] = useState<CalendarFilters>(DEFAULT_CALENDAR_FILTERS)
+  const [toastVisible, setToastVisible] = useState(false)
 
-  const { eventsByDay, loading } = useCalendarEvents(visibleMonth)
+  const { eventsByDay, loading } = useCalendarEvents(visibleMonth, filters)
+
+  // Cache the last-applied filters so they persist across visits — a plain
+  // read-once-on-mount + write-on-apply, no need for anything fancier.
+  useEffect(() => {
+    AsyncStorage.getItem(CALENDAR_FILTERS_KEY).then(raw => {
+      if (!raw) return
+      try {
+        setFilters({ ...DEFAULT_CALENDAR_FILTERS, ...JSON.parse(raw) })
+      } catch {}
+    })
+  }, [])
+
+  const applyFilters = (next: CalendarFilters) => {
+    setFilters(next)
+    setToastVisible(true)
+    AsyncStorage.setItem(CALENDAR_FILTERS_KEY, JSON.stringify(next)).catch(() => {})
+  }
 
   const gridWeeks = useMemo(() => {
     const year = visibleMonth.getFullYear()
@@ -83,16 +108,40 @@ export default function CalendarScreen() {
   const dayData = eventsByDay.get(selKey)
   const dayJoined = dayData?.joined ?? []
   const dayHosted = dayData?.hosted ?? []
+  const dayWaitlisted = dayData?.waitlisted ?? []
   const dayOther = dayData?.other ?? []
-  const hasEvents = dayJoined.length > 0 || dayHosted.length > 0 || dayOther.length > 0
+  const hasEvents = dayJoined.length > 0 || dayHosted.length > 0 || dayWaitlisted.length > 0 || dayOther.length > 0
   const isPast = selectedDate.getTime() < today.getTime()
+
+  const activeFilterCount =
+    (filters.showHosted ? 0 : 1) + (filters.showGoing ? 0 : 1) + (filters.showWaitlisted ? 0 : 1) + (filters.city ? 1 : 0)
 
   return (
     <View style={s.root}>
       <AppHeader
         title="Calendar"
         leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
-        rightAction={<HeaderIconBtn onPress={() => { hTap(); setSearchOpen(true) }}><Search size={19} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
+        rightAction={
+          <>
+            <HeaderIconBtn onPress={() => { hTap(); setFilterOpen(true) }}>
+              <View>
+                <SlidersHorizontal size={18} color={Colors.inkPrimary} strokeWidth={2} />
+                {activeFilterCount > 0 && (
+                  <View style={s.filterBadge}>
+                    <Text style={s.filterBadgeText}>{activeFilterCount}</Text>
+                  </View>
+                )}
+              </View>
+            </HeaderIconBtn>
+            {/* <HeaderIconBtn onPress={() => { hTap(); setSearchOpen(true) }}><Search size={19} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn> */}
+          </>
+        }
+      />
+
+      <FilterUpdatedToast
+        visible={toastVisible}
+        onView={() => setToastVisible(false)}
+        onDismiss={() => setToastVisible(false)}
       />
 
       <View style={s.monthRow}>
@@ -175,6 +224,14 @@ export default function CalendarScreen() {
                 </View>
               </View>
             )}
+            {dayWaitlisted.length > 0 && (
+              <View style={s.section}>
+                <Text style={s.sectionLabel}>WAITLISTED</Text>
+                <View style={s.cardsCol}>
+                  {dayWaitlisted.map(e => <DayEventRow key={e.id} event={e} />)}
+                </View>
+              </View>
+            )}
             {dayOther.length > 0 && (
               <View style={s.section}>
                 <Text style={s.sectionLabel}>HAPPENING NEARBY</Text>
@@ -208,11 +265,17 @@ export default function CalendarScreen() {
         )}
       </View>
 
-      <EventSearchModal visible={searchOpen} onClose={() => setSearchOpen(false)} nearbyEvents={[]} />
+      {/* <EventSearchModal visible={searchOpen} onClose={() => setSearchOpen(false)} nearbyEvents={[]} /> */}
       <CreateEventSheet
         visible={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreateEvent={() => router.push('/(events)/create' as any)}
+      />
+      <CalendarFilterSheet
+        visible={filterOpen}
+        filters={filters}
+        onApply={applyFilters}
+        onClose={() => setFilterOpen(false)}
       />
     </View>
   )
@@ -232,6 +295,13 @@ const s = StyleSheet.create({
     backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.divider,
   },
   todayBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: Colors.inkPrimary },
+  filterBadge: {
+    position: 'absolute', top: -4, right: -4,
+    minWidth: 16, height: 16, borderRadius: 8, paddingHorizontal: 3,
+    backgroundColor: Colors.brandOrange,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  filterBadgeText: { fontFamily: FontFamily.bodySemiBold, fontSize: 10, color: '#fff' },
 
   weekHeader: { flexDirection: 'row', paddingHorizontal: Spacing.screenPadding, marginBottom: 4 },
   weekHeaderText: {

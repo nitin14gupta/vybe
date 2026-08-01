@@ -6,12 +6,18 @@ import { Colors, FontFamily, Radius, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/
 import { formatEventDate } from '@/components/events/EventCard'
 import type { EventSummary } from '@/api/apiService'
 
-export function EventListCard({ event }: { event: EventSummary }) {
+function formatPrice(price: number, isFree: boolean) {
+  if (isFree) return 'Free'
+  if (price >= 1000) return '₹' + (price / 1000).toFixed(price % 1000 === 0 ? 0 : 1) + 'k'
+  return '₹' + price
+}
+
+export function EventListCard({ event, onPress }: { event: EventSummary; onPress?: () => void }) {
   const cover = event.cover_photos?.[0]?.url
   const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
 
   return (
-    <Pressable style={s.row} onPress={() => router.push(`/(events)/${event.id}` as any)}>
+    <Pressable style={s.row} onPress={onPress ?? (() => router.push(`/(events)/${event.id}` as any))}>
       <View style={s.thumb}>
         {cover ? (
           <Image source={{ uri: cover }} style={s.thumbImg} resizeMode="cover" />
@@ -29,6 +35,9 @@ export function EventListCard({ event }: { event: EventSummary }) {
             </View>
           )
         ) : null}
+        <View style={[s.priceBadge, event.is_free && s.priceBadgeFree]}>
+          <Text style={s.priceText}>{formatPrice(event.price_inr, event.is_free)}</Text>
+        </View>
       </View>
 
       <View style={s.info}>
@@ -93,6 +102,13 @@ const s = StyleSheet.create({
   },
   hostBadgeFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
   hostInitial: { fontFamily: FontFamily.headingBold, fontSize: 9, color: '#fff' },
+  priceBadge: {
+    position: 'absolute', bottom: 5, right: 5,
+    backgroundColor: 'rgba(17,17,17,0.85)',
+    borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
+  },
+  priceBadgeFree: { backgroundColor: 'rgba(0,196,140,0.85)' },
+  priceText: { fontFamily: FontFamily.bodySemiBold, fontSize: 10, color: '#fff' },
 
   info: { flex: 1, minWidth: 0, gap: 5 },
   title: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },

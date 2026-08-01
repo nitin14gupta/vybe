@@ -69,15 +69,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   side: {
-    width: 40,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
+    minWidth: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 8,
   },
   sideLogo: {
     marginLeft: 6,
   },
   sideRight: {
-    alignItems: 'flex-end',
+    justifyContent: 'flex-end',
   },
   center: {
     flex: 1,

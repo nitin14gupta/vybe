@@ -419,6 +419,45 @@ def get_joined_events(current_user: dict = Depends(get_current_user)):
     return result
 
 
+# ── GET /events/waitlisted — events I'm on the waitlist for ──────────────────
+
+@router.get("/waitlisted", response_model=List[EventSummary])
+def get_waitlisted_events(current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    with get_db() as (cur, _):
+        cur.execute(
+            """
+            SELECT
+                e.id::text,
+                e.title, e.event_type,
+                e.date_time::text, e.end_time::text,
+                e.location_name, e.location_lat, e.location_lng,
+                e.price_inr, (e.price_inr = 0) AS is_free,
+            e.platform_fee_inr, e.host_commission_inr, e.platform_profit_inr,
+                e.spots_left, e.capacity, e.age_restriction,
+                e.cover_photos, e.is_cancelled,
+                NULL::int AS distance_km,
+                u.name AS host_name,
+                (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
+                COALESCE(u.is_deleted, FALSE) AS host_is_deleted,
+                (SELECT COUNT(*) FROM event_attendees ea2 WHERE ea2.event_id = e.id AND ea2.status = 'going')::int AS attendee_count
+            FROM events e
+            JOIN users u ON u.id = e.host_id
+            JOIN event_attendees ea ON ea.event_id = e.id AND ea.user_id = %s::uuid AND ea.status = 'waitlist'
+            ORDER BY e.date_time ASC
+            """,
+            (uid,),
+        )
+        rows = cur.fetchall()
+    result = []
+    for row in rows:
+        d = dict(row)
+        photos_raw = d.get("cover_photos") or []
+        d["cover_photos"] = [{"url": p, "position": i} for i, p in enumerate(photos_raw)] if isinstance(photos_raw, list) and photos_raw and isinstance(photos_raw[0], str) else photos_raw
+        result.append(d)
+    return result
+
+
 # ── GET /events/free-slots ────────────────────────────────────────────────────
 # Must be registered BEFORE /{event_id} so FastAPI doesn't swallow "free-slots" as a UUID.
 

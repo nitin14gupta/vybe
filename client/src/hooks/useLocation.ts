@@ -1,37 +1,43 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Linking } from 'react-native'
 import { router } from 'expo-router'
 import * as Location from 'expo-location'
 import { useOnboardingStore } from '@/store/onboarding'
-import { setLocation, getCities } from '@/api/user'
+import { setLocation } from '@/api/user'
 import type { CityResponse } from '@/api/user'
 import { usePillStore } from '@/store/pillStore'
+import { useCities } from '@/hooks/useCities'
 
 export type { CityResponse }
 
 export function useLocation() {
   const store = useOnboardingStore()
   const showPill = usePillStore.getState().show
-  const [cities, setCities] = useState<CityResponse[]>([])
+  const { cities, loading: citiesLoading } = useCities()
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [detecting, setDetecting] = useState(false)
+  const [permissionGranted, setPermissionGranted] = useState(false)
+  const autoDetected = useRef(false)
 
+  // Request permission immediately, in parallel with the (shared, possibly
+  // already-cached) city list — don't make the permission prompt wait on a
+  // network round trip.
   useEffect(() => {
-    const init = async () => {
-      // Load cities and request permission in parallel
-      const [data, { status }] = await Promise.all([
-        getCities().catch(() => [] as CityResponse[]),
-        Location.requestForegroundPermissionsAsync(),
-      ])
-      setCities(data)
-      // If user just allowed (or had already allowed), auto-detect immediately
-      if (status === 'granted') {
-        runDetect(data)
-      }
-    }
-    init()
+    Location.requestForegroundPermissionsAsync().then(({ status }) => {
+      if (status === 'granted') setPermissionGranted(true)
+    })
   }, [])
+
+  // Auto-detect once permission is granted AND the city list has settled
+  // (loaded or failed) — cities.length alone can't distinguish "still
+  // loading" from "loaded empty", so gate on the hook's own loading flag.
+  useEffect(() => {
+    if (!permissionGranted || citiesLoading || autoDetected.current) return
+    autoDetected.current = true
+    runDetect(cities)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [permissionGranted, citiesLoading])
 
   // Core GPS detection — takes cityList explicitly so it works before state settles
   const runDetect = async (cityList: CityResponse[]) => {

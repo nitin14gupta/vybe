@@ -12,7 +12,7 @@ function formatPrice(price: number) {
   return '₹' + price
 }
 
-export function SmallEventCard({ event }: { event: EventSummary }) {
+export function SmallEventCard({ event, onPress }: { event: EventSummary; onPress?: () => void }) {
   const dateObj = new Date(event.date_time)
   const dayStr = dateObj.toLocaleDateString('en-US', { day: 'numeric' })
   const monthStr = dateObj.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()
@@ -21,7 +21,7 @@ export function SmallEventCard({ event }: { event: EventSummary }) {
   return (
     <Pressable
       style={({ pressed }) => [s.card, pressed && { opacity: 0.8 }]}
-      onPress={() => router.push(`/(events)/${event.id}` as any)}
+      onPress={onPress ?? (() => router.push(`/(events)/${event.id}` as any))}
     >
       <View style={s.imageContainer}>
         {event.cover_photos?.[0]?.url ? (
@@ -39,6 +39,9 @@ export function SmallEventCard({ event }: { event: EventSummary }) {
         <Text style={s.subtitle} numberOfLines={1}>
           {timeStr}
         </Text>
+        <View style={s.priceWrap}>
+          <Text style={[s.priceText, event.is_free && s.priceTextFree]}>{formatPrice(event.price_inr)}</Text>
+        </View>
       </View>
     </Pressable>
   )
@@ -46,7 +49,7 @@ export function SmallEventCard({ event }: { event: EventSummary }) {
 
 const s = StyleSheet.create({
   card: {
-    width: 300,
+    width: '100%',
     flexDirection: 'row',
     backgroundColor: 'rgba(255,255,255,0.02)',
     borderRadius: 16,
@@ -110,5 +113,8 @@ const s = StyleSheet.create({
     fontFamily: FontFamily.bodyMedium,
     fontSize: 11,
     color: Colors.inkSecondary,
+  },
+  priceTextFree: {
+    color: Colors.accentGreen,
   },
 })

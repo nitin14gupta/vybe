@@ -718,6 +718,10 @@ class ApiService {
     return this.get<EventSummary[]>('/events/joined')
   }
 
+  static async getMyWaitlistedEvents(): Promise<EventSummary[]> {
+    return this.get<EventSummary[]>('/events/waitlisted')
+  }
+
   // ── Upload ─────────────────────────────────────────────────────────────────
 
   static async uploadPhoto(uri: string, position: number): Promise<string> {
