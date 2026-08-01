@@ -568,6 +568,16 @@ def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, curre
     with get_db() as (cur, conn):
         cur.execute(
             """
+            SELECT COUNT(*)::int AS count FROM events
+            WHERE host_id = %s::uuid AND is_cancelled = FALSE
+            """,
+            (current_user["id"],),
+        )
+        hosted_count_before = cur.fetchone()["count"]
+        badge_before = compute_host_badges(hosted_count_before)
+
+        cur.execute(
+            """
             INSERT INTO events (
                 host_id, title, description, rules, event_type,
                 date_time, end_time, capacity, spots_left, age_restriction,
@@ -593,8 +603,13 @@ def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, curre
         )
         new_id = cur.fetchone()["id"]
 
+        # Did this event push the host into a new badge tier? (e.g. their
+        # 2nd non-cancelled event → "Rising", 10th → "Established", ...)
+        badge_after = compute_host_badges(hosted_count_before + 1)
+        new_badge = badge_after[0] if badge_after and badge_after != badge_before else None
+
         # Notify followers about the new event
-        from routes.notifications import notify_followers_event_created, notify_event_created
+        from routes.notifications import notify_followers_event_created, notify_event_created, notify_host_badge_earned, HOST_BADGE_COPY
         cur.execute("SELECT name FROM users WHERE id = %s::uuid", (current_user["id"],))
         host_row = cur.fetchone()
         host_name = host_row["name"] if host_row else "Someone"
@@ -602,6 +617,9 @@ def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, curre
 
         # Confirm to the host that their event was created successfully
         notify_event_created(cur, current_user["id"], new_id, body.title)
+
+        if new_badge:
+            notify_host_badge_earned(cur, current_user["id"], new_badge)
 
         # Collect follower IDs for push delivery after commit
         cur.execute(
@@ -611,7 +629,7 @@ def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, curre
         follower_ids = [r["follower_id"] for r in cur.fetchall()]
         conn.commit()
 
-    from utils.push import get_event_image_url
+    from utils.push import get_event_image_url, get_user_avatar_url
     cover_url = get_event_image_url(new_id)
 
     for fid in follower_ids:
@@ -626,6 +644,15 @@ def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, curre
         f"{body.title} was posted successfully.",
         {"type": "event", "event_id": new_id}, cover_url, category="hosting",
     )
+
+    if new_badge:
+        badge_title, badge_body = HOST_BADGE_COPY.get(new_badge, (f"You're a {new_badge} Host now!", None))
+        avatar_url = get_user_avatar_url(current_user["id"])
+        background_tasks.add_task(
+            send_push, current_user["id"], badge_title,
+            badge_body or "",
+            {"type": "profile", "user_id": current_user["id"]}, avatar_url, category="hosting",
+        )
 
     return get_event(new_id, current_user)
 

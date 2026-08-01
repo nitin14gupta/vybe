@@ -90,7 +90,7 @@ def compute_host_badges(hosted_events_count: int) -> list[str]:
         return ["Elite"]
     elif hosted_events_count >= 10:
         return ["Established"]
-    elif hosted_events_count >= 3:
+    elif hosted_events_count >= 2:
         return ["Rising"]
     return []
 

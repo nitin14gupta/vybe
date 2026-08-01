@@ -1,6 +1,6 @@
 import React from 'react'
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
-import { Colors } from '@/constants'
+import { Colors, DESCRIPTION_TEMPLATES, RULES_TEMPLATES } from '@/constants'
 import type { CreateEventForm } from '@/hooks/useCreateEvent'
 import { ef, EVENT_TYPES } from './styles'
 
@@ -12,6 +12,18 @@ interface Props {
   disabled?: boolean
   /** Wrap in ScrollView (default true — set false when parent already scrolls) */
   scrollable?: boolean
+}
+
+// Picks a random template, re-rolling once if it lands on the text already
+// in the field — so tapping "Prefill" twice in a row visibly swaps instead
+// of occasionally looking like a no-op.
+function randomTemplate(list: string[], current: string): string {
+  if (list.length <= 1) return list[0] ?? ''
+  let pick = list[Math.floor(Math.random() * list.length)]
+  if (pick === current) {
+    pick = list[Math.floor(Math.random() * list.length)]
+  }
+  return pick
 }
 
 function Inner({ form, set, errors, setErrors, disabled }: Omit<Props, 'scrollable'>) {
@@ -47,7 +59,17 @@ function Inner({ form, set, errors, setErrors, disabled }: Omit<Props, 'scrollab
         ))}
       </View>
 
-      <Text style={[ef.fieldLabel, { marginTop: 20 }]}>Description</Text>
+      <View style={[ef.fieldLabelRow, { marginTop: 20 }]}>
+        <Text style={ef.fieldLabel}>Description</Text>
+        {!disabled && (
+          <Pressable
+            style={ef.autofillBtn}
+            onPress={() => set('description', randomTemplate(DESCRIPTION_TEMPLATES, form.description).slice(0, 500))}
+          >
+            <Text style={ef.autofillBtnText}>Prefill</Text>
+          </Pressable>
+        )}
+      </View>
       <View style={ef.inputWrap}>
         <TextInput
           style={[ef.textInput, ef.textArea]}
@@ -62,7 +84,17 @@ function Inner({ form, set, errors, setErrors, disabled }: Omit<Props, 'scrollab
         <Text style={ef.charCount}>{form.description.length}/500</Text>
       </View>
 
-      <Text style={[ef.fieldLabel, { marginTop: 20 }]}>House Rules (optional)</Text>
+      <View style={[ef.fieldLabelRow, { marginTop: 20 }]}>
+        <Text style={ef.fieldLabel}>House Rules (optional)</Text>
+        {!disabled && (
+          <Pressable
+            style={ef.autofillBtn}
+            onPress={() => set('rules', randomTemplate(RULES_TEMPLATES, form.rules).slice(0, 200))}
+          >
+            <Text style={ef.autofillBtnText}>Prefill</Text>
+          </Pressable>
+        )}
+      </View>
       <View style={ef.inputWrap}>
         <TextInput
           style={[ef.textInput, ef.textArea]}

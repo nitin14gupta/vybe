@@ -64,6 +64,20 @@ export function EventCard({ event, onPress, showHost, isPast, isCancelled, foote
           <Text style={s.priceText}>{formatPrice(event.price_inr, event.is_free)}</Text>
         </View>
 
+        {/* Host pill — avatar + name, Partiful-style organizer credit */}
+        {event.host_name && !event.host_is_deleted ? (
+          <View style={s.hostPill}>
+            {event.host_avatar ? (
+              <Image source={{ uri: event.host_avatar }} style={s.hostPillAvatar} />
+            ) : (
+              <View style={[s.hostPillAvatar, s.hostPillAvatarFallback]}>
+                <Text style={s.hostPillInitial}>{event.host_name.charAt(0).toUpperCase()}</Text>
+              </View>
+            )}
+            <Text style={s.hostPillText} numberOfLines={1}>{event.host_name}</Text>
+          </View>
+        ) : null}
+
         {/* Status badges */}
         {isCancelled ? (
           <View style={[s.statusBadge, s.cancelledBadge]}>
@@ -146,8 +160,25 @@ const s = StyleSheet.create({
   priceBadgeFree: { backgroundColor: Colors.accentGreen },
   priceText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: '#fff' },
 
-  statusBadge: {
+  hostPill: {
     position: 'absolute', top: 12, left: 12,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: 'rgba(17,17,17,0.72)',
+    borderRadius: 20, paddingLeft: 4, paddingRight: 10, paddingVertical: 4,
+    maxWidth: '65%',
+  },
+  hostPillAvatar: { width: 20, height: 20, borderRadius: 10 },
+  // Neutral dark circle + white initial — matches the app's existing
+  // no-photo avatar convention (e.g. ChatHeader), not an attention-grabbing
+  // brand color that would compete with the price badge on the same card.
+  hostPillAvatarFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
+  hostPillInitial: { fontFamily: FontFamily.headingBold, fontSize: 11, color: '#fff' },
+  hostPillText: { fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: '#fff' },
+
+  // Sits below the host pill (top:12 + ~28px height + gap) rather than
+  // sharing its corner — Cancelled/Past events still show who hosted them.
+  statusBadge: {
+    position: 'absolute', top: 50, left: 12,
     backgroundColor: 'rgba(17,17,17,0.85)',
     borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3,
   },

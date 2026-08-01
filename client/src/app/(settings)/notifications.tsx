@@ -6,7 +6,7 @@ import {
 import { hTap } from '@/lib/haptics'
 import { router } from 'expo-router'
 import { useFocusEffect } from 'expo-router'
-import { ArrowLeft, Bell, UserPlus, Flame, MessageCircle, PartyPopper, ShieldCheck } from 'lucide-react-native'
+import { ArrowLeft, Bell, UserPlus, Flame, MessageCircle, PartyPopper, ShieldCheck, Trophy } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import ApiService, { AppNotification } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
@@ -57,12 +57,10 @@ const ACTION_ICON: Record<string, any> = {
   message: MessageCircle,
 }
 
-// Notification types with no actor avatar or event cover photo get a
-// branded fallback glyph instead of a plain bell, so "you're all set to
-// host" etc. feel like a moment rather than a generic ping.
 const TYPE_FALLBACK: Record<string, { Icon: any; bg: string; color: string }> = {
   host_onboarding_complete: { Icon: PartyPopper, bg: 'rgba(255,107,53,0.16)', color: Colors.brandOrange },
   report_submitted: { Icon: ShieldCheck, bg: 'rgba(255,107,53,0.16)', color: Colors.brandOrange },
+  host_badge_earned: { Icon: Trophy, bg: 'rgba(255,107,53,0.16)', color: Colors.brandOrange },
 }
 
 function NotifRow({ item, onPress, onAction }: {

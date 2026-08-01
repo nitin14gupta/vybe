@@ -43,6 +43,22 @@ def get_event_image_url(event_id: str):
         return None
 
 
+def get_user_avatar_url(user_id: str):
+    """Fetches a user's first (position 0) profile photo — square 1:1 crop —
+    for use as a push notification image, e.g. self-notifying a host about
+    their own badge tier-up."""
+    try:
+        with get_db() as (cur, _):
+            cur.execute(
+                "SELECT url FROM user_photos WHERE user_id = %s::uuid ORDER BY position LIMIT 1",
+                (user_id,),
+            )
+            row = cur.fetchone()
+        return row["url"] if row else None
+    except Exception:
+        return None
+
+
 def send_push(user_id: str, title: str, body: str, data: dict = None, image_url: str = None, category: str = None):
     try:
         if category is not None and not _category_enabled(user_id, category):

@@ -6,13 +6,6 @@ import { Colors, FontFamily, Radius, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/
 import { formatEventDate } from '@/components/events/EventCard'
 import type { EventSummary } from '@/api/apiService'
 
-// Full-width list row (16:9 thumbnail + title/time/location + chevron), used
-// by the Calendar screen's day panel. `style` on the outer Pressable must
-// stay a plain object/array, NOT a `({pressed}) => [...]` function — that
-// form silently failed to apply in this app's RN setup (children fell back
-// to View defaults: column direction, full-width stretch) even though every
-// other Pressable using a plain style renders fine. Cost a long debugging
-// loop to pin down, so: don't reintroduce it here.
 export function DayEventRow({ event }: { event: EventSummary }) {
   const cover = event.cover_photos?.[0]?.url
   const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
@@ -27,6 +20,15 @@ export function DayEventRow({ event }: { event: EventSummary }) {
             <TypeIcon size={20} color={Colors.inkDisabled} strokeWidth={1.5} />
           </View>
         )}
+        {event.host_name && !event.host_is_deleted ? (
+          event.host_avatar ? (
+            <Image source={{ uri: event.host_avatar }} style={s.hostBadge} />
+          ) : (
+            <View style={[s.hostBadge, s.hostBadgeFallback]}>
+              <Text style={s.hostInitial}>{event.host_name.charAt(0).toUpperCase()}</Text>
+            </View>
+          )
+        ) : null}
       </View>
 
       <View style={s.info}>
@@ -77,9 +79,16 @@ const s = StyleSheet.create({
   // Fixed width+height (16:9) instead of `aspectRatio` — that style prop is
   // unreliable across RN/Yoga versions paired with a fixed width and no
   // explicit height.
-  thumb: { width: 100, height: 56, borderRadius: 10, overflow: 'hidden' },
+  thumb: { width: 100, height: 56, borderRadius: 10, overflow: 'hidden', position: 'relative' },
   thumbImg: { width: '100%', height: '100%' },
   thumbFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
+  hostBadge: {
+    position: 'absolute', top: 4, left: 4,
+    width: 18, height: 18, borderRadius: 9,
+    borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.85)',
+  },
+  hostBadgeFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
+  hostInitial: { fontFamily: FontFamily.headingBold, fontSize: 8, color: '#fff' },
 
   info: { flex: 1, minWidth: 0, gap: 4 },
   title: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.inkPrimary },

@@ -20,6 +20,15 @@ export function EventListCard({ event }: { event: EventSummary }) {
             <TypeIcon size={22} color={Colors.inkDisabled} strokeWidth={1.5} />
           </View>
         )}
+        {event.host_name && !event.host_is_deleted ? (
+          event.host_avatar ? (
+            <Image source={{ uri: event.host_avatar }} style={s.hostBadge} />
+          ) : (
+            <View style={[s.hostBadge, s.hostBadgeFallback]}>
+              <Text style={s.hostInitial}>{event.host_name.charAt(0).toUpperCase()}</Text>
+            </View>
+          )
+        ) : null}
       </View>
 
       <View style={s.info}>
@@ -74,12 +83,16 @@ const s = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
-  // Fixed width+height (16:9) instead of `aspectRatio` — that style prop is
-  // unreliable across RN/Yoga versions paired with a fixed width and no
-  // explicit height.
-  thumb: { width: 120, height: 68, borderRadius: 14, overflow: 'hidden' },
+  thumb: { width: 120, height: 68, borderRadius: 14, overflow: 'hidden', position: 'relative' },
   thumbImg: { width: '100%', height: '100%' },
   thumbFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
+  hostBadge: {
+    position: 'absolute', top: 5, left: 5,
+    width: 20, height: 20, borderRadius: 10,
+    borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.85)',
+  },
+  hostBadgeFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
+  hostInitial: { fontFamily: FontFamily.headingBold, fontSize: 9, color: '#fff' },
 
   info: { flex: 1, minWidth: 0, gap: 5 },
   title: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },

@@ -78,6 +78,30 @@ def notify_host_onboarding_complete(cur, user_id: str):
     )
 
 
+HOST_BADGE_COPY = {
+    "Rising": ("You're a Rising Host now! \U0001f31f", "Keep it up — more hosted events means more visibility for your next one."),
+    "Established": ("You're an Established Host!", "Your track record is showing — expect more reach in Discover and Trending."),
+    "Elite": ("You're an Elite Host!", "Top-tier hosting, unlocked. Your events now get priority placement."),
+    "Legend": ("You're a Legend Host! \U0001f451", "75+ events hosted. Maximum visibility across Discover and Trending — nice work."),
+}
+
+
+def notify_host_badge_earned(cur, user_id: str, badge_name: str):
+    """Fired when a host's hosted-event count crosses a new badge tier
+    (see routes.users.compute_host_badges) — actor_id is set to the host
+    themselves so the notification list's existing actor_avatar join
+    surfaces their own profile photo, no separate image plumbing needed."""
+    title, body = HOST_BADGE_COPY.get(badge_name, (f"You're a {badge_name} Host now!", None))
+    _insert_notification(
+        cur, user_id, "host_badge_earned",
+        title=title,
+        body=body,
+        actor_id=user_id,
+        entity_id=user_id,
+        entity_type="user",
+    )
+
+
 def notify_event_created(cur, host_id: str, event_id: str, event_title: str):
     _insert_notification(
         cur, host_id, "event_created_confirmation",
