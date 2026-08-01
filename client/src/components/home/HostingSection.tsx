@@ -9,9 +9,6 @@ import { Colors, FontFamily } from '@/constants'
 
 const CARD_WIDTH = 240
 
-// Every upcoming event you're hosting — mirrors UpNextSection but for the
-// host side. Presentational only — MyEventsSection fetches and orders it
-// against UpNextSection by whichever has the nearer date.
 export function HostingSection({ events }: { events: EventSummary[] }) {
   if (events.length === 0) return null
 

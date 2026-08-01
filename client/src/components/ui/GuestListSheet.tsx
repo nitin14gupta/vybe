@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Image } from 'expo-image'
 import { router } from 'expo-router'
 import { BlurView } from 'expo-blur'
+import { LinearGradient } from 'expo-linear-gradient'
 import { BottomSheetModal, BottomSheetView, BottomSheetFlatList, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
@@ -22,22 +23,11 @@ interface Props {
   guests: EventGuest[]
   total: number
   waitlist?: EventGuest[]
-  /** Full guest list is only shown to attendees who've RSVP'd/have a ticket —
-   * everyone else sees the first few unblurred and the rest teased behind a
-   * blur, so identities are gated behind actually joining the event. */
   canViewFull?: boolean
-  /** Shows a shimmering placeholder grid instead of the real/empty state
-   * while the parent's guest fetch is still in flight — the sheet itself
-   * still opens immediately (see `useEffect(() => sheetRef.current?.present())`
-   * below), this only swaps what's inside it. */
   loading?: boolean
   onClose: () => void
 }
 
-// Flat shapes only, no background/shadow on any wrapping view — AutoSkeletonView
-// shimmers every child with its own background color, so a solid-colored
-// wrapper competes with the tiles underneath and just reads as a static block
-// (see EventCard.tsx's EventCardSkeleton for the same fix, in more detail).
 function GuestTileSkeleton() {
   return (
     <View style={t.root}>
@@ -193,7 +183,7 @@ function GuestListSheetCore({ eventId, guests, total, waitlist = [], canViewFull
 
   const isLocked = !canViewFull && guests.length > VISIBLE_COUNT
   const visibleGuests = isLocked ? guests.slice(0, VISIBLE_COUNT) : guests
-  const lockedGuests = isLocked ? guests.slice(VISIBLE_COUNT, VISIBLE_COUNT + 3) : []
+  const lockedGuests = isLocked ? guests.slice(VISIBLE_COUNT, VISIBLE_COUNT + 6) : []
   const lockedCount = guests.length - VISIBLE_COUNT
 
   const LockedTeaser = isLocked ? (
@@ -210,9 +200,21 @@ function GuestListSheetCore({ eventId, guests, total, waitlist = [], canViewFull
           </View>
         ))}
       </View>
-      <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+      <BlurView
+        intensity={100}
+        tint="dark"
+        experimentalBlurMethod="dimezisBlurView"
+        style={StyleSheet.absoluteFill}
+      />
+      <LinearGradient
+        colors={['rgba(26,26,26,0.45)', 'rgba(26,26,26,0.85)', 'rgba(26,26,26,0.96)']}
+        locations={[0, 0.3, 1]}
+        style={StyleSheet.absoluteFill}
+      />
       <View style={s.lockedOverlay}>
-        <Lock size={22} color={Colors.inkPrimary} strokeWidth={1.8} />
+        <View style={s.lockedIconBadge}>
+          <Lock size={18} color={Colors.inkPrimary} strokeWidth={2} />
+        </View>
         <Text style={s.lockedTitle}>+{lockedCount} more guest{lockedCount === 1 ? '' : 's'}</Text>
         <Text style={s.lockedSub}>Join the event to see who's going</Text>
       </View>
@@ -331,18 +333,37 @@ const s = StyleSheet.create({
   waitlistGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   lockedSection: {
     marginTop: 4,
-    borderRadius: 16,
     overflow: 'hidden',
-    minHeight: 140,
+    minHeight: 170,
   },
-  lockedGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12 },
-  lockedNameStub: { width: 48, height: 10, borderRadius: 5, backgroundColor: Colors.elevated },
+  lockedGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+    paddingTop: 14,
+    opacity: 0.9,
+  },
+  lockedNameStub: { width: 48, height: 10, borderRadius: 5, backgroundColor: Colors.divider },
   lockedOverlay: {
     ...StyleSheet.absoluteFill,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     gap: 4,
+    paddingBottom: 24,
+    paddingHorizontal: 24,
   },
-  lockedTitle: { fontFamily: FontFamily.headingBold, fontSize: 15, color: Colors.inkPrimary },
-  lockedSub: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary },
+  lockedIconBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.glassSurface,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  lockedTitle: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
+  lockedSub: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, textAlign: 'center' },
 })

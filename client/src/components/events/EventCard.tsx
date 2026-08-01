@@ -205,8 +205,6 @@ const s = StyleSheet.create({
 
   spotsBar: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: 'rgba(255,107,53,0.1)',
-    borderTopWidth: 1, borderTopColor: 'rgba(255,107,53,0.2)',
     paddingHorizontal: 14, paddingVertical: 8,
   },
   spotsText: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.brandOrange },
