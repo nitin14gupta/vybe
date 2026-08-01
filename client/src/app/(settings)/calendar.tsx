@@ -44,7 +44,7 @@ export default function CalendarScreen() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
 
-  const { eventsByDay, loading } = useCalendarEvents()
+  const { eventsByDay, loading } = useCalendarEvents(visibleMonth)
 
   const gridWeeks = useMemo(() => {
     const year = visibleMonth.getFullYear()
@@ -83,7 +83,8 @@ export default function CalendarScreen() {
   const dayData = eventsByDay.get(selKey)
   const dayJoined = dayData?.joined ?? []
   const dayHosted = dayData?.hosted ?? []
-  const hasEvents = dayJoined.length > 0 || dayHosted.length > 0
+  const dayOther = dayData?.other ?? []
+  const hasEvents = dayJoined.length > 0 || dayHosted.length > 0 || dayOther.length > 0
   const isPast = selectedDate.getTime() < today.getTime()
 
   return (
@@ -171,6 +172,14 @@ export default function CalendarScreen() {
                 <Text style={s.sectionLabel}>HOSTING</Text>
                 <View style={s.cardsCol}>
                   {dayHosted.map(e => <DayEventRow key={e.id} event={e} />)}
+                </View>
+              </View>
+            )}
+            {dayOther.length > 0 && (
+              <View style={s.section}>
+                <Text style={s.sectionLabel}>HAPPENING NEARBY</Text>
+                <View style={s.cardsCol}>
+                  {dayOther.map(e => <DayEventRow key={e.id} event={e} />)}
                 </View>
               </View>
             )}

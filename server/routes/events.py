@@ -209,7 +209,13 @@ def list_events(
     max_lat: Optional[float] = Query(default=None),
     min_lng: Optional[float] = Query(default=None),
     max_lng: Optional[float] = Query(default=None),
-    limit: int = Query(default=30, le=50),
+    # Calendar-style date-window queries (e.g. "everything in the next 90
+    # days") need a much higher cap than the browse/map feeds — a plain
+    # distance/relevance-ranked top-30 silently drops real events that are
+    # merely farther away, which reads as "the calendar is missing events."
+    start_date: Optional[str] = Query(default=None),
+    end_date: Optional[str] = Query(default=None),
+    limit: int = Query(default=30, le=200),
     current_user: dict = Depends(get_current_user),
 ):
     viewer_id = current_user["id"]
@@ -232,6 +238,13 @@ def list_events(
         filters.append("e.date_time::date = CURRENT_DATE")
     elif date_range == "weekend":
         filters.append("EXTRACT(DOW FROM e.date_time) IN (5, 6, 0)")
+
+    if start_date:
+        filters.append("e.date_time::date >= %s")
+        filter_params.append(start_date)
+    if end_date:
+        filters.append("e.date_time::date <= %s")
+        filter_params.append(end_date)
 
     if q:
         filters.append("(e.title ILIKE %s OR e.location_name ILIKE %s)")

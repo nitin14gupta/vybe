@@ -49,8 +49,7 @@ const s = StyleSheet.create({
   pill: {
     position: 'absolute',
     alignSelf: 'center',
-    left: 32,
-    right: 32,
+    maxWidth: Dimensions.get('window').width - 64,
     zIndex: 9999,
     borderRadius: 999,
     paddingHorizontal: 20,

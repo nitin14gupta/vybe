@@ -544,6 +544,10 @@ class ApiService {
     max_lat?: number
     min_lng?: number
     max_lng?: number
+    /** 'YYYY-MM-DD', inclusive — for calendar-style date-window queries */
+    start_date?: string
+    /** 'YYYY-MM-DD', inclusive — for calendar-style date-window queries */
+    end_date?: string
     limit?: number
   } = {}): Promise<EventSummary[]> {
     const params = new URLSearchParams()
@@ -558,6 +562,8 @@ class ApiService {
     if (filters.max_lat != null) params.set('max_lat', String(filters.max_lat))
     if (filters.min_lng != null) params.set('min_lng', String(filters.min_lng))
     if (filters.max_lng != null) params.set('max_lng', String(filters.max_lng))
+    if (filters.start_date) params.set('start_date', filters.start_date)
+    if (filters.end_date) params.set('end_date', filters.end_date)
     if (filters.limit != null) params.set('limit', String(filters.limit))
     const qs = params.toString()
     return this.get<EventSummary[]>(`${ENDPOINTS.EVENTS}${qs ? '?' + qs : ''}`)
