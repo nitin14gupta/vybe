@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { router } from 'expo-router'
 import {
-  ArrowLeft, ChevronLeft, ChevronRight, SlidersHorizontal,
+  ArrowLeft, ChevronLeft, ChevronRight, ListFilter,
   CalendarHeart, Ticket as TicketIcon,
 } from 'lucide-react-native'
 import {
@@ -125,7 +125,7 @@ export default function CalendarScreen() {
           <>
             <HeaderIconBtn onPress={() => { hTap(); setFilterOpen(true) }}>
               <View>
-                <SlidersHorizontal size={18} color={Colors.inkPrimary} strokeWidth={2} />
+                <ListFilter size={18} color={Colors.inkPrimary} strokeWidth={2} />
                 {activeFilterCount > 0 && (
                   <View style={s.filterBadge}>
                     <Text style={s.filterBadgeText}>{activeFilterCount}</Text>

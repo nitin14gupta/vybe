@@ -5,7 +5,7 @@ import Animated, {
   withTiming, withSpring, runOnJS, Easing,
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { SlidersHorizontal } from 'lucide-react-native'
+import { ListFilter } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 
@@ -48,7 +48,7 @@ export function FilterUpdatedToast({ visible, onView, onDismiss }: {
   return (
     <Animated.View style={[s.wrap, { top: insets.top + 8 }, animStyle]} pointerEvents="box-none">
       <Animated.View style={s.pill}>
-        <SlidersHorizontal size={14} color={Colors.inkPrimary} strokeWidth={2} />
+        <ListFilter size={14} color={Colors.inkPrimary} strokeWidth={2} />
         <Text style={s.text}>Filters updated</Text>
         <Pressable onPress={() => { hTap(); onView() }} style={s.viewBtn} hitSlop={8}>
           <Text style={s.viewText}>View</Text>

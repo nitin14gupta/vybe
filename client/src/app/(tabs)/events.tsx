@@ -26,7 +26,7 @@ import { useEvents } from "@/hooks/useEvents";
 import type { EventSummary } from "@/api/apiService";
 import { EventCard, formatEventDate } from "@/components/events/EventCard";
 import { EventSearchModal } from "@/components/events/EventSearchModal";
-import { LocationWarning, CreateEventSheet, PrimaryButton } from "@/components/ui";
+import { LocationWarning, CreateEventSheet, PrimaryButton, TabSwitcher } from "@/components/ui";
 import { usePermissionSheetStore } from "@/store/permissionSheetStore";
 
 const { width: W } = Dimensions.get("window");
@@ -203,22 +203,15 @@ export default function EventsScreen() {
 
   // Shared toggle pill used in both map and list header
   const togglePill = (
-    <View style={styles.togglePill}>
-      <Pressable
-        onPress={() => { hSelection(); setViewMode("map") }}
-        style={[styles.toggleBtn, viewMode === "map" && styles.toggleBtnActive]}
-      >
-        <Map size={13} color={viewMode === "map" ? "#fff" : Colors.inkSecondary} strokeWidth={2} />
-        <Text style={[styles.toggleLabel, viewMode === "map" && styles.toggleLabelActive]}>Map</Text>
-      </Pressable>
-      <Pressable
-        onPress={() => { hSelection(); setViewMode("list") }}
-        style={[styles.toggleBtn, viewMode === "list" && styles.toggleBtnActive]}
-      >
-        <List size={13} color={viewMode === "list" ? "#fff" : Colors.inkSecondary} strokeWidth={2} />
-        <Text style={[styles.toggleLabel, viewMode === "list" && styles.toggleLabelActive]}>List</Text>
-      </Pressable>
-    </View>
+    <TabSwitcher
+      tabs={[
+        { key: "map", label: "Map", icon: (active) => <Map size={13} color={active ? "#111" : Colors.inkSecondary} strokeWidth={2} /> },
+        { key: "list", label: "List", icon: (active) => <List size={13} color={active ? "#111" : Colors.inkSecondary} strokeWidth={2} /> },
+      ]}
+      activeTab={viewMode}
+      onChange={(key) => { hSelection(); setViewMode(key as "map" | "list") }}
+      fill={false}
+    />
   );
 
   // ── MAP VIEW — fullscreen ────────────────────────────────────────────────────
@@ -530,26 +523,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
-  // Toggle pill (shared map + list)
-  togglePill: {
-    flexDirection: "row",
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderRadius: 10,
-    padding: 3,
-    gap: 2,
-  },
-  toggleBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    gap: 4,
-  },
-  toggleBtnActive: { backgroundColor: Colors.brandOrange },
-  toggleLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.inkSecondary },
-  toggleLabelActive: { color: "#fff", fontFamily: FontFamily.bodySemiBold },
 
   // Map empty state
   mapEmpty: {

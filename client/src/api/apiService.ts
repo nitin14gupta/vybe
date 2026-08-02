@@ -16,6 +16,7 @@ import type {
   FollowsPage,
   EventSummary,
   EventDetail,
+  MyEventsPage,
   WaitlistEntry,
   TicketInfo,
   ReviewItem,
@@ -53,6 +54,7 @@ export type {
   EventPhoto,
   EventSummary,
   EventDetail,
+  MyEventsPage,
   WaitlistEntry,
   TicketInfo,
   ReviewItem,
@@ -741,6 +743,16 @@ class ApiService {
 
   static async getMyJoinedEvents(): Promise<EventSummary[]> {
     return this.get<EventSummary[]>('/events/joined')
+  }
+
+  // Paginated variants for the My Events / Joined Events screens — only the
+  // active tab's page is fetched, plus cheap upcoming/past counts for both.
+  static async getMyHostedEventsPaged(tab: 'upcoming' | 'past' = 'upcoming', limit = 6, offset = 0): Promise<MyEventsPage> {
+    return this.get<MyEventsPage>(`/events/hosted/paged?tab=${tab}&limit=${limit}&offset=${offset}`)
+  }
+
+  static async getMyJoinedEventsPaged(tab: 'upcoming' | 'past' = 'upcoming', limit = 6, offset = 0): Promise<MyEventsPage> {
+    return this.get<MyEventsPage>(`/events/joined/paged?tab=${tab}&limit=${limit}&offset=${offset}`)
   }
 
   static async getMyWaitlistedEvents(): Promise<EventSummary[]> {

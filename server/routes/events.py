@@ -130,6 +130,13 @@ class EventSummary(BaseModel):
     paid_attended_host_before: bool = False
 
 
+class MyEventsPage(BaseModel):
+    events: List[EventSummary]
+    upcoming_count: int
+    past_count: int
+    has_more: bool
+
+
 class EventDetail(EventSummary):
     description: Optional[str] = None
     rules: Optional[str] = None
@@ -341,7 +348,9 @@ def list_events(
     return result
 
 
-# ── GET /events/hosted — events I am hosting ─────────────────────────────────
+# ── GET /events/hosted — events I am hosting (full, unpaginated list — used
+# by the calendar, account-deletion check, home "My Events" section, and the
+# search modal, all of which need the complete set, not one page of it) ──────
 
 @router.get("/hosted", response_model=List[EventSummary])
 def get_hosted_events(current_user: dict = Depends(get_current_user)):
@@ -380,7 +389,76 @@ def get_hosted_events(current_user: dict = Depends(get_current_user)):
     return result
 
 
-# ── GET /events/joined — events I have RSVPed to ─────────────────────────────
+# ── GET /events/hosted/paged — paginated hosted events for the My Events
+# screen: cheap upcoming/past counts on every call, but only fetches the
+# content of whichever tab is active, a page at a time ──────────────────────
+
+@router.get("/hosted/paged", response_model=MyEventsPage)
+def get_hosted_events_paged(
+    tab: str = Query("upcoming", pattern="^(upcoming|past)$"),
+    limit: int = Query(6, ge=1, le=50),
+    offset: int = Query(0, ge=0),
+    current_user: dict = Depends(get_current_user),
+):
+    uid = current_user["id"]
+    is_past = tab == "past"
+    with get_db() as (cur, _):
+        cur.execute(
+            """
+            SELECT
+                COUNT(*) FILTER (WHERE e.date_time < NOW())  AS past_count,
+                COUNT(*) FILTER (WHERE e.date_time >= NOW()) AS upcoming_count
+            FROM events e
+            WHERE e.host_id = %s::uuid
+            """,
+            (uid,),
+        )
+        counts = cur.fetchone()
+        upcoming_count = int(counts["upcoming_count"])
+        past_count = int(counts["past_count"])
+
+        cur.execute(
+            f"""
+            SELECT
+                e.id::text,
+                e.title, e.event_type,
+                e.date_time::text, e.end_time::text,
+                e.location_name, e.location_lat, e.location_lng,
+                e.price_inr, (e.price_inr = 0) AS is_free,
+            e.platform_fee_inr, e.host_commission_inr, e.platform_profit_inr,
+                e.spots_left, e.capacity, e.age_restriction,
+                e.cover_photos, e.is_cancelled,
+                NULL::int AS distance_km,
+                u.name AS host_name,
+                (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
+                COALESCE(u.is_deleted, FALSE) AS host_is_deleted,
+                (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id = e.id AND ea.status = 'going')::int AS attendee_count
+            FROM events e
+            JOIN users u ON u.id = e.host_id
+            WHERE e.host_id = %s::uuid AND e.date_time {"<" if is_past else ">="} NOW()
+            ORDER BY e.date_time {"DESC" if is_past else "ASC"}
+            LIMIT %s OFFSET %s
+            """,
+            (uid, limit, offset),
+        )
+        rows = cur.fetchall()
+    result = []
+    for row in rows:
+        d = dict(row)
+        photos_raw = d.get("cover_photos") or []
+        d["cover_photos"] = [{"url": p, "position": i} for i, p in enumerate(photos_raw)] if isinstance(photos_raw, list) and photos_raw and isinstance(photos_raw[0], str) else photos_raw
+        result.append(d)
+    tab_total = past_count if is_past else upcoming_count
+    return {
+        "events": result,
+        "upcoming_count": upcoming_count,
+        "past_count": past_count,
+        "has_more": offset + len(result) < tab_total,
+    }
+
+
+# ── GET /events/joined — events I have RSVPed to (full, unpaginated list —
+# same reasoning as /hosted above: other consumers need the complete set) ────
 
 @router.get("/joined", response_model=List[EventSummary])
 def get_joined_events(current_user: dict = Depends(get_current_user)):
@@ -417,6 +495,74 @@ def get_joined_events(current_user: dict = Depends(get_current_user)):
         d["cover_photos"] = [{"url": p, "position": i} for i, p in enumerate(photos_raw)] if isinstance(photos_raw, list) and photos_raw and isinstance(photos_raw[0], str) else photos_raw
         result.append(d)
     return result
+
+
+# ── GET /events/joined/paged — paginated joined events for the Joined Events
+# screen (same pattern as /hosted/paged) ─────────────────────────────────────
+
+@router.get("/joined/paged", response_model=MyEventsPage)
+def get_joined_events_paged(
+    tab: str = Query("upcoming", pattern="^(upcoming|past)$"),
+    limit: int = Query(6, ge=1, le=50),
+    offset: int = Query(0, ge=0),
+    current_user: dict = Depends(get_current_user),
+):
+    uid = current_user["id"]
+    is_past = tab == "past"
+    with get_db() as (cur, _):
+        cur.execute(
+            """
+            SELECT
+                COUNT(*) FILTER (WHERE e.date_time < NOW())  AS past_count,
+                COUNT(*) FILTER (WHERE e.date_time >= NOW()) AS upcoming_count
+            FROM events e
+            JOIN event_attendees ea ON ea.event_id = e.id AND ea.user_id = %s::uuid AND ea.status = 'going'
+            """,
+            (uid,),
+        )
+        counts = cur.fetchone()
+        upcoming_count = int(counts["upcoming_count"])
+        past_count = int(counts["past_count"])
+
+        cur.execute(
+            f"""
+            SELECT
+                e.id::text,
+                e.title, e.event_type,
+                e.date_time::text, e.end_time::text,
+                e.location_name, e.location_lat, e.location_lng,
+                e.price_inr, (e.price_inr = 0) AS is_free,
+            e.platform_fee_inr, e.host_commission_inr, e.platform_profit_inr,
+                e.spots_left, e.capacity, e.age_restriction,
+                e.cover_photos, e.is_cancelled,
+                NULL::int AS distance_km,
+                u.name AS host_name,
+                (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
+                COALESCE(u.is_deleted, FALSE) AS host_is_deleted,
+                (SELECT COUNT(*) FROM event_attendees ea2 WHERE ea2.event_id = e.id AND ea2.status = 'going')::int AS attendee_count
+            FROM events e
+            JOIN users u ON u.id = e.host_id
+            JOIN event_attendees ea ON ea.event_id = e.id AND ea.user_id = %s::uuid AND ea.status = 'going'
+            WHERE e.date_time {"<" if is_past else ">="} NOW()
+            ORDER BY e.date_time {"DESC" if is_past else "ASC"}
+            LIMIT %s OFFSET %s
+            """,
+            (uid, limit, offset),
+        )
+        rows = cur.fetchall()
+    result = []
+    for row in rows:
+        d = dict(row)
+        photos_raw = d.get("cover_photos") or []
+        d["cover_photos"] = [{"url": p, "position": i} for i, p in enumerate(photos_raw)] if isinstance(photos_raw, list) and photos_raw and isinstance(photos_raw[0], str) else photos_raw
+        result.append(d)
+    tab_total = past_count if is_past else upcoming_count
+    return {
+        "events": result,
+        "upcoming_count": upcoming_count,
+        "past_count": past_count,
+        "has_more": offset + len(result) < tab_total,
+    }
 
 
 # ── GET /events/waitlisted — events I'm on the waitlist for ──────────────────

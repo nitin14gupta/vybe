@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, Modal, FlatList, ScrollView, Pressable } from 'react-native'
 import { router } from 'expo-router'
-import { X, Flame, SlidersHorizontal } from 'lucide-react-native'
+import { X, Flame, ListFilter } from 'lucide-react-native'
 import { hTap, hSelection } from '@/lib/haptics'
 import { Colors, FontFamily, FILTER_CHIPS, matchesChip } from '@/constants'
 import { Screen, SearchBar, EventListCard, EventListCardSkeleton } from '@/components/ui'
@@ -73,7 +73,7 @@ export function EventSearchModal({ visible, onClose, nearbyEvents, lat, lng, nea
               style={[s.filterIconBtn, (filtersOpen || chipKey !== 'all') && s.filterIconBtnActive]}
               hitSlop={8}
             >
-              <SlidersHorizontal size={16} color={filtersOpen || chipKey !== 'all' ? '#fff' : Colors.glassTextDisabled} strokeWidth={2} />
+              <ListFilter size={16} color={filtersOpen || chipKey !== 'all' ? '#fff' : Colors.glassTextDisabled} strokeWidth={2} />
             </Pressable>
           }
         />

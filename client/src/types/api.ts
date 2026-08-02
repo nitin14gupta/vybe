@@ -140,6 +140,13 @@ export interface EventSummary {
   paid_attended_host_before?: boolean
 }
 
+export interface MyEventsPage {
+  events: EventSummary[]
+  upcoming_count: number
+  past_count: number
+  has_more: boolean
+}
+
 export interface EventDetail extends EventSummary {
   description: string | null
   rules: string | null

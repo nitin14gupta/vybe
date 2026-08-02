@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   Pressable,
@@ -62,9 +62,18 @@ export default function FollowsScreen() {
 
   const displayName = decodeURIComponent(name ?? '')
 
-  // Both lists load in parallel — instant tab switching
-  const followersList = useFollowsList(userId, 'followers')
-  const followingList = useFollowsList(userId, 'following')
+  // Only the active tab's list is fetched — the counts shown on the inactive
+  // tab come from the route params below, not a fetch. Switching tabs fetches
+  // that tab's list once (sticky — flicking back doesn't re-fetch).
+  const [followersEverActive, setFollowersEverActive] = useState(initTab === 'followers')
+  const [followingEverActive, setFollowingEverActive] = useState(initTab === 'following')
+  useEffect(() => {
+    if (activeTab === 'followers') setFollowersEverActive(true)
+    else setFollowingEverActive(true)
+  }, [activeTab])
+
+  const followersList = useFollowsList(userId, 'followers', followersEverActive)
+  const followingList = useFollowsList(userId, 'following', followingEverActive)
   const active = activeTab === 'followers' ? followersList : followingList
 
   // Tab count: prefer live count from loaded data, fall back to param

@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/auth'
 
 const PAGE = 20
 
-export function useFollowsList(userId: string, type: 'followers' | 'following') {
+export function useFollowsList(userId: string, type: 'followers' | 'following', enabled: boolean) {
   const showPill = usePillStore(s => s.show)
   const myId = useAuthStore(s => s.userId)
   const isMyProfile = userId === myId
@@ -50,7 +50,13 @@ export function useFollowsList(userId: string, type: 'followers' | 'following') 
     setLoadingMore(false)
   }, [loadingMore, hasMore, fetchPage])
 
-  useEffect(() => { load() }, [load])
+  // Only fetches once this list is actually needed — the caller marks
+  // `enabled` true the first time its tab becomes active, and it stays true
+  // from then on, so this fires exactly once per tab, not on every mount.
+  useEffect(() => {
+    if (enabled) load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled])
 
   const inFlightRef = useRef<Set<string>>(new Set())
 

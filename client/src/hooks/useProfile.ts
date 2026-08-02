@@ -13,6 +13,23 @@ function cacheKey(userId?: string) {
   return userId ? `profile:${userId}` : 'profile:me'
 }
 
+// Two separate useProfile() instances exist for the same "me" profile — the
+// tab-bar layout (avatar) and the Profile screen itself — and both refetch on
+// focus. Returning from a pushed screen (follows, host-reviews, ...) refocuses
+// both at once, which without this would fire two identical GET requests.
+// Sharing the in-flight promise by cache key collapses that into one.
+const inFlightRequests: Record<string, Promise<ProfileResponse>> = {}
+
+function fetchProfileDeduped(key: string, userId?: string): Promise<ProfileResponse> {
+  const existing = inFlightRequests[key]
+  if (existing) return existing
+  const request = (userId ? getProfile(userId) : getMe()).finally(() => {
+    delete inFlightRequests[key]
+  })
+  inFlightRequests[key] = request
+  return request
+}
+
 export function useProfile(userId?: string) {
   const key = cacheKey(userId)
   const [profile, setProfile] = useState<ProfileResponse | null>(() => peekCached<ProfileResponse>(key))
@@ -27,7 +44,7 @@ export function useProfile(userId?: string) {
     if (!peekCached<ProfileResponse>(key)) setLoading(true)
     setError(null)
     try {
-      const data = userId ? await getProfile(userId) : await getMe()
+      const data = await fetchProfileDeduped(key, userId)
       setProfile(data)
       setCached(key, data)
     } catch (e: any) {
