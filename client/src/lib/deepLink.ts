@@ -12,6 +12,7 @@ export type DeepLinkTarget =
   | { screen: 'chat'; id: string }
   | { screen: 'chatList' }
   | { screen: 'notifications' }
+  | { screen: 'createEvent' }
 
 // `currentUserId` lets a "profile" target route to the own-profile tab
 // (`(tabs)/profile`) instead of the other-user viewer screen (`(profile)/[id]`)
@@ -25,6 +26,7 @@ export function targetToHref(t: DeepLinkTarget, currentUserId?: string | null): 
     case 'chat': return `/(chat)/${t.id}`
     case 'chatList': return '/(tabs)/chat'
     case 'notifications': return '/(settings)/notifications'
+    case 'createEvent': return '/(events)/create'
   }
 }
 
@@ -45,6 +47,8 @@ export function pushDataToTarget(data: any): DeepLinkTarget | null {
       return data.event_id ? { screen: 'ticket', id: data.event_id } : null
     case 'wallet':
       return { screen: 'wallet' }
+    case 'host_onboarding_complete':
+      return { screen: 'createEvent' }
     default:
       return null
   }

@@ -1,0 +1,333 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+.wrap{display:flex;flex-direction:column;gap:32px;padding:16px 0}
+.screen-label{font-size:11px;color:var(--text-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;padding-left:4px}
+.phone{width:340px;min-height:580px;background:var(--surface-2);border:0.5px solid var(--border);border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative}
+.phone-inner{padding:28px 20px 24px;display:flex;flex-direction:column;flex:1;gap:0}
+
+.step-dots{display:flex;gap:6px;justify-content:center;margin-bottom:28px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--border-strong)}
+.dot.active{width:20px;border-radius:4px;background:var(--text-primary)}
+.dot.done{background:var(--text-primary)}
+
+.hero-icon{width:64px;height:64px;border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:28px}
+
+.screen-title{font-size:22px;font-weight:500;color:var(--text-primary);text-align:center;line-height:1.25;margin-bottom:8px}
+.screen-sub{font-size:14px;color:var(--text-secondary);text-align:center;line-height:1.6;margin-bottom:28px}
+
+.badge-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:28px}
+.badge-card{border-radius:14px;padding:14px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;border:0.5px solid var(--border)}
+.badge-card.active{border-width:1.5px}
+.badge-icon-wrap{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.badge-name{font-size:13px;font-weight:500}
+.badge-req{font-size:11px;color:var(--text-muted);text-align:center;line-height:1.4}
+.badge-you{font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;margin-top:2px}
+
+.badge-rising .badge-card{background:var(--bg-success);border-color:var(--border-success)}
+.badge-rising .badge-icon-wrap{background:#C0DD97}
+.badge-rising .badge-name{color:var(--text-success)}
+.badge-rising .badge-you{background:var(--fill-success);color:var(--on-success)}
+
+.badge-est .badge-card{background:var(--bg-accent);border-color:var(--border-accent)}
+.badge-est .badge-icon-wrap{background:#B5D4F4}
+.badge-est .badge-name{color:var(--text-accent)}
+
+.badge-elite .badge-card{background:var(--bg-pro);border-color:var(--border-pro)}
+.badge-elite .badge-icon-wrap{background:#CECBF6}
+.badge-elite .badge-name{color:var(--text-pro)}
+
+.badge-legend .badge-card{background:var(--bg-warning);border-color:var(--border-warning)}
+.badge-legend .badge-icon-wrap{background:#FAC775}
+.badge-legend .badge-name{color:var(--text-warning)}
+
+.stat-row{display:flex;gap:8px;margin-bottom:20px}
+.stat-pill{flex:1;background:var(--surface-1);border:0.5px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center}
+.stat-num{font-size:18px;font-weight:500;color:var(--text-primary)}
+.stat-lab{font-size:11px;color:var(--text-muted);margin-top:2px}
+
+.info-row{display:flex;align-items:flex-start;gap:12px;padding:12px;background:var(--surface-1);border:0.5px solid var(--border);border-radius:12px;margin-bottom:10px}
+.info-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.info-text-wrap{}
+.info-title{font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:2px}
+.info-sub{font-size:12px;color:var(--text-secondary);line-height:1.5}
+
+.tab-row{display:flex;background:var(--surface-1);border-radius:10px;padding:3px;gap:2px;margin-bottom:16px}
+.tab{flex:1;text-align:center;font-size:13px;padding:7px 4px;border-radius:7px;color:var(--text-secondary);cursor:pointer}
+.tab.active{background:var(--surface-2);color:var(--text-primary);font-weight:500;border:0.5px solid var(--border)}
+
+.field-wrap{margin-bottom:12px}
+.field-label{font-size:12px;color:var(--text-secondary);margin-bottom:6px}
+.field-input{width:100%;background:var(--surface-1);border:0.5px solid var(--border);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--text-primary);font-family:var(--font-sans);outline:none}
+.field-input.focus{border-color:var(--border-accent);background:var(--bg-accent)}
+.field-hint{font-size:11px;color:var(--text-muted);margin-top:5px;line-height:1.5}
+.verify-row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#EAF3DE;border:0.5px solid var(--border-success);border-radius:10px;margin-top:-4px;margin-bottom:12px}
+.verify-name{font-size:13px;color:var(--text-success);font-weight:500}
+
+.bank-field-wrap{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+
+.btn-primary{width:100%;padding:14px;background:var(--text-primary);color:var(--surface-2);border:none;border-radius:12px;font-size:15px;font-weight:500;font-family:var(--font-sans);cursor:pointer;margin-top:auto}
+.btn-outline{width:100%;padding:13px;background:transparent;color:var(--text-primary);border:0.5px solid var(--border-strong);border-radius:12px;font-size:15px;font-weight:500;font-family:var(--font-sans);cursor:pointer;margin-bottom:8px}
+
+.soon-tag{font-size:10px;background:var(--surface-0);color:var(--text-muted);border:0.5px solid var(--border);border-radius:20px;padding:2px 8px;display:inline-block;margin-left:6px;vertical-align:middle}
+
+.payout-note{font-size:11px;color:var(--text-muted);text-align:center;line-height:1.5;margin-top:8px}
+
+.current-badge-banner{background:var(--bg-success);border:0.5px solid var(--border-success);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.cb-icon{font-size:20px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:#C0DD97;border-radius:9px}
+.cb-text{flex:1}
+.cb-label{font-size:11px;color:var(--text-success);font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+.cb-name{font-size:15px;font-weight:500;color:var(--text-success)}
+
+.divider{height:0.5px;background:var(--border);margin:16px 0}
+</style>
+
+<div class="wrap">
+
+<div>
+  <p class="screen-label">Screen 1 — Welcome</p>
+  <div class="phone">
+    <div class="phone-inner">
+      <div class="step-dots">
+        <div class="dot active"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+
+      <div class="hero-icon" style="background:#EAF3DE">🏠</div>
+      <div class="screen-title">Become a Gorave host</div>
+      <div class="screen-sub">Create events, build your community, and earn — all from the app.</div>
+
+      <div class="info-row">
+        <div class="info-icon" style="background:var(--bg-accent)">
+          <i class="ti ti-map-pin" style="color:var(--text-accent);font-size:16px" aria-hidden="true"></i>
+        </div>
+        <div class="info-text-wrap">
+          <div class="info-title">Your events get discovered</div>
+          <div class="info-sub">Automatically surfaces in Trending and nearby feeds the moment you publish.</div>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-icon" style="background:var(--bg-success)">
+          <i class="ti ti-shield-check" style="color:var(--text-success);font-size:16px" aria-hidden="true"></i>
+        </div>
+        <div class="info-text-wrap">
+          <div class="info-title">Phone-verified guests only</div>
+          <div class="info-sub">Every attendee is identity-verified before they can book your event.</div>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-icon" style="background:var(--bg-warning)">
+          <i class="ti ti-wallet" style="color:var(--text-warning);font-size:16px" aria-hidden="true"></i>
+        </div>
+        <div class="info-text-wrap">
+          <div class="info-title">Automatic payouts</div>
+          <div class="info-sub">Revenue lands in your UPI account after each event — no chasing payments.</div>
+        </div>
+      </div>
+
+      <div style="flex:1"></div>
+      <button class="btn-primary">Get started →</button>
+    </div>
+  </div>
+</div>
+
+<div>
+  <p class="screen-label">Screen 2 — Host badges</p>
+  <div class="phone">
+    <div class="phone-inner">
+      <div class="step-dots">
+        <div class="dot done"></div>
+        <div class="dot active"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+
+      <div class="screen-title">Your reputation grows with you</div>
+      <div class="screen-sub" style="margin-bottom:20px">Host more events, earn a higher badge. Guests can see your tier before they book.</div>
+
+      <div class="current-badge-banner">
+        <div class="cb-icon">🌱</div>
+        <div class="cb-text">
+          <div class="cb-label">You start here</div>
+          <div class="cb-name">Rising host</div>
+        </div>
+      </div>
+
+      <div class="badge-grid">
+        <div class="badge-rising">
+          <div class="badge-card active">
+            <div class="badge-icon-wrap">🌱</div>
+            <div class="badge-name">Rising</div>
+            <div class="badge-req">2+ events hosted</div>
+            <div class="badge-you">You're here</div>
+          </div>
+        </div>
+        <div class="badge-est">
+          <div class="badge-card">
+            <div class="badge-icon-wrap">⭐</div>
+            <div class="badge-name">Established</div>
+            <div class="badge-req">10+ events hosted</div>
+          </div>
+        </div>
+        <div class="badge-elite">
+          <div class="badge-card">
+            <div class="badge-icon-wrap">💎</div>
+            <div class="badge-name">Elite</div>
+            <div class="badge-req">25+ events hosted</div>
+          </div>
+        </div>
+        <div class="badge-legend">
+          <div class="badge-card">
+            <div class="badge-icon-wrap">🔥</div>
+            <div class="badge-name">Legend</div>
+            <div class="badge-req">75+ events hosted</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-pill">
+          <div class="stat-num">2×</div>
+          <div class="stat-lab">more bookings for Elite+ hosts</div>
+        </div>
+        <div class="stat-pill">
+          <div class="stat-num">Free</div>
+          <div class="stat-lab">2 free events per month</div>
+        </div>
+      </div>
+
+      <button class="btn-primary">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<div>
+  <p class="screen-label">Screen 3 — What to expect</p>
+  <div class="phone">
+    <div class="phone-inner">
+      <div class="step-dots">
+        <div class="dot done"></div>
+        <div class="dot done"></div>
+        <div class="dot active"></div>
+        <div class="dot"></div>
+      </div>
+
+      <div class="hero-icon" style="background:var(--bg-pro)">📋</div>
+      <div class="screen-title">How hosting works</div>
+      <div class="screen-sub">Three things worth knowing before your first event.</div>
+
+      <div class="info-row">
+        <div class="info-icon" style="background:var(--surface-1);border:0.5px solid var(--border)">
+          <span style="font-size:15px;font-weight:500;color:var(--text-primary)">1</span>
+        </div>
+        <div class="info-text-wrap">
+          <div class="info-title">You're in charge of your event</div>
+          <div class="info-sub">You're responsible for your venue, guests, and any local rules. Gorave handles bookings and payments.</div>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-icon" style="background:var(--surface-1);border:0.5px solid var(--border)">
+          <span style="font-size:15px;font-weight:500;color:var(--text-primary)">2</span>
+        </div>
+        <div class="info-text-wrap">
+          <div class="info-title">Cancel anytime — up to 48 hours before</div>
+          <div class="info-sub">Attendees get a full wallet refund automatically. After 48 hours, cancellations are blocked.</div>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-icon" style="background:var(--surface-1);border:0.5px solid var(--border)">
+          <span style="font-size:15px;font-weight:500;color:var(--text-primary)">3</span>
+        </div>
+        <div class="info-text-wrap">
+          <div class="info-title">Gorave takes 10%</div>
+          <div class="info-sub">We collect the full ticket price and transfer your 90% after the event. Clear, no surprises.</div>
+        </div>
+      </div>
+
+      <div style="flex:1"></div>
+      <button class="btn-primary">Understood, let's go →</button>
+    </div>
+  </div>
+</div>
+
+<div>
+  <p class="screen-label">Screen 4 — Payout setup (UPI default + bank option)</p>
+  <div class="phone">
+    <div class="phone-inner">
+      <div class="step-dots">
+        <div class="dot done"></div>
+        <div class="dot done"></div>
+        <div class="dot done"></div>
+        <div class="dot active"></div>
+      </div>
+
+      <div class="screen-title">Where do we send your money?</div>
+      <div class="screen-sub" style="margin-bottom:16px">Add a payout method. You can update this any time from settings.</div>
+
+      <div class="tab-row" id="payTabs">
+        <div class="tab active" onclick="switchTab('upi')">UPI</div>
+        <div class="tab" onclick="switchTab('bank')">Bank account <span class="soon-tag">soon</span></div>
+      </div>
+
+      <div id="upiPanel">
+        <div class="field-wrap">
+          <div class="field-label">UPI ID</div>
+          <input class="field-input focus" id="upiField" type="text" value="gaurav@okicici" placeholder="yourname@bank" oninput="checkUpi()" />
+          <div class="field-hint">We'll verify your UPI ID in real time via Razorpay</div>
+        </div>
+        <div class="verify-row" id="verifyRow">
+          <i class="ti ti-circle-check" style="color:var(--text-success);font-size:18px" aria-hidden="true"></i>
+          <div class="verify-name">Gaurav Sharma — ICICI Bank</div>
+        </div>
+      </div>
+
+      <div id="bankPanel" style="display:none">
+        <div class="bank-field-wrap">
+          <div class="field-wrap" style="margin-bottom:0">
+            <div class="field-label">Account holder name</div>
+            <input class="field-input" type="text" placeholder="As on your passbook" />
+          </div>
+          <div class="field-wrap" style="margin-bottom:0">
+            <div class="field-label">Account number</div>
+            <input class="field-input" type="text" placeholder="Enter account number" />
+          </div>
+          <div class="field-wrap" style="margin-bottom:0">
+            <div class="field-label">IFSC code</div>
+            <input class="field-input" type="text" placeholder="e.g. HDFC0001234" />
+          </div>
+        </div>
+        <div class="info-row" style="background:var(--bg-warning);border-color:var(--border-warning);margin-bottom:0">
+          <i class="ti ti-info-circle" style="color:var(--text-warning);font-size:18px;flex-shrink:0" aria-hidden="true"></i>
+          <div class="info-sub" style="color:var(--text-warning)">Bank payouts are coming soon. Add UPI now to start hosting without waiting.</div>
+        </div>
+      </div>
+
+      <div style="flex:1"></div>
+      <button class="btn-primary" id="finishBtn">Finish setup →</button>
+      <p class="payout-note">Payouts are released 48 hours after your event ends. Secured by Razorpay.</p>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function switchTab(tab) {
+  const tabs = document.querySelectorAll('.tab');
+  tabs[0].className = 'tab' + (tab==='upi' ? ' active' : '');
+  tabs[1].className = 'tab' + (tab==='bank' ? ' active' : '');
+  document.getElementById('upiPanel').style.display = tab==='upi' ? 'block' : 'none';
+  document.getElementById('bankPanel').style.display = tab==='bank' ? 'block' : 'none';
+}
+function checkUpi() {
+  const val = document.getElementById('upiField').value;
+  document.getElementById('verifyRow').style.display = val.includes('@') ? 'flex' : 'none';
+}
+</script>

@@ -12,6 +12,7 @@ import ApiService, { AppNotification } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
 import { notifEntityToTarget, targetToHref } from '@/lib/deepLink'
 import { AppHeader, HeaderIconBtn, OutlineButton, PrimaryButton } from '@/components/ui'
+import { useAuthStore } from '@/store/auth'
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
@@ -163,8 +164,12 @@ export default function NotificationsScreen() {
 
   const handleTap = async (item: AppNotification) => {
     await markRead(item)
+    if (item.type === 'host_onboarding_complete') {
+      router.push('/(events)/create' as any)
+      return
+    }
     const target = notifEntityToTarget(item.entity_type, item.entity_id)
-    if (target) router.push(targetToHref(target) as any)
+    if (target) router.push(targetToHref(target, useAuthStore.getState().userId) as any)
   }
 
   const handleAction = async (item: AppNotification) => {

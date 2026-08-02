@@ -15,6 +15,7 @@ import { Colors, FontFamily, Radius, Spacing } from '@/constants'
 import { BrandedLoader, SortSheet } from '@/components/ui'
 import { StarRow, RatingDistribution, RatingFilterRow, ReviewCard } from '@/components/reviews/ReviewParts'
 import { EventPerformanceSection } from '@/components/reviews/HostAnalytics'
+import { useAuthStore } from '@/store/auth'
 import ApiService, { type HostReviewItem, type HostReviewEvent } from '@/api/apiService'
 
 const PAGE_SIZE = 10
@@ -23,6 +24,7 @@ export default function HostReviewsScreen() {
   const { id, name } = useLocalSearchParams<{ id: string; name?: string }>()
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const isOwnProfile = useAuthStore(s => s.userId) === id
 
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -114,9 +116,11 @@ export default function HostReviewsScreen() {
                 </View>
               </View>
 
-              <EventPerformanceSection events={events} activeEventId={activeEventId} onSelect={setActiveEventId} />
+              {isOwnProfile && (
+                <EventPerformanceSection events={events} activeEventId={activeEventId} onSelect={setActiveEventId} />
+              )}
 
-              {events.length > 1 && (
+              {isOwnProfile && events.length > 1 && (
                 <Pressable style={s.eventFilterBtn} onPress={() => setEventSheetOpen(true)}>
                   <Text style={s.eventFilterLabel} numberOfLines={1}>
                     {activeEventTitle ?? 'All events'}
@@ -148,14 +152,16 @@ export default function HostReviewsScreen() {
         />
       )}
 
-      <SortSheet
-        visible={eventSheetOpen}
-        title="Filter by event"
-        options={[{ key: 'all', label: 'All events' }, ...events.map(ev => ({ key: ev.id, label: ev.title }))]}
-        selected={activeEventId ?? 'all'}
-        onSelect={key => setActiveEventId(key === 'all' ? null : key)}
-        onClose={() => setEventSheetOpen(false)}
-      />
+      {isOwnProfile && (
+        <SortSheet
+          visible={eventSheetOpen}
+          title="Filter by event"
+          options={[{ key: 'all', label: 'All events' }, ...events.map(ev => ({ key: ev.id, label: ev.title }))]}
+          selected={activeEventId ?? 'all'}
+          onSelect={key => setActiveEventId(key === 'all' ? null : key)}
+          onClose={() => setEventSheetOpen(false)}
+        />
+      )}
     </View>
   )
 }
