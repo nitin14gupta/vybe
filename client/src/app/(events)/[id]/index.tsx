@@ -42,7 +42,7 @@ import {
   Users,
   X as XIcon,
 } from 'lucide-react-native'
-import { Colors, FontFamily, EVENT_ICONS, EVENT_ICON_FALLBACK, HOST_BADGE_ICONS } from '@/constants'
+import { Colors, FontFamily, EVENT_ICONS, EVENT_ICON_FALLBACK, HOST_BADGE_IMAGES } from '@/constants'
 import ApiService, { type EventDetail, type EventAttendee, type EventGuest } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
 import { useRecentEventsStore } from '@/store/recentEventsStore'
@@ -583,11 +583,11 @@ export default function EventDetailScreen() {
                   )}
                 </View>
                 {!event.host_is_deleted && (() => {
-                  const hostBadgeName = event.host_badges?.find(b => HOST_BADGE_ICONS[b])
-                  const HostBadgeIcon = hostBadgeName ? HOST_BADGE_ICONS[hostBadgeName] : null
-                  return HostBadgeIcon ? (
+                  const hostBadgeName = event.host_badges?.find(b => HOST_BADGE_IMAGES[b])
+                  const hostBadgeImage = hostBadgeName ? HOST_BADGE_IMAGES[hostBadgeName] : null
+                  return hostBadgeImage ? (
                     <View style={styles.hostBadgeChip}>
-                      <HostBadgeIcon size={11} color={Colors.brandOrange} strokeWidth={2} />
+                      <Image source={hostBadgeImage} style={styles.hostBadgeImg} contentFit="contain" />
                     </View>
                   ) : null
                 })()}
@@ -1131,6 +1131,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  hostBadgeImg: { width: 14, height: 14 },
   hostInfo: { flex: 1 },
   hostLabel: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, marginBottom: 2 },
   hostName: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },

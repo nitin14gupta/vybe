@@ -707,6 +707,91 @@ def get_user_profile(user_id: str, current_user: dict = Depends(get_current_user
     }
 
 
+@router.get("/{user_id}/reviews")
+def get_host_reviews(
+    user_id: str,
+    event_id: Optional[str] = None,
+    rating: Optional[int] = None,
+    limit: int = 10,
+    offset: int = 0,
+    current_user: dict = Depends(get_current_user),
+):
+    with get_db() as (cur, _):
+        resolved_id = _resolve_user_id(cur, user_id)
+        if not resolved_id:
+            raise HTTPException(status_code=404, detail="User not found")
+        user_id = resolved_id
+
+        cur.execute(
+            """
+            SELECT
+                COUNT(*)::int AS count,
+                ROUND(AVG(er.rating)::numeric, 1) AS avg_rating,
+                COUNT(*) FILTER (WHERE er.rating = 5)::int AS r5,
+                COUNT(*) FILTER (WHERE er.rating = 4)::int AS r4,
+                COUNT(*) FILTER (WHERE er.rating = 3)::int AS r3,
+                COUNT(*) FILTER (WHERE er.rating = 2)::int AS r2,
+                COUNT(*) FILTER (WHERE er.rating = 1)::int AS r1
+            FROM event_reviews er
+            JOIN events e ON e.id = er.event_id
+            WHERE e.host_id = %s::uuid
+              AND (%s::uuid IS NULL OR er.event_id = %s::uuid)
+            """,
+            (user_id, event_id, event_id),
+        )
+        stats = cur.fetchone()
+
+        cur.execute(
+            """
+            SELECT
+                e.id::text, e.title, e.event_type,
+                COUNT(er.id)::int AS review_count,
+                ROUND(AVG(er.rating)::numeric, 1) AS avg_rating
+            FROM event_reviews er
+            JOIN events e ON e.id = er.event_id
+            WHERE e.host_id = %s::uuid
+            GROUP BY e.id, e.title, e.event_type
+            ORDER BY avg_rating ASC, e.title
+            """,
+            (user_id,),
+        )
+        events = [
+            {**dict(r), "avg_rating": float(r["avg_rating"]) if r["avg_rating"] is not None else None}
+            for r in cur.fetchall()
+        ]
+
+        cur.execute(
+            """
+            SELECT
+                er.id::text,
+                er.event_id::text,
+                e.title AS event_title,
+                u.id::text AS reviewer_id,
+                u.name AS reviewer_name,
+                (SELECT url FROM user_photos WHERE user_id = u.id ORDER BY position LIMIT 1) AS reviewer_avatar,
+                er.rating, er.body, er.created_at::text
+            FROM event_reviews er
+            JOIN events e ON e.id = er.event_id
+            JOIN users u ON u.id = er.reviewer_id
+            WHERE e.host_id = %s::uuid
+              AND (%s::uuid IS NULL OR er.event_id = %s::uuid)
+              AND (%s::int IS NULL OR er.rating = %s)
+            ORDER BY er.created_at DESC
+            LIMIT %s OFFSET %s
+            """,
+            (user_id, event_id, event_id, rating, rating, limit, offset),
+        )
+        reviews = [dict(r) for r in cur.fetchall()]
+
+    return {
+        "avg_rating": float(stats["avg_rating"]) if stats["avg_rating"] is not None else None,
+        "count": stats["count"],
+        "distribution": {"5": stats["r5"], "4": stats["r4"], "3": stats["r3"], "2": stats["r2"], "1": stats["r1"]},
+        "events": events,
+        "reviews": reviews,
+    }
+
+
 @router.get("/blocked")
 def get_blocked_users(current_user: dict = Depends(get_current_user)):
     with get_db() as (cur, _):

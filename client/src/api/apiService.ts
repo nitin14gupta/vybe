@@ -19,6 +19,8 @@ import type {
   WaitlistEntry,
   TicketInfo,
   ReviewItem,
+  HostReviewItem,
+  HostReviewEvent,
   CreateEventPayload,
   DiscoverUser,
   VybeRequest,
@@ -54,6 +56,8 @@ export type {
   WaitlistEntry,
   TicketInfo,
   ReviewItem,
+  HostReviewItem,
+  HostReviewEvent,
   CreateEventPayload,
   DiscoverUser,
   VybeRequest,
@@ -625,8 +629,29 @@ class ApiService {
     return this.post(ENDPOINTS.EVENT_REVIEWS.replace(':id', eventId), { rating, body: body ?? null })
   }
 
-  static async getEventReviews(eventId: string): Promise<{ avg_rating: number | null; count: number; reviews: ReviewItem[] }> {
-    return this.get(ENDPOINTS.EVENT_REVIEWS.replace(':id', eventId))
+  static async getEventReviews(
+    eventId: string,
+    { rating, limit = 10, offset = 0 }: { rating?: number | null; limit?: number; offset?: number } = {},
+  ): Promise<{ avg_rating: number | null; count: number; distribution: Record<string, number>; reviews: ReviewItem[] }> {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) })
+    if (rating) params.set('rating', String(rating))
+    return this.get(`${ENDPOINTS.EVENT_REVIEWS.replace(':id', eventId)}?${params.toString()}`)
+  }
+
+  static async getHostReviews(
+    userId: string,
+    { eventId, rating, limit = 10, offset = 0 }: { eventId?: string | null; rating?: number | null; limit?: number; offset?: number } = {},
+  ): Promise<{
+    avg_rating: number | null
+    count: number
+    distribution: Record<string, number>
+    events: HostReviewEvent[]
+    reviews: HostReviewItem[]
+  }> {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) })
+    if (eventId) params.set('event_id', eventId)
+    if (rating) params.set('rating', String(rating))
+    return this.get(`${ENDPOINTS.USER_REVIEWS.replace(':id', userId)}?${params.toString()}`)
   }
 
   static async getFreeSlots(): Promise<{ used: number; limit: number; resets_on: string }> {

@@ -3,16 +3,15 @@ import {
   View, Text, StyleSheet, ScrollView, Pressable,
   Image, Dimensions, RefreshControl, ActivityIndicator
 } from 'react-native'
-import { Image as ExpoImage } from 'expo-image'
 import { router } from 'expo-router'
 import { hTap } from '@/lib/haptics'
-import { MapPin, Pencil, Settings, Share, Ticket, Calendar, Plus, Star } from 'lucide-react-native'
+import { MapPin, Pencil, Settings, Share, Ticket, Calendar, Plus } from 'lucide-react-native'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
 import { InterestChip, PlaybackWave, VoicePlayButton, AppHeader, HeaderIconBtn, BrandedLoader, TabSwitcher, SmallEventCard, OutlineButton, PrimaryButton } from '@/components/ui'
 import { useProfile } from '@/hooks/useProfile'
 import ApiService, { EventSummary } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
-import { Colors, FontFamily, Spacing, Radius, HOST_BADGE_ICONS } from '@/constants'
+import { Colors, FontFamily, Spacing, Radius, HOST_BADGE_IMAGES } from '@/constants'
 import { useImageViewer } from '@/hooks/useImageViewer'
 import { MediaViewerModal } from '@/components/chat/MediaViewerModal'
 
@@ -115,7 +114,7 @@ export default function ProfileScreen() {
   const bio = profile?.bio ?? null
   const otherBadges = profile?.badges ?? []
   const hostBadgeName = profile?.host_badges?.[0] ?? null
-  const HostBadgeIcon = hostBadgeName ? HOST_BADGE_ICONS[hostBadgeName] : null
+  const hostBadgeImage = hostBadgeName ? HOST_BADGE_IMAGES[hostBadgeName] : null
   const vibers = profile?.vibers_count ?? 0
   const vibing = profile?.vibing_count ?? 0
   const avgRating = profile?.host_avg_rating ?? null
@@ -146,13 +145,15 @@ export default function ProfileScreen() {
                 <Text style={styles.avatarInitialLarge}>{name.charAt(0).toUpperCase()}</Text>
               </View>
             )}
+            {hostBadgeImage && (
+              <View style={styles.hostBadgeChip}>
+                <Image source={hostBadgeImage} style={styles.hostBadgeImg} resizeMode="contain" />
+              </View>
+            )}
           </View>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 8 }}>
             <Text style={[styles.nameLarge, { marginBottom: 0 }]} numberOfLines={1}>{name}</Text>
-            {HostBadgeIcon && (
-              <HostBadgeIcon size={20} color={Colors.accentGold} strokeWidth={2} style={{ marginLeft: -2 }} />
-            )}
           </View>
 
           <View style={styles.pillsRowCentered}>
@@ -210,14 +211,17 @@ export default function ProfileScreen() {
             onPress={() => profile && router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'following', name: encodeURIComponent(profile.name ?? ''), vibersCount: vibers, vibingCount: vibing } } as any)}
           />
           <View style={styles.statDivider} />
-          <View style={styles.statCol}>
+          <Pressable
+            style={styles.statCol}
+            android_ripple={null}
+            onPress={() => profile && router.push({ pathname: '/(profile)/host-reviews', params: { id: profile.id, name: encodeURIComponent(profile.name ?? '') } } as any)}
+          >
             <View style={styles.ratingRow}>
-              {avgRating != null && <Star size={14} color={Colors.accentGold} fill={Colors.accentGold} strokeWidth={0} />}
               <Text style={styles.statValue}>{avgRating != null ? avgRating.toFixed(1) : '—'}</Text>
             </View>
             <Text style={styles.statLabel}>Reviews</Text>
             <Text style={styles.statSub}>{reviewCount} rating{reviewCount === 1 ? '' : 's'}</Text>
-          </View>
+          </Pressable>
         </View>
 
         {/* ── Bio & Voice Intro ── */}
@@ -256,7 +260,7 @@ export default function ProfileScreen() {
         )}
 
         {/* ── Events Tabs ── */}
-        {(eventsAttending.length > 0 || eventsHosted.length > 0 || eventsLoading) && (
+        {/* {(eventsAttending.length > 0 || eventsHosted.length > 0 || eventsLoading) && (
           <View style={styles.section}>
             <TabSwitcher
               tabs={['Going to', 'Hosted']}
@@ -304,7 +308,7 @@ export default function ProfileScreen() {
               </ScrollView>
             )}
           </View>
-        )}
+        )} */}
 
         {/* ── Photo grid ── */}
         {(profile?.photos?.length ?? 0) > 0 && (
@@ -370,10 +374,25 @@ const styles = StyleSheet.create({
   },
   avatarWrap: {
     marginBottom: 16,
+    position: 'relative',
   },
   avatarLarge: {
     width: 100, height: 100, borderRadius: 50,
   },
+  hostBadgeChip: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.elevated,
+    borderWidth: 2,
+    borderColor: Colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hostBadgeImg: { width: 24, height: 24 },
   avatarFallback: {
     backgroundColor: Colors.elevated,
     alignItems: 'center', justifyContent: 'center',

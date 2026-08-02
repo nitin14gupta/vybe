@@ -25,7 +25,6 @@ import {
   Check,
   Ghost,
   Clock,
-  Star,
 } from "lucide-react-native";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import {
@@ -42,7 +41,7 @@ import {
   OutlineButton,
 } from "@/components/ui";
 import ApiService, { ExtendedProfile, EventSummary } from "@/api/apiService";
-import { Colors, FontFamily, Radius, HOST_BADGE_ICONS } from "@/constants";
+import { Colors, FontFamily, Radius, HOST_BADGE_IMAGES } from "@/constants";
 import { usePillStore } from "@/store/pillStore";
 import { useVybeStore } from "@/store/vybeStore";
 import { useImageViewer } from "@/hooks/useImageViewer";
@@ -314,7 +313,7 @@ export default function UserProfileScreen() {
     : null;
 
   const hostBadgeName = profile.host_badges?.[0] ?? null;
-  const HostBadgeIcon = hostBadgeName ? HOST_BADGE_ICONS[hostBadgeName] : null;
+  const hostBadgeImage = hostBadgeName ? HOST_BADGE_IMAGES[hostBadgeName] : null;
 
   return (
     <View style={[s.root, { paddingBottom: insets.bottom }]}>
@@ -407,8 +406,8 @@ export default function UserProfileScreen() {
                 {profile.name ?? "User"}
                 {age ? `, ${age}` : ""}
               </Text>
-              {HostBadgeIcon && (
-                <HostBadgeIcon size={20} color={Colors.accentGold} strokeWidth={2} style={s.hostBadgeIcon} />
+              {hostBadgeImage && (
+                <Image source={hostBadgeImage} style={[s.hostBadgeIcon, { width: 24, height: 24 }]} resizeMode="contain" />
               )}
             </View>
             {profile.mutual_count > 0 && (
@@ -463,11 +462,17 @@ export default function UserProfileScreen() {
                 <Text style={s.statLabel}>Vibing</Text>
               </Pressable>
               <View style={s.statDivider} />
-              <View style={s.statItem}>
+              <Pressable
+                style={s.statItem}
+                android_ripple={null}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(profile)/host-reviews",
+                    params: { id: profile.id, name: encodeURIComponent(profile.name ?? "") },
+                  } as any)
+                }
+              >
                 <View style={s.ratingRow}>
-                  {profile.host_avg_rating != null && (
-                    <Star size={13} color={Colors.accentGold} fill={Colors.accentGold} strokeWidth={0} />
-                  )}
                   <Text style={s.statValue}>
                     {profile.host_avg_rating != null ? profile.host_avg_rating.toFixed(1) : "—"}
                   </Text>
@@ -475,7 +480,7 @@ export default function UserProfileScreen() {
                 <Text style={s.statLabel}>
                   {profile.host_review_count ?? 0} review{(profile.host_review_count ?? 0) === 1 ? "" : "s"}
                 </Text>
-              </View>
+              </Pressable>
             </View>
           )}
 
@@ -556,7 +561,7 @@ export default function UserProfileScreen() {
           ) : null}
 
           {/* Events Tabs */}
-          {!blockedByMe &&
+          {/* {!blockedByMe &&
             (profile.events_attending?.length > 0 ||
               profile.events_hosted?.length > 0) && (
               <View style={s.eventsSection}>
@@ -600,7 +605,7 @@ export default function UserProfileScreen() {
                       ))}
                 </ScrollView>
               </View>
-            )}
+            )} */}
         </View>
       </ScrollView>
 

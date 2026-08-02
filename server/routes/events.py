@@ -1589,25 +1589,56 @@ def submit_review(event_id: str, body: ReviewBody, background_tasks: BackgroundT
 # ── GET /events/{id}/reviews ──────────────────────────────────────────────────
 
 @router.get("/{event_id}/reviews")
-def get_reviews(event_id: str, current_user: dict = Depends(get_current_user)):
+def get_reviews(
+    event_id: str,
+    rating: Optional[int] = None,
+    limit: int = 10,
+    offset: int = 0,
+    current_user: dict = Depends(get_current_user),
+):
     with get_db() as (cur, _):
         cur.execute(
             """
             SELECT
+                COUNT(*)::int AS count,
+                ROUND(AVG(rating)::numeric, 1) AS avg_rating,
+                COUNT(*) FILTER (WHERE rating = 5)::int AS r5,
+                COUNT(*) FILTER (WHERE rating = 4)::int AS r4,
+                COUNT(*) FILTER (WHERE rating = 3)::int AS r3,
+                COUNT(*) FILTER (WHERE rating = 2)::int AS r2,
+                COUNT(*) FILTER (WHERE rating = 1)::int AS r1
+            FROM event_reviews
+            WHERE event_id = %s
+            """,
+            (event_id,),
+        )
+        stats = cur.fetchone()
+
+        cur.execute(
+            """
+            SELECT
                 er.id::text,
+                u.id::text AS reviewer_id,
                 u.name AS reviewer_name,
                 (SELECT url FROM user_photos WHERE user_id = u.id ORDER BY position LIMIT 1) AS reviewer_avatar,
                 er.rating, er.body, er.created_at::text
             FROM event_reviews er
             JOIN users u ON u.id = er.reviewer_id
             WHERE er.event_id = %s
+              AND (%s::int IS NULL OR er.rating = %s)
             ORDER BY er.created_at DESC
+            LIMIT %s OFFSET %s
             """,
-            (event_id,),
+            (event_id, rating, rating, limit, offset),
         )
         reviews = [dict(r) for r in cur.fetchall()]
-        avg = round(sum(r["rating"] for r in reviews) / len(reviews), 1) if reviews else None
-    return {"avg_rating": avg, "count": len(reviews), "reviews": reviews}
+
+    return {
+        "avg_rating": float(stats["avg_rating"]) if stats["avg_rating"] is not None else None,
+        "count": stats["count"],
+        "distribution": {"5": stats["r5"], "4": stats["r4"], "3": stats["r3"], "2": stats["r2"], "1": stats["r1"]},
+        "reviews": reviews,
+    }
 
 
 # ── GET /events/{id}/reviews/me ───────────────────────────────────────────────

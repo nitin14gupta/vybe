@@ -1,8 +1,5 @@
-import { PartyPopper, Building2, Gamepad2, UtensilsCrossed, Music, Flame, Shield, Star, Gem, Crown } from 'lucide-react-native'
+import { PartyPopper, Building2, Gamepad2, UtensilsCrossed, Music, Flame } from 'lucide-react-native'
 
-// Single source of truth for event-type icons and host-badge-tier icons —
-// keep in sync with the badge tier names computed server-side in
-// server/routes/users.py (compute_host_badges).
 export const EVENT_ICONS: Record<string, any> = {
   house_party: PartyPopper,
   rooftop: Building2,
@@ -13,9 +10,9 @@ export const EVENT_ICONS: Record<string, any> = {
 }
 export const EVENT_ICON_FALLBACK = Flame
 
-export const HOST_BADGE_ICONS: Record<string, any> = {
-  Rising: Shield,
-  Established: Star,
-  Elite: Gem,
-  Legend: Crown,
+export const HOST_BADGE_IMAGES: Record<string, any> = {
+  Rising: require('../../assets/host_badges/rising.png'),
+  Elite: require('../../assets/host_badges/elite.png'),
+  Established: require('../../assets/host_badges/established.png'),
+  Legend: require('../../assets/host_badges/legend.png'),
 }

@@ -179,11 +179,25 @@ export interface TicketInfo {
 
 export interface ReviewItem {
   id: string
+  reviewer_id: string
   reviewer_name: string | null
   reviewer_avatar: string | null
   rating: number
   body: string | null
   created_at: string
+}
+
+export interface HostReviewItem extends ReviewItem {
+  event_id: string
+  event_title: string
+}
+
+export interface HostReviewEvent {
+  id: string
+  title: string
+  event_type: string
+  review_count: number
+  avg_rating: number | null
 }
 
 export interface CreateEventPayload {

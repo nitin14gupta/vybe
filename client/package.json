@@ -57,6 +57,7 @@
     "react-native-customui": "^2.2.9",
     "react-native-fast-confetti": "^2.0.0",
     "react-native-gesture-handler": "~2.31.1",
+    "react-native-gifted-charts": "^1.4.77",
     "react-native-keyboard-controller": "1.21.6",
     "react-native-maps": "1.27.2",
     "react-native-qrcode-svg": "^6.3.21",

@@ -1,9 +1,11 @@
 import { useRef, useEffect } from 'react'
-import { View, Text, StyleSheet, Pressable } from 'react-native'
-import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
+import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native'
+import { BottomSheetModal, BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { hSelection } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
+
+const MAX_SHEET_HEIGHT = Dimensions.get('window').height * 0.7
 
 export interface SortOption<T extends string = string> {
   key: T
@@ -32,14 +34,15 @@ function SortSheetCore<T extends string>({ title, options, selected, onSelect, o
     <BottomSheetModal
       ref={sheetRef}
       enableDynamicSizing
+      maxDynamicContentSize={MAX_SHEET_HEIGHT}
       enablePanDownToClose
       onDismiss={onClose}
       backdropComponent={renderBackdrop}
       backgroundStyle={s.bg}
       handleIndicatorStyle={s.handle}
     >
-      <BottomSheetView style={s.content}>
-        {title && <Text style={s.title}>{title}</Text>}
+      {title && <Text style={s.title}>{title}</Text>}
+      <BottomSheetScrollView style={s.content} showsVerticalScrollIndicator={false}>
         {options.map(opt => (
           <Pressable
             key={opt.key}
@@ -47,12 +50,12 @@ function SortSheetCore<T extends string>({ title, options, selected, onSelect, o
             android_ripple={{ color: 'rgba(255,255,255,0.06)' }}
             onPress={() => { hSelection(); onSelect(opt.key); sheetRef.current?.dismiss() }}
           >
-            <Text style={[s.rowText, selected === opt.key && s.rowTextActive]}>{opt.label}</Text>
+            <Text style={[s.rowText, selected === opt.key && s.rowTextActive]} numberOfLines={1}>{opt.label}</Text>
             {selected === opt.key && <View style={s.dot} />}
           </Pressable>
         ))}
         <View style={{ height: 16 }} />
-      </BottomSheetView>
+      </BottomSheetScrollView>
     </BottomSheetModal>
   )
 }

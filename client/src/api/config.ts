@@ -47,6 +47,7 @@ export const ENDPOINTS = {
   REMOVE_FOLLOWER: '/users/followers/:id',
   SEARCH_USERS: '/users/search',
   CHECK_USERNAME: '/users/check-username',
+  USER_REVIEWS: '/users/:id/reviews',
 
   // Vibes
   VIBES: '/vibes',
