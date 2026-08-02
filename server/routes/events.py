@@ -1571,18 +1571,41 @@ def submit_review(event_id: str, body: ReviewBody, background_tasks: BackgroundT
         reviewer_name = reviewer_row["name"] if reviewer_row else "Someone"
         event_title_review = ev_review["title"] if ev_review else ""
 
+        milestone = None
+        milestone_avg = None
         if host_id_review and host_id_review != uid:
-            from routes.notifications import notify_new_review
+            from routes.notifications import notify_new_review, notify_review_milestone, review_milestone_reached
             notify_new_review(cur, host_id_review, event_id, event_title_review, uid, reviewer_name, body.rating)
+
+            cur.execute(
+                """
+                SELECT COUNT(*)::int AS cnt, ROUND(AVG(er.rating)::numeric, 1) AS avg
+                FROM event_reviews er JOIN events e ON e.id = er.event_id
+                WHERE e.host_id = %s::uuid
+                """,
+                (host_id_review,),
+            )
+            rc = cur.fetchone()
+            milestone = review_milestone_reached(rc["cnt"]) if rc and float(rc["avg"] or 0) >= 4.0 else None
+            milestone_avg = float(rc["avg"]) if rc else None
+            if milestone:
+                notify_review_milestone(cur, host_id_review, milestone, milestone_avg)
 
         conn.commit()
 
     if host_id_review and host_id_review != uid:
+        from utils.push import get_event_image_url, get_user_avatar_url
         background_tasks.add_task(
-            send_push, host_id_review, "New Review",
-            f"{reviewer_name} left a {body.rating}-star review on {event_title_review}",
-            {"type": "event", "event_id": event_id}, category="hosting",
+            send_push, host_id_review, f"{reviewer_name} left a {body.rating}-star review",
+            event_title_review,
+            {"type": "event", "event_id": event_id}, get_event_image_url(event_id), category="hosting",
         )
+        if milestone:
+            background_tasks.add_task(
+                send_push, host_id_review, f"{milestone} reviews and {milestone_avg}★ average!",
+                "Your reputation is building — keep hosting to unlock more visibility.",
+                {"type": "user", "user_id": host_id_review}, get_user_avatar_url(host_id_review), category="hosting",
+            )
     return {"ok": True}
 
 

@@ -62,6 +62,7 @@ const TYPE_FALLBACK: Record<string, { Icon: any; bg: string; color: string }> = 
   host_onboarding_complete: { Icon: PartyPopper, bg: 'rgba(255,107,53,0.16)', color: Colors.brandOrange },
   report_submitted: { Icon: ShieldCheck, bg: 'rgba(255,107,53,0.16)', color: Colors.brandOrange },
   host_badge_earned: { Icon: Trophy, bg: 'rgba(255,107,53,0.16)', color: Colors.brandOrange },
+  review_milestone: { Icon: Trophy, bg: 'rgba(255,107,53,0.16)', color: Colors.brandOrange },
 }
 
 function NotifRow({ item, onPress, onAction }: {

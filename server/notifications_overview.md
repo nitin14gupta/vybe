@@ -20,6 +20,7 @@ This table breaks down all the major actions in the app that trigger notificatio
 | Waitlist spot opens up for you | ✅ | ✅ | Promoted User |
 | Your waitlist spot offer expires | ✅ | ✅ | User who missed out |
 | Someone leaves a review on your event | ✅ | ✅ | Event Host |
+| Your reviews hit a milestone (5, 10, 25, 50, then every 50) at a 4.0+ average | ✅ | ✅ | Event Host |
 | Your event sold out (0 spots left) | ✅ | ✅ | Event Host |
 | **Payments & Ticketing** | | | |
 | Ticket payment confirmed | ✅ | ✅ | Ticket Buyer |
@@ -37,3 +38,5 @@ This table breaks down all the major actions in the app that trigger notificatio
 > "Event edited" only fires when a substantive field changes (title, description, rules, type, date/time, age restriction, location, or price) — pure capacity increases/decreases don't trigger it (those already notify waitlisted users separately when they get promoted).
 >
 > "Sold out" fires once at the moment spots_left transitions from 1 → 0, for both free RSVPs and all three paid-ticket payment paths (Razorpay checkout, QR code, wallet). If the event later opens back up (e.g. a cancellation) and fills again, it will fire again.
+>
+> "Review milestone" only fires if the host's overall average rating (across all their events) is 4.0+ at the moment the milestone is hit — a host with a shaky rating doesn't get a congratulatory push. Milestones are 5, 10, 25, 50, 100, then every 50 after that.

@@ -137,6 +137,34 @@ def notify_new_review(cur, host_id: str, event_id: str, event_title: str, review
     )
 
 
+# Fixed early milestones (fast, frequent wins while a host is building trust),
+# then every 50 after 100 (spaced out further since a big host racks up
+# reviews quickly and a notif every single multiple of 5/10 would be spammy).
+REVIEW_MILESTONES = (5, 10, 25, 50, 100)
+
+
+def review_milestone_reached(review_count: int) -> Optional[int]:
+    """review_count only ever increases by 1 per call site (one review per
+    submission, duplicates blocked before insert), so a plain membership/
+    modulo check is enough — no need to scan a range for skipped milestones."""
+    if review_count in REVIEW_MILESTONES:
+        return review_count
+    if review_count > REVIEW_MILESTONES[-1] and review_count % 50 == 0:
+        return review_count
+    return None
+
+
+def notify_review_milestone(cur, host_id: str, milestone: int, avg_rating: float):
+    _insert_notification(
+        cur, host_id, "review_milestone",
+        title=f"{milestone} reviews and {avg_rating}★ average!",
+        body="Your reputation is building — attendees are loving what you host. Keep it up for more visibility.",
+        actor_id=host_id,
+        entity_id=host_id,
+        entity_type="user",
+    )
+
+
 def notify_payment_confirmed(cur, user_id: str, event_id: str, event_title: str):
     _insert_notification(
         cur, user_id, "payment_confirmed",
