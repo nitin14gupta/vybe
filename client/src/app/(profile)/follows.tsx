@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, ArrowUpDown, Search, Users, X as XIcon } from 'lucide-react-native'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { Colors, FontFamily } from '@/constants'
-import { ReportSheet, BlockSheet, SortSheet, DotsSheet, ConfirmSheet, TabSwitcher } from '@/components/ui'
+import { ReportSheet, BlockSheet, SortSheet, DotsSheet, ConfirmSheet, SwipeableTabs } from '@/components/ui'
 import type { SortOption } from '@/components/ui'
 import { useGoBack } from '@/hooks/useGoBack'
 import { useFollowsList } from '@/hooks/useFollowsList'
@@ -76,14 +76,16 @@ export default function FollowsScreen() {
   const liveVibersCount = followersList.loading ? parseInt(vibersCount ?? '0', 10) : followersList.totalCount
   const liveVibingCount = followingList.loading ? parseInt(vibingCount ?? '0', 10) : followingList.totalCount
 
-  // Apply sort
-  const sortedUsers = useMemo(() => {
-    const arr = [...active.users]
+  // Apply sort — computed per-list so both panes stay ready for the pager
+  const applySort = (users: FollowUser[]) => {
+    const arr = [...users]
     if (sort === 'az') arr.sort((a, b) => (a.name ?? a.username ?? '').localeCompare(b.name ?? b.username ?? ''))
     if (sort === 'za') arr.sort((a, b) => (b.name ?? b.username ?? '').localeCompare(a.name ?? a.username ?? ''))
     if (sort === 'earliest') arr.reverse()
     return arr
-  }, [active.users, sort])
+  }
+  const sortedFollowers = useMemo(() => applySort(followersList.users), [followersList.users, sort])
+  const sortedFollowing = useMemo(() => applySort(followingList.users), [followingList.users, sort])
 
   const sortLabel = SORT_OPTIONS.find(o => o.key === sort)?.label ?? 'Default'
 
@@ -115,23 +117,73 @@ export default function FollowsScreen() {
     if (key === 'block')  { setBlockTarget(dotsTarget);  setDotsTarget(null) }
   }
 
-  const renderItem = ({ item }: { item: FollowUser }) => (
-    <UserFollowCard
-      user={item}
-      type={activeTab}
-      isMyProfile={active.isMyProfile}
-      onFollow={active.toggleFollow}
-      onUnfollow={() => setConfirmTarget({ user: item, action: 'unfollow' })}
-      onRemove={() => setConfirmTarget({ user: item, action: 'remove' })}
-      onDots={(u) => setDotsTarget(u)}
-    />
-  )
+  const emptyText = (type: 'followers' | 'following', list: ReturnType<typeof useFollowsList>) =>
+    list.query.trim()
+      ? 'No results'
+      : type === 'followers'
+        ? (list.isMyProfile ? 'No one is vibing you yet' : 'No vibers yet')
+        : (list.isMyProfile ? "You're not vibing anyone yet" : 'Not vibing anyone yet')
 
-  const emptyText = active.query.trim()
-    ? 'No results'
-    : activeTab === 'followers'
-      ? (active.isMyProfile ? 'No one is vibing you yet' : 'No vibers yet')
-      : (active.isMyProfile ? "You're not vibing anyone yet" : 'Not vibing anyone yet')
+  const renderPane = (type: 'followers' | 'following', list: ReturnType<typeof useFollowsList>, sorted: FollowUser[]) => (
+    list.loading ? (
+      <AutoSkeletonView isLoading animationType="gradient" defaultRadius={7} gradientColors={['#1e1e1e', '#2e2e2e']}>
+        {Array.from({ length: 7 }).map((_, i) => (
+          <View key={i} style={s.skRow}>
+            <View style={s.skAvatar} />
+            <View style={s.skInfo}>
+              <View style={s.skLineName} />
+              <View style={s.skLineUser} />
+            </View>
+          </View>
+        ))}
+      </AutoSkeletonView>
+    ) : list.error && sorted.length === 0 ? (
+      <View style={s.center}>
+        <Text style={s.emptyTitle}>Something went wrong</Text>
+        <Pressable onPress={() => list.load()} style={s.retryBtn} android_ripple={null}>
+          <Text style={s.retryText}>Tap to retry</Text>
+        </Pressable>
+      </View>
+    ) : (
+      <FlashList
+        data={sorted}
+        keyExtractor={u => u.id}
+        renderItem={({ item }) => (
+          <UserFollowCard
+            user={item}
+            type={type}
+            isMyProfile={list.isMyProfile}
+            onFollow={list.toggleFollow}
+            onUnfollow={() => setConfirmTarget({ user: item, action: 'unfollow' })}
+            onRemove={() => setConfirmTarget({ user: item, action: 'remove' })}
+            onDots={(u) => setDotsTarget(u)}
+          />
+        )}
+        ItemSeparatorComponent={null}
+        onEndReached={list.loadMore}
+        onEndReachedThreshold={0.4}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={list.refreshing}
+            onRefresh={() => list.load(true)}
+            tintColor={Colors.brandOrange}
+          />
+        }
+        ListEmptyComponent={
+          <View style={s.center}>
+            <Users size={48} color={Colors.elevated} strokeWidth={1} />
+            <Text style={s.emptyTitle}>{emptyText(type, list)}</Text>
+          </View>
+        }
+        ListFooterComponent={
+          list.loadingMore
+            ? <View style={s.loadingMore}><ActivityIndicator size="small" color={Colors.inkSecondary} /></View>
+            : null
+        }
+      />
+    )
+  )
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
@@ -144,17 +196,6 @@ export default function FollowsScreen() {
         <Text style={s.headerName} numberOfLines={1}>{displayName || 'Profile'}</Text>
         <View style={{ width: 36 }} />
       </View>
-
-      {/* ── Tab switcher ── */}
-      <TabSwitcher
-        variant="underline"
-        tabs={[
-          { key: 'followers', label: 'Vibers', count: liveVibersCount },
-          { key: 'following', label: 'Vibing', count: liveVibingCount },
-        ]}
-        activeTab={activeTab}
-        onChange={t => setActiveTab(t as 'followers' | 'following')}
-      />
 
       {/* ── Sort row + search ── */}
       <View style={s.toolbarWrap}>
@@ -183,56 +224,17 @@ export default function FollowsScreen() {
         )}
       </View>
 
-      {/* ── List ── */}
-      {active.loading ? (
-        <AutoSkeletonView isLoading animationType="gradient" defaultRadius={7} gradientColors={['#1e1e1e', '#2e2e2e']}>
-          {Array.from({ length: 7 }).map((_, i) => (
-            <View key={i} style={s.skRow}>
-              <View style={s.skAvatar} />
-              <View style={s.skInfo}>
-                <View style={s.skLineName} />
-                <View style={s.skLineUser} />
-              </View>
-            </View>
-          ))}
-        </AutoSkeletonView>
-      ) : active.error && sortedUsers.length === 0 ? (
-        <View style={s.center}>
-          <Text style={s.emptyTitle}>Something went wrong</Text>
-          <Pressable onPress={() => active.load()} style={s.retryBtn} android_ripple={null}>
-            <Text style={s.retryText}>Tap to retry</Text>
-          </Pressable>
-        </View>
-      ) : (
-        <FlashList
-          key={activeTab}
-          data={sortedUsers}
-          keyExtractor={u => u.id}
-          renderItem={renderItem}
-          ItemSeparatorComponent={null}
-          onEndReached={active.loadMore}
-          onEndReachedThreshold={0.4}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
-          refreshControl={
-            <RefreshControl
-              refreshing={active.refreshing}
-              onRefresh={() => active.load(true)}
-              tintColor={Colors.brandOrange}
-            />
-          }
-          ListEmptyComponent={
-            <View style={s.center}>
-              <Users size={48} color={Colors.elevated} strokeWidth={1} />
-              <Text style={s.emptyTitle}>{emptyText}</Text>
-            </View>
-          }
-          ListFooterComponent={
-            active.loadingMore
-              ? <View style={s.loadingMore}><ActivityIndicator size="small" color={Colors.inkSecondary} /></View>
-              : null
-          }
-        />
-      )}
+      {/* ── Swipeable tabs + list ── */}
+      <SwipeableTabs
+        tabs={[
+          { key: 'followers', label: 'Vibers', count: liveVibersCount },
+          { key: 'following', label: 'Vibing', count: liveVibingCount },
+        ]}
+        activeTab={activeTab}
+        onChange={t => setActiveTab(t as 'followers' | 'following')}
+      >
+        {[renderPane('followers', followersList, sortedFollowers), renderPane('following', followingList, sortedFollowing)]}
+      </SwipeableTabs>
 
       {/* ── Sort bottom sheet (gorhom) ── */}
       <SortSheet

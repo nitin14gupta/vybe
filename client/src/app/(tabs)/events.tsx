@@ -26,8 +26,9 @@ import { useEvents } from "@/hooks/useEvents";
 import type { EventSummary } from "@/api/apiService";
 import { EventCard, formatEventDate } from "@/components/events/EventCard";
 import { EventSearchModal } from "@/components/events/EventSearchModal";
-import { LocationWarning, CreateEventSheet, PrimaryButton, TabSwitcher } from "@/components/ui";
+import { LocationWarning, CreateEventSheet, PrimaryButton, TabSwitcher, EventListCard, ViewModeToggle } from "@/components/ui";
 import { usePermissionSheetStore } from "@/store/permissionSheetStore";
+import { useEventViewModeStore } from "@/store/eventViewModeStore";
 
 const { width: W } = Dimensions.get("window");
 const CARD_W = 268;
@@ -130,6 +131,8 @@ export default function EventsScreen() {
   };
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [listCount, setListCount] = useState(LIST_PAGE);
+  const cardViewMode = useEventViewModeStore((s) => s.mode);
+  const setCardViewMode = useEventViewModeStore((s) => s.setMode);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const previewListRef = useRef<FlatList>(null);
@@ -463,9 +466,19 @@ export default function EventsScreen() {
             ) : null
           }
           renderItem={({ item }) => (
-            <EventCard event={item} onPress={() => openEvent(item.id)} />
+            cardViewMode === "list" ? (
+              <EventListCard event={item} onPress={() => openEvent(item.id)} />
+            ) : (
+              <EventCard event={item} onPress={() => openEvent(item.id)} />
+            )
           )}
         />
+      )}
+
+      {!isEmpty && (
+        <View style={styles.cardViewToggle}>
+          <ViewModeToggle mode={cardViewMode} onChange={setCardViewMode} />
+        </View>
       )}
     </View>
   );
@@ -708,4 +721,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 24,
   },
+
+  cardViewToggle: { position: "absolute", right: 16, bottom: 16 },
 });
