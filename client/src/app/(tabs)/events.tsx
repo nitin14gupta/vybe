@@ -24,9 +24,9 @@ import { Image } from "expo-image";
 import { Colors, FontFamily, FILTER_CHIPS, EVENT_ICONS, EVENT_ICON_FALLBACK } from "@/constants";
 import { useEvents } from "@/hooks/useEvents";
 import type { EventSummary } from "@/api/apiService";
-import { EventCard, formatEventDate } from "@/components/events/EventCard";
+import { EventCard, EventCardSkeleton, formatEventDate } from "@/components/events/EventCard";
 import { EventSearchModal } from "@/components/events/EventSearchModal";
-import { LocationWarning, CreateEventSheet, PrimaryButton, TabSwitcher, EventListCard, ViewModeToggle } from "@/components/ui";
+import { LocationWarning, CreateEventSheet, PrimaryButton, TabSwitcher, EventListCard, EventListCardSkeleton, ViewModeToggle } from "@/components/ui";
 import { usePermissionSheetStore } from "@/store/permissionSheetStore";
 import { useEventViewModeStore } from "@/store/eventViewModeStore";
 
@@ -422,7 +422,13 @@ export default function EventsScreen() {
       </ScrollView>
 
       {/* List */}
-      {error && !loading ? (
+      {loading && events.length === 0 ? (
+        <View style={styles.listContent}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            cardViewMode === "list" ? <EventListCardSkeleton key={i} /> : <EventCardSkeleton key={i} />
+          ))}
+        </View>
+      ) : error && !loading ? (
         <View style={[styles.listEmpty, { flex: 1 }]}>
           <Text style={styles.listEmptyTitle}>Couldn't load events</Text>
           <Text style={styles.listEmptySub}>Check your connection and try again</Text>

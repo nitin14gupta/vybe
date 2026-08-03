@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, Refresh
 import { router } from 'expo-router'
 import { ArrowLeft, Calendar, Plus, Star, ChevronRight } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
-import { AppHeader, HeaderIconBtn, PrimaryButton, EventListCard, ViewModeToggle, SwipeableTabs } from '@/components/ui'
+import { AppHeader, HeaderIconBtn, PrimaryButton, EventListCard, EventListCardSkeleton, ViewModeToggle, SwipeableTabs } from '@/components/ui'
 import ApiService from '@/api/apiService'
-import { EventCard } from '@/components/events/EventCard'
+import { EventCard, EventCardSkeleton } from '@/components/events/EventCard'
 import { useEventViewModeStore } from '@/store/eventViewModeStore'
 import { useMyEventsPage } from '@/hooks/useMyEventsPage'
 import { useFocusRefresh } from '@/hooks/useFocusRefresh'
@@ -28,8 +28,10 @@ function EventsPane({
 
   if (page.loading) {
     return (
-      <View style={s.center}>
-        <ActivityIndicator color={Colors.brandOrange} />
+      <View style={s.listContent}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          viewMode === 'list' ? <EventListCardSkeleton key={i} /> : <EventCardSkeleton key={i} />
+        ))}
       </View>
     )
   }

@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } fro
 import { LinearGradient } from 'expo-linear-gradient'
 import { Image } from 'expo-image'
 import { MapPin, Flame } from 'lucide-react-native'
+import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { Colors, FontFamily, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constants'
 import { parseServerDate } from '@/lib/dates'
 import type { EventSummary } from '@/api/apiService'
@@ -169,6 +170,26 @@ export function EventCard({ event, onPress, showHost, isPast, isCancelled, foote
   )
 }
 
+// Same shape as the real card, shimmering — shown while events are still loading.
+export function EventCardSkeleton() {
+  return (
+    <AutoSkeletonView isLoading animationType="gradient" defaultRadius={20} gradientColors={['#1e1e1e', '#2e2e2e']}>
+      <View style={s.card}>
+        <View style={[s.imageWrap, s.skBlock]} />
+        <View style={s.meta}>
+          <View style={s.metaLeft}>
+            <View style={[s.skLine, { width: '45%', height: 12 }]} />
+            <View style={[s.skLine, { width: '65%', height: 12, marginTop: 6 }]} />
+          </View>
+          <View style={s.metaRight}>
+            <View style={[s.skLine, { width: 54, height: 11 }]} />
+          </View>
+        </View>
+      </View>
+    </AutoSkeletonView>
+  )
+}
+
 const s = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
@@ -232,4 +253,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 8,
   },
   spotsText: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.brandOrange },
+
+  skBlock: { backgroundColor: '#2a2a2a' },
+  skLine: { borderRadius: 5, backgroundColor: '#2a2a2a' },
 })
