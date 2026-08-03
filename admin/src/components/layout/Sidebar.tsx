@@ -52,7 +52,9 @@ export function Sidebar() {
           collapsed ? 'w-[68px]' : 'w-60',
         )}
       >
-        <div className={cn('mb-4 flex items-center px-4', collapsed && 'justify-center px-0')}>
+        <div className={cn('mb-4 flex items-center gap-2 px-4', collapsed && 'justify-center px-0')}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icon.png" alt="Gorave" className="h-8 w-8 shrink-0 brightness-0" />
           {!collapsed && (
             <span className="font-sketch text-xl font-bold text-zinc-900 underline decoration-amber-400 decoration-wavy decoration-2 underline-offset-4">
               Gorave Admin
@@ -76,8 +78,12 @@ export function Sidebar() {
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
           <aside className="bg-paper absolute left-0 top-0 flex h-full w-64 flex-col border-r-2 border-zinc-900 py-4">
             <div className="mb-4 flex items-center justify-between px-4">
-              <span className="font-sketch text-xl font-bold text-zinc-900 underline decoration-amber-400 decoration-wavy decoration-2 underline-offset-4">
-                Gorave Admin
+              <span className="flex items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/icon.png" alt="Gorave" className="h-7 w-7 shrink-0 brightness-0" />
+                <span className="font-sketch text-xl font-bold text-zinc-900 underline decoration-amber-400 decoration-wavy decoration-2 underline-offset-4">
+                  Gorave Admin
+                </span>
               </span>
               <button onClick={() => setMobileOpen(false)} className="rounded-full p-1.5 hover:bg-zinc-900/5">
                 <X className="h-5 w-5" />

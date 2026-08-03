@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/Card'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/Table'
 import { Pagination } from '@/components/ui/Pagination'
 import { Avatar } from '@/components/ui/Avatar'
+import { HostBadge } from '@/components/ui/HostBadge'
 import { Badge } from '@/components/ui/Badge'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { Input } from '@/components/ui/Input'
@@ -97,8 +98,9 @@ export default function UsersPage() {
                       <Link href={`/users/${u.id}`} className="flex items-center gap-3">
                         <Avatar src={u.avatar} name={u.name} size={32} />
                         <div>
-                          <p className="font-medium text-zinc-900">
+                          <p className="flex items-center gap-1.5 font-medium text-zinc-900">
                             {u.name ?? 'Unnamed'}
+                            <HostBadge tier={u.host_badges[0]} size={16} />
                           </p>
                           {u.username && (
                             <p className="text-xs text-zinc-500">@{u.username}</p>

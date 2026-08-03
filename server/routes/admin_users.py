@@ -7,6 +7,8 @@ from middleware.admin_auth import get_current_admin
 from utils.push import send_push
 from utils.account_purge import PURGE_AFTER_DAYS
 from utils.admin_audit import log_action
+from utils.crypto import decrypt
+from routes.users import compute_host_badges, _mask_upi, _mask_account_number
 
 router = APIRouter(prefix="/admin/users", tags=["admin-users"])
 
@@ -64,7 +66,10 @@ def list_users(
                 u.id::text, u.name, u.username, u.phone, u.country_code, u.city,
                 u.wallet_balance, u.is_active, COALESCE(u.is_deleted, FALSE) AS is_deleted,
                 u.deleted_at, COALESCE(u.is_locked, FALSE) AS is_locked, u.created_at,
-                (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS avatar
+                (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS avatar,
+                (SELECT COUNT(*) FROM events e
+                 WHERE e.host_id = u.id AND COALESCE(e.is_cancelled, FALSE) = FALSE
+                )::int AS hosted_events_count
             FROM users u
             {where}
             ORDER BY u.created_at DESC
@@ -73,6 +78,8 @@ def list_users(
             [*params, page_size, offset],
         )
         rows = [_with_purge_at(dict(r)) for r in cur.fetchall()]
+        for r in rows:
+            r["host_badges"] = compute_host_badges(r.pop("hosted_events_count"))
 
     return {"items": rows, "total": total, "page": page, "page_size": page_size}
 
@@ -116,6 +123,7 @@ def get_user_detail(user_id: str, current_admin: dict = Depends(get_current_admi
             (user_id,),
         )
         hosted_events = cur.fetchall()
+        user["host_badges"] = compute_host_badges(sum(1 for e in hosted_events if not e["is_cancelled"]))
 
         cur.execute(
             """
@@ -284,3 +292,47 @@ def unlock_user(user_id: str, current_admin: dict = Depends(get_current_admin)):
         pass
 
     return {"ok": True}
+
+
+# ── GET /admin/users/{user_id}/payout-details ─────────────────────────────────
+
+@router.get("/{user_id}/payout-details")
+def get_user_payout_details(user_id: str, current_admin: dict = Depends(get_current_admin)):
+    with get_db() as (cur, _):
+        cur.execute("SELECT id FROM users WHERE id = %s::uuid", (user_id,))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="User not found")
+
+        cur.execute(
+            """
+            SELECT payout_method, upi_id_ciphertext, account_holder_name_ciphertext,
+                   account_number_ciphertext, ifsc_code, bank_name, updated_at
+            FROM host_payout_details WHERE user_id = %s::uuid
+            """,
+            (user_id,),
+        )
+        row = cur.fetchone()
+
+    if not row:
+        return {"payout_method": None, "upi_id_masked": None, "bank_masked": None, "updated_at": None}
+
+    if row["payout_method"] == "upi" and row["upi_id_ciphertext"]:
+        return {
+            "payout_method": "upi",
+            "upi_id_masked": _mask_upi(decrypt(row["upi_id_ciphertext"])),
+            "bank_masked": None,
+            "updated_at": row["updated_at"],
+        }
+    if row["payout_method"] == "bank" and row["account_number_ciphertext"]:
+        return {
+            "payout_method": "bank",
+            "upi_id_masked": None,
+            "bank_masked": {
+                "account_holder_name": decrypt(row["account_holder_name_ciphertext"]),
+                "account_number_masked": _mask_account_number(decrypt(row["account_number_ciphertext"])),
+                "ifsc_code": row["ifsc_code"],
+                "bank_name": row["bank_name"],
+            },
+            "updated_at": row["updated_at"],
+        }
+    return {"payout_method": row["payout_method"], "upi_id_masked": None, "bank_masked": None, "updated_at": row["updated_at"]}

@@ -3,10 +3,11 @@
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Lock, Unlock, Mic, ShieldAlert, Wallet, CalendarDays, MessageSquare, Heart } from 'lucide-react'
+import { ArrowLeft, Lock, Unlock, Mic, ShieldAlert, Wallet, CalendarDays, MessageSquare, Heart, Banknote } from 'lucide-react'
 import { apiClient } from '@/lib/apiClient'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Avatar } from '@/components/ui/Avatar'
+import { HostBadge } from '@/components/ui/HostBadge'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
@@ -17,7 +18,7 @@ import { ImageModal } from '@/components/ui/ImageModal'
 import { IconChip } from '@/components/ui/IconChip'
 import { formatDate, formatInr, formatRelative } from '@/lib/formatters'
 import { useToast } from '@/hooks/useToast'
-import type { UserDetail } from '@/types/user'
+import type { UserDetail, PayoutDetails } from '@/types/user'
 
 export default function UserDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -88,6 +89,7 @@ export default function UserDetailPage() {
                 <h1 className="font-sketch text-xl font-bold text-zinc-900">
                   {user.name ?? 'Unnamed'}
                 </h1>
+                <HostBadge tier={user.host_badges[0]} size={24} />
                 {user.is_locked ? (
                   <Badge variant="danger">Locked</Badge>
                 ) : user.is_deleted ? (
@@ -131,6 +133,7 @@ export default function UserDetailPage() {
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="events">Events</TabsTrigger>
           <TabsTrigger value="wallet">Wallet</TabsTrigger>
+          <TabsTrigger value="payout">Payout</TabsTrigger>
           <TabsTrigger value="safety">Safety</TabsTrigger>
           <TabsTrigger value="support">Support & Feedback</TabsTrigger>
           <TabsTrigger value="vibes">Vibe Requests</TabsTrigger>
@@ -144,6 +147,9 @@ export default function UserDetailPage() {
         </TabsContent>
         <TabsContent value="wallet">
           <WalletTab data={data} />
+        </TabsContent>
+        <TabsContent value="payout">
+          <PayoutTab userId={id} isHostOnboarded={user.is_host_onboarding_finished} />
         </TabsContent>
         <TabsContent value="safety">
           <SafetyTab data={data} />
@@ -196,6 +202,7 @@ function ProfileTab({ data }: { data: UserDetail }) {
           <Field label="Bio" value={user.bio ?? '—'} full />
           <Field label="Interests" value={user.interests.join(', ') || '—'} full />
           <Field label="Badges" value={user.badges.join(', ') || '—'} full />
+          <Field label="Host tier" value={user.host_badges[0] ?? 'None'} />
           <Field label="Profile complete" value={user.profile_complete ? 'Yes' : 'No'} />
           <Field label="Host onboarding" value={user.is_host_onboarding_finished ? 'Finished' : 'Not finished'} />
           <Field label="Joined" value={formatDate(user.created_at)} />
@@ -331,6 +338,53 @@ function WalletTab({ data }: { data: UserDetail }) {
             ))}
           </TBody>
         </Table>
+      </CardContent>
+    </Card>
+  )
+}
+
+function PayoutTab({ userId, isHostOnboarded }: { userId: string; isHostOnboarded: boolean }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-user-payout', userId],
+    queryFn: () => apiClient.get<PayoutDetails>(`/admin/users/${userId}/payout-details`),
+    enabled: !!userId,
+  })
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Banknote className="h-4 w-4" /> Payout details
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <Skeleton className="h-24 w-full" />
+        ) : !data?.payout_method ? (
+          <div className="flex flex-col gap-1">
+            <p className="text-sm text-zinc-500">No payout details on file.</p>
+            <p className="text-xs text-zinc-400">
+              {isHostOnboarded
+                ? 'Host onboarding is marked finished but no payout method is saved — worth a closer look.'
+                : 'Host onboarding not completed — this user is not yet eligible to host events.'}
+            </p>
+          </div>
+        ) : data.payout_method === 'upi' ? (
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <Field label="Method" value="UPI" />
+            <Field label="UPI ID" value={data.upi_id_masked ?? '—'} />
+            <Field label="Last updated" value={data.updated_at ? formatDate(data.updated_at) : '—'} />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <Field label="Method" value="Bank transfer" />
+            <Field label="Account holder" value={data.bank_masked?.account_holder_name ?? '—'} />
+            <Field label="Account number" value={data.bank_masked?.account_number_masked ?? '—'} />
+            <Field label="IFSC code" value={data.bank_masked?.ifsc_code ?? '—'} />
+            <Field label="Bank name" value={data.bank_masked?.bank_name ?? '—'} />
+            <Field label="Last updated" value={data.updated_at ? formatDate(data.updated_at) : '—'} />
+          </div>
+        )}
       </CardContent>
     </Card>
   )

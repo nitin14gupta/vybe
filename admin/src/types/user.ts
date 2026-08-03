@@ -1,3 +1,5 @@
+export type HostBadgeTier = 'Rising' | 'Established' | 'Elite' | 'Legend'
+
 export interface UserListItem {
   id: string
   name: string | null
@@ -13,6 +15,7 @@ export interface UserListItem {
   is_locked: boolean
   created_at: string
   avatar: string | null
+  host_badges: HostBadgeTier[]
 }
 
 export interface UserListResponse {
@@ -48,6 +51,21 @@ export interface UserProfile {
   is_host_onboarding_finished: boolean
   created_at: string
   updated_at: string
+  host_badges: HostBadgeTier[]
+}
+
+export interface PayoutBankDetails {
+  account_holder_name: string
+  account_number_masked: string
+  ifsc_code: string | null
+  bank_name: string | null
+}
+
+export interface PayoutDetails {
+  payout_method: 'upi' | 'bank' | null
+  upi_id_masked: string | null
+  bank_masked: PayoutBankDetails | null
+  updated_at: string | null
 }
 
 export interface UserPhoto {
