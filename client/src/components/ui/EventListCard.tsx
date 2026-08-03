@@ -1,4 +1,5 @@
-import { Pressable, View, Text, StyleSheet, Image } from 'react-native'
+import { Pressable, View, Text, StyleSheet } from 'react-native'
+import { Image } from 'expo-image'
 import { router } from 'expo-router'
 import { MapPin, ChevronRight, Calendar } from 'lucide-react-native'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
@@ -20,7 +21,7 @@ export function EventListCard({ event, onPress }: { event: EventSummary; onPress
     <Pressable style={s.row} onPress={onPress ?? (() => router.push(`/(events)/${event.id}` as any))}>
       <View style={s.thumb}>
         {cover ? (
-          <Image source={{ uri: cover }} style={s.thumbImg} resizeMode="cover" />
+          <Image source={{ uri: cover }} style={s.thumbImg} contentFit="cover" />
         ) : (
           <View style={[s.thumbImg, s.thumbFallback]}>
             <TypeIcon size={22} color={Colors.inkDisabled} strokeWidth={1.5} />

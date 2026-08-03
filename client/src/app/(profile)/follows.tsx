@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, ArrowUpDown, Search, Users, X as XIcon } from 'lucide-react-native'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { Colors, FontFamily } from '@/constants'
-import { ReportSheet, BlockSheet, SortSheet, DotsSheet, ConfirmSheet } from '@/components/ui'
+import { ReportSheet, BlockSheet, SortSheet, DotsSheet, ConfirmSheet, TabSwitcher } from '@/components/ui'
 import type { SortOption } from '@/components/ui'
 import { useGoBack } from '@/hooks/useGoBack'
 import { useFollowsList } from '@/hooks/useFollowsList'
@@ -61,10 +61,6 @@ export default function FollowsScreen() {
   const [confirmTarget, setConfirmTarget] = useState<{ user: FollowUser; action: 'unfollow' | 'remove' } | null>(null)
 
   const displayName = decodeURIComponent(name ?? '')
-
-  // Only the active tab's list is fetched — the counts shown on the inactive
-  // tab come from the route params below, not a fetch. Switching tabs fetches
-  // that tab's list once (sticky — flicking back doesn't re-fetch).
   const [followersEverActive, setFollowersEverActive] = useState(initTab === 'followers')
   const [followingEverActive, setFollowingEverActive] = useState(initTab === 'following')
   useEffect(() => {
@@ -150,20 +146,15 @@ export default function FollowsScreen() {
       </View>
 
       {/* ── Tab switcher ── */}
-      <View style={s.tabs}>
-        <Pressable style={[s.tab, activeTab === 'followers' && s.tabActive]} android_ripple={null} onPress={() => setActiveTab('followers')}>
-          <Text style={[s.tabInline, activeTab === 'followers' && s.tabInlineActive]}>
-            <Text style={[s.tabCount, activeTab === 'followers' && s.tabCountActive]}>{liveVibersCount} </Text>
-            <Text style={[s.tabLabel, activeTab === 'followers' && s.tabLabelActive]}>Vibers</Text>
-          </Text>
-        </Pressable>
-        <Pressable style={[s.tab, activeTab === 'following' && s.tabActive]} android_ripple={null} onPress={() => setActiveTab('following')}>
-          <Text style={[s.tabInline, activeTab === 'following' && s.tabInlineActive]}>
-            <Text style={[s.tabCount, activeTab === 'following' && s.tabCountActive]}>{liveVibingCount} </Text>
-            <Text style={[s.tabLabel, activeTab === 'following' && s.tabLabelActive]}>Vibing</Text>
-          </Text>
-        </Pressable>
-      </View>
+      <TabSwitcher
+        variant="underline"
+        tabs={[
+          { key: 'followers', label: 'Vibers', count: liveVibersCount },
+          { key: 'following', label: 'Vibing', count: liveVibingCount },
+        ]}
+        activeTab={activeTab}
+        onChange={t => setActiveTab(t as 'followers' | 'following')}
+      />
 
       {/* ── Sort row + search ── */}
       <View style={s.toolbarWrap}>
@@ -322,37 +313,6 @@ const s = StyleSheet.create({
     flex: 1, textAlign: 'center',
     fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary,
   },
-
-  // Tabs
-  tabs: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.divider,
-  },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 11,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  tabActive: { borderBottomColor: Colors.inkPrimary },
-  tabInline: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 15,
-    color: Colors.inkSecondary,
-  },
-  tabInlineActive: { color: Colors.inkPrimary },
-  tabCount: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 15,
-  },
-  tabCountActive: {},
-  tabLabel: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 15,
-  },
-  tabLabelActive: {},
 
   // Toolbar
   toolbarWrap: {

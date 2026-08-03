@@ -59,16 +59,15 @@ export default function MyEventsScreen() {
         rightAction={<HeaderIconBtn onPress={() => router.push('/(events)/create' as any)}><Plus size={20} color={Colors.brandOrange} strokeWidth={2.5} /></HeaderIconBtn>}
       />
 
-      <View style={s.tabs}>
-        <TabSwitcher
-          tabs={[
-            { key: 'upcoming', label: `Upcoming (${upcoming.length})` },
-            { key: 'past', label: `Past (${past.length})` },
-          ]}
-          activeTab={tab}
-          onChange={t => setTab(t as Tab)}
-        />
-      </View>
+      <TabSwitcher
+        variant="underline"
+        tabs={[
+          { key: 'upcoming', label: `Upcoming (${upcoming.length})` },
+          { key: 'past', label: `Past (${past.length})` },
+        ]}
+        activeTab={tab}
+        onChange={t => setTab(t as Tab)}
+      />
 
       {loading ? (
         <View style={s.center}>
@@ -147,12 +146,6 @@ const s = StyleSheet.create({
   emptySub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center' },
   ctaBtn: { marginTop: 8 },
   listContent: { padding: 16, gap: 16 },
-
-  tabs: {
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 8,
-  },
 
   reviewsFooter: {
     flexDirection: 'row',

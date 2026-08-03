@@ -6,6 +6,8 @@ import { hTap } from '@/lib/haptics'
 export interface TabSwitcherItem {
   key: string
   label: string
+  /** Optional leading count, rendered bold ahead of the label (e.g. "12 Vibers"). */
+  count?: number
   icon?: (isActive: boolean) => React.ReactNode
 }
 
@@ -50,12 +52,22 @@ export function TabSwitcher({ tabs, activeTab, onChange, variant = 'pill', fill 
             }}
           >
             {item.icon?.(isActive)}
-            <Text style={[
-              isUnderline ? s.tabTextUnderline : s.tabText,
-              isActive && (isUnderline ? s.tabTextUnderlineActive : s.tabTextActive),
-            ]}>
-              {item.label}
-            </Text>
+            {item.count != null ? (
+              <Text style={[
+                isUnderline ? s.tabTextUnderline : s.tabText,
+                isActive && (isUnderline ? s.tabTextUnderlineActive : s.tabTextActive),
+              ]}>
+                <Text style={s.tabCount}>{item.count} </Text>
+                {item.label}
+              </Text>
+            ) : (
+              <Text style={[
+                isUnderline ? s.tabTextUnderline : s.tabText,
+                isActive && (isUnderline ? s.tabTextUnderlineActive : s.tabTextActive),
+              ]}>
+                {item.label}
+              </Text>
+            )}
           </Pressable>
         )
       })}
@@ -126,5 +138,8 @@ const s = StyleSheet.create({
   tabTextUnderlineActive: {
     fontFamily: FontFamily.bodySemiBold,
     color: Colors.inkPrimary,
+  },
+  tabCount: {
+    fontFamily: FontFamily.headingBold,
   },
 })
