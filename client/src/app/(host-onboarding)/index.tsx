@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Keyboard } from 'react-native'
 import { router } from 'expo-router'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 import { hTap, hSuccess } from '@/lib/haptics'
@@ -11,6 +11,7 @@ import {
   BadgesStep,
   WhatToExpectStep,
   PayoutStep,
+  DuplicatePayoutSheet,
 } from '@/components/host-onboarding'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
@@ -40,6 +41,19 @@ export default function HostOnboardingScreen() {
   const [ifscCode, setIfscCode] = useState('')
   const [saving, setSaving] = useState(false)
   const [finishing, setFinishing] = useState(false)
+  const [keyboardVisible, setKeyboardVisible] = useState(false)
+  const [duplicateError, setDuplicateError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow'
+    const hideEvt = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide'
+    const showSub = Keyboard.addListener(showEvt, () => setKeyboardVisible(true))
+    const hideSub = Keyboard.addListener(hideEvt, () => setKeyboardVisible(false))
+    return () => {
+      showSub.remove()
+      hideSub.remove()
+    }
+  }, [])
 
   const { validFormat, checking, vpaResult, vpaError } = useVpaValidation(upiId, rzpKey)
   const { loading: bankLookupLoading, bankInfo, error: ifscError } = useIfscLookup(ifscCode)
@@ -87,7 +101,11 @@ export default function HostOnboardingScreen() {
       setFinishing(true)
       setTimeout(() => router.replace('/(events)/create'), FINISHING_DELAY_MS)
     } catch (err: any) {
-      showPill(err?.detail ?? 'Could not save payout details. Try again.', 'error')
+      if (err?.status === 409) {
+        setDuplicateError(err?.detail ?? err?.message ?? 'This payout account is already linked to another Gorave account.')
+      } else {
+        showPill(err?.detail ?? 'Could not save payout details. Try again.', 'error')
+      }
       setSaving(false)
     }
   }
@@ -157,9 +175,11 @@ export default function HostOnboardingScreen() {
             {body}
           </ScrollView>
 
-          <View style={styles.dotsWrap}>
-            <StepDots step={step} total={TOTAL_STEPS} />
-          </View>
+          {!keyboardVisible && (
+            <View style={styles.dotsWrap}>
+              <StepDots step={step} total={TOTAL_STEPS} />
+            </View>
+          )}
           <View style={styles.footer}>
             <OutlineButton label="Back" onPress={handleBack} style={styles.backBtn} disabled={saving} />
             <View style={styles.nextBtn}>
@@ -182,6 +202,12 @@ export default function HostOnboardingScreen() {
           </View>
         </>
       )}
+
+      <DuplicatePayoutSheet
+        visible={duplicateError !== null}
+        message={duplicateError ?? ''}
+        onClose={() => setDuplicateError(null)}
+      />
     </Screen>
   )
 }

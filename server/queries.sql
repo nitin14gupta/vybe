@@ -166,6 +166,8 @@ CREATE TABLE IF NOT EXISTS public.host_payout_details (
   updated_at timestamp with time zone DEFAULT now(),
   payout_method text DEFAULT 'upi'::text NOT NULL,
   upi_id_ciphertext text,
+  account_fingerprint text,
+  upi_fingerprint text,
   CONSTRAINT host_payout_details_pkey PRIMARY KEY (id),
   CONSTRAINT host_payout_details_user_id_key UNIQUE (user_id)
 );
@@ -400,6 +402,8 @@ ALTER TABLE public.vibe_requests ADD CONSTRAINT vibe_requests_sender_id_fkey FOR
 ALTER TABLE public.wallet_transactions ADD CONSTRAINT wallet_transactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 -- ── Indexes ─────────────────────────────────────────────────────────────────
+CREATE UNIQUE INDEX IF NOT EXISTS host_payout_account_fingerprint_uidx ON public.host_payout_details (account_fingerprint) WHERE (account_fingerprint IS NOT NULL);
+CREATE UNIQUE INDEX IF NOT EXISTS host_payout_upi_fingerprint_uidx ON public.host_payout_details (upi_fingerprint) WHERE (upi_fingerprint IS NOT NULL);
 CREATE INDEX idx_admin_audit_log_created_at ON public.admin_audit_log USING btree (created_at DESC);
 CREATE INDEX idx_admin_refresh_tokens_admin_id ON public.admin_refresh_tokens USING btree (admin_id);
 CREATE INDEX idx_device_tokens_user ON public.device_tokens USING btree (user_id);

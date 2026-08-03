@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator, Pressable } from 'react-native'
-import { CheckCircle2, XCircle, Info, Eye, EyeOff } from 'lucide-react-native'
+import { CheckCircle2, XCircle, Info, Eye, EyeOff, ShieldCheck } from 'lucide-react-native'
 import { Input, LogoMark, TabSwitcher } from '@/components/ui'
 import { Colors, FontFamily, Radius } from '@/constants'
 import type { BankInfo } from '@/hooks/useIfscLookup'
@@ -170,6 +170,11 @@ export function PayoutStep({
           </>
         )}
       </View>
+
+      <View style={s.secureRow}>
+        <ShieldCheck size={15} color={Colors.inkSecondary} strokeWidth={1.8} />
+        <Text style={s.secureText}>Your account details are encrypted and safe with us.</Text>
+      </View>
     </View>
   )
 }
@@ -195,6 +200,18 @@ const s = StyleSheet.create({
     paddingHorizontal: 8,
   },
   form: { width: '100%', gap: 16 },
+  secureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 20,
+  },
+  secureText: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 12,
+    color: Colors.inkSecondary,
+  },
   vpaRow: {
     flexDirection: 'row',
     alignItems: 'center',

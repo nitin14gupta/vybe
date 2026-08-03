@@ -21,7 +21,7 @@ import ReAnimated, {
 import ViewShot, { type ViewShotRef } from 'react-native-view-shot'
 import { Asset as MediaAsset, requestPermissionsAsync as requestMediaPermissionsAsync } from 'expo-media-library'
 import { hTap, hSuccess } from '@/lib/haptics'
-import { Colors, FontFamily, Radius, Spacing, ComponentSize } from '@/constants'
+import { Colors, FontFamily, Radius, Spacing, ComponentSize, LogoBlack } from '@/constants'
 import ApiService, { type TicketInfo } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { getOrFetch, peekCached } from '@/lib/queryCache'
@@ -124,7 +124,7 @@ function TicketCard({ ticket }: { ticket: TicketInfo }) {
           <StyledQr data={ticket.ticket_token} size={176} errorCorrectionLevel="M" />
         </View>
         <View style={s.scanHintRow}>
-          <LogoMark size={13} opacity={0.55} />
+          <LogoMark size={13} opacity={0.85} source={LogoBlack} />
           <Text style={s.scanHint}>Scan at the door</Text>
         </View>
         <Text style={s.orderRef}>{orderRef(ticket.ticket_token)}</Text>
@@ -267,9 +267,9 @@ export default function TicketScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Orange glow bleeds into status bar area */}
+        {/* Soft neutral glow bleeds into status bar area */}
         <LinearGradient
-          colors={['rgba(255,107,53,0.22)', 'transparent']}
+          colors={['rgba(255,255,255,0.08)', 'transparent']}
           style={s.ambientGlow}
           pointerEvents="none"
         />
@@ -403,8 +403,8 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: CARD_BORDER,
     overflow: 'hidden',
-    shadowColor: Colors.brandOrange,
-    shadowOpacity: 0.15,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 8 },
     elevation: 14,

@@ -1,3 +1,4 @@
+import psycopg2
 from fastapi import APIRouter, BackgroundTasks, HTTPException, status, Depends
 from pydantic import BaseModel
 from datetime import date, datetime, timezone, timedelta
@@ -10,7 +11,7 @@ from schemas.user import (
 from middleware.auth import get_current_user
 from db.config import get_db
 from utils.push import send_push, get_user_avatar_url
-from utils.crypto import encrypt, decrypt
+from utils.crypto import encrypt, decrypt, fingerprint
 from routes.notifications import notify_new_follower, notify_report_submitted, notify_host_onboarding_complete
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -312,31 +313,48 @@ def set_payout_details(
     current_user: dict = Depends(get_current_user),
 ):
     is_upi = body.payout_method == "upi"
+    upi_fp = fingerprint(body.upi_id) if is_upi else None
+    account_fp = fingerprint(f"{body.account_number}:{body.ifsc_code}") if not is_upi else None
+
     with get_db() as (cur, _):
-        cur.execute(
-            """
-            INSERT INTO host_payout_details
-                (user_id, payout_method, upi_id_ciphertext,
-                 account_holder_name_ciphertext, account_number_ciphertext, ifsc_code, bank_name)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (user_id) DO UPDATE SET
-                payout_method = EXCLUDED.payout_method,
-                upi_id_ciphertext = EXCLUDED.upi_id_ciphertext,
-                account_holder_name_ciphertext = EXCLUDED.account_holder_name_ciphertext,
-                account_number_ciphertext = EXCLUDED.account_number_ciphertext,
-                ifsc_code = EXCLUDED.ifsc_code,
-                bank_name = EXCLUDED.bank_name,
-                updated_at = NOW()
-            """,
-            (
-                current_user["id"], body.payout_method,
-                encrypt(body.upi_id) if is_upi else None,
-                None if is_upi else encrypt(body.account_holder_name),
-                None if is_upi else encrypt(body.account_number),
-                None if is_upi else body.ifsc_code,
-                None if is_upi else body.bank_name,
-            ),
-        )
+        try:
+            cur.execute(
+                """
+                INSERT INTO host_payout_details
+                    (user_id, payout_method, upi_id_ciphertext, upi_fingerprint,
+                     account_holder_name_ciphertext, account_number_ciphertext, account_fingerprint,
+                     ifsc_code, bank_name)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (user_id) DO UPDATE SET
+                    payout_method = EXCLUDED.payout_method,
+                    upi_id_ciphertext = EXCLUDED.upi_id_ciphertext,
+                    upi_fingerprint = EXCLUDED.upi_fingerprint,
+                    account_holder_name_ciphertext = EXCLUDED.account_holder_name_ciphertext,
+                    account_number_ciphertext = EXCLUDED.account_number_ciphertext,
+                    account_fingerprint = EXCLUDED.account_fingerprint,
+                    ifsc_code = EXCLUDED.ifsc_code,
+                    bank_name = EXCLUDED.bank_name,
+                    updated_at = NOW()
+                """,
+                (
+                    current_user["id"], body.payout_method,
+                    encrypt(body.upi_id) if is_upi else None, upi_fp,
+                    None if is_upi else encrypt(body.account_holder_name),
+                    None if is_upi else encrypt(body.account_number), account_fp,
+                    None if is_upi else body.ifsc_code,
+                    None if is_upi else body.bank_name,
+                ),
+            )
+        except psycopg2.errors.UniqueViolation as e:
+            constraint = getattr(e.diag, "constraint_name", "") or ""
+            if "upi_fingerprint" in constraint:
+                detail = "This UPI ID is already linked to another Gorave account."
+            elif "account_fingerprint" in constraint:
+                detail = "This bank account is already linked to another Gorave account."
+            else:
+                detail = "This payout account is already linked to another Gorave account."
+            raise HTTPException(status_code=409, detail=detail)
+
         cur.execute(
             "UPDATE users SET is_host_onboarding_finished = TRUE WHERE id = %s",
             (current_user["id"],),

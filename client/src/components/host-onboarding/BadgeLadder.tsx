@@ -2,10 +2,10 @@ import { View, Text, Image, StyleSheet } from 'react-native'
 import { Colors, FontFamily, Radius, HOST_BADGE_IMAGES } from '@/constants'
 
 const TIERS = [
-  { key: 'Rising', label: 'Rising', req: '2+ events hosted', tint: 'rgba(0,196,140,0.12)', border: 'rgba(0,196,140,0.35)', text: Colors.accentGreen },
-  { key: 'Established', label: 'Established', req: '10+ events hosted', tint: 'rgba(255,107,53,0.12)', border: 'rgba(255,107,53,0.35)', text: Colors.brandOrange },
-  { key: 'Elite', label: 'Elite', req: '25+ events hosted', tint: 'rgba(255,56,100,0.12)', border: 'rgba(255,56,100,0.35)', text: Colors.brandCoral },
-  { key: 'Legend', label: 'Legend', req: '75+ events hosted', tint: 'rgba(255,184,48,0.14)', border: 'rgba(255,184,48,0.4)', text: Colors.accentGold },
+  { key: 'Rising', label: 'Rising', req: '2+ events hosted', text: Colors.accentGreen },
+  { key: 'Established', label: 'Established', req: '10+ events hosted', text: Colors.brandOrange },
+  { key: 'Elite', label: 'Elite', req: '25+ events hosted', text: Colors.brandCoral },
+  { key: 'Legend', label: 'Legend', req: '75+ events hosted', text: Colors.accentGold },
 ] as const
 
 export function BadgeLadder() {
@@ -23,7 +23,7 @@ export function BadgeLadder() {
 
       <View style={s.grid}>
         {TIERS.map(tier => (
-          <View key={tier.key} style={[s.card, { backgroundColor: tier.tint, borderColor: tier.border }]}>
+          <View key={tier.key} style={s.card}>
             <View style={s.cardIconWrap}>
               <Image source={HOST_BADGE_IMAGES[tier.key]} style={s.cardIcon} resizeMode="contain" />
             </View>
@@ -41,9 +41,9 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: 'rgba(0,196,140,0.1)',
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: 'rgba(0,196,140,0.3)',
+    borderColor: Colors.divider,
     borderRadius: Radius.card,
     padding: 12,
     marginBottom: 16,
@@ -52,7 +52,7 @@ const s = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 9,
-    backgroundColor: 'rgba(0,196,140,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -61,14 +61,14 @@ const s = StyleSheet.create({
   bannerLabel: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 10.5,
-    color: Colors.accentGreen,
+    color: Colors.inkSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
   bannerName: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 14,
-    color: Colors.accentGreen,
+    color: Colors.inkPrimary,
     marginTop: 2,
   },
   grid: {
@@ -78,7 +78,9 @@ const s = StyleSheet.create({
   },
   card: {
     width: '47.5%',
+    backgroundColor: Colors.surface,
     borderWidth: 1,
+    borderColor: Colors.divider,
     borderRadius: Radius.card,
     paddingVertical: 14,
     paddingHorizontal: 10,
