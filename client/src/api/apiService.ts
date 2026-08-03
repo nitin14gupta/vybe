@@ -17,6 +17,8 @@ import type {
   EventSummary,
   EventDetail,
   MyEventsPage,
+  CalendarDaySummary,
+  CalendarDayEvents,
   WaitlistEntry,
   TicketInfo,
   ReviewItem,
@@ -55,6 +57,8 @@ export type {
   EventSummary,
   EventDetail,
   MyEventsPage,
+  CalendarDaySummary,
+  CalendarDayEvents,
   WaitlistEntry,
   TicketInfo,
   ReviewItem,
@@ -757,6 +761,21 @@ class ApiService {
 
   static async getMyWaitlistedEvents(): Promise<EventSummary[]> {
     return this.get<EventSummary[]>('/events/waitlisted')
+  }
+
+  // Calendar screen — month-scoped summary (dates + booleans, no event
+  // payload) drives the grid dots; full details for one day are fetched
+  // lazily via getCalendarDay, only when that day is actually selected.
+  static async getCalendarSummary(startDate: string, endDate: string, lat?: number | null, lng?: number | null): Promise<CalendarDaySummary[]> {
+    const params = new URLSearchParams({ start_date: startDate, end_date: endDate })
+    if (lat != null && lng != null) { params.set('lat', String(lat)); params.set('lng', String(lng)) }
+    return this.get<CalendarDaySummary[]>(`/events/calendar/summary?${params.toString()}`)
+  }
+
+  static async getCalendarDay(date: string, lat?: number | null, lng?: number | null): Promise<CalendarDayEvents> {
+    const params = new URLSearchParams({ date })
+    if (lat != null && lng != null) { params.set('lat', String(lat)); params.set('lng', String(lng)) }
+    return this.get<CalendarDayEvents>(`/events/calendar/day?${params.toString()}`)
   }
 
   // ── Upload ─────────────────────────────────────────────────────────────────

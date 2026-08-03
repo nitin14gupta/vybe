@@ -147,6 +147,21 @@ export interface MyEventsPage {
   has_more: boolean
 }
 
+export interface CalendarDaySummary {
+  date: string
+  has_joined: boolean
+  has_hosted: boolean
+  has_waitlisted: boolean
+  has_other: boolean
+}
+
+export interface CalendarDayEvents {
+  joined: EventSummary[]
+  hosted: EventSummary[]
+  waitlisted: EventSummary[]
+  other: EventSummary[]
+}
+
 export interface EventDetail extends EventSummary {
   description: string | null
   rules: string | null

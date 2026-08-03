@@ -604,6 +604,202 @@ def get_waitlisted_events(current_user: dict = Depends(get_current_user)):
     return result
 
 
+# ── Calendar screen ──────────────────────────────────────────────────────────
+# The old approach had the calendar pull the full unpaginated /hosted,
+# /joined and /waitlisted lists (a user's entire history, no date bound) just
+# to know which days deserve a dot. That gets slower forever as an account
+# ages. Instead: a cheap month-scoped summary (dates + booleans, no event
+# payload) drives the grid, and full event details are fetched lazily, one
+# day at a time, only for whichever day the user actually taps.
+
+class CalendarDaySummary(BaseModel):
+    date: str
+    has_joined: bool = False
+    has_hosted: bool = False
+    has_waitlisted: bool = False
+    has_other: bool = False
+
+
+class CalendarDayEvents(BaseModel):
+    joined: List[EventSummary] = []
+    hosted: List[EventSummary] = []
+    waitlisted: List[EventSummary] = []
+    other: List[EventSummary] = []
+
+
+_EVENT_COLUMNS = """
+    e.id::text, e.title, e.event_type,
+    e.date_time::text, e.end_time::text,
+    e.location_name, e.location_lat, e.location_lng,
+    e.price_inr, (e.price_inr = 0) AS is_free,
+    e.platform_fee_inr, e.host_commission_inr, e.platform_profit_inr,
+    e.spots_left, e.capacity, e.age_restriction,
+    e.cover_photos, e.is_cancelled,
+    NULL::int AS distance_km,
+    u.name AS host_name,
+    (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
+    COALESCE(u.is_deleted, FALSE) AS host_is_deleted,
+    (SELECT COUNT(*) FROM event_attendees ea2 WHERE ea2.event_id = e.id AND ea2.status = 'going')::int AS attendee_count
+"""
+
+
+def _shape_event_rows(rows) -> list:
+    result = []
+    for row in rows:
+        d = dict(row)
+        photos_raw = d.get("cover_photos") or []
+        d["cover_photos"] = [{"url": p, "position": i} for i, p in enumerate(photos_raw)] if isinstance(photos_raw, list) and photos_raw and isinstance(photos_raw[0], str) else photos_raw
+        result.append(d)
+    return result
+
+
+def _other_filter_sql(date_filter: str, params: list, uid: str, lat, lng, radius_km) -> tuple[str, list]:
+    """'Other' = published, not cancelled, upcoming events that aren't mine
+    (not hosted, not going, not waitlisted) — same definition the client used
+    to compute locally, now scoped server-side per day/month instead."""
+    filters = [
+        "e.is_published = TRUE", "e.is_cancelled = FALSE", "e.date_time > NOW()",
+        date_filter,
+        "e.host_id != %s::uuid",
+        "NOT EXISTS (SELECT 1 FROM event_attendees ea WHERE ea.event_id = e.id AND ea.user_id = %s::uuid AND ea.status IN ('going', 'waitlist'))",
+    ]
+    all_params = params + [uid, uid]
+    if lat is not None and lng is not None and radius_km:
+        filters.append("""
+            6371.0 * acos(LEAST(1.0,
+                cos(radians(%s)) * cos(radians(e.location_lat)) *
+                cos(radians(e.location_lng) - radians(%s)) +
+                sin(radians(%s)) * sin(radians(e.location_lat))
+            )) <= %s
+        """)
+        all_params.extend([lat, lng, lat, radius_km])
+    return " AND ".join(filters), all_params
+
+
+@router.get("/calendar/summary", response_model=List[CalendarDaySummary])
+def get_calendar_summary(
+    start_date: str = Query(...),
+    end_date: str = Query(...),
+    lat: Optional[float] = Query(default=None),
+    lng: Optional[float] = Query(default=None),
+    radius_km: Optional[int] = Query(default=50),
+    current_user: dict = Depends(get_current_user),
+):
+    uid = current_user["id"]
+    days: dict = {}
+
+    def mark(d, key):
+        k = d.isoformat()
+        entry = days.setdefault(k, {"date": k, "has_joined": False, "has_hosted": False, "has_waitlisted": False, "has_other": False})
+        entry[key] = True
+
+    with get_db() as (cur, _):
+        cur.execute(
+            """
+            SELECT DISTINCT e.date_time::date AS d
+            FROM events e
+            JOIN event_attendees ea ON ea.event_id = e.id AND ea.user_id = %s::uuid AND ea.status = 'going'
+            WHERE e.date_time::date BETWEEN %s AND %s
+            """,
+            (uid, start_date, end_date),
+        )
+        for row in cur.fetchall():
+            mark(row["d"], "has_joined")
+
+        cur.execute(
+            """
+            SELECT DISTINCT e.date_time::date AS d
+            FROM events e
+            WHERE e.host_id = %s::uuid AND e.date_time::date BETWEEN %s AND %s
+            """,
+            (uid, start_date, end_date),
+        )
+        for row in cur.fetchall():
+            mark(row["d"], "has_hosted")
+
+        cur.execute(
+            """
+            SELECT DISTINCT e.date_time::date AS d
+            FROM events e
+            JOIN event_attendees ea ON ea.event_id = e.id AND ea.user_id = %s::uuid AND ea.status = 'waitlist'
+            WHERE e.date_time::date BETWEEN %s AND %s
+            """,
+            (uid, start_date, end_date),
+        )
+        for row in cur.fetchall():
+            mark(row["d"], "has_waitlisted")
+
+        other_where, other_params = _other_filter_sql(
+            "e.date_time::date BETWEEN %s AND %s", [start_date, end_date], uid, lat, lng, radius_km,
+        )
+        cur.execute(f"SELECT DISTINCT e.date_time::date AS d FROM events e WHERE {other_where}", other_params)
+        for row in cur.fetchall():
+            mark(row["d"], "has_other")
+
+    return list(days.values())
+
+
+@router.get("/calendar/day", response_model=CalendarDayEvents)
+def get_calendar_day(
+    date_: str = Query(..., alias="date"),
+    lat: Optional[float] = Query(default=None),
+    lng: Optional[float] = Query(default=None),
+    radius_km: Optional[int] = Query(default=50),
+    current_user: dict = Depends(get_current_user),
+):
+    uid = current_user["id"]
+    with get_db() as (cur, _):
+        cur.execute(
+            f"""
+            SELECT {_EVENT_COLUMNS}
+            FROM events e
+            JOIN users u ON u.id = e.host_id
+            JOIN event_attendees ea ON ea.event_id = e.id AND ea.user_id = %s::uuid AND ea.status = 'going'
+            WHERE e.date_time::date = %s
+            """,
+            (uid, date_),
+        )
+        joined = _shape_event_rows(cur.fetchall())
+
+        cur.execute(
+            f"""
+            SELECT {_EVENT_COLUMNS}
+            FROM events e
+            JOIN users u ON u.id = e.host_id
+            WHERE e.host_id = %s::uuid AND e.date_time::date = %s
+            """,
+            (uid, date_),
+        )
+        hosted = _shape_event_rows(cur.fetchall())
+
+        cur.execute(
+            f"""
+            SELECT {_EVENT_COLUMNS}
+            FROM events e
+            JOIN users u ON u.id = e.host_id
+            JOIN event_attendees ea ON ea.event_id = e.id AND ea.user_id = %s::uuid AND ea.status = 'waitlist'
+            WHERE e.date_time::date = %s
+            """,
+            (uid, date_),
+        )
+        waitlisted = _shape_event_rows(cur.fetchall())
+
+        other_where, other_params = _other_filter_sql("e.date_time::date = %s", [date_], uid, lat, lng, radius_km)
+        cur.execute(
+            f"""
+            SELECT {_EVENT_COLUMNS}
+            FROM events e
+            JOIN users u ON u.id = e.host_id
+            WHERE {other_where}
+            ORDER BY e.date_time ASC
+            """,
+            other_params,
+        )
+        other = _shape_event_rows(cur.fetchall())
+
+    return {"joined": joined, "hosted": hosted, "waitlisted": waitlisted, "other": other}
+
+
 # ── GET /events/free-slots ────────────────────────────────────────────────────
 # Must be registered BEFORE /{event_id} so FastAPI doesn't swallow "free-slots" as a UUID.
 

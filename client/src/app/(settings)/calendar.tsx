@@ -52,7 +52,7 @@ export default function CalendarScreen() {
   const [filters, setFilters] = useState<CalendarFilters>(DEFAULT_CALENDAR_FILTERS)
   const [toastVisible, setToastVisible] = useState(false)
 
-  const { eventsByDay, loading } = useCalendarEvents(visibleMonth, filters)
+  const { hasEventsOnDate, dayEvents, dayLoading } = useCalendarEvents(visibleMonth, selectedDate, filters)
 
   // Cache the last-applied filters so they persist across visits — a plain
   // read-once-on-mount + write-on-apply, no need for anything fancier.
@@ -105,11 +105,10 @@ export default function CalendarScreen() {
   }
 
   const selKey = dateKey(selectedDate)
-  const dayData = eventsByDay.get(selKey)
-  const dayJoined = dayData?.joined ?? []
-  const dayHosted = dayData?.hosted ?? []
-  const dayWaitlisted = dayData?.waitlisted ?? []
-  const dayOther = dayData?.other ?? []
+  const dayJoined = dayEvents.joined
+  const dayHosted = dayEvents.hosted
+  const dayWaitlisted = dayEvents.waitlisted
+  const dayOther = dayEvents.other
   const hasEvents = dayJoined.length > 0 || dayHosted.length > 0 || dayWaitlisted.length > 0 || dayOther.length > 0
   const isPast = selectedDate.getTime() < today.getTime()
 
@@ -168,7 +167,7 @@ export default function CalendarScreen() {
             {week.map((d, di) => {
               if (!d) return <View key={di} style={s.dayCell} />
               const k = dateKey(d)
-              const hasDot = eventsByDay.has(k)
+              const hasDot = hasEventsOnDate(k)
               const isSelected = k === selKey
               const isToday = k === dateKey(today)
               return (
@@ -200,7 +199,7 @@ export default function CalendarScreen() {
           </Pressable>
         </View>
 
-        {loading ? (
+        {dayLoading ? (
           <View style={s.eventsScroll}>
             <View style={s.cardsCol}>
               {Array.from({ length: 3 }).map((_, i) => <DayEventRowSkeleton key={i} />)}

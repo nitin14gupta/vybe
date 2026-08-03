@@ -1,7 +1,7 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useFocusEffect } from 'expo-router'
 import ApiService, { type EventSummary } from '@/api/apiService'
-import { parseServerDate } from '@/lib/dates'
+import type { CalendarDaySummary, CalendarDayEvents } from '@/types/api'
 import type { CityResponse } from '@/hooks/useCities'
 
 export interface DayEvents {
@@ -38,86 +38,82 @@ function monthBounds(monthDate: Date): [string, string] {
   return [dateKey(new Date(year, month, 1)), dateKey(new Date(year, month + 1, 0))]
 }
 
-export function useCalendarEvents(visibleMonth: Date, filters: CalendarFilters = DEFAULT_CALENDAR_FILTERS) {
-  const [joined, setJoined] = useState<EventSummary[]>([])
-  const [hosted, setHosted] = useState<EventSummary[]>([])
-  const [waitlisted, setWaitlisted] = useState<EventSummary[]>([])
-  const [nearby, setNearby] = useState<EventSummary[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
+const EMPTY_DAY: CalendarDayEvents = { joined: [], hosted: [], waitlisted: [], other: [] }
+
+// The grid only ever needs "does this day have a dot" — a cheap month-scoped
+// summary covers that. Full event details are fetched lazily, one day at a
+// time, only for whichever day is actually selected — not the user's entire
+// hosted/joined/waitlisted history up front (that only gets worse as an
+// account ages).
+export function useCalendarEvents(visibleMonth: Date, selectedDate: Date, filters: CalendarFilters = DEFAULT_CALENDAR_FILTERS) {
+  const [summary, setSummary] = useState<Map<string, CalendarDaySummary>>(new Map())
+  const [monthLoading, setMonthLoading] = useState(true)
+  const [monthError, setMonthError] = useState(false)
+
+  const [dayRaw, setDayRaw] = useState<CalendarDayEvents>(EMPTY_DAY)
+  const [dayLoading, setDayLoading] = useState(true)
+  const [dayError, setDayError] = useState(false)
+
   const [monthStart, monthEnd] = monthBounds(visibleMonth)
+  const selKey = dateKey(selectedDate)
   // Only the city matters for refetching — the Hosted/Going/Waitlisted
-  // toggles are applied client-side below (see eventsByDay) so flipping them
-  // is instant and never re-hits the network.
+  // toggles are applied client-side below, so flipping them is instant and
+  // never re-hits the network.
   const cityLat = filters.city?.lat
   const cityLng = filters.city?.lng
 
-  const load = useCallback(async () => {
-    setError(false)
-    let failed = false
-    const [j, h, w, n] = await Promise.all([
-      ApiService.getMyJoinedEvents().catch(() => { failed = true; return [] as EventSummary[] }),
-      ApiService.getMyHostedEvents().catch(() => { failed = true; return [] as EventSummary[] }),
-      ApiService.getMyWaitlistedEvents().catch(() => { failed = true; return [] as EventSummary[] }),
-      ApiService.getEvents({
-        start_date: monthStart,
-        end_date: monthEnd,
-        limit: 200,
-        // No location filter at all by default ("All") — every published
-        // event in the visible month shows up regardless of distance. Only
-        // when a specific city is picked do we scope "other" to near it.
-        ...(cityLat != null && cityLng != null ? { lat: cityLat, lng: cityLng, radius_km: 50 } : {}),
-      }).catch(() => [] as EventSummary[]),
-    ])
-    setJoined(j)
-    setHosted(h)
-    setWaitlisted(w)
-    setNearby(n)
-    setError(failed)
-    setLoading(false)
+  const loadMonth = useCallback(async () => {
+    setMonthLoading(true)
+    try {
+      const rows = await ApiService.getCalendarSummary(monthStart, monthEnd, cityLat, cityLng)
+      setSummary(new Map(rows.map(r => [r.date, r])))
+      setMonthError(false)
+    } catch {
+      setMonthError(true)
+    } finally {
+      setMonthLoading(false)
+    }
   }, [monthStart, monthEnd, cityLat, cityLng])
 
-  useFocusEffect(useCallback(() => { load() }, [load]))
+  useFocusEffect(useCallback(() => { loadMonth() }, [loadMonth]))
 
-  const eventsByDay = useMemo(() => {
-    const map = new Map<string, DayEvents>()
-    const get = (k: string) => {
-      if (!map.has(k)) map.set(k, { joined: [], hosted: [], waitlisted: [], other: [] })
-      return map.get(k)!
+  const loadDay = useCallback(async () => {
+    setDayLoading(true)
+    try {
+      const data = await ApiService.getCalendarDay(selKey, cityLat, cityLng)
+      setDayRaw(data)
+      setDayError(false)
+    } catch {
+      setDayRaw(EMPTY_DAY)
+      setDayError(true)
+    } finally {
+      setDayLoading(false)
     }
-    // "Yours" always excludes from the "other" bucket regardless of whether
-    // its own section is currently toggled off — hiding the Hosting section
-    // shouldn't make your own event reappear as a stranger's event.
-    const mineIds = new Set<string>()
-    for (const e of joined) mineIds.add(e.id)
-    for (const e of hosted) mineIds.add(e.id)
-    for (const e of waitlisted) mineIds.add(e.id)
+  }, [selKey, cityLat, cityLng])
 
-    if (filters.showGoing) {
-      for (const e of joined) {
-        const d = parseServerDate(e.date_time)
-        if (d) get(dateKey(d)).joined.push(e)
-      }
-    }
-    if (filters.showHosted) {
-      for (const e of hosted) {
-        const d = parseServerDate(e.date_time)
-        if (d) get(dateKey(d)).hosted.push(e)
-      }
-    }
-    if (filters.showWaitlisted) {
-      for (const e of waitlisted) {
-        const d = parseServerDate(e.date_time)
-        if (d) get(dateKey(d)).waitlisted.push(e)
-      }
-    }
-    for (const e of nearby) {
-      if (mineIds.has(e.id)) continue
-      const d = parseServerDate(e.date_time)
-      if (d) get(dateKey(d)).other.push(e)
-    }
-    return map
-  }, [joined, hosted, waitlisted, nearby, filters.showGoing, filters.showHosted, filters.showWaitlisted])
+  useEffect(() => { loadDay() }, [loadDay])
 
-  return { eventsByDay, loading, error, reload: load }
+  const hasEventsOnDate = useCallback((key: string) => {
+    const s = summary.get(key)
+    if (!s) return false
+    return (filters.showGoing && s.has_joined) || (filters.showHosted && s.has_hosted) || (filters.showWaitlisted && s.has_waitlisted) || s.has_other
+  }, [summary, filters.showGoing, filters.showHosted, filters.showWaitlisted])
+
+  const dayEvents: DayEvents = useMemo(() => ({
+    joined: filters.showGoing ? dayRaw.joined : [],
+    hosted: filters.showHosted ? dayRaw.hosted : [],
+    waitlisted: filters.showWaitlisted ? dayRaw.waitlisted : [],
+    other: dayRaw.other,
+  }), [dayRaw, filters.showGoing, filters.showHosted, filters.showWaitlisted])
+
+  return {
+    hasEventsOnDate,
+    monthLoading,
+    monthError,
+    dayEvents,
+    dayLoading,
+    dayError,
+    reloadMonth: loadMonth,
+    reloadDay: loadDay,
+  }
 }
