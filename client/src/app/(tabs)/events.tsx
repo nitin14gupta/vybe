@@ -205,8 +205,8 @@ export default function EventsScreen() {
   const togglePill = (
     <TabSwitcher
       tabs={[
-        { key: "map", label: "Map", icon: (active) => <Map size={13} color={active ? "#111" : Colors.inkSecondary} strokeWidth={2} /> },
-        { key: "list", label: "List", icon: (active) => <List size={13} color={active ? "#111" : Colors.inkSecondary} strokeWidth={2} /> },
+        { key: "map", label: "Map", icon: (active) => <Map size={13} color={active ? Colors.inkOnAccent : Colors.inkSecondary} strokeWidth={2} /> },
+        { key: "list", label: "List", icon: (active) => <List size={13} color={active ? Colors.inkOnAccent : Colors.inkSecondary} strokeWidth={2} /> },
       ]}
       activeTab={viewMode}
       onChange={(key) => { hSelection(); setViewMode(key as "map" | "list") }}

@@ -16,7 +16,7 @@ export const Colors = {
   inkPrimary: '#F5F0EB',       // headings, primary content
   inkSecondary: '#A09890',     // captions, metadata
   inkDisabled: '#4A4540',      // placeholder, disabled state
-
+  inkOnAccent: '#111111',      // text/icons on light or brand-colored fills (active tabs, toggles, buttons)
   // Structure
   divider: '#2A2A2A',          // borders, separators
 
