@@ -3,11 +3,12 @@ import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, Refresh
 import { router, useFocusEffect } from 'expo-router'
 import { ArrowLeft, Ticket, QrCode, ChevronRight, Ban } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
-import { AppHeader, HeaderIconBtn, PrimaryButton } from '@/components/ui'
+import { AppHeader, HeaderIconBtn, PrimaryButton, EventListCard, ViewModeToggle, TabSwitcher } from '@/components/ui'
 import ApiService from '@/api/apiService'
 import type { EventSummary } from '@/api/apiService'
 import { EventCard } from '@/components/events/EventCard'
 import { parseServerDate } from '@/lib/dates'
+import { useEventViewModeStore } from '@/store/eventViewModeStore'
 
 type Tab = 'upcoming' | 'past'
 
@@ -16,6 +17,8 @@ export default function JoinedEventsScreen() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [tab, setTab] = useState<Tab>('upcoming')
+  const viewMode = useEventViewModeStore(s => s.mode)
+  const setViewMode = useEventViewModeStore(s => s.setMode)
 
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true)
@@ -56,12 +59,14 @@ export default function JoinedEventsScreen() {
       />
 
       <View style={s.tabs}>
-        <Pressable style={[s.tab, tab === 'upcoming' && s.tabActive]} onPress={() => setTab('upcoming')}>
-          <Text style={[s.tabLabel, tab === 'upcoming' && s.tabLabelActive]}>Upcoming ({upcoming.length})</Text>
-        </Pressable>
-        <Pressable style={[s.tab, tab === 'past' && s.tabActive]} onPress={() => setTab('past')}>
-          <Text style={[s.tabLabel, tab === 'past' && s.tabLabelActive]}>Past ({past.length})</Text>
-        </Pressable>
+        <TabSwitcher
+          tabs={[
+            { key: 'upcoming', label: `Upcoming (${upcoming.length})` },
+            { key: 'past', label: `Past (${past.length})` },
+          ]}
+          activeTab={tab}
+          onChange={t => setTab(t as Tab)}
+        />
       </View>
 
       {loading ? (
@@ -93,31 +98,41 @@ export default function JoinedEventsScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={Colors.brandOrange} />
           }
           renderItem={({ item }) => (
-            <EventCard
-              event={item}
-              onPress={() => router.push(`/(events)/${item.id}` as any)}
-              showHost
-              isPast={tab === 'past'}
-              footer={
-                tab === 'upcoming' ? (
-                  <Pressable
-                    style={s.ticketFooter}
-                    onPress={() => router.push(`/(events)/${item.id}/ticket` as any)}
-                  >
-                    <QrCode size={15} color={Colors.brandOrange} strokeWidth={2} />
-                    <Text style={s.ticketFooterText}>View Ticket</Text>
-                    <ChevronRight size={15} color={Colors.brandOrange} strokeWidth={2} />
-                  </Pressable>
-                ) : (
-                  <View style={s.expiredFooter}>
-                    <Ban size={14} color={Colors.inkDisabled} strokeWidth={1.8} />
-                    <Text style={s.expiredFooterText}>Ticket no longer valid — this event has ended</Text>
-                  </View>
-                )
-              }
-            />
+            viewMode === 'list' ? (
+              <EventListCard event={item} onPress={() => router.push(`/(events)/${item.id}` as any)} />
+            ) : (
+              <EventCard
+                event={item}
+                onPress={() => router.push(`/(events)/${item.id}` as any)}
+                showHost
+                isPast={tab === 'past'}
+                footer={
+                  tab === 'upcoming' ? (
+                    <Pressable
+                      style={s.ticketFooter}
+                      onPress={() => router.push(`/(events)/${item.id}/ticket` as any)}
+                    >
+                      <QrCode size={15} color={Colors.brandOrange} strokeWidth={2} />
+                      <Text style={s.ticketFooterText}>View Ticket</Text>
+                      <ChevronRight size={15} color={Colors.brandOrange} strokeWidth={2} />
+                    </Pressable>
+                  ) : (
+                    <View style={s.expiredFooter}>
+                      <Ban size={14} color={Colors.inkDisabled} strokeWidth={1.8} />
+                      <Text style={s.expiredFooterText}>Ticket no longer valid — this event has ended</Text>
+                    </View>
+                  )
+                }
+              />
+            )
           )}
         />
+      )}
+
+      {!loading && visible.length > 0 && (
+        <View style={s.viewToggle}>
+          <ViewModeToggle mode={viewMode} onChange={setViewMode} />
+        </View>
       )}
     </View>
   )
@@ -134,22 +149,10 @@ const s = StyleSheet.create({
   listContent: { padding: 16, gap: 16 },
 
   tabs: {
-    flexDirection: 'row',
     paddingHorizontal: 16,
     paddingTop: 4,
     paddingBottom: 8,
-    gap: 8,
   },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: Colors.elevated,
-  },
-  tabActive: { backgroundColor: Colors.brandOrange },
-  tabLabel: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.inkSecondary },
-  tabLabelActive: { color: '#111' },
 
   ticketFooter: {
     flexDirection: 'row',
@@ -174,4 +177,6 @@ const s = StyleSheet.create({
     paddingVertical: 12,
   },
   expiredFooterText: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.inkDisabled },
+
+  viewToggle: { position: 'absolute', right: 16, bottom: 16 },
 })
