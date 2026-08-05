@@ -116,7 +116,14 @@ export default function TabsLayout() {
             tabBarIcon: ({ color, focused }) =>
               avatarUrl ? (
                 <View style={[styles.avatarWrap, focused && styles.avatarWrapActive]}>
-                  <Image source={{ uri: avatarUrl }} style={styles.avatarImg} contentFit="cover" />
+                  <Image
+                    source={{ uri: avatarUrl }}
+                    style={styles.avatarImg}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    priority="low"
+                    transition={150}
+                  />
                 </View>
               ) : (
                 <User size={24} color={color} strokeWidth={1.8} />

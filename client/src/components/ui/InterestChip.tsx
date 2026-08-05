@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Pressable, Text, StyleSheet } from 'react-native'
 import { hSelection } from '@/lib/haptics'
 import { Colors, FontFamily, Radius } from '@/constants'
@@ -10,7 +11,7 @@ interface Props {
   bordered?: boolean
 }
 
-export function InterestChip({ label, emoji, selected, bordered, onPress }: Props) {
+function InterestChipBase({ label, emoji, selected, bordered, onPress }: Props) {
   return (
     <Pressable
       onPress={() => { hSelection(); onPress() }}
@@ -65,3 +66,5 @@ const styles = StyleSheet.create({
     color: Colors.inkSecondary,
   },
 })
+
+export const InterestChip = memo(InterestChipBase)

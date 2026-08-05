@@ -1,19 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import {
-  View, Text, StyleSheet, FlatList,
-  Pressable, Image,
-} from 'react-native'
+import { View, Text, StyleSheet, FlatList } from 'react-native'
 import { router } from 'expo-router'
 import { useFocusEffect } from 'expo-router'
-import { ArrowLeft, Users, X } from 'lucide-react-native'
+import { ArrowLeft, Users } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
-import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import ApiService from '@/api/apiService'
 import type { DiscoverUser } from '@/api/apiService'
 import { useSearchHistoryStore } from '@/store/searchHistoryStore'
-import type { SearchHistoryUser } from '@/store/searchHistoryStore'
 import { AppHeader, HeaderIconBtn, SearchBar } from '@/components/ui'
+import { PeopleListSkeleton } from '@/components/profile/PeopleListSkeleton'
+import { SearchHistoryList } from '@/components/profile/SearchHistoryList'
+import { SearchResultRow } from '@/components/profile/SearchResultRow'
 
 export default function SearchScreen() {
   const [query, setQuery] = useState('')
@@ -92,7 +90,6 @@ export default function SearchScreen() {
         leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
       />
 
-      {/* Search bar */}
       <View style={s.searchWrap}>
         <SearchBar
           value={query}
@@ -105,21 +102,10 @@ export default function SearchScreen() {
         />
       </View>
 
-      {/* Content */}
       {loading ? (
-        <AutoSkeletonView isLoading animationType="gradient" defaultRadius={7} gradientColors={['#1e1e1e', '#2e2e2e']}>
-          {Array.from({ length: 7 }).map((_, i) => (
-            <View key={i} style={s.skRow}>
-              <View style={s.skAvatar} />
-              <View style={s.skInfo}>
-                <View style={s.skLineName} />
-                <View style={s.skLineUser} />
-              </View>
-            </View>
-          ))}
-        </AutoSkeletonView>
+        <PeopleListSkeleton />
       ) : showHistory ? (
-        <HistoryList
+        <SearchHistoryList
           history={history}
           onTap={(user) => router.push(`/(profile)/${user.id}` as any)}
           onRemove={(id) => { hTap(); remove(id) }}
@@ -149,85 +135,11 @@ export default function SearchScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => (
-            <UserRow user={item} onTap={() => handleResultTap(item)} />
+            <SearchResultRow user={item} onTap={() => handleResultTap(item)} />
           )}
         />
       )}
     </View>
-  )
-}
-
-// ── History list ──────────────────────────────────────────────────────────────
-
-function HistoryList({
-  history,
-  onTap,
-  onRemove,
-  onClear,
-}: {
-  history: SearchHistoryUser[]
-  onTap: (user: SearchHistoryUser) => void
-  onRemove: (id: string) => void
-  onClear: () => void
-}) {
-  return (
-    <FlatList
-      data={history}
-      keyExtractor={item => item.id}
-      keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={false}
-      ListHeaderComponent={
-        <View style={s.historyHeader}>
-          <Text style={s.historyTitle}>Recent</Text>
-          <Pressable onPress={onClear} hitSlop={8}>
-            <Text style={s.clearAll}>Clear all</Text>
-          </Pressable>
-        </View>
-      }
-      renderItem={({ item }) => (
-        <Pressable style={s.row} onPress={() => onTap(item)}>
-          {item.avatar ? (
-            <Image source={{ uri: item.avatar }} style={s.avatar} />
-          ) : (
-            <View style={[s.avatar, s.avatarFallback]}>
-              <Text style={s.avatarInitial}>{(item.name ?? '?').charAt(0)}</Text>
-            </View>
-          )}
-          <View style={s.info}>
-            <Text style={s.name} numberOfLines={1}>{item.name ?? 'User'}</Text>
-            {item.username ? (
-              <Text style={s.username} numberOfLines={1}>@{item.username}</Text>
-            ) : null}
-          </View>
-          <Pressable onPress={() => onRemove(item.id)} hitSlop={10} style={s.removeBtn}>
-            <X size={16} color={Colors.inkDisabled} strokeWidth={2} />
-          </Pressable>
-        </Pressable>
-      )}
-    />
-  )
-}
-
-// ── Search result row ─────────────────────────────────────────────────────────
-
-function UserRow({ user, onTap }: { user: DiscoverUser; onTap: () => void }) {
-  const avatar = user.photos[0]?.url
-  return (
-    <Pressable style={s.row} onPress={onTap}>
-      {avatar ? (
-        <Image source={{ uri: avatar }} style={s.avatar} />
-      ) : (
-        <View style={[s.avatar, s.avatarFallback]}>
-          <Text style={s.avatarInitial}>{(user.name ?? '?').charAt(0)}</Text>
-        </View>
-      )}
-      <View style={s.info}>
-        <Text style={s.name} numberOfLines={1}>{user.name ?? 'User'}</Text>
-        {user.username ? (
-          <Text style={s.username} numberOfLines={1}>@{user.username}</Text>
-        ) : null}
-      </View>
-    </Pressable>
   )
 }
 
@@ -242,45 +154,5 @@ const s = StyleSheet.create({
   emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
   emptySub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center' },
 
-  historyHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  historyTitle: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 13,
-    color: Colors.inkSecondary,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  clearAll: {
-    fontFamily: FontFamily.bodyMedium,
-    fontSize: 13,
-    color: Colors.brandOrange,
-  },
-
-  skRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, gap: 14 },
-  skAvatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#2a2a2a' },
-  skInfo: { flex: 1, gap: 8 },
-  skLineName: { height: 14, width: '55%', borderRadius: 7, backgroundColor: '#2a2a2a' },
-  skLineUser: { height: 12, width: '35%', borderRadius: 6, backgroundColor: '#2a2a2a' },
-
   listContent: { paddingBottom: 32 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    gap: 14,
-  },
-  avatar: { width: 52, height: 52, borderRadius: 26 },
-  avatarFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
-  avatarInitial: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary },
-  info: { flex: 1, gap: 2 },
-  name: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.inkPrimary },
-  username: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkDisabled },
-  removeBtn: { padding: 4 },
 })

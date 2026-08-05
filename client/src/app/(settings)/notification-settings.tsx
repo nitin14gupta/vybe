@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, Switch, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native'
 import { router } from 'expo-router'
 import { useFocusEffect } from 'expo-router'
 import {
@@ -7,8 +7,9 @@ import {
 } from 'lucide-react-native'
 import { Screen, BackButton } from '@/components/ui'
 import ApiService, { type NotificationPrefs } from '@/api/apiService'
-import { hSelection } from '@/lib/haptics'
-import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { usePillStore } from '@/store/pillStore'
+import { Colors, FontFamily, Spacing } from '@/constants'
+import { PreferenceToggleRow } from '@/components/settings/PreferenceToggleRow'
 
 const CATEGORIES: { key: keyof NotificationPrefs; icon: any; label: string; description: string }[] = [
   {
@@ -37,52 +38,27 @@ const CATEGORIES: { key: keyof NotificationPrefs; icon: any; label: string; desc
   },
 ]
 
-function ToggleRow({ icon: Icon, label, description, value, onChange, showSeparator }: {
-  icon: any
-  label: string
-  description: string
-  value: boolean
-  onChange: (v: boolean) => void
-  showSeparator: boolean
-}) {
-  return (
-    <>
-      <View style={s.row}>
-        <View style={s.iconWrap}>
-          <Icon size={18} color={Colors.inkSecondary} strokeWidth={1.5} />
-        </View>
-        <View style={s.textBlock}>
-          <Text style={s.label}>{label}</Text>
-          <Text style={s.description}>{description}</Text>
-        </View>
-        <Switch
-          value={value}
-          onValueChange={v => { hSelection(); onChange(v) }}
-          trackColor={{ false: Colors.divider, true: Colors.brandOrange }}
-          thumbColor="#fff"
-        />
-      </View>
-      {showSeparator && <View style={s.sep} />}
-    </>
-  )
-}
-
 export default function NotificationSettingsScreen() {
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null)
   const [loading, setLoading] = useState(true)
+  const showPill = usePillStore(s => s.show)
 
   useFocusEffect(useCallback(() => {
     ApiService.getNotificationPrefs()
       .then(setPrefs)
-      .catch(() => setPrefs({ social: true, hosting: true, attending: true, payments: true }))
+      .catch(() => {
+        setPrefs({ social: true, hosting: true, attending: true, payments: true })
+        showPill("Couldn't load your preferences, showing defaults", 'error')
+      })
       .finally(() => setLoading(false))
-  }, []))
+  }, [showPill]))
 
   const toggle = (key: keyof NotificationPrefs, value: boolean) => {
     setPrefs(prev => prev ? { ...prev, [key]: value } : prev)
     ApiService.updateNotificationPrefs({ [key]: value }).catch(() => {
       // Revert on failure
       setPrefs(prev => prev ? { ...prev, [key]: !value } : prev)
+      showPill("Couldn't save that change, try again", 'error')
     })
   }
 
@@ -107,7 +83,7 @@ export default function NotificationSettingsScreen() {
           </Text>
           <View style={s.card}>
             {CATEGORIES.map((cat, i) => (
-              <ToggleRow
+              <PreferenceToggleRow
                 key={cat.key}
                 icon={cat.icon}
                 label={cat.label}
@@ -164,37 +140,5 @@ const s = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: 16,
     overflow: 'hidden',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.screenPadding,
-    paddingVertical: 14,
-    gap: 14,
-  },
-  iconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: Radius.sm,
-    backgroundColor: Colors.elevated,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  textBlock: { flex: 1, gap: 2 },
-  label: {
-    fontFamily: FontFamily.bodyMedium,
-    fontSize: 15,
-    color: Colors.inkPrimary,
-  },
-  description: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 12,
-    color: Colors.inkSecondary,
-    lineHeight: 16,
-  },
-  sep: {
-    height: 1,
-    backgroundColor: Colors.divider,
-    marginLeft: Spacing.screenPadding + 36 + 14,
   },
 })

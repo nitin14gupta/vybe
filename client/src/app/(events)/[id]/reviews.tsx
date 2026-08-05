@@ -26,6 +26,7 @@ export default function ReviewsScreen() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [loadError, setLoadError] = useState(false)
   const [avgRating, setAvgRating] = useState<number | null>(null)
   const [count, setCount] = useState(0)
   const [distribution, setDistribution] = useState<Record<string, number>>({})
@@ -39,13 +40,14 @@ export default function ReviewsScreen() {
     else setLoading(true)
     ApiService.getEventReviews(id, { rating: activeRating, limit: PAGE_SIZE, offset: 0 })
       .then(res => {
+        setLoadError(false)
         setAvgRating(res.avg_rating)
         setCount(res.count)
         setDistribution(res.distribution)
         setReviews(res.reviews)
         setHasMore(res.reviews.length === PAGE_SIZE)
       })
-      .catch(() => {})
+      .catch(() => setLoadError(true))
       .finally(() => { setLoading(false); setRefreshing(false) })
   }, [id, activeRating])
 
@@ -77,6 +79,15 @@ export default function ReviewsScreen() {
       {loading && reviews.length === 0 ? (
         <View style={s.center}>
           <BrandedLoader />
+        </View>
+      ) : loadError && reviews.length === 0 ? (
+        <View style={s.center}>
+          <Star size={48} color={Colors.inkDisabled} strokeWidth={1.2} />
+          <Text style={s.emptyTitle}>Couldn't load reviews</Text>
+          <Text style={s.emptySub}>Something went wrong.</Text>
+          <Pressable style={s.retryBtn} onPress={() => fetchFirstPage(false)}>
+            <Text style={s.retryText}>Try again</Text>
+          </Pressable>
         </View>
       ) : count === 0 && !activeRating ? (
         <View style={s.center}>
@@ -210,5 +221,19 @@ const s = StyleSheet.create({
     color: Colors.inkSecondary,
     textAlign: 'center',
     lineHeight: 21,
+  },
+  retryBtn: {
+    marginTop: 4,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: Colors.elevated,
+    borderWidth: 1,
+    borderColor: Colors.divider,
+  },
+  retryText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 13,
+    color: Colors.inkPrimary,
   },
 })

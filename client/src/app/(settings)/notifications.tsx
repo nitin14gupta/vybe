@@ -1,28 +1,21 @@
 import React, { useState, useCallback, useRef } from 'react'
 import {
   View, Text, StyleSheet, SectionList, Pressable,
-  ActivityIndicator, Image,
+  ActivityIndicator,
 } from 'react-native'
-import { hTap } from '@/lib/haptics'
 import { router } from 'expo-router'
 import { useFocusEffect } from 'expo-router'
-import { ArrowLeft, Bell, UserPlus, Flame, MessageCircle, PartyPopper, ShieldCheck, Trophy } from 'lucide-react-native'
+import { hTap } from '@/lib/haptics'
+import { ArrowLeft } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import ApiService, { AppNotification } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
 import { notifEntityToTarget, targetToHref } from '@/lib/deepLink'
-import { AppHeader, HeaderIconBtn, OutlineButton, PrimaryButton } from '@/components/ui'
+import { AppHeader, HeaderIconBtn } from '@/components/ui'
 import { useAuthStore } from '@/store/auth'
-
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime()
-  const m = Math.floor(diff / 60000)
-  if (m < 1) return 'just now'
-  if (m < 60) return `${m}m ago`
-  const h = Math.floor(m / 60)
-  if (h < 24) return `${h}h ago`
-  return `${Math.floor(h / 24)}d ago`
-}
+import { usePillStore } from '@/store/pillStore'
+import { NotificationRow } from '@/components/settings/NotificationRow'
+import { NotificationsEmptyState, NotificationsErrorState } from '@/components/settings/NotificationsStatusViews'
 
 function groupByDate(notifs: AppNotification[]): { title: string; data: AppNotification[] }[] {
   const now = new Date()
@@ -50,98 +43,30 @@ function groupByDate(notifs: AppNotification[]): { title: string; data: AppNotif
     .map(([title, data]) => ({ title, data }))
 }
 
-// Same icon language as the profile screen's CTA bar (client/src/app/(profile)/[id].tsx)
-// — UserPlus for Follow/Follow Back, Flame for Send Vybe, MessageCircle for Message.
-const ACTION_ICON: Record<string, any> = {
-  follow: UserPlus,
-  send_vybe: Flame,
-  message: MessageCircle,
-}
-
-const TYPE_FALLBACK: Record<string, { Icon: any; bg: string; color: string }> = {
-  host_onboarding_complete: { Icon: PartyPopper, bg: 'rgba(255,107,53,0.16)', color: Colors.brandOrange },
-  report_submitted: { Icon: ShieldCheck, bg: 'rgba(255,107,53,0.16)', color: Colors.brandOrange },
-  host_badge_earned: { Icon: Trophy, bg: 'rgba(255,107,53,0.16)', color: Colors.brandOrange },
-  review_milestone: { Icon: Trophy, bg: 'rgba(255,107,53,0.16)', color: Colors.brandOrange },
-}
-
-function NotifRow({ item, onPress, onAction }: {
-  item: AppNotification
-  onPress: () => void
-  onAction: (item: AppNotification) => void
-}) {
-  const unread = !item.read_at
-  const ActionIcon = item.action ? ACTION_ICON[item.action] : null
-  const isPrimary = item.action === 'send_vybe' || item.action === 'message'
-  const fallback = TYPE_FALLBACK[item.type]
-
-  return (
-    <View style={s.row}>
-      <Pressable style={s.rowMain} onPress={() => { hTap(); onPress() }}>
-        <View style={s.avatarWrap}>
-          {item.cover_photo ? (
-            <Image source={{ uri: item.cover_photo }} style={s.coverThumb} resizeMode="cover" />
-          ) : item.actor_avatar ? (
-            <Image source={{ uri: item.actor_avatar }} style={s.avatar} />
-          ) : fallback ? (
-            <View style={[s.avatar, s.avatarFallback, { backgroundColor: fallback.bg }]}>
-              <fallback.Icon size={18} color={fallback.color} strokeWidth={1.75} />
-            </View>
-          ) : (
-            <View style={[s.avatar, s.avatarFallback]}>
-              <Bell size={18} color={Colors.inkDisabled} strokeWidth={1.5} />
-            </View>
-          )}
-          {unread && <View style={s.unreadDot} />}
-        </View>
-        <View style={s.textBlock}>
-          <Text style={[s.title, unread && s.titleUnread]}>{item.title}</Text>
-          {item.body ? <Text style={s.body}>{item.body}</Text> : null}
-          <Text style={s.time}>{timeAgo(item.created_at)}</Text>
-        </View>
-      </Pressable>
-
-      {item.action && item.action_label && ActionIcon ? (
-        <View style={s.actionBtnWrap}>
-          {isPrimary ? (
-            <PrimaryButton
-              label={item.action_label}
-              onPress={() => onAction(item)}
-              icon={<ActionIcon size={14} color="#111" strokeWidth={2} />}
-              size="small"
-            />
-          ) : (
-            <OutlineButton
-              label={item.action_label}
-              onPress={() => onAction(item)}
-              icon={<ActionIcon size={14} color={Colors.inkPrimary} strokeWidth={2} />}
-              size="small"
-            />
-          )}
-        </View>
-      ) : null}
-    </View>
-  )
-}
-
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets()
   const [notifs, setNotifs] = useState<AppNotification[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(false)
   const cursorRef = useRef<string | undefined>(undefined)
+  const showPill = usePillStore(s => s.show)
 
   const loadInitial = useCallback(async () => {
     setLoading(true)
+    setLoadError(false)
     cursorRef.current = undefined
     try {
       const data = await ApiService.getNotifications()
       setNotifs(data)
       setHasMore(data.length === 10)
       if (data.length > 0) cursorRef.current = data[data.length - 1].created_at
-    } catch { }
-    finally { setLoading(false) }
+    } catch {
+      setLoadError(true)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   const loadMore = useCallback(async () => {
@@ -151,9 +76,12 @@ export default function NotificationsScreen() {
       setNotifs(prev => [...prev, ...data])
       setHasMore(data.length === 10)
       if (data.length > 0) cursorRef.current = data[data.length - 1].created_at
-    } catch { }
-    finally { setLoadingMore(false) }
-  }, [])
+    } catch {
+      showPill("Couldn't load more, try again", 'error')
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [showPill])
 
   useFocusEffect(useCallback(() => { loadInitial() }, [loadInitial]))
 
@@ -187,6 +115,7 @@ export default function NotificationsScreen() {
         setNotifs(prev => prev.map(n => n.id === item.id
           ? { ...n, action: item.action, action_label: item.action_label }
           : n))
+        showPill("Couldn't follow, try again", 'error')
       }
     } else if (item.action === 'send_vybe') {
       router.push(targetToHref({ screen: 'profile', id: item.action_target_id }) as any)
@@ -208,18 +137,16 @@ export default function NotificationsScreen() {
         <View style={s.center}>
           <ActivityIndicator color={Colors.brandOrange} />
         </View>
+      ) : loadError ? (
+        <NotificationsErrorState onRetry={loadInitial} />
       ) : notifs.length === 0 ? (
-        <View style={s.center}>
-          <Bell size={48} color={Colors.inkDisabled} strokeWidth={1.2} />
-          <Text style={s.emptyTitle}>No notifications yet</Text>
-          <Text style={s.emptySub}>We'll let you know when something happens</Text>
-        </View>
+        <NotificationsEmptyState />
       ) : (
         <SectionList
           sections={sections}
           keyExtractor={n => n.id}
           renderItem={({ item }) => (
-            <NotifRow item={item} onPress={() => handleTap(item)} onAction={handleAction} />
+            <NotificationRow item={item} onPress={() => handleTap(item)} onAction={handleAction} />
           )}
           renderSectionHeader={({ section }) => (
             <View style={s.sectionHeader}>
@@ -246,8 +173,6 @@ export default function NotificationsScreen() {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32 },
-  emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
-  emptySub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center' },
   sectionHeader: {
     paddingHorizontal: 20,
     paddingTop: 20,
@@ -259,40 +184,6 @@ const s = StyleSheet.create({
     color: Colors.inkSecondary,
     letterSpacing: 0.6,
     textTransform: 'uppercase',
-  },
-  row: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 20, paddingVertical: 14, gap: 10,
-  },
-  rowMain: {
-    flex: 1,
-    flexDirection: 'row', alignItems: 'flex-start',
-    gap: 14,
-  },
-  avatarWrap: { position: 'relative' },
-  avatar: { width: 44, height: 44, borderRadius: 22 },
-  // True 16:9 event cover thumbnail — a circular crop mangles a landscape
-  // photo, so these get a rounded-rect thumbnail instead of the avatar shape.
-  coverThumb: { width: 64, height: 36, borderRadius: 8 },
-  avatarFallback: {
-    backgroundColor: Colors.surface,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  unreadDot: {
-    position: 'absolute', top: 0, right: 0,
-    width: 10, height: 10, borderRadius: 5,
-    backgroundColor: Colors.brandOrange,
-    borderWidth: 2, borderColor: Colors.background,
-  },
-  // minWidth: 0 keeps this from growing past its share when the action button
-  // sits alongside it (RN flex-row-with-Text overflow quirk).
-  textBlock: { flex: 1, minWidth: 0, gap: 2 },
-  title: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkSecondary, lineHeight: 20 },
-  titleUnread: { color: Colors.inkPrimary },
-  body: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, lineHeight: 18 },
-  time: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, marginTop: 2 },
-  actionBtnWrap: {
-    marginLeft: 'auto',
   },
   loadMoreBtn: { alignItems: 'center', paddingVertical: 16 },
   loadMoreText: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.brandOrange },

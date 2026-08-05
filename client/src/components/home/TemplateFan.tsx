@@ -54,7 +54,9 @@ function FanCard({ p, source, center, settledCenter }: {
     <AnimatedTemplateImage
       source={source}
       contentFit="cover"
-      cachePolicy="disk"
+      cachePolicy="memory-disk"
+      priority="high"
+      transition={150}
       style={[s.card, style]}
     />
   )

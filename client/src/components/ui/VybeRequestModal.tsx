@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { View, Text, TextInput, Pressable, Image, StyleSheet, Keyboard } from 'react-native'
+import { View, Text, TextInput, Pressable, StyleSheet, Keyboard } from 'react-native'
+import { Image } from 'expo-image'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { Flame } from 'lucide-react-native'
@@ -76,7 +77,7 @@ function VybeRequestModalCore({ user, onSend, onClose }: Omit<Props, 'visible'>)
       <BottomSheetView style={s.content}>
         <View style={s.partnerRow}>
           {avatar ? (
-            <Image source={{ uri: avatar }} style={s.avatar} />
+            <Image source={{ uri: avatar }} style={s.avatar} cachePolicy="memory-disk" priority="high" transition={150} />
           ) : (
             <View style={[s.avatar, s.avatarFallback]}>
               <Text style={s.avatarInitial}>{(user?.name ?? '?').charAt(0)}</Text>

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { View, Text, StyleSheet, Pressable, Image } from 'react-native'
+import { View, Text, StyleSheet, Pressable } from 'react-native'
+import { Image } from 'expo-image'
 import { BottomSheetModal, BottomSheetView, BottomSheetFlatList, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
@@ -51,7 +52,7 @@ function RequestCard({ req, onBeginAccept, onPass }: { req: VybeRequest; onBegin
     <View style={[s.card, actioned && s.cardActioned]}>
       <Pressable style={s.cardLeft} onPress={() => router.push(`/(profile)/${req.sender_id}` as any)}>
         {avatar ? (
-          <Image source={{ uri: avatar }} style={s.cardAvatar} />
+          <Image source={{ uri: avatar }} style={s.cardAvatar} cachePolicy="memory-disk" priority="low" transition={150} />
         ) : (
           <View style={[s.cardAvatar, s.cardAvatarFallback]}>
             <Text style={s.cardAvatarInitial}>{(req.name ?? '?').charAt(0)}</Text>

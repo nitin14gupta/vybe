@@ -7,6 +7,7 @@ import { Input, Screen } from '@/components/ui'
 import { useLocation } from '@/hooks/useLocation'
 import { setLocation } from '@/api/user'
 import { useOnboardingStore } from '@/store/onboarding'
+import { usePillStore } from '@/store/pillStore'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -14,6 +15,7 @@ export default function ProfileLocationScreen() {
   const insets = useSafeAreaInsets()
   const { filtered, query, setQuery, selectedCity, detecting, selectCity, detectLocation } = useLocation()
   const store = useOnboardingStore()
+  const showPill = usePillStore(s => s.show)
   const [saving, setSaving] = useState(false)
 
   const handleSave = async () => {
@@ -22,7 +24,8 @@ export default function ProfileLocationScreen() {
     try {
       await setLocation(selectedCity, store.lat ?? 0, store.lng ?? 0)
       router.back()
-    } catch {
+    } catch (e: any) {
+      showPill(e?.message || 'Could not save your location', 'error')
       setSaving(false)
     }
   }

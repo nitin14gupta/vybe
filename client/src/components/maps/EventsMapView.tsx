@@ -31,6 +31,24 @@ const DARK_MAP_STYLE = [
   { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#757575' }] },
 ]
 
+// Heatmap paint spec is static (no prop/state dependencies) — hoisted out of
+// the component so it isn't reallocated on every render (zoom changes etc.).
+const HEATMAP_PAINT = {
+  'heatmap-weight': 1,
+  'heatmap-radius': 46,
+  'heatmap-intensity': 1.1,
+  'heatmap-color': [
+    'interpolate', ['linear'], ['heatmap-density'],
+    0, 'rgba(0,0,0,0)',
+    0.15, 'rgba(29,233,182,0.18)',
+    0.35, 'rgba(79,195,247,0.35)',
+    0.60, 'rgba(206,147,216,0.5)',
+    0.82, 'rgba(255,82,82,0.55)',
+    1.0, 'rgba(255,107,53,0.6)',
+  ] as any,
+  'heatmap-opacity': 0.7,
+}
+
 // ── Google Maps implementation ────────────────────────────────────────────────
 
 interface GoogleProps {
@@ -46,6 +64,17 @@ function EventsMapGoogle({ events, userLat, userLng, userHeading, activeEventId,
   const { mapRef } = useGoogleMaps()
   const [zoom, setZoom] = useState(DEFAULT_ZOOM)
   const pinScale = pinScaleForZoom(zoom)
+
+  // Filtering is only redone when the underlying event list changes, not on
+  // every zoom/selection re-render — index is preserved so it still lines up
+  // with the caller's own `events` array (used e.g. to scroll a preview list).
+  const markerEvents = useMemo(
+    () =>
+      events
+        .map((ev, idx) => ({ ev, idx }))
+        .filter(({ ev }) => ev.location_lat != null && ev.location_lng != null),
+    [events],
+  )
 
   return (
     <MapView
@@ -73,18 +102,16 @@ function EventsMapGoogle({ events, userLat, userLng, userHeading, activeEventId,
         </Marker>
       )}
 
-      {events.map((ev, idx) =>
-        ev.location_lat != null && ev.location_lng != null ? (
-          <Marker
-            key={ev.id}
-            coordinate={{ latitude: ev.location_lat, longitude: ev.location_lng }}
-            onPress={() => onEventSelect(ev, idx)}
-            anchor={{ x: 0.5, y: 0.5 }}
-          >
-            <EventMapPin event={ev} active={ev.id === activeEventId} scale={pinScale} />
-          </Marker>
-        ) : null,
-      )}
+      {markerEvents.map(({ ev, idx }) => (
+        <Marker
+          key={ev.id}
+          coordinate={{ latitude: ev.location_lat as number, longitude: ev.location_lng as number }}
+          onPress={() => onEventSelect(ev, idx)}
+          anchor={{ x: 0.5, y: 0.5 }}
+        >
+          <EventMapPin event={ev} active={ev.id === activeEventId} scale={pinScale} />
+        </Marker>
+      ))}
     </MapView>
   )
 }
@@ -106,23 +133,16 @@ function EventsMapLibre({ events, userLat, userLng, userHeading, activeEventId, 
   const geojson = useMemo(() => eventsToGeoJSON(events), [events])
   const pinScale = pinScaleForZoom(zoom)
 
-  // Heatmap — soft ambient glow beneath the pins, toned down now that pins
-  // carry the event photo and no longer need the circle layer for legibility.
-  const heatmapPaint = {
-    'heatmap-weight': 1,
-    'heatmap-radius': 46,
-    'heatmap-intensity': 1.1,
-    'heatmap-color': [
-      'interpolate', ['linear'], ['heatmap-density'],
-      0, 'rgba(0,0,0,0)',
-      0.15, 'rgba(29,233,182,0.18)',
-      0.35, 'rgba(79,195,247,0.35)',
-      0.60, 'rgba(206,147,216,0.5)',
-      0.82, 'rgba(255,82,82,0.55)',
-      1.0, 'rgba(255,107,53,0.6)',
-    ] as any,
-    'heatmap-opacity': 0.7,
-  }
+  // Filtering is only redone when the underlying event list changes, not on
+  // every zoom/selection re-render — index is preserved so it still lines up
+  // with the caller's own `events` array (used e.g. to scroll a preview list).
+  const markerEvents = useMemo(
+    () =>
+      events
+        .map((ev, idx) => ({ ev, idx }))
+        .filter(({ ev }) => ev.location_lat != null && ev.location_lng != null),
+    [events],
+  )
 
   return (
     <Map
@@ -151,23 +171,21 @@ function EventsMapLibre({ events, userLat, userLng, userHeading, activeEventId, 
 
       {/* Heatmap glow layer — ambient warmth under the pins */}
       <GeoJSONSource id="events-heat-source" data={geojson}>
-        <Layer id="events-heatmap" type="heatmap" source="events-heat-source" paint={heatmapPaint} />
+        <Layer id="events-heatmap" type="heatmap" source="events-heat-source" paint={HEATMAP_PAINT} />
       </GeoJSONSource>
 
       {/* Photo pins — one real marker per event, centered on the coordinate */}
-      {events.map((ev, idx) =>
-        ev.location_lat != null && ev.location_lng != null ? (
-          <LibreMarker
-            key={ev.id}
-            id={ev.id}
-            lngLat={[ev.location_lng, ev.location_lat]}
-            anchor="center"
-            onPress={() => onEventSelect(ev, idx)}
-          >
-            <EventMapPin event={ev} active={ev.id === activeEventId} scale={pinScale} />
-          </LibreMarker>
-        ) : null,
-      )}
+      {markerEvents.map(({ ev, idx }) => (
+        <LibreMarker
+          key={ev.id}
+          id={ev.id}
+          lngLat={[ev.location_lng as number, ev.location_lat as number]}
+          anchor="center"
+          onPress={() => onEventSelect(ev, idx)}
+        >
+          <EventMapPin event={ev} active={ev.id === activeEventId} scale={pinScale} />
+        </LibreMarker>
+      ))}
     </Map>
   )
 }
@@ -355,7 +373,15 @@ function zoomFromLongitudeDelta(longitudeDelta: number) {
 // point never shifts — the zoom-driven size change is done purely as a
 // `transform: scale`, animated with Reanimated so it eases smoothly toward
 // each new target instead of snapping every time the zoom level updates.
-function EventMapPin({ event, active, scale }: { event: EventSummary; active: boolean; scale: number }) {
+const EventMapPin = React.memo(function EventMapPin({
+  event,
+  active,
+  scale,
+}: {
+  event: EventSummary
+  active: boolean
+  scale: number
+}) {
   const cover = event.cover_photos?.[0]?.url
   const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
   const scaleSV = useSharedValue(scale)
@@ -372,7 +398,13 @@ function EventMapPin({ event, active, scale }: { event: EventSummary; active: bo
     <View style={p.wrap}>
       <Animated.View style={[p.bubble, animatedStyle]}>
         {cover ? (
-          <Image source={{ uri: cover }} style={p.photo} contentFit="cover" />
+          <Image
+            source={{ uri: cover }}
+            style={p.photo}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={150}
+          />
         ) : (
           <View style={[p.photo, p.photoFallback]}>
             <TypeIcon size={18} color={Colors.inkDisabled} strokeWidth={1.5} />
@@ -381,7 +413,7 @@ function EventMapPin({ event, active, scale }: { event: EventSummary; active: bo
       </Animated.View>
     </View>
   )
-}
+})
 
 const PIN_W = 72
 const PIN_H = Math.round((PIN_W * 9) / 16)

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, FlatList } from 'react-native'
+import { memo, useCallback, useEffect, useState } from 'react'
+import { View, Text, StyleSheet, FlatList, type ListRenderItemInfo } from 'react-native'
 import { router } from 'expo-router'
 import ApiService, { type EventSummary } from '@/api/apiService'
 import { EventCard } from '@/components/events/EventCard'
@@ -7,9 +7,22 @@ import { useProfile } from '@/hooks/useProfile'
 import { Colors, FontFamily } from '@/constants'
 
 const CARD_WIDTH = 240
+const CARD_GAP = 12
 const INITIAL_COUNT = 6
 const PAGE_SIZE = 6
 const FETCH_LIMIT = 30
+
+const TrendingCard = memo(function TrendingCard({ event, onPress }: {
+  event: EventSummary
+  onPress: (id: string) => void
+}) {
+  const handlePress = useCallback(() => onPress(event.id), [onPress, event.id])
+  return (
+    <View style={s.card}>
+      <EventCard event={event} onPress={handlePress} />
+    </View>
+  )
+})
 
 interface Props {
   /** Reports whether this section has nothing to show, once its fetch
@@ -29,37 +42,57 @@ export function TrendingSection({ onEmptyChange }: Props) {
   const [allEvents, setAllEvents] = useState<EventSummary[]>([])
   const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT)
 
-  const loadTrending = (lat: number, lng: number) => {
-    ApiService.getEvents({ lat, lng, radius_km: 40, limit: FETCH_LIMIT })
-      .then(result => {
-        const sorted = [...result].sort((a, b) => b.attendee_count - a.attendee_count)
-        setAllEvents(sorted)
-        setVisibleCount(INITIAL_COUNT)
-        onEmptyChange?.(sorted.length === 0)
-      })
-      .catch(() => {})
-  }
-
   useEffect(() => {
+    let active = true
+
+    const loadTrending = (lat: number, lng: number) => {
+      ApiService.getEvents({ lat, lng, radius_km: 40, limit: FETCH_LIMIT })
+        .then(result => {
+          if (!active) return
+          const sorted = [...result].sort((a, b) => b.attendee_count - a.attendee_count)
+          setAllEvents(sorted)
+          setVisibleCount(INITIAL_COUNT)
+          onEmptyChange?.(sorted.length === 0)
+        })
+        .catch(() => {})
+    }
+
     const { lat, lng, city } = profile ?? {}
     // 0,0 isn't a real location — it's what a manually-picked city used to
     // save before city coordinates existed. Treat it the same as "unset".
     const hasRealCoords = lat != null && lng != null && (lat !== 0 || lng !== 0)
-    if (hasRealCoords) { loadTrending(lat!, lng!); return }
-    if (!city) return
+    if (hasRealCoords) { loadTrending(lat!, lng!); return () => { active = false } }
+    if (!city) return () => { active = false }
 
     // Self-heal: this profile has a city name but no real coordinates behind
     // it — look up the city's known lat/lng and backfill the profile so this
     // repair only has to happen once.
     ApiService.getCities()
       .then(cities => {
+        if (!active) return
         const match = cities.find(c => c.name === city)
         if (!match) return
         ApiService.setLocation(city, match.lat, match.lng).catch(() => {})
         loadTrending(match.lat, match.lng)
       })
       .catch(() => {})
+
+    return () => { active = false }
   }, [profile?.lat, profile?.lng, profile?.city])
+
+  const handleCardPress = useCallback((id: string) => {
+    router.push(`/(events)/${id}` as any)
+  }, [])
+
+  const renderItem = useCallback(({ item }: ListRenderItemInfo<EventSummary>) => (
+    <TrendingCard event={item} onPress={handleCardPress} />
+  ), [handleCardPress])
+
+  const getItemLayout = useCallback((_: unknown, index: number) => ({
+    length: CARD_WIDTH,
+    offset: (CARD_WIDTH + CARD_GAP) * index,
+    index,
+  }), [])
 
   if (allEvents.length === 0) return null
 
@@ -76,11 +109,12 @@ export function TrendingSection({ onEmptyChange }: Props) {
         contentContainerStyle={s.list}
         onEndReachedThreshold={0.5}
         onEndReached={() => setVisibleCount(c => Math.min(c + PAGE_SIZE, allEvents.length))}
-        renderItem={({ item }) => (
-          <View style={s.card}>
-            <EventCard event={item} onPress={() => router.push(`/(events)/${item.id}` as any)} />
-          </View>
-        )}
+        renderItem={renderItem}
+        getItemLayout={getItemLayout}
+        initialNumToRender={INITIAL_COUNT}
+        maxToRenderPerBatch={PAGE_SIZE}
+        windowSize={5}
+        removeClippedSubviews
       />
     </View>
   )

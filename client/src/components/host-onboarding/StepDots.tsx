@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { memo, useEffect } from 'react'
 import { StyleSheet } from 'react-native'
 import Animated, {
   FadeIn,
@@ -12,7 +12,7 @@ import { Colors, Spacing } from '@/constants'
 const DOT_SIZE = 6
 const DOT_ACTIVE_WIDTH = 20
 
-function Dot({ isActive, isDone, delay }: { isActive: boolean; isDone: boolean; delay: number }) {
+const Dot = memo(function Dot({ isActive, isDone, delay }: { isActive: boolean; isDone: boolean; delay: number }) {
   const width = useSharedValue(DOT_SIZE)
   const filled = useSharedValue(isDone || isActive ? 1 : 0)
 
@@ -27,9 +27,9 @@ function Dot({ isActive, isDone, delay }: { isActive: boolean; isDone: boolean; 
   }))
 
   return <Animated.View style={[s.dot, style]} />
-}
+})
 
-export function StepDots({ step, total }: { step: number; total: number }) {
+function StepDotsBase({ step, total }: { step: number; total: number }) {
   return (
     <Animated.View entering={FadeIn.duration(350)} style={s.row}>
       {Array.from({ length: total }).map((_, i) => (
@@ -38,6 +38,8 @@ export function StepDots({ step, total }: { step: number; total: number }) {
     </Animated.View>
   )
 }
+
+export const StepDots = memo(StepDotsBase)
 
 const s = StyleSheet.create({
   row: {

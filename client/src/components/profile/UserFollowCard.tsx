@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { memo, useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Image } from 'expo-image'
 import { MoreVertical } from 'lucide-react-native'
@@ -17,7 +17,7 @@ interface Props {
   onDots: (user: FollowUser) => void
 }
 
-export function UserFollowCard({ user, type, isMyProfile, onFollow, onUnfollow, onRemove, onDots }: Props) {
+export const UserFollowCard = memo(function UserFollowCard({ user, type, isMyProfile, onFollow, onUnfollow, onRemove, onDots }: Props) {
   const [actionLoading, setActionLoading] = useState(false)
 
   const initial = (user.name ?? user.username ?? '?').charAt(0).toUpperCase()
@@ -67,7 +67,14 @@ export function UserFollowCard({ user, type, isMyProfile, onFollow, onUnfollow, 
       {/* Avatar */}
       <View style={s.avatar}>
         {user.avatar_url ? (
-          <Image source={{ uri: user.avatar_url }} style={StyleSheet.absoluteFill} contentFit="cover" />
+          <Image
+            source={{ uri: user.avatar_url }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            priority="low"
+            transition={150}
+          />
         ) : (
           <Text style={s.avatarInitial}>{initial}</Text>
         )}
@@ -103,7 +110,7 @@ export function UserFollowCard({ user, type, isMyProfile, onFollow, onUnfollow, 
       </View>
     </Pressable>
   )
-}
+})
 
 const s = StyleSheet.create({
   row: {

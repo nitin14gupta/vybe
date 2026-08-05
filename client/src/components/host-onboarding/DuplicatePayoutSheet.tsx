@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { memo, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
@@ -45,10 +45,12 @@ function DuplicatePayoutSheetCore({ message, onClose }: { message: string; onClo
   )
 }
 
-export function DuplicatePayoutSheet({ visible, message, onClose }: { visible: boolean; message: string; onClose: () => void }) {
+function DuplicatePayoutSheetBase({ visible, message, onClose }: { visible: boolean; message: string; onClose: () => void }) {
   if (!visible) return null
   return <DuplicatePayoutSheetCore message={message} onClose={onClose} />
 }
+
+export const DuplicatePayoutSheet = memo(DuplicatePayoutSheetBase)
 
 const s = StyleSheet.create({
   bg: { backgroundColor: Colors.surface },

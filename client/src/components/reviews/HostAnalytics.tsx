@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native'
 import { BarChart } from 'react-native-gifted-charts'
 import { AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react-native'
@@ -110,12 +110,22 @@ export function EventPerformanceSection({
     [events],
   )
   const [expanded, setExpanded] = useState(false)
+  const allRows: ChartRow[] = useMemo(
+    () => events.map(ev => ({ id: ev.id, label: ev.title, value: ev.avg_rating, count: ev.review_count })),
+    [events],
+  )
+  const rows = useMemo(
+    () => (expanded ? allRows : allRows.slice(0, DEFAULT_VISIBLE)),
+    [expanded, allRows],
+  )
+  const handleSelect = useCallback(
+    (id: string) => onSelect(activeEventId === id ? null : id),
+    [activeEventId, onSelect],
+  )
 
   if (events.length < 2) return null
 
-  const allRows: ChartRow[] = events.map(ev => ({ id: ev.id, label: ev.title, value: ev.avg_rating, count: ev.review_count }))
   const canExpand = allRows.length > DEFAULT_VISIBLE
-  const rows = expanded ? allRows : allRows.slice(0, DEFAULT_VISIBLE)
 
   return (
     <View style={a.section}>
@@ -128,7 +138,7 @@ export function EventPerformanceSection({
           </Text>
         </View>
       )} */}
-      <RatingBarChart rows={rows} onSelect={id => onSelect(activeEventId === id ? null : id)} />
+      <RatingBarChart rows={rows} onSelect={handleSelect} />
       {canExpand && (
         <Pressable style={a.expandBtn} onPress={() => setExpanded(v => !v)}>
           <Text style={a.expandText}>
@@ -159,10 +169,12 @@ export function EventTypeSection({ events }: { events: HostReviewEvent[] }) {
       .map(([type, g]) => ({ type, avg: g.totalWeighted / g.count, count: g.count }))
       .sort((x, y) => x.avg - y.avg)
   }, [events])
+  const rows: ChartRow[] = useMemo(
+    () => byType.map(t => ({ id: t.type, label: formatEventType(t.type), value: t.avg, count: t.count })),
+    [byType],
+  )
 
   if (byType.length < 2) return null
-
-  const rows: ChartRow[] = byType.map(t => ({ id: t.type, label: formatEventType(t.type), value: t.avg, count: t.count }))
 
   return (
     <View style={a.section}>

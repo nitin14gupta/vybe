@@ -139,7 +139,14 @@ export default function BookScreen() {
         {/* Banner */}
         <View style={s.bannerWrap}>
           {cover ? (
-            <Image source={{ uri: cover }} style={s.bannerImg} contentFit="cover" />
+            <Image
+              source={{ uri: cover }}
+              style={s.bannerImg}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              priority="high"
+              transition={150}
+            />
           ) : (
             <LinearGradient colors={['#2A2A2A', '#111']} style={[s.bannerImg, { alignItems: 'center', justifyContent: 'center' }]}>
               <Music2 size={52} color="rgba(255,107,53,0.4)" strokeWidth={1.2} />

@@ -67,7 +67,7 @@ function PaymentFailedCore({ message, onRetry, onBack }: Omit<Props, 'visible'>)
       handleIndicatorStyle={s.handle}
     >
       <BottomSheetView style={s.content}>
-        <Animated.View>
+        <Animated.View style={iconStyle}>
           {isCancelled
             ? <AlertCircle size={52} color="#FFB830" strokeWidth={1.5} />
             : <XCircle size={52} color="#FF3864" strokeWidth={1.5} />

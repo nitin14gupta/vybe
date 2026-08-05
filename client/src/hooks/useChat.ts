@@ -3,6 +3,7 @@ import { AppState } from 'react-native'
 import ApiService, { Message } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
 import { peekCached, setCached } from '@/lib/queryCache'
+import { usePillStore } from '@/store/pillStore'
 
 function messagesCacheKey(conversationId: string) {
   return `chat:messages:${conversationId}`
@@ -17,6 +18,7 @@ export function useChat(conversationId: string) {
   const [isPartnerOnline, setIsPartnerOnline] = useState(false)
   const [isWsConnected, setIsWsConnected] = useState(false)
   const [wsError, setWsError] = useState<string | null>(null)
+  const [reconnectFailed, setReconnectFailed] = useState(false)
   const [partnerSeenAt, setPartnerSeenAt] = useState<string | null>(null)
   const [failedIds, setFailedIds] = useState<Set<string>>(new Set())
   const [loadingMore, setLoadingMore] = useState(false)
@@ -43,7 +45,10 @@ export function useChat(conversationId: string) {
       if (firstRead) {
         setPartnerSeenAt(firstRead.read_at)
       }
-    })().catch(() => setLoading(false))
+    })().catch((e: any) => {
+      setLoading(false)
+      usePillStore.getState().show(e?.message || "Couldn't load messages", 'error')
+    })
   }, [conversationId])
 
   useEffect(() => {
@@ -85,6 +90,7 @@ export function useChat(conversationId: string) {
     ws.onopen = () => {
       retryCountRef.current = 0
       setIsWsConnected(true)
+      setReconnectFailed(false)
     }
 
     ws.onmessage = (evt: MessageEvent) => {
@@ -163,10 +169,13 @@ export function useChat(conversationId: string) {
 
     ws.onclose = () => {
       setIsWsConnected(false)
-      if (!isBackgrounded.current && retryCountRef.current < 10) {
+      if (isBackgrounded.current) return
+      if (retryCountRef.current < 10) {
         const delay = Math.min(1000 * Math.pow(2, retryCountRef.current), 30000)
         retryCountRef.current++
         retryTimerRef.current = setTimeout(() => connect(), delay)
+      } else {
+        setReconnectFailed(true)
       }
     }
 
@@ -188,11 +197,19 @@ export function useChat(conversationId: string) {
         const ws = wsRef.current
         if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
           retryCountRef.current = 0
+          setReconnectFailed(false)
           connect()
         }
       }
     })
     return () => sub.remove()
+  }, [connect])
+
+  const manualReconnect = useCallback(() => {
+    if (retryTimerRef.current) clearTimeout(retryTimerRef.current)
+    retryCountRef.current = 0
+    setReconnectFailed(false)
+    connect()
   }, [connect])
 
   useEffect(() => {
@@ -402,6 +419,8 @@ export function useChat(conversationId: string) {
     isPartnerOnline,
     isWsConnected,
     wsError,
+    reconnectFailed,
+    manualReconnect,
     loading,
     partnerSeenAt,
     failedIds,

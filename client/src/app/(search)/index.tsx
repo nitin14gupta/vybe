@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, memo } from 'react'
 import {
-  View, Text, StyleSheet, FlatList, Pressable, Image,
+  View, Text, StyleSheet, FlatList, Pressable,
   TextInput, ActivityIndicator,
 } from 'react-native'
+import { Image } from 'expo-image'
 import { router } from 'expo-router'
 import { ChevronLeft, Search, UserPlus } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -52,7 +53,7 @@ function useSearch() {
   return { query, users, loading, hasMore, handleQueryChange, loadMore }
 }
 
-function UserRow({ user }: { user: DiscoverUser }) {
+const UserRow = memo(function UserRow({ user }: { user: DiscoverUser }) {
   const avatar = user.photos[0]?.url
   return (
     <Pressable
@@ -60,7 +61,7 @@ function UserRow({ user }: { user: DiscoverUser }) {
       onPress={() => router.push(`/(profile)/${user.id}` as any)}
     >
       {avatar ? (
-        <Image source={{ uri: avatar }} style={s.avatar} />
+        <Image source={{ uri: avatar }} style={s.avatar} cachePolicy="memory-disk" priority="low" transition={150} />
       ) : (
         <View style={[s.avatar, s.avatarFallback]}>
           <Text style={s.avatarInitial}>{(user.name ?? '?').charAt(0)}</Text>
@@ -84,7 +85,7 @@ function UserRow({ user }: { user: DiscoverUser }) {
       </View>
     </Pressable>
   )
-}
+})
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets()

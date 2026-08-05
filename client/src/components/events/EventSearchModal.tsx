@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { View, Text, StyleSheet, Modal, FlatList, ScrollView, Pressable } from 'react-native'
 import { router } from 'expo-router'
 import { X, Flame, ListFilter } from 'lucide-react-native'
@@ -31,10 +31,10 @@ export function EventSearchModal({ visible, onClose, nearbyEvents, lat, lng, nea
     if (visible) fetchHostedOnce()
   }, [visible])
 
-  const openEvent = (id: string) => {
+  const openEvent = useCallback((id: string) => {
     router.push(`/(events)/${id}` as any)
     onClose()
-  }
+  }, [onClose])
 
   const isSearching = query.trim().length > 0
   const hostedIds = new Set(hostedEvents.map(e => e.id))
@@ -43,11 +43,13 @@ export function EventSearchModal({ visible, onClose, nearbyEvents, lat, lng, nea
     .filter(e => matchesChip(e, chipKey))
     .slice(0, 12)
 
-  const renderCard = (item: EventSummary) => (
+  const renderCard = useCallback((item: EventSummary) => (
     <View style={s.cardWrap}>
       <EventListCard event={item} onPress={() => openEvent(item.id)} />
     </View>
-  )
+  ), [openEvent])
+
+  const renderListItem = useCallback(({ item }: { item: EventSummary }) => renderCard(item), [renderCard])
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -122,7 +124,10 @@ export function EventSearchModal({ visible, onClose, nearbyEvents, lat, lng, nea
               contentContainerStyle={s.listContent}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
-              renderItem={({ item }) => renderCard(item)}
+              renderItem={renderListItem}
+              initialNumToRender={8}
+              maxToRenderPerBatch={8}
+              windowSize={7}
             />
           )
         ) : (
@@ -152,7 +157,10 @@ export function EventSearchModal({ visible, onClose, nearbyEvents, lat, lng, nea
                 </View>
               ) : null
             }
-            renderItem={({ item }) => renderCard(item)}
+            renderItem={renderListItem}
+            initialNumToRender={8}
+            maxToRenderPerBatch={8}
+            windowSize={7}
           />
         )}
       </Screen>

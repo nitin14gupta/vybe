@@ -1,10 +1,8 @@
 import React, { useEffect } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { Plus, X } from 'lucide-react-native'
-import { Image } from 'expo-image'
 import { Colors, PLATFORM_FEE_INR, HOST_COMMISSION_RATE, HOST_COMMISSION_PERCENT_LABEL } from '@/constants'
 import type { CreateEventForm } from '@/hooks/useCreateEvent'
-import { useEventPhotos } from '@/hooks/useEventPhotos'
 import { ef } from './styles'
 import { usePillStore } from '@/store/pillStore'
 

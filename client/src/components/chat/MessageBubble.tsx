@@ -172,6 +172,9 @@ function ImageChatBubble({ url, isMine, width: srcW, height: srcH, isPending }: 
         source={{ uri: url }}
         style={[mc.img, { width: MEDIA_WIDTH, height: h }]}
         contentFit="cover"
+        cachePolicy="memory-disk"
+        priority="high"
+        transition={150}
       />
       {isPending && (
         <View style={mc.pendingOverlay}>

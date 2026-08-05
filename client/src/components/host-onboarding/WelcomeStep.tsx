@@ -1,10 +1,11 @@
+import { memo } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { MapPin, ShieldCheck, Wallet } from 'lucide-react-native'
 import { LogoMark } from '@/components/ui'
 import { Colors, FontFamily } from '@/constants'
 import { InfoRow } from './InfoRow'
 
-export function WelcomeStep() {
+function WelcomeStepBase() {
   return (
     <View style={s.content}>
       <LogoMark size={64} style={s.logo} />
@@ -36,6 +37,8 @@ export function WelcomeStep() {
     </View>
   )
 }
+
+export const WelcomeStep = memo(WelcomeStepBase)
 
 const s = StyleSheet.create({
   content: { alignItems: 'center' },

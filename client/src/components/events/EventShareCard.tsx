@@ -24,6 +24,9 @@ export const EventShareCard = forwardRef<View, Props>(
           source={{ uri: imageUrl }}
           style={StyleSheet.absoluteFill}
           contentFit="cover"
+          cachePolicy="memory-disk"
+          priority="high"
+          transition={150}
           onLoad={onImageLoad}
         />
         <LinearGradient

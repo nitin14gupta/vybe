@@ -75,12 +75,16 @@ export function useLocation() {
 
   // Manual "Use my current location" button
   const detectLocation = async () => {
-    const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync()
-    if (status !== 'granted') {
-      if (!canAskAgain) Linking.openSettings()
-      return
+    try {
+      const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync()
+      if (status !== 'granted') {
+        if (!canAskAgain) Linking.openSettings()
+        return
+      }
+      runDetect(cities)
+    } catch {
+      showPill('Could not access location permissions', 'error')
     }
-    runDetect(cities)
   }
 
   const filtered = cities.filter(c =>
@@ -105,7 +109,9 @@ export function useLocation() {
     setLoading(true)
     try {
       await setLocation(store.city, store.lat ?? 0, store.lng ?? 0)
-    } catch {}
+    } catch (e: any) {
+      showPill(e?.message || 'Could not save your location, you can update it later', 'error')
+    }
     setLoading(false)
     router.replace('/(onboarding)/complete')
   }

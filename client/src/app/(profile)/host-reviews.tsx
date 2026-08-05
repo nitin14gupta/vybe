@@ -10,12 +10,13 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { ArrowLeft, ChevronDown, Star } from 'lucide-react-native'
-import { Colors, FontFamily, Radius, Spacing } from '@/constants'
+import { ArrowLeft, Star } from 'lucide-react-native'
+import { Colors, FontFamily, Spacing } from '@/constants'
 import { BrandedLoader, SortSheet } from '@/components/ui'
-import { StarRow, RatingDistribution, RatingFilterRow, ReviewCard } from '@/components/reviews/ReviewParts'
-import { EventPerformanceSection } from '@/components/reviews/HostAnalytics'
+import { ReviewCard } from '@/components/reviews/ReviewParts'
+import { HostReviewsSummary } from '@/components/reviews/HostReviewsSummary'
 import { useAuthStore } from '@/store/auth'
+import { usePillStore } from '@/store/pillStore'
 import ApiService, { type HostReviewItem, type HostReviewEvent } from '@/api/apiService'
 
 const PAGE_SIZE = 10
@@ -25,6 +26,7 @@ export default function HostReviewsScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const isOwnProfile = useAuthStore(s => s.userId) === id
+  const showPill = usePillStore(s => s.show)
 
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -52,7 +54,7 @@ export default function HostReviewsScreen() {
         setHasMore(res.reviews.length === PAGE_SIZE)
         setEvents(res.events)
       })
-      .catch(() => {})
+      .catch((e: any) => showPill(e?.message || 'Could not load reviews', 'error'))
       .finally(() => { setLoading(false); setRefreshing(false) })
   }, [id, activeEventId, activeRating])
 
@@ -66,11 +68,9 @@ export default function HostReviewsScreen() {
         setReviews(prev => [...prev, ...res.reviews])
         setHasMore(res.reviews.length === PAGE_SIZE)
       })
-      .catch(() => {})
+      .catch((e: any) => showPill(e?.message || 'Could not load more reviews', 'error'))
       .finally(() => setLoadingMore(false))
   }, [id, activeEventId, activeRating, loadingMore, hasMore, reviews.length])
-
-  const activeEventTitle = activeEventId ? events.find(e => e.id === activeEventId)?.title : null
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
@@ -104,35 +104,18 @@ export default function HostReviewsScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={() => fetchFirstPage(true)} tintColor={Colors.brandOrange} colors={[Colors.brandOrange]} />
           }
           ListHeaderComponent={
-            <View>
-              <View style={s.summary}>
-                <View style={s.summaryTop}>
-                  <View style={s.summaryLeft}>
-                    <Text style={s.avg}>{avgRating?.toFixed(1) ?? '—'}</Text>
-                    <StarRow rating={Math.round(avgRating ?? 0)} />
-                    <Text style={s.countText}>{count} {count === 1 ? 'review' : 'reviews'}</Text>
-                  </View>
-                  <RatingDistribution distribution={distribution} total={count} />
-                </View>
-              </View>
-
-              {isOwnProfile && (
-                <EventPerformanceSection events={events} activeEventId={activeEventId} onSelect={setActiveEventId} />
-              )}
-
-              {isOwnProfile && events.length > 1 && (
-                <Pressable style={s.eventFilterBtn} onPress={() => setEventSheetOpen(true)}>
-                  <Text style={s.eventFilterLabel} numberOfLines={1}>
-                    {activeEventTitle ?? 'All events'}
-                  </Text>
-                  <ChevronDown size={16} color={Colors.inkSecondary} strokeWidth={2} />
-                </Pressable>
-              )}
-
-              <RatingFilterRow activeRating={activeRating} onSelect={setActiveRating} distribution={distribution} />
-
-              <Text style={s.whatPeopleSay}>What people say</Text>
-            </View>
+            <HostReviewsSummary
+              avgRating={avgRating}
+              count={count}
+              distribution={distribution}
+              events={events}
+              isOwnProfile={isOwnProfile}
+              activeEventId={activeEventId}
+              activeRating={activeRating}
+              onSelectEvent={setActiveEventId}
+              onSelectRating={setActiveRating}
+              onOpenEventSheet={() => setEventSheetOpen(true)}
+            />
           }
           renderItem={({ item }) => <ReviewCard item={item} subtitle={item.event_title} eventId={item.event_id} />}
           ListEmptyComponent={
@@ -180,63 +163,6 @@ const s = StyleSheet.create({
   },
   iconBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   title: { flex: 1, textAlign: 'center', fontFamily: FontFamily.headingBold, fontSize: 17, color: Colors.inkPrimary },
-
-  summary: {
-    paddingHorizontal: Spacing.screenPadding,
-    paddingTop: 24,
-    paddingBottom: 16,
-  },
-  summaryTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 28,
-  },
-  summaryLeft: {
-    alignItems: 'flex-start',
-    gap: 4,
-  },
-  avg: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 44,
-    color: Colors.inkPrimary,
-    letterSpacing: -1.5,
-    lineHeight: 48,
-  },
-  countText: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 13,
-    color: Colors.inkSecondary,
-    marginTop: 2,
-  },
-  whatPeopleSay: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 18,
-    color: Colors.inkPrimary,
-    paddingHorizontal: Spacing.screenPadding,
-    marginTop: 4,
-    marginBottom: 16,
-  },
-
-  eventFilterBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-    marginHorizontal: Spacing.screenPadding,
-    marginBottom: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: Radius.card,
-    backgroundColor: Colors.elevated,
-    borderWidth: 1,
-    borderColor: Colors.divider,
-  },
-  eventFilterLabel: {
-    flex: 1,
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 14,
-    color: Colors.inkPrimary,
-  },
 
   footerLoader: {
     paddingVertical: 20,

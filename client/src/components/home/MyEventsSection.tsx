@@ -20,16 +20,19 @@ export function MyEventsSection({ onEmptyChange }: Props) {
   const [hosted, setHosted] = useState<EventSummary[]>([])
 
   useFocusEffect(useCallback(() => {
+    let active = true
     Promise.all([
       ApiService.getMyJoinedEvents().catch(() => []),
       ApiService.getMyHostedEvents().catch(() => []),
     ]).then(([joinedData, hostedData]) => {
+      if (!active) return
       const j = upcomingSorted(joinedData)
       const h = upcomingSorted(hostedData)
       setJoined(j)
       setHosted(h)
       onEmptyChange?.(j.length === 0 && h.length === 0)
     })
+    return () => { active = false }
   }, []))
 
   if (joined.length === 0 && hosted.length === 0) return null

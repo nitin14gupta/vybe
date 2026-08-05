@@ -9,6 +9,7 @@ def convert_to_webp(
     quality: int = 85,
     force_square: bool = False,
     aspect_ratio: float | None = None,
+    max_dimension: int | None = None,
 ) -> bytes:
     """
     Converts an image byte string to WebP format.
@@ -19,6 +20,11 @@ def convert_to_webp(
       ratio, center-crop it to fit — e.g. 16/9 for event cover photos. This
       is a safety net for clients that skip the in-app cropper; it always
       runs server-side so every stored image ends up the correct shape.
+    - max_dimension: if set, downscales so the longest edge is at most this
+      many pixels (aspect ratio preserved, never upscales). Applied after
+      cropping. Modern phone cameras shoot 12-48MP — without this, full-res
+      originals get stored and served as-is, inflating storage/bandwidth and
+      slowing first paint for no visible quality gain in a chat bubble/thumbnail.
     """
     try:
         with Image.open(io.BytesIO(contents)) as img:
@@ -41,6 +47,13 @@ def convert_to_webp(
                         new_h = round(w / target_ratio)
                         top = (h - new_h) // 2
                         img = img.crop((0, top, w, top + new_h))
+
+            if max_dimension:
+                w, h = img.size
+                longest = max(w, h)
+                if longest > max_dimension:
+                    scale = max_dimension / longest
+                    img = img.resize((round(w * scale), round(h * scale)), Image.LANCZOS)
 
             output = io.BytesIO()
             img.save(output, format="WEBP", quality=quality)

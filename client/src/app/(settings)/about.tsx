@@ -39,8 +39,6 @@ export default function AboutScreen() {
           <InfoRow label="Privacy Policy" value="" onPress={() => router.push('/(settings)/privacy')} />
           <View style={styles.divider} />
           <InfoRow label="Terms of Use" value="" onPress={() => router.push('/(settings)/terms')} />
-          <View style={styles.divider} />
-          <InfoRow label="Open Source Licenses" value="" onPress={() => router.push('/(settings)/open-source' as any)} />
         </View>
 
         <Text style={styles.madeWith}>

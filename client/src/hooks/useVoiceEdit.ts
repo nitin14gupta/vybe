@@ -34,12 +34,16 @@ export function useVoiceEdit(existingUrl?: string | null) {
   }, [seconds, isRecording])
 
   const stopRecording = async () => {
-    await audioRecorder.stop()
-    const uri = audioRecorder.uri
-    if (uri) {
-      setLocalUri(uri)
-      player.replace({ uri })
-      setRecorded(true)
+    try {
+      await audioRecorder.stop()
+      const uri = audioRecorder.uri
+      if (uri) {
+        setLocalUri(uri)
+        player.replace({ uri })
+        setRecorded(true)
+      }
+    } catch {
+      setSaveError('Recording stopped unexpectedly, try again')
     }
   }
 
@@ -58,9 +62,14 @@ export function useVoiceEdit(existingUrl?: string | null) {
 
       setRecorded(false)
       setLocalUri(null)
+      setSaveError(null)
       if (existingUrl) player.replace({ uri: existingUrl })
-      await audioRecorder.prepareToRecordAsync()
-      audioRecorder.record()
+      try {
+        await audioRecorder.prepareToRecordAsync()
+        audioRecorder.record()
+      } catch {
+        setSaveError("Couldn't start recording, try again")
+      }
     }
   }
 

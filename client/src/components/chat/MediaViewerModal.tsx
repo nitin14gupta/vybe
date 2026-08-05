@@ -119,6 +119,9 @@ export function MediaViewerModal({ visible, items, initialIndex = 0, onClose }: 
                     source={{ uri: item.url }}
                     style={{ width: W, height: H }}
                     contentFit="contain"
+                    cachePolicy="memory-disk"
+                    priority={index === activeIndex ? 'high' : 'low'}
+                    transition={150}
                   />
                 )}
               </View>

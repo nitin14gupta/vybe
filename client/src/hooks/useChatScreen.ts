@@ -156,7 +156,7 @@ export function useChatScreen(convId: string) {
 
   const {
     messages, isPartnerTyping, isPartnerRecording, isPartnerOnline,
-    isWsConnected, wsError, loading, partnerSeenAt,
+    isWsConnected, wsError, reconnectFailed, manualReconnect, loading, partnerSeenAt,
     failedIds, loadingMore, sendMessage, retryMessage, sendTyping, sendVoiceTyping, loadMore, reactToMessage,
     addOptimisticMedia, sendMediaMessage, markMediaFailed, clearMediaFailed,
     applyUnsentLocally, removeMessageLocally, editMessageText,
@@ -284,7 +284,11 @@ export function useChatScreen(convId: string) {
 
   const handleCopyMessage = useCallback(async (content: string) => {
     hTap()
-    await Clipboard.setStringAsync(content)
+    try {
+      await Clipboard.setStringAsync(content)
+    } catch {
+      showPill("Couldn't copy message", 'error')
+    }
   }, [showPill])
 
   const handleReportMessageSubmit = useCallback(async (reason: string) => {
@@ -484,7 +488,7 @@ export function useChatScreen(convId: string) {
     partnerName, partnerUsername, partnerAvatar, partnerId, partnerIsDeleted, blockStatus,
     // chat
     messages, listData, isPartnerTyping, isPartnerRecording, isPartnerOnline,
-    isWsConnected, loading,
+    isWsConnected, reconnectFailed, manualReconnect, loading,
     // input
     inputText, inputBarHeight, recordState, recordDurationMs,
     recordedVoice, replyingTo, emojiTarget, editingMessage,

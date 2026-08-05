@@ -1,157 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
-import {
-  Animated,
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
+import { Animated, Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { StatusBar } from 'expo-status-bar'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { Clock, Users } from 'lucide-react-native'
-import { Colors, FontFamily, Spacing, Radius, ComponentSize } from '@/constants'
+import { Users } from 'lucide-react-native'
+import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 import { PrimaryButton, OutlineButton, BackButton, ConfirmSheet } from '@/components/ui'
-import ApiService from '@/api/apiService'
-import { usePillStore } from '@/store/pillStore'
+import { WaitlistPositionBadge } from '@/components/events/WaitlistPositionBadge'
+import { WaitlistInfoCard } from '@/components/events/WaitlistInfoCard'
+import { useLeaveWaitlist } from '@/hooks/useLeaveWaitlist'
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window')
 const BANNER_H = SCREEN_H * 0.48
-
-// ── WaitlistBadge ─────────────────────────────────────────────────────────────
-
-function WaitlistBadge({ position }: { position: number }) {
-  const pulse = useRef(new Animated.Value(1)).current
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.1, duration: 950, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1, duration: 950, useNativeDriver: true }),
-      ])
-    ).start()
-  }, [])
-
-  return (
-    <View style={badge.wrap}>
-      <Animated.View style={[badge.ring, { transform: [{ scale: pulse }] }]} />
-      <LinearGradient
-        colors={[Colors.brandOrange, Colors.brandCoral]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={badge.circle}
-      >
-        <Text style={badge.num}>#{position}</Text>
-      </LinearGradient>
-    </View>
-  )
-}
-
-const badge = StyleSheet.create({
-  wrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.lg,
-  },
-  ring: {
-    position: 'absolute',
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,107,53,0.25)',
-  },
-  circle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  num: {
-    fontFamily: FontFamily.displayExtraBold,
-    fontSize: 26,
-    color: '#fff',
-    letterSpacing: -0.5,
-  },
-})
-
-// ── WaitlistInfoCard ──────────────────────────────────────────────────────────
-
-function WaitlistInfoCard() {
-  return (
-    <View style={info.card}>
-      <View style={info.row}>
-        <Clock size={15} color={Colors.accentGold} strokeWidth={1.8} />
-        <Text style={info.text}>
-          You have{' '}
-          <Text style={info.highlight}>1 hour</Text>
-          {' '}to confirm once a spot opens for you
-        </Text>
-      </View>
-      <View style={info.divider} />
-      <View style={info.row}>
-        <Users size={15} color={Colors.inkSecondary} strokeWidth={1.8} />
-        <Text style={info.text}>
-          We'll push-notify you the moment the spot is yours
-        </Text>
-      </View>
-    </View>
-  )
-}
-
-const info = StyleSheet.create({
-  card: {
-    width: '100%',
-    backgroundColor: Colors.elevated,
-    borderRadius: Radius.card,
-    borderWidth: 1,
-    borderColor: Colors.divider,
-    padding: Spacing.md,
-    gap: 12,
-    marginTop: Spacing.md,
-  },
-  row: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  text: {
-    flex: 1,
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 13,
-    color: Colors.inkSecondary,
-    lineHeight: 19,
-  },
-  highlight: {
-    fontFamily: FontFamily.bodySemiBold,
-    color: Colors.accentGold,
-  },
-  divider: { height: 1, backgroundColor: Colors.divider },
-})
-
-// ── useLeaveWaitlist ──────────────────────────────────────────────────────────
-
-function useLeaveWaitlist(id: string) {
-  const [leaving, setLeaving] = useState(false)
-  const showPill = usePillStore(s => s.show)
-  const router = useRouter()
-
-  const leave = async () => {
-    setLeaving(true)
-    try {
-      await ApiService.rsvpEvent(id, 'cancel')
-      showPill('Removed from waitlist', 'default')
-      router.back()
-    } catch {
-      showPill("Couldn't leave waitlist, try again", 'error')
-      setLeaving(false)
-    }
-  }
-
-  return { leaving, leave }
-}
-
-// ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function WaitlistJoinedScreen() {
   const { id, position, coverUrl, title } = useLocalSearchParams<{
@@ -190,7 +52,14 @@ export default function WaitlistJoinedScreen() {
         {/* Full-bleed banner — goes behind status bar */}
         <View style={s.bannerWrap}>
           {coverUrl ? (
-            <Image source={{ uri: coverUrl }} style={s.bannerImg} contentFit="cover" />
+            <Image
+              source={{ uri: coverUrl }}
+              style={s.bannerImg}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              priority="high"
+              transition={150}
+            />
           ) : (
             <View style={[s.bannerImg, s.bannerFallback]} />
           )}
@@ -211,7 +80,7 @@ export default function WaitlistJoinedScreen() {
         <Animated.View
           style={[s.card, { opacity: cardOpacity, transform: [{ translateY: cardY }] }]}
         >
-          <WaitlistBadge position={pos} />
+          <WaitlistPositionBadge position={pos} />
 
           <Text style={s.heading}>You're on the{'\n'}waitlist</Text>
           {title ? (

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { View, Text, StyleSheet, Pressable, Image, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native'
+import { Image } from 'expo-image'
 import {
   BottomSheetModal, BottomSheetView, BottomSheetFlatList, BottomSheetBackdrop,
 } from '@gorhom/bottom-sheet'
@@ -38,7 +39,7 @@ function TargetTile({ conv, selected, onPress }: { conv: Conversation; selected:
     <Pressable style={t.root} onPress={onPress}>
       <View style={t.avatarWrap}>
         {conv.partner_avatar ? (
-          <Image source={{ uri: conv.partner_avatar }} style={t.avatar} />
+          <Image source={{ uri: conv.partner_avatar }} style={t.avatar} cachePolicy="memory-disk" priority="low" transition={150} />
         ) : (
           <View style={[t.avatar, t.avatarFallback]}>
             <Text style={t.avatarInitial}>{(conv.partner_name ?? '?').charAt(0).toUpperCase()}</Text>
@@ -150,7 +151,7 @@ function ShareToChatSheetCore({
 
       <View style={st.preview}>
         {previewImage ? (
-          <Image source={{ uri: previewImage }} style={st.previewImg} />
+          <Image source={{ uri: previewImage }} style={st.previewImg} cachePolicy="memory-disk" priority="normal" transition={150} />
         ) : (
           <View style={[st.previewImg, st.previewImgFallback]}>
             <Users size={18} color={Colors.inkDisabled} strokeWidth={1.5} />

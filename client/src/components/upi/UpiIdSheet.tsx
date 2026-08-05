@@ -33,6 +33,7 @@ function UpiIdSheetCore({
   onClose: () => void
 }) {
   const ref = useRef<BottomSheetModal>(null)
+  const mountedRef = useRef(true)
   const [vpa, setVpa] = useState('')
   const [savedVpa, setSavedVpa] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -43,6 +44,8 @@ function UpiIdSheetCore({
 
   useEffect(() => { ref.current?.present() }, [])
 
+  useEffect(() => () => { mountedRef.current = false }, [])
+
   useEffect(() => {
     const show = Keyboard.addListener('keyboardDidShow', () => ref.current?.snapToIndex(1))
     const hide = Keyboard.addListener('keyboardDidHide', () => ref.current?.snapToIndex(0))
@@ -51,25 +54,32 @@ function UpiIdSheetCore({
 
   // Load saved UPI ID on mount
   useEffect(() => {
+    let cancelled = false
     ApiService.getSavedUpiId().then(saved => {
+      if (cancelled) return
       if (saved?.upi_id) {
         setSavedVpa(saved.upi_id)
         setVpa(saved.upi_id)
       }
     }).catch(() => {})
+    return () => { cancelled = true }
   }, [])
 
   const handleSaveAndPay = async () => {
     if (!canPay || !vpaResult) return
     hSuccess()
     setSaving(true)
+    let savedOk = false
     try {
       await ApiService.saveUpiId(vpa.trim(), vpaResult.name)
-      setSavedVpa(vpa.trim())
+      savedOk = true
     } catch {
       // save failed silently — still proceed with payment
     } finally {
-      setSaving(false)
+      if (mountedRef.current) {
+        if (savedOk) setSavedVpa(vpa.trim())
+        setSaving(false)
+      }
     }
     onPay(vpa.trim())
   }
@@ -142,10 +152,10 @@ function UpiIdSheetCore({
 
         {canPay && !isAlreadySaved ? (
           <View style={s.btnRow}>
-            <View style={{ flex: 1 }}>
+            <View style={s.btnFlex1}>
               <OutlineButton label="Pay" onPress={() => { hSuccess(); onPay(vpa.trim()) }} />
             </View>
-            <View style={{ flex: 1.4 }}>
+            <View style={s.btnFlex14}>
               <PrimaryButton label="Save & Pay" onPress={handleSaveAndPay} loading={saving} />
             </View>
           </View>
@@ -208,4 +218,6 @@ const s = StyleSheet.create({
   hint: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkDisabled, marginBottom: 20 },
 
   btnRow: { flexDirection: 'row', gap: 10 },
+  btnFlex1: { flex: 1 },
+  btnFlex14: { flex: 1.4 },
 })

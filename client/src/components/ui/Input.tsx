@@ -1,5 +1,5 @@
-import { useState, useRef, ReactNode } from 'react'
-import { View, Text, TextInput, StyleSheet, KeyboardTypeOptions, ViewStyle, Pressable } from 'react-native'
+import { useState, useRef, ReactNode, memo } from 'react'
+import { View, Text, TextInput, StyleSheet, KeyboardTypeOptions, TextInputProps, ViewStyle, Pressable } from 'react-native'
 import { Colors, FontFamily, ComponentSize, Radius } from '@/constants'
 
 interface Props {
@@ -15,9 +15,10 @@ interface Props {
   style?: ViewStyle
   autoFocus?: boolean
   onBlur?: () => void
+  autoCapitalize?: TextInputProps['autoCapitalize']
 }
 
-export function Input({
+function InputBase({
   label,
   placeholder,
   value,
@@ -30,6 +31,7 @@ export function Input({
   style,
   autoFocus,
   onBlur: onBlurProp,
+  autoCapitalize,
 }: Props) {
   const [focused, setFocused] = useState(false)
   const inputRef = useRef<TextInput>(null)
@@ -56,6 +58,7 @@ export function Input({
           keyboardType={keyboardType}
           secureTextEntry={secureTextEntry}
           autoFocus={autoFocus}
+          autoCapitalize={autoCapitalize}
           onFocus={() => setFocused(true)}
           onBlur={() => { setFocused(false); onBlurProp?.() }}
           showSoftInputOnFocus
@@ -66,6 +69,8 @@ export function Input({
     </View>
   )
 }
+
+export const Input = memo(InputBase)
 
 const styles = StyleSheet.create({
   label: {

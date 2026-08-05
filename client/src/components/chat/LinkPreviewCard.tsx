@@ -62,7 +62,7 @@ export function LinkPreviewCard({ url, isMine }: Props) {
   return (
     <View style={s.card}>
       {preview?.image ? (
-        <Image source={{ uri: preview.image }} style={s.image} contentFit="cover" />
+        <Image source={{ uri: preview.image }} style={s.image} contentFit="cover" cachePolicy="memory-disk" priority="low" transition={150} />
       ) : null}
       <View style={s.body}>
         {preview?.title ? (

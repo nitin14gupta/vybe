@@ -3,6 +3,7 @@ import { useFocusEffect } from 'expo-router'
 import ApiService, { type EventSummary } from '@/api/apiService'
 import type { CalendarDaySummary, CalendarDayEvents } from '@/types/api'
 import type { CityResponse } from '@/hooks/useCities'
+import { usePillStore } from '@/store/pillStore'
 
 export interface DayEvents {
   joined: EventSummary[]
@@ -46,6 +47,7 @@ const EMPTY_DAY: CalendarDayEvents = { joined: [], hosted: [], waitlisted: [], o
 // hosted/joined/waitlisted history up front (that only gets worse as an
 // account ages).
 export function useCalendarEvents(visibleMonth: Date, selectedDate: Date, filters: CalendarFilters = DEFAULT_CALENDAR_FILTERS) {
+  const showPill = usePillStore(s => s.show)
   const [summary, setSummary] = useState<Map<string, CalendarDaySummary>>(new Map())
   const [monthLoading, setMonthLoading] = useState(true)
   const [monthError, setMonthError] = useState(false)
@@ -68,12 +70,13 @@ export function useCalendarEvents(visibleMonth: Date, selectedDate: Date, filter
       const rows = await ApiService.getCalendarSummary(monthStart, monthEnd, cityLat, cityLng)
       setSummary(new Map(rows.map(r => [r.date, r])))
       setMonthError(false)
-    } catch {
+    } catch (e: any) {
       setMonthError(true)
+      showPill(e?.message || "Couldn't load this month's calendar", 'error')
     } finally {
       setMonthLoading(false)
     }
-  }, [monthStart, monthEnd, cityLat, cityLng])
+  }, [monthStart, monthEnd, cityLat, cityLng, showPill])
 
   useFocusEffect(useCallback(() => { loadMonth() }, [loadMonth]))
 
@@ -83,13 +86,14 @@ export function useCalendarEvents(visibleMonth: Date, selectedDate: Date, filter
       const data = await ApiService.getCalendarDay(selKey, cityLat, cityLng)
       setDayRaw(data)
       setDayError(false)
-    } catch {
+    } catch (e: any) {
       setDayRaw(EMPTY_DAY)
       setDayError(true)
+      showPill(e?.message || "Couldn't load this day's events", 'error')
     } finally {
       setDayLoading(false)
     }
-  }, [selKey, cityLat, cityLng])
+  }, [selKey, cityLat, cityLng, showPill])
 
   useEffect(() => { loadDay() }, [loadDay])
 

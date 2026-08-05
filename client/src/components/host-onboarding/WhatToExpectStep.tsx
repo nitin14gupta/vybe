@@ -1,9 +1,10 @@
+import { memo } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { LogoMark } from '@/components/ui'
 import { Colors, FontFamily } from '@/constants'
 import { InfoRow } from './InfoRow'
 
-export function WhatToExpectStep() {
+function WhatToExpectStepBase() {
   return (
     <View style={s.content}>
       <LogoMark size={64} style={s.logo} />
@@ -30,6 +31,8 @@ export function WhatToExpectStep() {
     </View>
   )
 }
+
+export const WhatToExpectStep = memo(WhatToExpectStepBase)
 
 const s = StyleSheet.create({
   content: { alignItems: 'center' },

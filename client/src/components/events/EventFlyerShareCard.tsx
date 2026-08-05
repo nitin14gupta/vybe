@@ -1,5 +1,6 @@
 import { forwardRef, useEffect } from 'react'
-import { View, Text, Image, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet } from 'react-native'
+import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import Animated, {
   useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing,
@@ -138,7 +139,10 @@ export const EventFlyerShareCard = forwardRef<View, Props>(
               source={{ uri: imageUrl }}
               style={s.image}
               onLoad={onImageLoad}
-              resizeMode="cover"
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              priority="high"
+              transition={150}
             />
             <PhotoSticker theme={theme} />
           </View>
@@ -150,7 +154,14 @@ export const EventFlyerShareCard = forwardRef<View, Props>(
             <View style={s.hostBlock}>
               <View style={[s.hostAvatarWrap, { backgroundColor: theme.chip }]}>
                 {hostAvatarUrl ? (
-                  <Image source={{ uri: hostAvatarUrl }} style={s.hostAvatarImg} />
+                  <Image
+                    source={{ uri: hostAvatarUrl }}
+                    style={s.hostAvatarImg}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    priority="low"
+                    transition={150}
+                  />
                 ) : (
                   <Text style={[s.hostAvatarFallback, { color: theme.ink }]}>
                     {(hostName ?? 'G').charAt(0).toUpperCase()}

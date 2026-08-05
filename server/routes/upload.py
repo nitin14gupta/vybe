@@ -179,6 +179,7 @@ async def upload_chat_voice(
 
 
 MAX_MEDIA_SIZE = 50 * 1024 * 1024  # 50 MB (videos)
+CHAT_IMAGE_MAX_DIMENSION = 1600  # px, longest edge — chat bubbles/thumbnails never need more
 
 ALLOWED_MEDIA_CONTENT_TYPES = {
     "image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif",
@@ -200,7 +201,7 @@ async def upload_chat_media(
     max_size = MAX_MEDIA_SIZE if is_video else MAX_PHOTO_SIZE
     contents = await file.read()
     if not is_video and not is_gif:
-        contents = convert_to_webp(contents)
+        contents = convert_to_webp(contents, max_dimension=CHAT_IMAGE_MAX_DIMENSION)
 
     if len(contents) == 0:
         raise HTTPException(status_code=400, detail="Empty file received")

@@ -1,13 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import {
-  View, Text, StyleSheet, Pressable, Image,
-  ActivityIndicator, BackHandler, ScrollView,
-} from 'react-native'
+import { View, Text, StyleSheet, Pressable, BackHandler, ScrollView } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import Animated, {
-  useSharedValue, useAnimatedStyle, withSpring, withTiming,
-} from 'react-native-reanimated'
 import * as Notifications from 'expo-notifications'
 import { ArrowLeft, CheckCircle, Share2 } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
@@ -15,45 +9,11 @@ import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { hTap, hSuccess } from '@/lib/haptics'
 import { useImageShare } from '@/hooks/useImageShare'
-import { PrimaryButton, OutlineButton, ConfirmSheet, StyledQr, BrandedLoader } from '@/components/ui'
+import { PrimaryButton, OutlineButton, ConfirmSheet, BrandedLoader } from '@/components/ui'
+import { PaymentQrCard } from '@/components/events/PaymentQrCard'
+import { PaymentStatusOverlay } from '@/components/events/PaymentStatusOverlay'
 
 type Status = 'loading' | 'active' | 'paid' | 'expired' | 'error'
-
-// ── Paid animation ────────────────────────────────────────────────────────────
-
-function PaidOverlay() {
-  const scale   = useSharedValue(0)
-  const opacity = useSharedValue(0)
-
-  useEffect(() => {
-    scale.value   = withSpring(1, { damping: 12, stiffness: 200 })
-    opacity.value = withTiming(1, { duration: 200 })
-  }, [])
-
-  const style = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }))
-
-  return (
-    <View style={po.root}>
-      <Animated.View style={[po.circle, style]}>
-        <CheckCircle size={48} color="#fff" strokeWidth={2} />
-      </Animated.View>
-      <Text style={po.label}>Payment Confirmed!</Text>
-      <Text style={po.sub}>Taking you to your ticket…</Text>
-    </View>
-  )
-}
-
-const po = StyleSheet.create({
-  root: { ...StyleSheet.absoluteFill, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', gap: 16, zIndex: 50 },
-  circle: { width: 96, height: 96, borderRadius: 48, backgroundColor: Colors.accentGreen, alignItems: 'center', justifyContent: 'center' },
-  label: { fontFamily: FontFamily.headingBold, fontSize: 24, color: Colors.inkPrimary, marginTop: 8 },
-  sub: { fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkSecondary },
-})
-
-// ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function QrPaymentScreen() {
   const {
@@ -156,6 +116,39 @@ export default function QrPaymentScreen() {
     return () => sub.remove()
   }, [id])
 
+  // ── Fallback poll — covers the case where the push notification never
+  // arrives (permission denied, delivery delay, backgrounded app). Runs
+  // only while the QR is active and backs off so a slow network doesn't
+  // spam the status endpoint or wedge the UI on repeated failures.
+  useEffect(() => {
+    if (status !== 'active') return
+    let cancelled = false
+    let delay = 8000
+    let timer: ReturnType<typeof setTimeout>
+
+    const poll = async () => {
+      if (cancelled || !qrId) return
+      try {
+        const res = await ApiService.getQrStatus(qrId)
+        if (cancelled) return
+        if (res.status === 'paid') {
+          setStatus('paid')
+          hSuccess()
+          setTimeout(() => router.replace(`/(events)/${id}/ticket` as any), 1600)
+          return
+        }
+        if (res.status === 'expired') { setStatus('expired'); return }
+        delay = 8000
+      } catch {
+        delay = Math.min(delay * 2, 30000)
+      }
+      if (!cancelled) timer = setTimeout(poll, delay)
+    }
+
+    timer = setTimeout(poll, delay)
+    return () => { cancelled = true; clearTimeout(timer) }
+  }, [status, qrId, id])
+
   // ── Back intercept ─────────────────────────────────────────────────────────
 
   const confirmBack = () => {
@@ -218,7 +211,9 @@ export default function QrPaymentScreen() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  if (status === 'paid') return <PaidOverlay />
+  if (status === 'paid') {
+    return <PaymentStatusOverlay title="Payment Confirmed!" subtitle="Taking you to your ticket…" />
+  }
 
   const isActive  = status === 'active'
   const isExpired = status === 'expired'
@@ -260,49 +255,16 @@ export default function QrPaymentScreen() {
             contentContainerStyle={s.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* QR card — ref used to capture image for sharing */}
-            <View style={s.card} ref={qrCardRef} collapsable={false}>
-              <Text style={s.toPayLabel}>TO PAY</Text>
-              <Text style={s.amount}>₹{amountInr}</Text>
-
-              <View style={[s.qrWrap, isExpired && s.qrWrapExpired]}>
-                {paymentUrl ? (
-                  // Clean QR generated from UPI payment string — no Razorpay branding
-                  <View style={s.qrSvgWrap}>
-                    <StyledQr data={paymentUrl} size={220} showLogo={false} />
-                  </View>
-                ) : imageUrl ? (
-                  // Fallback: crop Razorpay branded image to show just the QR code area
-                  <View style={s.qrCropContainer}>
-                    {imgLoading && (
-                      <ActivityIndicator
-                        style={StyleSheet.absoluteFill}
-                        color={Colors.inkDisabled}
-                      />
-                    )}
-                    <Image
-                      source={{ uri: imageUrl }}
-                      style={s.qrCropImage}
-                      resizeMode="stretch"
-                      onLoadStart={() => setImgLoading(true)}
-                      onLoad={() => setImgLoading(false)}
-                      onError={() => setImgLoading(false)}
-                    />
-                  </View>
-                ) : (
-                  <View style={s.qrPlaceholder}>
-                    <ActivityIndicator color={Colors.inkDisabled} />
-                  </View>
-                )}
-                {isExpired && (
-                  <View style={s.expiredOverlay}>
-                    <Text style={s.expiredOverlayText}>QR Expired</Text>
-                  </View>
-                )}
-              </View>
-
-              <Text style={s.scanHint}>Scan and pay using any UPI app</Text>
-            </View>
+            <PaymentQrCard
+              cardRef={qrCardRef}
+              amountInr={amountInr}
+              paymentUrl={paymentUrl}
+              imageUrl={imageUrl}
+              isExpired={isExpired}
+              imgLoading={imgLoading}
+              onImageLoadStart={() => setImgLoading(true)}
+              onImageLoad={() => setImgLoading(false)}
+            />
 
             {/* Countdown */}
             {isActive && (
@@ -376,28 +338,6 @@ const s = StyleSheet.create({
   headerTitle: { flex: 1, textAlign: 'center', fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
 
   scrollContent: { paddingHorizontal: 20, paddingBottom: 16, gap: 16 },
-
-  card: { backgroundColor: Colors.surface, borderRadius: 20, padding: 24, alignItems: 'center', gap: 14 },
-  toPayLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 12, letterSpacing: 1.5, color: Colors.inkSecondary },
-  amount: { fontFamily: FontFamily.headingBold, fontSize: 36, color: Colors.inkPrimary },
-
-  qrWrap: { borderRadius: 16, overflow: 'hidden', backgroundColor: '#fff' },
-  qrWrapExpired: { opacity: 0.35 },
-
-  // Clean QR from react-native-qrcode-svg (paymentUrl available)
-  qrSvgWrap: { width: 240, height: 240, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', padding: 10 },
-
-  // Crop fallback: show only the QR code portion of Razorpay's branded image.
-  // Razorpay template is approx portrait ~3:4 ratio; the QR code lives in the
-  // upper-center 40% of the image. We scale up and clip to zoom into that area.
-  qrCropContainer: { width: 240, height: 240, overflow: 'hidden', alignItems: 'center', backgroundColor: '#fff' },
-  qrCropImage: { width: 350, height: 440, marginTop: -80 },
-
-  qrPlaceholder: { width: 240, height: 240, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.elevated },
-  expiredOverlay: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.55)' },
-  expiredOverlayText: { fontFamily: FontFamily.headingBold, fontSize: 22, color: '#fff' },
-
-  scanHint: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center' },
 
   countdown: { fontFamily: FontFamily.bodyMedium, fontSize: 15, textAlign: 'center' },
   countdownBold: { fontFamily: FontFamily.headingBold, fontSize: 15 },

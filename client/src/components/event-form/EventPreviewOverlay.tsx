@@ -41,12 +41,15 @@ export function EventPreviewOverlay({ visible, form, onClose }: Props) {
 
   useEffect(() => {
     if (!visible) return
+    let cancelled = false
     ApiService.getMe()
       .then(me => {
+        if (cancelled) return
         setHostName(me.name ?? 'You')
         setHostAvatar(me.photos?.[0]?.url ?? null)
       })
       .catch(() => {})
+    return () => { cancelled = true }
   }, [visible])
 
   if (!visible) return null
@@ -118,7 +121,14 @@ export function EventPreviewOverlay({ visible, form, onClose }: Props) {
           {/* Hero — true 16:9, matches EventCard */}
           <View style={[s.hero, { height: heroHeight }]}>
             {heroPhoto ? (
-              <Image source={{ uri: heroPhoto }} style={StyleSheet.absoluteFill} contentFit="cover" />
+              <Image
+                source={{ uri: heroPhoto }}
+                style={StyleSheet.absoluteFill}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                priority="high"
+                transition={150}
+              />
             ) : (
               <LinearGradient colors={['#1A1A1A', '#111111']} style={[StyleSheet.absoluteFill, s.heroPlaceholder]}>
                 {(() => {
@@ -181,7 +191,14 @@ export function EventPreviewOverlay({ visible, form, onClose }: Props) {
             <View style={s.hostCard}>
               <View style={s.hostAvatar}>
                 {hostAvatar ? (
-                  <Image source={{ uri: hostAvatar }} style={s.hostAvatarImg} contentFit="cover" />
+                  <Image
+                    source={{ uri: hostAvatar }}
+                    style={s.hostAvatarImg}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    priority="normal"
+                    transition={150}
+                  />
                 ) : (
                   <Text style={s.hostAvatarFallback}>{hostName[0]}</Text>
                 )}

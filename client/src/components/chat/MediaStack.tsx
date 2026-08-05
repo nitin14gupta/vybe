@@ -47,7 +47,7 @@ export function MediaStack({ messages, isMine, onOpen }: Props) {
         <View style={st.pairRow}>
           {messages.map((m, i) => (
             <Pressable key={m.id} style={st.pairTile} onPress={() => handleTap(i)}>
-              <Image source={{ uri: thumbUrl(m) }} style={st.pairImg} contentFit="cover" />
+              <Image source={{ uri: thumbUrl(m) }} style={st.pairImg} contentFit="cover" cachePolicy="memory-disk" priority="low" transition={150} />
               {m.content_type === 'video' && <PlayBadge />}
             </Pressable>
           ))}
@@ -67,16 +67,16 @@ export function MediaStack({ messages, isMine, onOpen }: Props) {
       <Pressable style={st.stackWrap} onPress={() => handleTap(0)}>
         {back && (
           <View style={[st.stackImg, st.backCard]}>
-            <Image source={{ uri: thumbUrl(back) }} style={st.stackImg} contentFit="cover" />
+            <Image source={{ uri: thumbUrl(back) }} style={st.stackImg} contentFit="cover" cachePolicy="memory-disk" priority="low" transition={150} />
             <View style={st.dimOverlay} />
           </View>
         )}
         <View style={[st.stackImg, st.midCard]}>
-          <Image source={{ uri: thumbUrl(mid) }} style={st.stackImg} contentFit="cover" />
+          <Image source={{ uri: thumbUrl(mid) }} style={st.stackImg} contentFit="cover" cachePolicy="memory-disk" priority="normal" transition={150} />
           <View style={st.dimOverlayLight} />
         </View>
         <View style={[st.stackImg, st.frontCard]}>
-          <Image source={{ uri: thumbUrl(front) }} style={st.stackImg} contentFit="cover" />
+          <Image source={{ uri: thumbUrl(front) }} style={st.stackImg} contentFit="cover" cachePolicy="memory-disk" priority="high" transition={150} />
           {front.content_type === 'video' && <PlayBadge />}
           <View style={st.countBadge}>
             <Layers size={13} color="#fff" strokeWidth={2} />

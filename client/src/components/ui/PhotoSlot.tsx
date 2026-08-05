@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Dimensions } from 'react-native'
-import { Image } from 'expo-image'
+import { Image, type ImageProps } from 'expo-image'
 import { hTap, hError } from '@/lib/haptics'
 import { Camera, X, Plus, AlertCircle, Crown } from 'lucide-react-native'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
@@ -24,12 +24,14 @@ export function PhotoSlot({
   onSlotPress,
   retryUpload,
   removePhoto,
+  priority = 'normal',
 }: {
   item: PhotoItem
   index: number
   onSlotPress: (id: string) => void
   retryUpload: (id: string) => void
   removePhoto: (id: string) => void
+  priority?: ImageProps['priority']
 }) {
   const isMain = index === 0
   const isDone = item.state === 'done'
@@ -47,7 +49,9 @@ export function PhotoSlot({
             source={item.uri}
             style={StyleSheet.absoluteFill}
             contentFit="cover"
+            cachePolicy="memory-disk"
             transition={120}
+            priority={priority}
           />
 
           {isUploading && (

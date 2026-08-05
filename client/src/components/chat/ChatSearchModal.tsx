@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { View, Text, StyleSheet, Modal, FlatList, Pressable, Image } from 'react-native'
+import { View, Text, StyleSheet, Modal, FlatList, Pressable } from 'react-native'
+import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, X, Users } from 'lucide-react-native'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
@@ -35,7 +36,13 @@ function PersonRow({
   return (
     <Pressable style={s.row} onPress={onPress}>
       {avatar ? (
-        <Image source={{ uri: avatar }} style={s.avatar} />
+        <Image
+          source={{ uri: avatar }}
+          style={s.avatar}
+          cachePolicy="memory-disk"
+          priority="low"
+          transition={150}
+        />
       ) : (
         <View style={[s.avatar, s.avatarFallback]}>
           <Text style={s.avatarInitial}>{(name ?? '?').charAt(0)}</Text>

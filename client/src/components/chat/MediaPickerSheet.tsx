@@ -42,7 +42,7 @@ export const MediaPickerSheet = forwardRef<BottomSheetModal, Props>(
                 <Camera size={26} color={Colors.brandOrange} strokeWidth={1.6} />
               </View>
               <Text style={s.tileLabel}>Camera</Text>
-              <Text style={s.tileSub}>Photo or video</Text>
+              <Text style={s.tileSub}>Photo</Text>
             </Pressable>
 
             <Pressable style={s.tile} onPress={() => pick(onLibrary)} android_ripple={{ color: 'rgba(255,255,255,0.06)', borderless: false }}>

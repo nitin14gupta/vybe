@@ -166,6 +166,8 @@ export default function ChatDetailScreen() {
         partnerIsDeleted={screen.partnerIsDeleted}
         isPartnerOnline={screen.isPartnerOnline}
         isWsConnected={screen.isWsConnected}
+        reconnectFailed={screen.reconnectFailed}
+        onManualReconnect={screen.manualReconnect}
         loading={screen.loading}
         onMenuPress={() => screen.setMenuOpen(true)}
         selectMode={screen.selectMode}

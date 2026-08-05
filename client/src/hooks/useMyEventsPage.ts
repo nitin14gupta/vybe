@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import type { EventSummary, MyEventsPage } from '@/api/apiService'
+import { usePillStore } from '@/store/pillStore'
 
 const PAGE_SIZE = 6
 
@@ -9,6 +10,7 @@ type Fetcher = (tab: 'upcoming' | 'past', limit: number, offset: number) => Prom
 // this (one per tab) run side by side so SwipeableTabs can reveal the other
 // tab's real content mid-drag instead of an empty pane.
 export function useMyEventsPage(fetcher: Fetcher, tab: 'upcoming' | 'past') {
+  const showPill = usePillStore(s => s.show)
   const [events, setEvents] = useState<EventSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -29,9 +31,12 @@ export function useMyEventsPage(fetcher: Fetcher, tab: 'upcoming' | 'past') {
         setPastCount(res.past_count)
         setLoaded(true)
       })
-      .catch(() => setEvents([]))
+      .catch(() => {
+        setEvents([])
+        showPill("Couldn't load your events, try again", 'error')
+      })
       .finally(() => { setLoading(false); setRefreshing(false) })
-  }, [fetcher, tab])
+  }, [fetcher, tab, showPill])
 
   const loadMore = useCallback(() => {
     if (loadingMore || !hasMore) return
@@ -41,9 +46,9 @@ export function useMyEventsPage(fetcher: Fetcher, tab: 'upcoming' | 'past') {
         setEvents(prev => [...prev, ...res.events])
         setHasMore(res.has_more)
       })
-      .catch(() => {})
+      .catch(() => showPill("Couldn't load more events, try again", 'error'))
       .finally(() => setLoadingMore(false))
-  }, [fetcher, tab, events.length, loadingMore, hasMore])
+  }, [fetcher, tab, events.length, loadingMore, hasMore, showPill])
 
   return { events, loading, refreshing, loadingMore, hasMore, upcomingCount, pastCount, loaded, fetchFirstPage, loadMore }
 }

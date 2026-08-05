@@ -12,53 +12,20 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { StatusBar } from 'expo-status-bar'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { ArrowLeft, Calendar, Download, MapPin, PartyPopper, Share2 } from 'lucide-react-native'
-import ReAnimated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated'
+import { ArrowLeft, PartyPopper, Share2 } from 'lucide-react-native'
 import ViewShot, { type ViewShotRef } from 'react-native-view-shot'
 import { Asset as MediaAsset, requestPermissionsAsync as requestMediaPermissionsAsync } from 'expo-media-library'
 import { hTap, hSuccess } from '@/lib/haptics'
-import { Colors, FontFamily, Radius, Spacing, ComponentSize, LogoBlack } from '@/constants'
+import { Colors, FontFamily, Spacing } from '@/constants'
 import ApiService, { type TicketInfo } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { getOrFetch, peekCached } from '@/lib/queryCache'
-import { ConfettiRain, StyledQr, LogoMark, BrandedLoader } from '@/components/ui'
+import { ConfettiRain, BrandedLoader } from '@/components/ui'
 import { useGoBack } from '@/hooks/useGoBack'
 import { EventShareCard } from '@/components/events/EventShareCard'
+import { TicketQrCard, fmtDate, fmtTime, parseTs } from '@/components/events/TicketQrCard'
+import { TicketActionButtons } from '@/components/events/TicketActionButtons'
 import { useImageShare } from '@/hooks/useImageShare'
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function parseTs(iso: string | null | undefined): Date | null {
-  if (!iso) return null
-  const d = new Date(iso.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'))
-  return isNaN(d.getTime()) ? null : d
-}
-
-function fmtDate(iso: string | null | undefined) {
-  const d = parseTs(iso)
-  if (!d) return 'Date TBC'
-  return d.toLocaleDateString('en-IN', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
-function fmtTime(iso: string | null | undefined) {
-  const d = parseTs(iso)
-  if (!d) return ''
-  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
-}
-
-function orderRef(token: string): string {
-  const tail = token.replace(/[^a-zA-Z0-9]/g, '').slice(-8).toUpperCase()
-  return `TKT-${tail}`
-}
 
 // ── Heading block ─────────────────────────────────────────────────────────────
 
@@ -84,87 +51,6 @@ function HeadingBlock() {
   )
 }
 
-// ── Ticket card ───────────────────────────────────────────────────────────────
-
-function TicketCard({ ticket }: { ticket: TicketInfo }) {
-  return (
-    <View style={s.card}>
-      {/* Info */}
-      <View style={s.cardTop}>
-        <Text style={s.cardTitle}>{ticket.event_title}</Text>
-        <View style={s.cardMeta}>
-          <View style={s.metaRow}>
-            <Calendar size={15} color={Colors.inkSecondary} strokeWidth={1.5} />
-            <View style={s.metaTexts}>
-              <Text style={s.metaMain}>{fmtDate(ticket.date_time)}</Text>
-              {ticket.date_time && (
-                <Text style={s.metaSub}>Doors open · {fmtTime(ticket.date_time)}</Text>
-              )}
-            </View>
-          </View>
-          {ticket.location_name && (
-            <View style={s.metaRow}>
-              <MapPin size={15} color={Colors.inkSecondary} strokeWidth={1.5} />
-              <Text style={s.metaMain} numberOfLines={1}>{ticket.location_name}</Text>
-            </View>
-          )}
-        </View>
-      </View>
-
-      {/* Perforated tear line */}
-      <View style={s.tearRow}>
-        <View style={s.tearHole} />
-        <View style={s.tearDash} />
-        <View style={s.tearHole} />
-      </View>
-
-      {/* QR */}
-      <View style={s.qrSection}>
-        <View style={s.qrPaper}>
-          <StyledQr data={ticket.ticket_token} size={176} errorCorrectionLevel="M" />
-        </View>
-        <View style={s.scanHintRow}>
-          <LogoMark size={13} opacity={0.85} source={LogoBlack} />
-          <Text style={s.scanHint}>Scan at the door</Text>
-        </View>
-        <Text style={s.orderRef}>{orderRef(ticket.ticket_token)}</Text>
-      </View>
-    </View>
-  )
-}
-
-// ── Animated save button ──────────────────────────────────────────────────────
-
-function SaveButton({ onPress }: { onPress: () => void }) {
-  const scale = useSharedValue(1)
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }))
-
-  return (
-    <Pressable
-      onPressIn={() => {
-        hTap()
-        scale.value = withSpring(0.94, { damping: 18, stiffness: 380 })
-      }}
-      onPressOut={() => {
-        scale.value = withSpring(1, { damping: 10, stiffness: 180 })
-      }}
-      onPress={onPress}
-    >
-        <LinearGradient
-          colors={[Colors.brandOrange, Colors.brandCoral]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={s.saveGradient}
-        >
-          <Download size={18} color={Colors.inkPrimary} strokeWidth={2.2} />
-          <Text style={s.saveBtnText}>Save to Photos</Text>
-        </LinearGradient>
-    </Pressable>
-  )
-}
-
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function TicketScreen() {
@@ -176,13 +62,16 @@ export default function TicketScreen() {
 
   const [ticket, setTicket] = useState<TicketInfo | null>(() => id ? peekCached<TicketInfo>(`ticket:${id}`) : null)
   const [loading, setLoading] = useState(() => !(id && peekCached<TicketInfo>(`ticket:${id}`)))
+  const [loadError, setLoadError] = useState(false)
   const [coverUrl, setCoverUrl] = useState('')
   const cardRef = useRef<ViewShotRef>(null)
   const shareCardRef = useRef<View>(null)
   const { shareImage } = useImageShare()
 
-  useEffect(() => {
+  const loadTicket = () => {
     if (!id) return
+    setLoading(true)
+    setLoadError(false)
     getOrFetch(`ticket:${id}`, () => ApiService.getMyTicket(id), {
       ttlMs: t => {
         const d = parseTs(t.date_time)
@@ -190,8 +79,19 @@ export default function TicketScreen() {
       },
     })
       .then(setTicket)
-      .catch(() => showPill("Couldn't load your ticket", 'error'))
+      .catch(() => {
+        setLoadError(true)
+        showPill("Couldn't load your ticket", 'error')
+      })
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    if (!id) {
+      setLoading(false)
+      return
+    }
+    loadTicket()
     // Cover photo only — this screen never touches live fields (RSVP status,
     // spots left), just cosmetic display for the share card, so it's as safe
     // to cache-until-event-ends as the ticket itself.
@@ -208,11 +108,15 @@ export default function TicketScreen() {
   const handleShare = async () => {
     if (!ticket) return
     const message = `I'm going to "${ticket.event_title}"! 🎉\n${fmtDate(ticket.date_time)}${ticket.location_name ? `\n📍 ${ticket.location_name}` : ''}`
-    if (coverUrl) {
-      const result = await shareImage(shareCardRef, { message, title: ticket.event_title })
-      if (result.shared || result.error === 'cancelled') return
+    try {
+      if (coverUrl) {
+        const result = await shareImage(shareCardRef, { message, title: ticket.event_title })
+        if (result.shared || result.error === 'cancelled') return
+      }
+      await Share.share({ message, title: ticket.event_title })
+    } catch {
+      showPill("Couldn't share, try again", 'error')
     }
-    await Share.share({ message, title: ticket.event_title })
   }
 
   const handleSave = async () => {
@@ -245,7 +149,14 @@ export default function TicketScreen() {
     return (
       <View style={[s.root, s.center]}>
         <StatusBar style="light" />
-        <Text style={s.errorText}>Ticket not found</Text>
+        <Text style={s.errorText}>
+          {loadError ? "Couldn't load your ticket" : 'Ticket not found'}
+        </Text>
+        {loadError && (
+          <Pressable onPress={loadTicket} style={s.retryBtn}>
+            <Text style={s.retryText}>Try again</Text>
+          </Pressable>
+        )}
         <Pressable onPress={goBack}>
           <Text style={s.backLinkText}>← Go back</Text>
         </Pressable>
@@ -277,21 +188,10 @@ export default function TicketScreen() {
         <HeadingBlock />
 
         <ViewShot ref={cardRef} options={{ format: 'png', quality: 1 }} style={s.viewShot}>
-          <TicketCard ticket={ticket} />
+          <TicketQrCard ticket={ticket} />
         </ViewShot>
 
-        {/* Actions */}
-        <View style={s.actions}>
-          <SaveButton onPress={handleSave} />
-
-          <Pressable
-            style={s.shareBtn}
-            onPress={() => { hTap(); handleShare() }}
-          >
-            <Share2 size={18} color={Colors.inkPrimary} strokeWidth={1.8} />
-            <Text style={s.shareBtnText}>Share Event</Text>
-          </Pressable>
-        </View>
+        <TicketActionButtons onSave={handleSave} onShare={handleShare} />
 
         <Pressable
           style={s.allTicketsLink}
@@ -330,10 +230,6 @@ export default function TicketScreen() {
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
-
-const CARD_BG = '#1A1A1A'
-const CARD_BORDER = '#2A2A2A'
-const QR_BG = '#ECECEC'
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
@@ -395,135 +291,6 @@ const s = StyleSheet.create({
 
   // Ticket card
   viewShot: { width: '100%', maxWidth: 400 },
-  card: {
-    width: '100%',
-    maxWidth: 400,
-    backgroundColor: CARD_BG,
-    borderRadius: Radius.card + 8,
-    borderWidth: 1,
-    borderColor: CARD_BORDER,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 14,
-  },
-
-  cardTop: { padding: 20, gap: 14 },
-  cardTitle: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 22,
-    color: Colors.inkPrimary,
-    lineHeight: 28,
-    letterSpacing: -0.3,
-  },
-  cardMeta: { gap: 10 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  metaTexts: { flex: 1, gap: 2 },
-  metaMain: {
-    fontFamily: FontFamily.bodyMedium,
-    fontSize: 14,
-    color: Colors.inkPrimary,
-    flex: 1,
-  },
-  metaSub: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 12,
-    color: Colors.inkSecondary,
-  },
-
-  // Tear line
-  tearRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: CARD_BG,
-  },
-  tearHole: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: Colors.background,
-    marginHorizontal: -11,
-    zIndex: 1,
-  },
-  tearDash: {
-    flex: 1,
-    borderTopWidth: 1.5,
-    borderTopColor: CARD_BORDER,
-    borderStyle: 'dashed',
-  },
-
-  // QR
-  qrSection: {
-    backgroundColor: QR_BG,
-    alignItems: 'center',
-    paddingVertical: 28,
-    paddingHorizontal: 24,
-    gap: 12,
-  },
-  qrPaper: {
-    backgroundColor: '#fff',
-    padding: 12,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
-  },
-  scanHintRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  scanHint: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 13,
-    color: '#222',
-    textAlign: 'center',
-  },
-  orderRef: {
-    fontFamily: FontFamily.bodyMedium,
-    fontSize: 10,
-    color: '#777',
-    letterSpacing: 2.5,
-    textTransform: 'uppercase',
-  },
-
-  // Buttons
-  actions: { width: '100%', gap: 10 },
-
-  saveGradient: {
-    height: ComponentSize.btnPrimary,
-    borderRadius: Radius.pill,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-  },
-  saveBtnText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 16,
-    color: Colors.inkPrimary,
-    letterSpacing: 0.1,
-  },
-
-  shareBtn: {
-    height: ComponentSize.btnPrimary,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-    borderColor: CARD_BORDER,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-  },
-  shareBtnText: {
-    fontFamily: FontFamily.bodyMedium,
-    fontSize: 15,
-    color: Colors.inkPrimary,
-  },
 
   // Footer
   allTicketsLink: { paddingVertical: 4 },
@@ -545,5 +312,17 @@ const s = StyleSheet.create({
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 15,
     color: Colors.brandOrange,
+  },
+  retryBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: Colors.brandOrange,
+    marginBottom: 16,
+  },
+  retryText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 14,
+    color: Colors.inkPrimary,
   },
 })

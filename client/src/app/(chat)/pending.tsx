@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, Pressable, Image, ScrollView } from 'react-native'
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native'
+import { Image } from 'expo-image'
 import { router, useLocalSearchParams } from 'expo-router'
 import { ArrowLeft, Clock, Flame } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -41,7 +42,13 @@ export default function PendingChatScreen() {
         <View style={s.avatarSection}>
           <Pressable onPress={goToProfile} style={s.avatarRing} hitSlop={6}>
             {partnerAvatar ? (
-              <Image source={{ uri: partnerAvatar }} style={s.avatar} />
+              <Image
+                source={{ uri: partnerAvatar }}
+                style={s.avatar}
+                cachePolicy="memory-disk"
+                priority="high"
+                transition={150}
+              />
             ) : (
               <View style={[s.avatar, s.avatarFallback]}>
                 <Text style={s.avatarInitial}>{name.charAt(0).toUpperCase()}</Text>

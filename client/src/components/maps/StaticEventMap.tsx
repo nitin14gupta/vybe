@@ -39,7 +39,7 @@ export function StaticEventMap({
         zoomEnabled={false}
         rotateEnabled={false}
       >
-        <GoogleMarker coordinate={{ latitude: lat, longitude: lng }}>
+        <GoogleMarker coordinate={{ latitude: lat, longitude: lng }} tracksViewChanges={false}>
           <View style={s.pin}>
             <TypeIcon size={16} color={Colors.brandOrange} strokeWidth={2} />
           </View>

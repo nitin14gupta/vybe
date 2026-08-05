@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react'
+import { memo, useState, useCallback } from 'react'
 import {
-  View, Text, StyleSheet, FlatList, Pressable, Image,
+  View, Text, StyleSheet, FlatList, Pressable,
   ActivityIndicator,
 } from 'react-native'
+import { Image } from 'expo-image'
 import { router } from 'expo-router'
 import { hError } from '@/lib/haptics'
 import { useFocusEffect } from 'expo-router'
@@ -12,6 +13,38 @@ import ApiService, { BlockedUser } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
 import { ConfirmSheet } from '@/components/ui'
 import { usePillStore } from '@/store/pillStore'
+
+const BlockedUserRow = memo(function BlockedUserRow({ user, onUnblock }: {
+  user: BlockedUser
+  onUnblock: (user: BlockedUser) => void
+}) {
+  return (
+    <View style={s.row}>
+      <View style={s.avatarWrap}>
+        {user.avatar ? (
+          <Image
+            source={{ uri: user.avatar }}
+            style={s.avatar}
+            cachePolicy="memory-disk"
+            priority="low"
+            transition={150}
+          />
+        ) : (
+          <View style={[s.avatar, s.avatarFallback]}>
+            <Text style={s.avatarInitial}>{(user.name ?? '?').charAt(0)}</Text>
+          </View>
+        )}
+      </View>
+      <View style={s.info}>
+        <Text style={s.name}>{user.name ?? 'Unknown'}</Text>
+        {user.city ? <Text style={s.city}>{user.city}</Text> : null}
+      </View>
+      <Pressable style={s.unblockBtn} onPress={() => { hError(); onUnblock(user) }}>
+        <Text style={s.unblockText}>Unblock</Text>
+      </Pressable>
+    </View>
+  )
+})
 
 export default function BlockedUsersScreen() {
   const showPill = usePillStore(s => s.show)
@@ -62,24 +95,7 @@ export default function BlockedUsersScreen() {
           keyExtractor={u => u.id}
           contentContainerStyle={s.list}
           renderItem={({ item }) => (
-            <View style={s.row}>
-              <View style={s.avatarWrap}>
-                {item.avatar ? (
-                  <Image source={{ uri: item.avatar }} style={s.avatar} />
-                ) : (
-                  <View style={[s.avatar, s.avatarFallback]}>
-                    <Text style={s.avatarInitial}>{(item.name ?? '?').charAt(0)}</Text>
-                  </View>
-                )}
-              </View>
-              <View style={s.info}>
-                <Text style={s.name}>{item.name ?? 'Unknown'}</Text>
-                {item.city ? <Text style={s.city}>{item.city}</Text> : null}
-              </View>
-              <Pressable style={s.unblockBtn} onPress={() => { hError(); setConfirmUser(item) }}>
-                <Text style={s.unblockText}>Unblock</Text>
-              </Pressable>
-            </View>
+            <BlockedUserRow user={item} onUnblock={setConfirmUser} />
           )}
         />
       )}

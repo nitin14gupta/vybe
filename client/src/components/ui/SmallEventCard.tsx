@@ -1,5 +1,6 @@
-import React from 'react'
-import { View, Text, Pressable, StyleSheet, Image } from 'react-native'
+import React, { memo } from 'react'
+import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { Image, type ImageProps } from 'expo-image'
 import { Colors, FontFamily } from '@/constants'
 import { router } from 'expo-router'
 import { EventSummary } from '@/api/apiService'
@@ -12,7 +13,15 @@ function formatPrice(price: number) {
   return '₹' + price
 }
 
-export function SmallEventCard({ event, onPress }: { event: EventSummary; onPress?: () => void }) {
+function SmallEventCardBase({
+  event,
+  onPress,
+  priority = 'normal',
+}: {
+  event: EventSummary
+  onPress?: () => void
+  priority?: ImageProps['priority']
+}) {
   const dateObj = new Date(event.date_time)
   const dayStr = dateObj.toLocaleDateString('en-US', { day: 'numeric' })
   const monthStr = dateObj.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()
@@ -25,7 +34,14 @@ export function SmallEventCard({ event, onPress }: { event: EventSummary; onPres
     >
       <View style={s.imageContainer}>
         {event.cover_photos?.[0]?.url ? (
-          <Image source={{ uri: event.cover_photos[0].url }} style={s.image} />
+          <Image
+            source={{ uri: event.cover_photos[0].url }}
+            style={s.image}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={150}
+            priority={priority}
+          />
         ) : (
           <View style={[s.image, s.imageFallback]}>
             <Text style={s.fallbackMonth}>{monthStr}</Text>
@@ -118,3 +134,5 @@ const s = StyleSheet.create({
     color: Colors.accentGreen,
   },
 })
+
+export const SmallEventCard = memo(SmallEventCardBase)

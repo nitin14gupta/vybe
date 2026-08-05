@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator, Pressable } from 'react-native'
 import { CheckCircle2, XCircle, Info, Eye, EyeOff, ShieldCheck } from 'lucide-react-native'
 import { Input, LogoMark, TabSwitcher } from '@/components/ui'
@@ -8,7 +8,7 @@ import type { BankInfo } from '@/hooks/useIfscLookup'
 const PAYOUT_TABS = ['Bank Account', 'UPI'] as const
 type PayoutTab = typeof PAYOUT_TABS[number]
 
-export function PayoutStep({
+function PayoutStepBase({
   activeTab,
   onTabChange,
   upiId,
@@ -52,6 +52,51 @@ export function PayoutStep({
   const [showAccountNumber, setShowAccountNumber] = useState(false)
   const [showConfirmAccountNumber, setShowConfirmAccountNumber] = useState(false)
 
+  const handleAccountNumberChange = useCallback(
+    (t: string) => onAccountNumberChange(t.replace(/[^0-9]/g, '')),
+    [onAccountNumberChange],
+  )
+  const handleConfirmAccountNumberChange = useCallback(
+    (t: string) => onConfirmAccountNumberChange(t.replace(/[^0-9]/g, '')),
+    [onConfirmAccountNumberChange],
+  )
+  const handleIfscCodeChange = useCallback(
+    (t: string) => onIfscCodeChange(t.toUpperCase()),
+    [onIfscCodeChange],
+  )
+  const handleUpiIdChange = useCallback(
+    (t: string) => onUpiIdChange(t.toLowerCase().trim()),
+    [onUpiIdChange],
+  )
+
+  const toggleShowAccountNumber = useCallback(() => setShowAccountNumber(v => !v), [])
+  const toggleShowConfirmAccountNumber = useCallback(() => setShowConfirmAccountNumber(v => !v), [])
+
+  const accountNumberIcon = useMemo(
+    () => (
+      <Pressable onPress={toggleShowAccountNumber} hitSlop={8}>
+        {showAccountNumber ? (
+          <EyeOff size={18} color={Colors.inkSecondary} strokeWidth={1.8} />
+        ) : (
+          <Eye size={18} color={Colors.inkSecondary} strokeWidth={1.8} />
+        )}
+      </Pressable>
+    ),
+    [showAccountNumber, toggleShowAccountNumber],
+  )
+  const confirmAccountNumberIcon = useMemo(
+    () => (
+      <Pressable onPress={toggleShowConfirmAccountNumber} hitSlop={8}>
+        {showConfirmAccountNumber ? (
+          <EyeOff size={18} color={Colors.inkSecondary} strokeWidth={1.8} />
+        ) : (
+          <Eye size={18} color={Colors.inkSecondary} strokeWidth={1.8} />
+        )}
+      </Pressable>
+    ),
+    [showConfirmAccountNumber, toggleShowConfirmAccountNumber],
+  )
+
   return (
     <View style={s.content}>
       <LogoMark size={64} style={s.logo} />
@@ -75,42 +120,26 @@ export function PayoutStep({
               label="Account number"
               placeholder="Enter account number"
               value={accountNumber}
-              onChangeText={t => onAccountNumberChange(t.replace(/[^0-9]/g, ''))}
+              onChangeText={handleAccountNumberChange}
               keyboardType="number-pad"
               secureTextEntry={!showAccountNumber}
-              rightIcon={
-                <Pressable onPress={() => setShowAccountNumber(v => !v)} hitSlop={8}>
-                  {showAccountNumber ? (
-                    <EyeOff size={18} color={Colors.inkSecondary} strokeWidth={1.8} />
-                  ) : (
-                    <Eye size={18} color={Colors.inkSecondary} strokeWidth={1.8} />
-                  )}
-                </Pressable>
-              }
+              rightIcon={accountNumberIcon}
             />
             <Input
               label="Confirm account number"
               placeholder="Re-enter account number"
               value={confirmAccountNumber}
-              onChangeText={t => onConfirmAccountNumberChange(t.replace(/[^0-9]/g, ''))}
+              onChangeText={handleConfirmAccountNumberChange}
               keyboardType="number-pad"
               secureTextEntry={!showConfirmAccountNumber}
               error={accountNumberMismatch ? "Account numbers don't match" : undefined}
-              rightIcon={
-                <Pressable onPress={() => setShowConfirmAccountNumber(v => !v)} hitSlop={8}>
-                  {showConfirmAccountNumber ? (
-                    <EyeOff size={18} color={Colors.inkSecondary} strokeWidth={1.8} />
-                  ) : (
-                    <Eye size={18} color={Colors.inkSecondary} strokeWidth={1.8} />
-                  )}
-                </Pressable>
-              }
+              rightIcon={confirmAccountNumberIcon}
             />
             <Input
               label="IFSC code"
               placeholder="e.g. HDFC0001234"
               value={ifscCode}
-              onChangeText={t => onIfscCodeChange(t.toUpperCase())}
+              onChangeText={handleIfscCodeChange}
               error={!bankLookupLoading && ifscError ? 'Could not verify this IFSC code' : undefined}
               autoCapitalize="characters"
             />
@@ -134,7 +163,7 @@ export function PayoutStep({
               label="UPI ID"
               placeholder="yourname@upi"
               value={upiId}
-              onChangeText={t => onUpiIdChange(t.toLowerCase().trim())}
+              onChangeText={handleUpiIdChange}
               error={!checking && vpaError ? 'UPI ID not found. Please check and try again.' : undefined}
               autoCapitalize="none"
               keyboardType="email-address"
@@ -178,6 +207,8 @@ export function PayoutStep({
     </View>
   )
 }
+
+export const PayoutStep = memo(PayoutStepBase)
 
 const s = StyleSheet.create({
   content: { alignItems: 'center' },

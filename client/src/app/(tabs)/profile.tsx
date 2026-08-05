@@ -1,23 +1,20 @@
 import { useEffect, useState, useCallback } from 'react'
-import {
-  View, Text, StyleSheet, ScrollView, Pressable,
-  Image, Dimensions, RefreshControl, ActivityIndicator
-} from 'react-native'
+import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl } from 'react-native'
 import { router } from 'expo-router'
 import { hTap } from '@/lib/haptics'
-import { MapPin, Pencil, Settings, Share, Ticket, Calendar, Plus } from 'lucide-react-native'
+import { Pencil, Settings, Share } from 'lucide-react-native'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
-import { InterestChip, PlaybackWave, VoicePlayButton, AppHeader, HeaderIconBtn, BrandedLoader, TabSwitcher, SmallEventCard, OutlineButton, PrimaryButton } from '@/components/ui'
+import { AppHeader, HeaderIconBtn, BrandedLoader, PrimaryButton } from '@/components/ui'
+import { ProfileAvatarHeader } from '@/components/profile/ProfileAvatarHeader'
+import { ProfileStatsRow } from '@/components/profile/ProfileStatsRow'
+import { ProfileBioVoiceCard } from '@/components/profile/ProfileBioVoiceCard'
+import { ProfileDetailsChips } from '@/components/profile/ProfileDetailsChips'
+import { ProfilePhotoGrid } from '@/components/profile/ProfilePhotoGrid'
 import { useProfile } from '@/hooks/useProfile'
-import ApiService, { EventSummary } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
-import { Colors, FontFamily, Spacing, Radius, HOST_BADGE_IMAGES } from '@/constants'
+import { Colors, FontFamily, Spacing, HOST_BADGE_IMAGES } from '@/constants'
 import { useImageViewer } from '@/hooks/useImageViewer'
 import { MediaViewerModal } from '@/components/chat/MediaViewerModal'
-
-const { width } = Dimensions.get('window')
-const GRID_GAP = 2
-const PHOTO_SIZE = (width - (Spacing.screenPadding * 2) - (GRID_GAP * 2)) / 3
 
 const GENDER_DISPLAY: Record<string, string> = {
   Man: 'Male',
@@ -29,10 +26,7 @@ const GENDER_DISPLAY: Record<string, string> = {
 export default function ProfileScreen() {
   const { profile, loading, error, refresh } = useProfile()
   const { viewingMedia, openMedia, closeMedia } = useImageViewer()
-  const [activeTab, setActiveTab] = useState<'going' | 'hosted'>('going')
-  const [eventsAttending, setEventsAttending] = useState<EventSummary[]>([])
-  const [eventsHosted, setEventsHosted] = useState<EventSummary[]>([])
-  const [eventsLoading, setEventsLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
   const player = useAudioPlayer(null)
   const status = useAudioPlayerStatus(player)
@@ -45,32 +39,11 @@ export default function ProfileScreen() {
     if (profile?.dob !== undefined) useAuthStore.getState().setDob(profile.dob ?? null)
   }, [profile?.dob])
 
-  const [refreshing, setRefreshing] = useState(false)
-
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
     await refresh()
-    if (profile?.id) {
-      try {
-        const ext = await ApiService.getUserProfile(profile.id)
-        setEventsAttending(ext.events_attending || [])
-        setEventsHosted(ext.events_hosted || [])
-      } catch { }
-    }
     setRefreshing(false)
-  }, [refresh, profile?.id])
-
-  useEffect(() => {
-    if (profile?.id) {
-      setEventsLoading(true)
-      ApiService.getUserProfile(profile.id)
-        .then(ext => {
-          setEventsAttending(ext.events_attending || [])
-          setEventsHosted(ext.events_hosted || [])
-        })
-        .finally(() => setEventsLoading(false))
-    }
-  }, [profile?.id])
+  }, [refresh])
 
   const toggleVoice = () => {
     hTap()
@@ -113,6 +86,8 @@ export default function ProfileScreen() {
   const city = profile?.city ?? null
   const bio = profile?.bio ?? null
   const otherBadges = profile?.badges ?? []
+  const interests = profile?.interests ?? []
+  const photos = profile?.photos ?? []
   const hostBadgeName = profile?.host_badges?.[0] ?? null
   const hostBadgeImage = hostBadgeName ? HOST_BADGE_IMAGES[hostBadgeName] : null
   const vibers = profile?.vibers_count ?? 0
@@ -133,45 +108,15 @@ export default function ProfileScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.brandOrange} colors={[Colors.brandOrange]} />}>
 
-        {/* ── Top Header / Avatar Area ── */}
-        <View style={styles.headerSection}>
-          <View style={styles.avatarWrap}>
-            {profile?.photos?.[0]?.url ? (
-              <Pressable onLongPress={() => openMedia([{ url: profile!.photos[0].url, type: 'image' }], 0)} delayLongPress={400}>
-                <Image source={{ uri: profile.photos[0].url }} style={styles.avatarLarge} />
-              </Pressable>
-            ) : (
-              <View style={[styles.avatarLarge, styles.avatarFallback]}>
-                <Text style={styles.avatarInitialLarge}>{name.charAt(0).toUpperCase()}</Text>
-              </View>
-            )}
-            {hostBadgeImage && (
-              <View style={styles.hostBadgeChip}>
-                <Image source={hostBadgeImage} style={styles.hostBadgeImg} resizeMode="contain" />
-              </View>
-            )}
-          </View>
+        <ProfileAvatarHeader
+          name={name}
+          gender={gender}
+          city={city}
+          avatarUrl={photos[0]?.url ?? null}
+          hostBadgeImage={hostBadgeImage}
+          onAvatarLongPress={() => photos[0] && openMedia([{ url: photos[0].url, type: 'image' }], 0)}
+        />
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 8 }}>
-            <Text style={[styles.nameLarge, { marginBottom: 0 }]} numberOfLines={1}>{name}</Text>
-          </View>
-
-          <View style={styles.pillsRowCentered}>
-            {gender && (
-              <View style={styles.pill}>
-                <Text style={styles.pillText}>{gender}</Text>
-              </View>
-            )}
-            {city && (
-              <View style={styles.pill}>
-                <MapPin size={10} color={Colors.inkSecondary} strokeWidth={2} />
-                <Text style={styles.pillText}>{city}</Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        {/* ── Action Buttons ── */}
         <View style={styles.actionsRow}>
           <Pressable onPress={() => router.push('/(profile)/edit')} style={styles.actionBtnSecondary}>
             <Pencil size={18} color={Colors.inkPrimary} strokeWidth={1.8} />
@@ -189,9 +134,9 @@ export default function ProfileScreen() {
                     userId: profile.id,
                     username: profile.username ?? '',
                     name: profile.name ?? '',
-                    avatar: profile.photos?.[0]?.url ?? '',
+                    avatar: photos[0]?.url ?? '',
                     city: profile.city ?? '',
-                    interests: (profile.interests ?? []).join(','),
+                    interests: interests.join(','),
                   },
                 } as any)
               }}
@@ -199,136 +144,29 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* ── Stats Row ── */}
-        <View style={styles.statsCard}>
-          <StatCol
-            value={vibers} label="Vibers" sub="fans vibin'"
-            onPress={() => profile && router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'followers', name: encodeURIComponent(profile.name ?? ''), vibersCount: vibers, vibingCount: vibing } } as any)}
-          />
-          <View style={styles.statDivider} />
-          <StatCol
-            value={vibing} label="Vibing" sub="folks feelin'"
-            onPress={() => profile && router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'following', name: encodeURIComponent(profile.name ?? ''), vibersCount: vibers, vibingCount: vibing } } as any)}
-          />
-          <View style={styles.statDivider} />
-          <Pressable
-            style={styles.statCol}
-            android_ripple={null}
-            onPress={() => profile && router.push({ pathname: '/(profile)/host-reviews', params: { id: profile.id, name: encodeURIComponent(profile.name ?? '') } } as any)}
-          >
-            <View style={styles.ratingRow}>
-              <Text style={styles.statValue}>{avgRating != null ? avgRating.toFixed(1) : '—'}</Text>
-            </View>
-            <Text style={styles.statLabel}>Reviews</Text>
-            <Text style={styles.statSub}>{reviewCount} rating{reviewCount === 1 ? '' : 's'}</Text>
-          </Pressable>
-        </View>
+        <ProfileStatsRow
+          vibers={vibers}
+          vibing={vibing}
+          avgRating={avgRating}
+          reviewCount={reviewCount}
+          onVibersPress={() => router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'followers', name: encodeURIComponent(profile.name ?? ''), vibersCount: vibers, vibingCount: vibing } } as any)}
+          onVibingPress={() => router.push({ pathname: '/(profile)/follows', params: { userId: profile.id, type: 'following', name: encodeURIComponent(profile.name ?? ''), vibersCount: vibers, vibingCount: vibing } } as any)}
+          onReviewsPress={() => router.push({ pathname: '/(profile)/host-reviews', params: { id: profile.id, name: encodeURIComponent(profile.name ?? '') } } as any)}
+        />
 
-        {/* ── Bio & Voice Intro ── */}
-        {(bio || profile?.voice_url) && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>About me</Text>
-            {bio ? <Text style={styles.bio}>{bio}</Text> : null}
+        <ProfileBioVoiceCard
+          bio={bio}
+          voiceUrl={profile?.voice_url ?? null}
+          playing={status.playing}
+          onTogglePlay={toggleVoice}
+        />
 
-            {profile?.voice_url ? (
-              <View style={styles.voiceCard}>
-                <VoicePlayButton playing={status.playing} onPress={toggleVoice} />
-                <View style={styles.voiceWave}>
-                  <PlaybackWave isActive={status.playing} compact />
-                </View>
-                <Text style={styles.voiceLabel}>Voice intro</Text>
-              </View>
-            ) : null}
-          </View>
-        )}
+        <ProfileDetailsChips badges={otherBadges} interests={interests} />
 
-        {/* ── Details: Badges & Interests ── */}
-        {(otherBadges.length > 0 || (profile?.interests?.length ?? 0) > 0) && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>My Details</Text>
-            <View style={styles.chipsWrap}>
-              {otherBadges.map(badge => (
-                <View key={badge} style={styles.badgeChip}>
-                  <Text style={styles.badgeText}>{badge}</Text>
-                </View>
-              ))}
-              {profile?.interests?.map(tag => (
-                <InterestChip key={tag} label={tag} emoji="" selected onPress={() => { }} />
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* ── Events Tabs ── */}
-        {/* {(eventsAttending.length > 0 || eventsHosted.length > 0 || eventsLoading) && (
-          <View style={styles.section}>
-            <TabSwitcher
-              tabs={['Going to', 'Hosted']}
-              activeTab={activeTab === 'going' ? 'Going to' : 'Hosted'}
-              onChange={(tab) => setActiveTab(tab === 'Going to' ? 'going' : 'hosted')}
-            />
-            {eventsLoading ? (
-              <View style={{ padding: 20, alignItems: 'center' }}>
-                <ActivityIndicator size="small" color={Colors.brandOrange} />
-              </View>
-            ) : activeTab === 'going' && eventsAttending.length === 0 ? (
-              <View style={styles.emptyCenter}>
-                <Ticket size={52} color={Colors.inkDisabled} strokeWidth={1.2} />
-                <Text style={styles.emptyTitle}>No upcoming tickets</Text>
-                <Text style={styles.emptySub}>Events you RSVP to will appear here</Text>
-                <PrimaryButton
-                  label="Browse Events"
-                  size="small"
-                  style={styles.emptyCtaBtn}
-                  onPress={() => router.push('/(tabs)/events' as any)}
-                />
-              </View>
-            ) : activeTab === 'hosted' && eventsHosted.length === 0 ? (
-              <View style={styles.emptyCenter}>
-                <Calendar size={52} color={Colors.inkDisabled} strokeWidth={1.2} />
-                <Text style={styles.emptyTitle}>No upcoming events</Text>
-                <Text style={styles.emptySub}>Events you host will appear here</Text>
-                <PrimaryButton
-                  label="Create Event"
-                  size="small"
-                  style={styles.emptyCtaBtn}
-                  icon={<Plus size={16} color={Colors.background} strokeWidth={2.5} />}
-                  onPress={() => router.push('/(events)/create' as any)}
-                />
-              </View>
-            ) : (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, marginTop: 12 }}>
-                {activeTab === 'going' && eventsAttending.slice(0, 3).map(item => (
-                  <SmallEventCard key={item.id} event={item} />
-                ))}
-
-                {activeTab === 'hosted' && eventsHosted.slice(0, 3).map(item => (
-                  <SmallEventCard key={item.id} event={item} />
-                ))}
-              </ScrollView>
-            )}
-          </View>
-        )} */}
-
-        {/* ── Photo grid ── */}
-        {(profile?.photos?.length ?? 0) > 0 && (
-          <View style={styles.grid}>
-            {profile!.photos.map((photo, i) => (
-              <Pressable
-                key={photo.id}
-                onPress={() => openMedia(profile!.photos.map(p => ({ url: p.url, type: 'image' as const })), i)}
-                onLongPress={() => openMedia(profile!.photos.map(p => ({ url: p.url, type: 'image' as const })), i)}
-                delayLongPress={400}
-              >
-                <Image
-                  source={{ uri: photo.url }}
-                  style={styles.gridPhoto}
-                  resizeMode="cover"
-                />
-              </Pressable>
-            ))}
-          </View>
-        )}
+        <ProfilePhotoGrid
+          photos={photos}
+          onPhotoPress={(i) => openMedia(photos.map(p => ({ url: p.url, type: 'image' as const })), i)}
+        />
 
         <View style={{ height: 36 }} />
       </ScrollView>
@@ -345,93 +183,11 @@ export default function ProfileScreen() {
   )
 }
 
-function StatCol({ value, label, sub, onPress }: { value: number; label: string; sub: string; onPress?: () => void }) {
-  const inner = (
-    <>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={styles.statSub}>{sub}</Text>
-    </>
-  )
-  if (onPress) {
-    return <Pressable style={styles.statCol} onPress={onPress} android_ripple={null}>{inner}</Pressable>
-  }
-  return <View style={styles.statCol}>{inner}</View>
-}
-
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
   loader: { flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center' },
-
   scroll: { paddingBottom: 32 },
 
-  // ── Header Section ──
-  headerSection: {
-    alignItems: 'center',
-    paddingTop: 24,
-    paddingBottom: 20,
-    paddingHorizontal: Spacing.screenPadding,
-  },
-  avatarWrap: {
-    marginBottom: 16,
-    position: 'relative',
-  },
-  avatarLarge: {
-    width: 100, height: 100, borderRadius: 50,
-  },
-  hostBadgeChip: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.elevated,
-    borderWidth: 2,
-    borderColor: Colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  hostBadgeImg: { width: 24, height: 24 },
-  avatarFallback: {
-    backgroundColor: Colors.elevated,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  avatarInitialLarge: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 40,
-    color: Colors.inkPrimary,
-  },
-  nameLarge: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 26,
-    color: Colors.inkPrimary,
-    letterSpacing: -0.4,
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  pillsRowCentered: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-  },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.pill,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  pillText: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 13,
-    color: Colors.inkSecondary,
-  },
-
-  // ── Action Buttons ──
   actionsRow: {
     flexDirection: 'row',
     gap: 12,
@@ -453,123 +209,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.inkPrimary,
   },
-  // ── Stats Row ──
-  statsCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    marginHorizontal: Spacing.screenPadding,
-    borderRadius: Radius.card,
-    paddingVertical: 16,
-    marginBottom: 24,
-  },
-  statCol: { flex: 1, alignItems: 'center', gap: 2 },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  statValue: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 22,
-    color: Colors.inkPrimary,
-    letterSpacing: -0.3,
-  },
-  statLabel: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 13,
-    color: Colors.inkSecondary,
-  },
-  statSub: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 11,
-    color: Colors.inkDisabled,
-  },
-  statDivider: {
-    width: 1, height: 40,
-    backgroundColor: Colors.divider,
-  },
-
-  // ── Common Section ──
-  section: {
-    marginHorizontal: Spacing.screenPadding,
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 18,
-    color: Colors.inkPrimary,
-    marginBottom: 12,
-  },
-
-  // Bio
-  bio: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 15,
-    color: Colors.inkSecondary,
-    lineHeight: 22,
-    marginBottom: 12,
-  },
-
-  // Chips
-  chipsWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  badgeChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,184,48,0.12)',
-    borderRadius: Radius.pill,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  badgeText: {
-    fontFamily: FontFamily.bodyMedium,
-    fontSize: 13,
-    color: Colors.accentGold,
-  },
-
-  // Voice
-  voiceCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.card,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  voiceWave: { flex: 1, overflow: 'hidden' },
-  voiceLabel: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 12,
-    color: Colors.inkDisabled,
-  },
-
-  // Photos
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: GRID_GAP,
-    marginHorizontal: Spacing.screenPadding,
-  },
-  gridPhoto: { width: PHOTO_SIZE, height: PHOTO_SIZE },
-
-  // Events
-  emptyCenter: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    padding: 32
-  },
-  emptyTitle: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 18,
-    color: Colors.inkPrimary
-  },
-  emptySub: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 14,
-    color: Colors.inkSecondary,
-    textAlign: 'center'
-  },
-  emptyCtaBtn: { marginTop: 8 },
 })

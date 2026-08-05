@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { memo, type ReactNode } from 'react'
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Image } from 'expo-image'
@@ -22,7 +22,14 @@ export function HostPill({
   return (
     <View style={[hp.pill, compact && hp.pillCompact, style]}>
       {avatar ? (
-        <Image source={{ uri: avatar }} style={[hp.avatar, compact && hp.avatarCompact]} />
+        <Image
+          source={{ uri: avatar }}
+          style={[hp.avatar, compact && hp.avatarCompact]}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          priority="low"
+          transition={150}
+        />
       ) : (
         <View style={[hp.avatar, compact && hp.avatarCompact, hp.avatarFallback]}>
           <Text style={[hp.initial, compact && hp.initialCompact]}>{name.charAt(0).toUpperCase()}</Text>
@@ -79,7 +86,7 @@ interface Props {
   footer?: ReactNode
 }
 
-export function EventCard({ event, onPress, showHost, isPast, isCancelled, footer }: Props) {
+export const EventCard = memo(function EventCard({ event, onPress, showHost, isPast, isCancelled, footer }: Props) {
   const cover = event.cover_photos?.[0]?.url
   const spotsLow = event.spots_left > 0 && event.spots_left <= 10
   const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
@@ -89,7 +96,14 @@ export function EventCard({ event, onPress, showHost, isPast, isCancelled, foote
       {/* 16:9 cover image */}
       <View style={s.imageWrap}>
         {cover ? (
-          <Image source={{ uri: cover }} style={StyleSheet.absoluteFill} contentFit="cover" />
+          <Image
+            source={{ uri: cover }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            priority="low"
+            transition={150}
+          />
         ) : (
           <LinearGradient colors={['#1a1a1a', '#0d0d0d']} style={[StyleSheet.absoluteFill, s.placeholder]}>
             <TypeIcon size={40} color={Colors.inkDisabled} strokeWidth={1.5} />
@@ -168,7 +182,7 @@ export function EventCard({ event, onPress, showHost, isPast, isCancelled, foote
       {footer}
     </Pressable>
   )
-}
+})
 
 // Same shape as the real card, shimmering — shown while events are still loading.
 export function EventCardSkeleton() {

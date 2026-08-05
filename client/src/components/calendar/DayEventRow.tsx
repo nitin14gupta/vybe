@@ -1,4 +1,6 @@
-import { Pressable, View, Text, StyleSheet, Image } from 'react-native'
+import { memo, useCallback } from 'react'
+import { Pressable, View, Text, StyleSheet } from 'react-native'
+import { Image } from 'expo-image'
 import { router } from 'expo-router'
 import { MapPin, ChevronRight } from 'lucide-react-native'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
@@ -6,15 +8,23 @@ import { Colors, FontFamily, Radius, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/
 import { formatEventDate } from '@/components/events/EventCard'
 import type { EventSummary } from '@/api/apiService'
 
-export function DayEventRow({ event }: { event: EventSummary }) {
+export const DayEventRow = memo(function DayEventRow({ event }: { event: EventSummary }) {
   const cover = event.cover_photos?.[0]?.url
   const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
+  const onPress = useCallback(() => router.push(`/(events)/${event.id}` as any), [event.id])
 
   return (
-    <Pressable style={s.row} onPress={() => router.push(`/(events)/${event.id}` as any)}>
+    <Pressable style={s.row} onPress={onPress}>
       <View style={s.thumb}>
         {cover ? (
-          <Image source={{ uri: cover }} style={s.thumbImg} resizeMode="cover" />
+          <Image
+            source={{ uri: cover }}
+            style={s.thumbImg}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            priority="normal"
+            transition={150}
+          />
         ) : (
           <View style={[s.thumbImg, s.thumbFallback]}>
             <TypeIcon size={20} color={Colors.inkDisabled} strokeWidth={1.5} />
@@ -22,7 +32,14 @@ export function DayEventRow({ event }: { event: EventSummary }) {
         )}
         {event.host_name && !event.host_is_deleted ? (
           event.host_avatar ? (
-            <Image source={{ uri: event.host_avatar }} style={s.hostBadge} />
+            <Image
+              source={{ uri: event.host_avatar }}
+              style={s.hostBadge}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              priority="low"
+              transition={150}
+            />
           ) : (
             <View style={[s.hostBadge, s.hostBadgeFallback]}>
               <Text style={s.hostInitial}>{event.host_name.charAt(0).toUpperCase()}</Text>
@@ -45,7 +62,7 @@ export function DayEventRow({ event }: { event: EventSummary }) {
       <ChevronRight size={18} color={Colors.inkDisabled} strokeWidth={2} />
     </Pressable>
   )
-}
+})
 
 // Same shape as the real row, shimmering — shown while joined/hosted events
 // are still loading.

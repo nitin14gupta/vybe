@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { memo, useEffect, useMemo, useRef } from 'react'
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { Image } from 'expo-image'
 import { Star } from 'lucide-react-native'
@@ -7,7 +7,7 @@ import { Colors, FontFamily, Radius, Spacing } from '@/constants'
 import { useAuthStore } from '@/store/auth'
 import type { ReviewItem } from '@/api/apiService'
 
-export function StarRow({ rating, size = 13 }: { rating: number; size?: number }) {
+export const StarRow = memo(function StarRow({ rating, size = 13 }: { rating: number; size?: number }) {
   return (
     <View style={{ flexDirection: 'row', gap: 2 }}>
       {[1, 2, 3, 4, 5].map(n => (
@@ -21,7 +21,7 @@ export function StarRow({ rating, size = 13 }: { rating: number; size?: number }
       ))}
     </View>
   )
-}
+})
 
 function DistBar({ pct, delay }: { pct: number; delay: number }) {
   const width = useRef(new Animated.Value(0)).current
@@ -101,7 +101,7 @@ export function RatingFilterRow({
   )
 }
 
-export function ReviewCard({
+export const ReviewCard = memo(function ReviewCard({
   item,
   subtitle,
   eventId,
@@ -111,8 +111,10 @@ export function ReviewCard({
   eventId?: string | null
 }) {
   const initials = (item.reviewer_name ?? '?').charAt(0).toUpperCase()
-  const date = new Date(item.created_at.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'))
-  const dateStr = isNaN(date.getTime()) ? '' : date.toLocaleDateString([], { month: 'short', day: 'numeric' })
+  const dateStr = useMemo(() => {
+    const date = new Date(item.created_at.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'))
+    return isNaN(date.getTime()) ? '' : date.toLocaleDateString([], { month: 'short', day: 'numeric' })
+  }, [item.created_at])
 
   const goToReviewer = () => {
     const myId = useAuthStore.getState().userId
@@ -132,7 +134,14 @@ export function ReviewCard({
       <Pressable style={c.cardTop} onPress={goToReviewer} hitSlop={4}>
         <View style={c.avatar}>
           {item.reviewer_avatar ? (
-            <Image source={{ uri: item.reviewer_avatar }} style={c.avatarImg} contentFit="cover" />
+            <Image
+              source={{ uri: item.reviewer_avatar }}
+              style={c.avatarImg}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              priority="low"
+              transition={150}
+            />
           ) : (
             <Text style={c.avatarInit}>{initials}</Text>
           )}
@@ -153,7 +162,7 @@ export function ReviewCard({
       {item.body ? <Text style={c.body}>{item.body}</Text> : null}
     </View>
   )
-}
+})
 
 const c = StyleSheet.create({
   card: {

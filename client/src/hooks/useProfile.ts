@@ -3,6 +3,7 @@ import { useFocusEffect } from 'expo-router'
 import { getMe, getProfile, followUser, unfollowUser } from '@/api/user'
 import type { ProfileResponse } from '@/api/user'
 import { peekCached, setCached } from '@/lib/queryCache'
+import { usePillStore } from '@/store/pillStore'
 
 // "Own profile" barely changes between one tab visit and the next, so
 // blocking on a full network round-trip (and a BrandedLoader flash) every
@@ -31,6 +32,7 @@ function fetchProfileDeduped(key: string, userId?: string): Promise<ProfileRespo
 }
 
 export function useProfile(userId?: string) {
+  const showPill = usePillStore(s => s.show)
   const key = cacheKey(userId)
   const [profile, setProfile] = useState<ProfileResponse | null>(() => peekCached<ProfileResponse>(key))
   const [loading, setLoading] = useState(() => peekCached<ProfileResponse>(key) === null)
@@ -84,6 +86,7 @@ export function useProfile(userId?: string) {
         is_following: following,
         vibers_count: p.vibers_count + (following ? 1 : -1),
       } : p)
+      showPill("Couldn't do that, try again", 'error')
     }
   }
 

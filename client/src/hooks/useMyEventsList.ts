@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { EventSummary, MyEventsPage } from '@/api/apiService'
 import type { EventViewMode } from '@/store/eventViewModeStore'
+import { usePillStore } from '@/store/pillStore'
 
 export type MyEventsTab = 'upcoming' | 'past'
 
@@ -28,6 +29,7 @@ export function useMyEventsList(
   fetchPage: (tab: MyEventsTab, limit: number, offset: number) => Promise<MyEventsPage>,
   viewMode: EventViewMode,
 ) {
+  const showPill = usePillStore(s => s.show)
   const [tab, setTabState] = useState<MyEventsTab>('upcoming')
   const [events, setEvents] = useState<EventSummary[]>([])
   const [upcomingCount, setUpcomingCount] = useState(0)
@@ -67,12 +69,16 @@ export function useMyEventsList(
       cacheRef.current[t] = entry
       if (tabRef.current === t) applyEntry(entry)
     } catch {
-      if (tabRef.current === t) { setEvents([]); setHasMore(false) }
+      if (tabRef.current === t) {
+        setEvents([])
+        setHasMore(false)
+        showPill("Couldn't load your events, try again", 'error')
+      }
     } finally {
       if (isRefresh) setRefreshing(false)
       else setLoading(false)
     }
-  }, [fetchPage, limit, applyEntry])
+  }, [fetchPage, limit, applyEntry, showPill])
 
   // Screen focus / pull-to-refresh — always fresh, cache is only for
   // in-screen tab flicking (see setTab below).
@@ -121,10 +127,12 @@ export function useMyEventsList(
       setPastCount(page.past_count)
       setHasMore(page.has_more)
       offsetRef.current = nextOffset
+    } catch {
+      showPill("Couldn't load more events, try again", 'error')
     } finally {
       setLoadingMore(false)
     }
-  }, [fetchPage, tab, limit, hasMore, loadingMore, events])
+  }, [fetchPage, tab, limit, hasMore, loadingMore, events, showPill])
 
   return {
     tab, setTab,

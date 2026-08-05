@@ -41,7 +41,9 @@ export function OTPInput({ value, onChange, error, autoFocus }: Props) {
   }, [error])
 
   useEffect(() => {
-    if (autoFocus) setTimeout(() => inputRef.current?.focus(), 100)
+    if (!autoFocus) return
+    const t = setTimeout(() => inputRef.current?.focus(), 100)
+    return () => clearTimeout(t)
   }, [autoFocus])
 
   const handleChange = (text: string) => {

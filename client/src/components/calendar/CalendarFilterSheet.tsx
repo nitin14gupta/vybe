@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useMemo, useCallback, memo } from 'react'
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import {
   BottomSheetModal, BottomSheetView, BottomSheetScrollView,
@@ -44,6 +44,23 @@ function CheckboxRow({ Icon, label, checked, onPress }: {
   )
 }
 
+const CityRow = memo(function CityRow({ city, selected, onPress }: {
+  city: CityResponse
+  selected: boolean
+  onPress: (city: CityResponse) => void
+}) {
+  const handlePress = useCallback(() => onPress(city), [onPress, city])
+  return (
+    <Pressable style={s.cityRow} onPress={handlePress} android_ripple={{ color: 'rgba(255,255,255,0.06)' }}>
+      <View>
+        <Text style={[s.cityName, selected && s.cityNameSelected]}>{city.name}</Text>
+        <Text style={s.cityState}>{city.state}</Text>
+      </View>
+      {selected && <Check size={18} color={Colors.brandOrange} strokeWidth={2.5} />}
+    </Pressable>
+  )
+})
+
 function CalendarFilterSheetCore({ filters, onApply, onClose }: Omit<Props, 'visible'>) {
   const sheetRef = useRef<BottomSheetModal>(null)
   const [draft, setDraft] = useState<CalendarFilters>(filters)
@@ -61,17 +78,20 @@ function CalendarFilterSheetCore({ filters, onApply, onClose }: Omit<Props, 'vis
     sheetRef.current?.dismiss()
   }
 
-  const pickCity = (city: CityResponse | null) => {
+  const pickCity = useCallback((city: CityResponse | null) => {
     hSelection()
     setDraft(d => ({ ...d, city }))
     setView('filters')
     setQuery('')
-  }
+  }, [])
 
-  const filteredCities = cities.filter(c =>
-    c.name.toLowerCase().includes(query.toLowerCase()) ||
-    c.state.toLowerCase().includes(query.toLowerCase()),
-  )
+  const filteredCities = useMemo(() => {
+    const q = query.toLowerCase()
+    return cities.filter(c =>
+      c.name.toLowerCase().includes(q) ||
+      c.state.toLowerCase().includes(q),
+    )
+  }, [cities, query])
 
   return (
     <BottomSheetModal
@@ -166,13 +186,7 @@ function CalendarFilterSheetCore({ filters, onApply, onClose }: Omit<Props, 'vis
               </Pressable>
             }
             renderItem={({ item }) => (
-              <Pressable style={s.cityRow} onPress={() => pickCity(item)} android_ripple={{ color: 'rgba(255,255,255,0.06)' }}>
-                <View>
-                  <Text style={[s.cityName, draft.city?.name === item.name && s.cityNameSelected]}>{item.name}</Text>
-                  <Text style={s.cityState}>{item.state}</Text>
-                </View>
-                {draft.city?.name === item.name && <Check size={18} color={Colors.brandOrange} strokeWidth={2.5} />}
-              </Pressable>
+              <CityRow city={item} selected={draft.city?.name === item.name} onPress={pickCity} />
             )}
           />
         </>

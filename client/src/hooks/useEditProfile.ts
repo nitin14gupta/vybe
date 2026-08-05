@@ -118,8 +118,7 @@ export function useEditProfile() {
       showPill('Profile updated!', 'default')
       router.push('/(tabs)/profile')
     } catch (e: any) {
-      const msg = e?.detail || e?.message || 'Failed to save'
-      showPill(msg, 'error')
+      showPill(e?.message || 'Failed to save', 'error')
     } finally {
       setSaving(false)
     }

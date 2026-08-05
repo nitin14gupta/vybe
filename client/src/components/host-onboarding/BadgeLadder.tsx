@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { View, Text, Image, StyleSheet } from 'react-native'
 import { Colors, FontFamily, Radius, HOST_BADGE_IMAGES } from '@/constants'
 
@@ -8,7 +9,7 @@ const TIERS = [
   { key: 'Legend', label: 'Legend', req: '75+ events hosted', text: Colors.accentGold },
 ] as const
 
-export function BadgeLadder() {
+function BadgeLadderBase() {
   return (
     <View>
       <View style={s.banner}>
@@ -35,6 +36,8 @@ export function BadgeLadder() {
     </View>
   )
 }
+
+export const BadgeLadder = memo(BadgeLadderBase)
 
 const s = StyleSheet.create({
   banner: {

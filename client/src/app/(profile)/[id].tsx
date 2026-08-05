@@ -1,127 +1,38 @@
 import { useState, useEffect, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  Image,
-  FlatList,
-  Dimensions,
-  RefreshControl,
-} from "react-native";
-import { Image as ExpoImage } from "expo-image";
+import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { hTap, hMedium, hSuccess } from "@/lib/haptics";
+import { hMedium, hSuccess } from "@/lib/haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  ArrowLeft,
-  MoreVertical,
-  Flame,
-  UserPlus,
-  UserCheck,
-  MessageCircle,
-  Ban,
-  Check,
-  Ghost,
-  Clock,
-} from "lucide-react-native";
+import { ArrowLeft, Ghost } from "lucide-react-native";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
-import {
-  VybeRequestModal,
-  VybeIcebreakerModal,
-  PlaybackWave,
-  VoicePlayButton,
-  ProfileMenuSheet,
-  InterestChip,
-  TabSwitcher,
-  SmallEventCard,
-  BrandedLoader,
-  PrimaryButton,
-  OutlineButton,
-} from "@/components/ui";
-import ApiService, { ExtendedProfile, EventSummary } from "@/api/apiService";
-import { Colors, FontFamily, Radius, HOST_BADGE_IMAGES } from "@/constants";
+import { VybeRequestModal, VybeIcebreakerModal, ProfileMenuSheet, BrandedLoader } from "@/components/ui";
+import ApiService, { ExtendedProfile } from "@/api/apiService";
+import { Colors, FontFamily, HOST_BADGE_IMAGES } from "@/constants";
 import { usePillStore } from "@/store/pillStore";
 import { useVybeStore } from "@/store/vybeStore";
 import { useImageViewer } from "@/hooks/useImageViewer";
 import { MediaViewerModal } from "@/components/chat/MediaViewerModal";
-import { useCountdown } from "@/hooks/useCountdown";
-import { parseServerDate } from "@/lib/dates";
-
-const { width: W } = Dimensions.get("window");
-
-// ── Mini event card ───────────────────────────────────────────────────────────
-
-function formatCooldown(seconds: number): string {
-  if (seconds <= 0) return "a moment";
-  const days = Math.floor(seconds / 86400);
-  const hours = Math.floor((seconds % 86400) / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  return `${Math.max(minutes, 1)}m`;
-}
-
-function CooldownPill({
-  cooldownUntil,
-  onExpiredPress,
-}: {
-  cooldownUntil: string;
-  onExpiredPress: () => void;
-}) {
-  const deadline = parseServerDate(cooldownUntil);
-  const initialSeconds = deadline
-    ? Math.max(0, Math.round((deadline.getTime() - Date.now()) / 1000))
-    : 0;
-  const { seconds, isExpired } = useCountdown(initialSeconds);
-
-  if (isExpired) {
-    return (
-      <View style={{ flex: 1.6 }}>
-        <PrimaryButton
-          label="Send Vybe"
-          onPress={onExpiredPress}
-          icon={<Flame size={18} color={Colors.background} fill={Colors.background} strokeWidth={2} />}
-        />
-      </View>
-    );
-  }
-
-  return (
-    <Pressable
-      style={[s.ctaBtn, s.ctaBtnPending, { borderColor: Colors.divider }]}
-      disabled
-    >
-      <Clock size={16} color={Colors.inkDisabled} strokeWidth={1.8} />
-      <Text
-        style={[
-          s.ctaBtnPendingText,
-          { fontSize: 14, color: Colors.inkDisabled },
-        ]}
-        numberOfLines={1}
-      >
-        Try again in {formatCooldown(seconds)}
-      </Text>
-    </Pressable>
-  );
-}
-
-// ── Profile screen ────────────────────────────────────────────────────────────
+import { ProfileHeaderBar } from "@/components/profile/ProfileHeaderBar";
+import { ProfilePhotoCarousel } from "@/components/profile/ProfilePhotoCarousel";
+import { ProfileNameHeader } from "@/components/profile/ProfileNameHeader";
+import { UserProfileStatsRow } from "@/components/profile/UserProfileStatsRow";
+import { UserProfileBlockedOverlay } from "@/components/profile/UserProfileBlockedOverlay";
+import { UserProfileBadgesInterests } from "@/components/profile/UserProfileBadgesInterests";
+import { UserProfileVoiceIntro } from "@/components/profile/UserProfileVoiceIntro";
+import { UserProfileCtaBar } from "@/components/profile/UserProfileCtaBar";
 
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const [profile, setProfile] = useState<ExtendedProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [photoIdx, setPhotoIdx] = useState(0);
   const [following, setFollowing] = useState(false);
   const [vybeModalOpen, setVybeModalOpen] = useState(false);
   const [vybeSent, setVybeSent] = useState(false);
   const [acceptModalOpen, setAcceptModalOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [blockedByMe, setBlockedByMe] = useState(false);
-  const [activeTab, setActiveTab] = useState<"going" | "hosted">("going");
+  const [refreshing, setRefreshing] = useState(false);
   const showPill = usePillStore((s) => s.show);
   const { markSent, markCleared, isSentTo } = useVybeStore();
 
@@ -136,17 +47,14 @@ export default function UserProfileScreen() {
         setProfile(p);
         setFollowing(!!p.is_following);
         setVybeSent(
-          (p.vybe_status === "pending" && !!p.vybe_sent_by_me) ||
-            isSentTo(p.id),
+          (p.vybe_status === "pending" && !!p.vybe_sent_by_me) || isSentTo(p.id),
         );
         setBlockedByMe(!!p.is_blocked_by_me);
         if (p.voice_url) voicePlayer.replace({ uri: p.voice_url });
       })
-      .catch(() => showPill("Couldn't load this profile", "error"))
+      .catch((e: any) => showPill(e?.message || "Couldn't load this profile", "error"))
       .finally(() => setLoading(false));
   }, [id]);
-
-  const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = useCallback(async () => {
     if (!id) return;
@@ -160,7 +68,8 @@ export default function UserProfileScreen() {
       );
       setBlockedByMe(!!p.is_blocked_by_me);
       if (p.voice_url) voicePlayer.replace({ uri: p.voice_url });
-    } catch {
+    } catch (e: any) {
+      showPill(e?.message || "Couldn't refresh this profile", "error");
     } finally {
       setRefreshing(false);
     }
@@ -173,8 +82,9 @@ export default function UserProfileScreen() {
     try {
       if (next) await ApiService.followUser(profile.id);
       else await ApiService.unfollowUser(profile.id);
-    } catch {
+    } catch (e: any) {
       setFollowing(!next);
+      showPill(e?.message || "Couldn't update follow status, try again", "error");
     }
   };
 
@@ -191,7 +101,7 @@ export default function UserProfileScreen() {
       showPill(
         err?.status === 429
           ? "You're on cooldown with this person, try again later"
-          : "Couldn't send that vybe, try again",
+          : err?.message || "Couldn't send that vybe, try again",
         "error",
       );
     }
@@ -201,16 +111,12 @@ export default function UserProfileScreen() {
     if (!profile?.vybe_id) return;
     setAcceptModalOpen(false);
     try {
-      const result = await ApiService.respondToVibe(
-        profile.vybe_id,
-        "accept",
-        icebreaker,
-      );
+      const result = await ApiService.respondToVibe(profile.vybe_id, "accept", icebreaker);
       if (result.conversation_id) {
         router.replace(`/(chat)/${result.conversation_id}` as any);
       }
-    } catch {
-      showPill("Couldn't send that vybe, try again", "error");
+    } catch (e: any) {
+      showPill(e?.message || "Couldn't send that vybe, try again", "error");
     }
   };
 
@@ -219,8 +125,8 @@ export default function UserProfileScreen() {
     try {
       await ApiService.blockUser(profile.id);
       setBlockedByMe(true);
-    } catch {
-      showPill("Couldn't block this person", "error");
+    } catch (e: any) {
+      showPill(e?.message || "Couldn't block this person", "error");
     }
   };
 
@@ -229,8 +135,8 @@ export default function UserProfileScreen() {
     try {
       await ApiService.unblockUser(profile.id);
       setBlockedByMe(false);
-    } catch {
-      showPill("Couldn't unblock, try again", "error");
+    } catch (e: any) {
+      showPill(e?.message || "Couldn't unblock, try again", "error");
     }
   };
 
@@ -239,8 +145,19 @@ export default function UserProfileScreen() {
     try {
       await ApiService.reportUser(profile.id, reason);
       showPill("Report submitted", "success");
-    } catch {
-      showPill("Report not sent, try again", "error");
+    } catch (e: any) {
+      showPill(e?.message || "Report not sent, try again", "error");
+    }
+  };
+
+  const handleVoiceTogglePlay = () => {
+    if (voiceStatus.playing) {
+      voicePlayer.pause();
+    } else {
+      if (voiceStatus.duration > 0 && voiceStatus.currentTime >= voiceStatus.duration - 0.05) {
+        voicePlayer.seekTo(0);
+      }
+      voicePlayer.play();
     }
   };
 
@@ -257,10 +174,7 @@ export default function UserProfileScreen() {
       <View style={[s.root, s.center]}>
         <Pressable
           onPress={() => router.back()}
-          style={[
-            s.backBtn,
-            { position: "absolute", top: insets.top + 8, left: 0 },
-          ]}
+          style={[s.backBtn, { position: "absolute", top: insets.top + 8, left: 0 }]}
         >
           <ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} />
         </Pressable>
@@ -268,9 +182,7 @@ export default function UserProfileScreen() {
           <Ghost size={40} color={Colors.inkDisabled} strokeWidth={1.5} />
         </View>
         <Text style={s.deletedTitle}>Profile Not Found</Text>
-        <Text style={s.deletedBody}>
-          This user may not exist or the link is invalid.
-        </Text>
+        <Text style={s.deletedBody}>This user may not exist or the link is invalid.</Text>
       </View>
     );
   }
@@ -280,10 +192,7 @@ export default function UserProfileScreen() {
       <View style={[s.root, s.center]}>
         <Pressable
           onPress={() => router.back()}
-          style={[
-            s.backBtn,
-            { position: "absolute", top: insets.top + 8, left: 0 },
-          ]}
+          style={[s.backBtn, { position: "absolute", top: insets.top + 8, left: 0 }]}
         >
           <ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} />
         </Pressable>
@@ -299,8 +208,7 @@ export default function UserProfileScreen() {
   const photos = profile.photos ?? [];
   const isConnected = profile.vybe_status === "connected";
   const isPending =
-    vybeSent ||
-    (profile.vybe_status === "pending" && !!profile.vybe_sent_by_me);
+    vybeSent || (profile.vybe_status === "pending" && !!profile.vybe_sent_by_me);
   const theySentVybe =
     profile.vybe_status === "pending" && !profile.vybe_sent_by_me && !vybeSent;
   const isCooldown =
@@ -317,26 +225,11 @@ export default function UserProfileScreen() {
 
   return (
     <View style={[s.root, { paddingBottom: insets.bottom }]}>
-      {/* Header overlay */}
-      <View style={[s.headerOverlay, { paddingTop: insets.top + 8 }]}>
-        <Pressable
-          onPress={() => router.back()}
-          style={s.headerCircleBtn}
-          hitSlop={8}
-        >
-          <ArrowLeft size={20} color="#fff" strokeWidth={2.2} />
-        </Pressable>
-        <Pressable
-          onPress={() => {
-            hTap();
-            setMenuOpen(true);
-          }}
-          style={s.headerCircleBtn}
-          hitSlop={8}
-        >
-          <MoreVertical size={20} color="#fff" strokeWidth={1.8} />
-        </Pressable>
-      </View>
+      <ProfileHeaderBar
+        topInset={insets.top}
+        onBack={() => router.back()}
+        onMenu={() => setMenuOpen(true)}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -350,354 +243,79 @@ export default function UserProfileScreen() {
           />
         }
       >
-        {/* Photo carousel */}
-        {photos.length > 0 ? (
-          <View>
-            <FlatList
-              data={photos}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              keyExtractor={(p) => p.id}
-              onMomentumScrollEnd={(e) =>
-                setPhotoIdx(Math.round(e.nativeEvent.contentOffset.x / W))
-              }
-              renderItem={({ item, index }) => (
-                <Pressable
-                  onPress={() =>
-                    openMedia(
-                      photos.map((p) => ({ url: p.url, type: "image" })),
-                      index,
-                    )
-                  }
-                >
-                  <Image
-                    source={{ uri: item.url }}
-                    style={{ width: W, height: W }}
-                    resizeMode="cover"
-                  />
-                </Pressable>
-              )}
-            />
-            {photos.length > 1 && (
-              <View style={s.photoDots}>
-                {photos.map((_, i) => (
-                  <View
-                    key={i}
-                    style={[s.photoDot, i === photoIdx && s.photoDotActive]}
-                  />
-                ))}
-              </View>
-            )}
-          </View>
-        ) : (
-          <View style={s.photoFallback}>
-            <Text style={s.photoFallbackInitial}>
-              {(profile.name ?? "?").charAt(0)}
-            </Text>
-          </View>
-        )}
+        <ProfilePhotoCarousel
+          photos={photos}
+          name={profile.name}
+          onOpenPhoto={(index) =>
+            openMedia(photos.map((p) => ({ url: p.url, type: "image" })), index)
+          }
+        />
 
         <View style={s.body}>
-          {/* Name + location */}
-          <View style={s.nameRow}>
-            <View style={s.nameWithBadge}>
-              <Text style={s.name} numberOfLines={1}>
-                {profile.name ?? "User"}
-                {age ? `, ${age}` : ""}
-              </Text>
-              {hostBadgeImage && (
-                <Image source={hostBadgeImage} style={[s.hostBadgeIcon, { width: 24, height: 24 }]} resizeMode="contain" />
-              )}
-            </View>
-            {profile.mutual_count > 0 && (
-              <Text style={s.mutual}>{profile.mutual_count} mutual</Text>
-            )}
-          </View>
-          {profile.username ? (
-            <Text style={s.username}>@{profile.username}</Text>
-          ) : null}
-          {profile.city ? <Text style={s.city}>{profile.city}</Text> : null}
+          <ProfileNameHeader
+            name={profile.name}
+            age={age}
+            username={profile.username}
+            city={profile.city}
+            mutualCount={profile.mutual_count ?? 0}
+            hostBadgeImage={hostBadgeImage}
+          />
 
-          {/* Vibers / Vibing stats */}
           {!blockedByMe && (
-            <View style={s.statsRow}>
-              <Pressable
-                style={s.statItem}
-                android_ripple={null}
-                onPress={() =>
-                  router.push({
-                    pathname: "/(profile)/follows",
-                    params: {
-                      userId: profile.id,
-                      type: "followers",
-                      name: encodeURIComponent(profile.name ?? ""),
-                      vibersCount: profile.vibers_count ?? 0,
-                      vibingCount: profile.vibing_count ?? 0,
-                    },
-                  } as any)
-                }
-              >
-                <Text style={s.statValue}>{profile.vibers_count ?? 0}</Text>
-                <Text style={s.statLabel}>Vibers</Text>
-              </Pressable>
-              <View style={s.statDivider} />
-              <Pressable
-                style={s.statItem}
-                android_ripple={null}
-                onPress={() =>
-                  router.push({
-                    pathname: "/(profile)/follows",
-                    params: {
-                      userId: profile.id,
-                      type: "following",
-                      name: encodeURIComponent(profile.name ?? ""),
-                      vibersCount: profile.vibers_count ?? 0,
-                      vibingCount: profile.vibing_count ?? 0,
-                    },
-                  } as any)
-                }
-              >
-                <Text style={s.statValue}>{profile.vibing_count ?? 0}</Text>
-                <Text style={s.statLabel}>Vibing</Text>
-              </Pressable>
-              <View style={s.statDivider} />
-              <Pressable
-                style={s.statItem}
-                android_ripple={null}
-                onPress={() =>
-                  router.push({
-                    pathname: "/(profile)/host-reviews",
-                    params: { id: profile.id, name: encodeURIComponent(profile.name ?? "") },
-                  } as any)
-                }
-              >
-                <View style={s.ratingRow}>
-                  <Text style={s.statValue}>
-                    {profile.host_avg_rating != null ? profile.host_avg_rating.toFixed(1) : "—"}
-                  </Text>
-                </View>
-                <Text style={s.statLabel}>
-                  {profile.host_review_count ?? 0} review{(profile.host_review_count ?? 0) === 1 ? "" : "s"}
-                </Text>
-              </Pressable>
-            </View>
+            <UserProfileStatsRow
+              userId={profile.id}
+              name={profile.name}
+              vibersCount={profile.vibers_count ?? 0}
+              vibingCount={profile.vibing_count ?? 0}
+              hostAvgRating={profile.host_avg_rating}
+              hostReviewCount={profile.host_review_count ?? 0}
+            />
           )}
 
-          {/* Blocked overlay */}
-          {blockedByMe && (
-            <View style={s.blockedOverlay}>
-              <View style={s.blockedIconWrap}>
-                <Ban size={36} color={Colors.inkSecondary} strokeWidth={1.5} />
-              </View>
-              <Text style={s.blockedTitle}>You've blocked this account</Text>
-              <Text style={s.blockedSub}>
-                Unblock to see their profile and content
-              </Text>
-              <OutlineButton
-                label="Unblock"
-                size="small"
-                style={s.unblockBtn}
-                onPress={() => {
-                  hSuccess();
-                  handleUnblock();
-                }}
-              />
-            </View>
+          {blockedByMe && <UserProfileBlockedOverlay onUnblock={handleUnblock} />}
+
+          {!blockedByMe && profile.bio ? <Text style={s.bio}>{profile.bio}</Text> : null}
+
+          {!blockedByMe && (
+            <UserProfileBadgesInterests badges={profile.badges} interests={profile.interests} />
           )}
 
-          {/* Bio */}
-          {!blockedByMe && profile.bio ? (
-            <Text style={s.bio}>{profile.bio}</Text>
-          ) : null}
-
-          {/* Details (Badges & Interests) */}
-          {!blockedByMe &&
-            ((profile.badges?.length ?? 0) > 0 ||
-              (profile.interests?.length ?? 0) > 0) && (
-              <View style={s.chipsRow}>
-                {profile.badges?.map((badge) => (
-                  <View key={badge} style={s.badgeChip}>
-                    <Text style={s.badgeText}>{badge}</Text>
-                  </View>
-                ))}
-                {profile.interests?.map((tag) => (
-                  <InterestChip
-                    key={tag}
-                    label={tag}
-                    emoji=""
-                    selected
-                    onPress={() => {}}
-                  />
-                ))}
-              </View>
-            )}
-
-          {/* Voice intro */}
           {!blockedByMe && profile.voice_url ? (
-            <View style={s.voiceCard}>
-              <VoicePlayButton
-                playing={voiceStatus.playing}
-                onPress={() => {
-                  hTap();
-                  if (voiceStatus.playing) {
-                    voicePlayer.pause();
-                  } else {
-                    if (
-                      voiceStatus.duration > 0 &&
-                      voiceStatus.currentTime >= voiceStatus.duration - 0.05
-                    ) {
-                      voicePlayer.seekTo(0);
-                    }
-                    voicePlayer.play();
-                  }
-                }}
-              />
-              <View style={s.voiceWave}>
-                <PlaybackWave isActive={voiceStatus.playing} compact />
-              </View>
-              <Text style={s.voiceLabel}>Voice intro</Text>
-            </View>
+            <UserProfileVoiceIntro playing={voiceStatus.playing} onTogglePlay={handleVoiceTogglePlay} />
           ) : null}
-
-          {/* Events Tabs */}
-          {/* {!blockedByMe &&
-            (profile.events_attending?.length > 0 ||
-              profile.events_hosted?.length > 0) && (
-              <View style={s.eventsSection}>
-                <TabSwitcher
-                  tabs={["Going to", "Hosted"]}
-                  activeTab={activeTab === "going" ? "Going to" : "Hosted"}
-                  onChange={(tab) =>
-                    setActiveTab(tab === "Going to" ? "going" : "hosted")
-                  }
-                />
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={s.eventsList}
-                >
-                  {activeTab === "going" &&
-                    profile.events_attending?.length === 0 && (
-                      <Text style={s.emptyEventsText}>
-                        Not going to any upcoming events.
-                      </Text>
-                    )}
-                  {activeTab === "hosted" &&
-                    profile.events_hosted?.length === 0 && (
-                      <Text style={s.emptyEventsText}>
-                        Not hosting any upcoming events.
-                      </Text>
-                    )}
-
-                  {activeTab === "going" &&
-                    profile.events_attending
-                      ?.slice(0, 3)
-                      .map((item) => (
-                        <SmallEventCard key={item.id} event={item} />
-                      ))}
-
-                  {activeTab === "hosted" &&
-                    profile.events_hosted
-                      ?.slice(0, 3)
-                      .map((item) => (
-                        <SmallEventCard key={item.id} event={item} />
-                      ))}
-                </ScrollView>
-              </View>
-            )} */}
         </View>
       </ScrollView>
 
-      {/* Sticky CTAs — hidden when blocked */}
       {!blockedByMe && (
-        <View style={[s.ctaBar, { paddingBottom: insets.bottom + 8 }]}>
-          {isConnected ? (
-            <View style={{ flex: 1 }}>
-              <PrimaryButton
-                label="Message"
-                icon={<MessageCircle size={18} color={Colors.background} strokeWidth={2} />}
-                onPress={() => {
-                  if (profile.conversation_id) {
-                    router.push(`/(chat)/${profile.conversation_id}` as any);
-                  } else {
-                    showPill("Send them a vybe first to start chatting", "error");
-                  }
-                }}
-              />
-            </View>
-          ) : theySentVybe ? (
-            <View style={{ flex: 1.6 }}>
-              <PrimaryButton
-                label="Accept Vybe"
-                icon={<Check size={18} color={Colors.background} strokeWidth={2.5} />}
-                onPress={() => {
-                  hSuccess();
-                  setAcceptModalOpen(true);
-                }}
-              />
-            </View>
-          ) : isPending ? (
-            <Pressable style={[s.ctaBtn, s.ctaBtnPending]} disabled>
-              <Flame
-                size={18}
-                color={Colors.brandOrange}
-                fill="transparent"
-                strokeWidth={1.8}
-              />
-              <Text style={s.ctaBtnPendingText}>Vybe Sent</Text>
-            </Pressable>
-          ) : isCooldown ? (
-            <CooldownPill
-              cooldownUntil={profile.cooldown_until!}
-              onExpiredPress={() => {
-                hMedium();
-                setVybeModalOpen(true);
-              }}
-            />
-          ) : (
-            <View style={{ flex: 1.6 }}>
-              <PrimaryButton
-                label="Send Vybe"
-                icon={<Flame size={18} color={Colors.background} fill={Colors.background} strokeWidth={2} />}
-                onPress={() => {
-                  hMedium();
-                  setVybeModalOpen(true);
-                }}
-              />
-            </View>
-          )}
-
-          <Pressable
-            style={[
-              s.ctaBtn,
-              s.ctaBtnSecondary,
-              following && s.ctaBtnFollowing,
-            ]}
-            onPress={() => {
-              hTap();
-              handleFollowToggle();
-            }}
-          >
-            {following ? (
-              <UserCheck
-                size={18}
-                color={Colors.brandOrange}
-                strokeWidth={1.8}
-              />
-            ) : (
-              <UserPlus size={18} color={Colors.inkPrimary} strokeWidth={1.8} />
-            )}
-            <Text
-              style={[
-                s.ctaBtnSecondaryText,
-                following && s.ctaBtnFollowingText,
-              ]}
-            >
-              {following ? "Following" : "Follow"}
-            </Text>
-          </Pressable>
-        </View>
+        <UserProfileCtaBar
+          insetsBottom={insets.bottom}
+          isConnected={isConnected}
+          theySentVybe={theySentVybe}
+          isPending={isPending}
+          isCooldown={isCooldown}
+          cooldownUntil={profile.cooldown_until}
+          following={following}
+          onMessagePress={() => {
+            if (profile.conversation_id) {
+              router.push(`/(chat)/${profile.conversation_id}` as any);
+            } else {
+              showPill("Send them a vybe first to start chatting", "error");
+            }
+          }}
+          onAcceptPress={() => {
+            hSuccess();
+            setAcceptModalOpen(true);
+          }}
+          onSendVybePress={() => {
+            hMedium();
+            setVybeModalOpen(true);
+          }}
+          onCooldownExpiredPress={() => {
+            hMedium();
+            setVybeModalOpen(true);
+          }}
+          onFollowTogglePress={handleFollowToggle}
+        />
       )}
 
       <VybeRequestModal
@@ -757,18 +375,7 @@ export default function UserProfileScreen() {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
   center: { alignItems: "center", justifyContent: "center" },
-  errorText: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 16,
-    color: Colors.inkSecondary,
-    marginBottom: 12,
-  },
   backBtn: { paddingHorizontal: 20, paddingVertical: 10 },
-  backBtnText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 14,
-    color: Colors.brandOrange,
-  },
   deletedIconWrap: {
     width: 88,
     height: 88,
@@ -791,239 +398,11 @@ const s = StyleSheet.create({
     textAlign: "center",
     lineHeight: 21,
   },
-
-  // Header overlay
-  headerOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    zIndex: 10,
-  },
-  headerCircleBtn: {
-    width: 38,
-    height: 38,
-    // borderRadius: 19,
-    // backgroundColor: "rgba(0,0,0,0.5)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  // Photos
-  photoFallback: {
-    width: W,
-    height: W * 1.2,
-    backgroundColor: "#1a1a1a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  photoFallbackInitial: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 96,
-    color: Colors.inkSecondary,
-  },
-  photoDots: {
-    position: "absolute",
-    bottom: 12,
-    flexDirection: "row",
-    alignSelf: "center",
-    gap: 6,
-  },
-  photoDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "rgba(255,255,255,0.4)",
-  },
-  photoDotActive: { backgroundColor: "#fff", width: 16 },
-
-  // Blocked overlay
-  blockedOverlay: {
-    alignItems: "center",
-    paddingVertical: 32,
-    gap: 10,
-  },
-  blockedIconWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "#2a2a2a",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4,
-  },
-  blockedTitle: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 18,
-    color: Colors.inkPrimary,
-    textAlign: "center",
-  },
-  blockedSub: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 14,
-    color: Colors.inkSecondary,
-    textAlign: "center",
-  },
-  unblockBtn: { marginTop: 8 },
-
-  // Body
   body: { padding: 20, gap: 16 },
-  nameRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    justifyContent: "space-between",
-    gap: 10,
-  },
-  nameWithBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    flexShrink: 1,
-  },
-  name: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 26,
-    color: Colors.inkPrimary,
-  },
-  hostBadgeIcon: { marginLeft: -2 },
-  mutual: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 12,
-    color: Colors.inkSecondary,
-  },
-  username: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 13,
-    color: Colors.brandOrange,
-    marginTop: -6,
-  },
-  city: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 14,
-    color: Colors.inkSecondary,
-    marginTop: -10,
-  },
-
-  // Stats
-  statsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 14,
-    gap: 0,
-  },
-  statItem: { alignItems: "center", paddingHorizontal: 20, paddingVertical: 6 },
-  ratingRow: { flexDirection: "row", alignItems: "center", gap: 3 },
-  statValue: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 18,
-    color: Colors.inkPrimary,
-  },
-  statLabel: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 12,
-    color: Colors.inkSecondary,
-    marginTop: 1,
-  },
-  statDivider: { width: 1, height: 28, backgroundColor: Colors.divider },
-
-  // Bio
   bio: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 15,
     color: Colors.inkSecondary,
     lineHeight: 22,
   },
-
-  // Chips
-  chipsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  badgeChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255,184,48,0.12)",
-    borderRadius: Radius.pill,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  badgeText: {
-    fontFamily: FontFamily.bodyMedium,
-    fontSize: 13,
-    color: Colors.accentGold,
-  },
-
-  // Voice
-  voiceCard: {
-    marginTop: 4,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.card,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  voiceWave: { flex: 1, overflow: "hidden" },
-  voiceLabel: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 12,
-    color: Colors.inkDisabled,
-  },
-
-  // Events
-  eventsSection: { gap: 12, marginTop: 8 },
-  eventsList: { gap: 12, paddingRight: 24 },
-  emptyEventsText: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 14,
-    color: Colors.inkSecondary,
-    textAlign: "center",
-    marginVertical: 20,
-  },
-
-  // CTAs
-  ctaBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    backgroundColor: Colors.background,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "rgba(255,255,255,0.08)",
-  },
-  ctaBtn: {
-    height: 52,
-    borderRadius: 26,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  ctaBtnSecondary: {
-    flex: 1,
-    borderWidth: 1.5,
-    borderColor: Colors.divider,
-    backgroundColor: "transparent",
-  },
-  ctaBtnSecondaryText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 15,
-    color: Colors.inkPrimary,
-  },
-  ctaBtnPending: {
-    flex: 1.6,
-    backgroundColor: Colors.elevated,
-  },
-  ctaBtnPendingText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 16,
-    color: Colors.brandOrange,
-  },
-  ctaBtnFollowing: { borderColor: Colors.brandOrange },
-  ctaBtnFollowingText: { color: Colors.brandOrange },
 });

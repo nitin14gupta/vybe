@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Image } from 'expo-image'
 import { router } from 'expo-router'
@@ -76,7 +76,7 @@ function renderBackdrop(props: BottomSheetBackdropProps) {
   )
 }
 
-function GuestTile({ guest, isMe, isFollowing, onOpenProfile, onToggleFollow }: {
+const GuestTile = memo(function GuestTile({ guest, isMe, isFollowing, onOpenProfile, onToggleFollow }: {
   guest: EventGuest
   isMe: boolean
   isFollowing: boolean
@@ -87,7 +87,7 @@ function GuestTile({ guest, isMe, isFollowing, onOpenProfile, onToggleFollow }: 
     <Pressable style={t.root} onPress={() => onOpenProfile(guest.id)}>
       <View style={t.avatarWrap}>
         {guest.avatar ? (
-          <Image source={{ uri: guest.avatar }} style={t.avatar} contentFit="cover" />
+          <Image source={{ uri: guest.avatar }} style={t.avatar} contentFit="cover" cachePolicy="memory-disk" transition={150} />
         ) : (
           <View style={[t.avatar, t.avatarFallback]}>
             <Text style={t.avatarInitial}>{(guest.name ?? '?').charAt(0).toUpperCase()}</Text>
@@ -111,7 +111,7 @@ function GuestTile({ guest, isMe, isFollowing, onOpenProfile, onToggleFollow }: 
       <Text style={t.name} numberOfLines={1}>{isMe ? 'You' : (guest.name ?? 'Guest')}</Text>
     </Pressable>
   )
-}
+})
 
 const t = StyleSheet.create({
   root: { width: '33.333%', alignItems: 'center', paddingVertical: 12, gap: 8 },
@@ -142,13 +142,13 @@ function GuestListSheetCore({ eventId, guests, total, waitlist = [], canViewFull
     () => new Set([...guests, ...waitlist].filter(g => g.is_following).map(g => g.id)),
   )
 
-  const handleOpenProfile = (id: string) => {
+  const handleOpenProfile = useCallback((id: string) => {
     hTap()
     onClose()
     router.push(`/(profile)/${id}` as any)
-  }
+  }, [onClose])
 
-  const handleToggleFollow = (guest: EventGuest) => {
+  const handleToggleFollow = useCallback((guest: EventGuest) => {
     hSelection()
     const nowFollowing = !followingIds.has(guest.id)
     setFollowingIds(prev => {
@@ -167,7 +167,7 @@ function GuestListSheetCore({ eventId, guests, total, waitlist = [], canViewFull
         return next
       })
     })
-  }
+  }, [followingIds, showPill])
 
   const Header = (
     <View style={s.header}>
@@ -192,7 +192,7 @@ function GuestListSheetCore({ eventId, guests, total, waitlist = [], canViewFull
         {lockedGuests.map(g => (
           <View key={g.id} style={t.root}>
             {g.avatar ? (
-              <Image source={{ uri: g.avatar }} style={t.avatar} contentFit="cover" />
+              <Image source={{ uri: g.avatar }} style={t.avatar} contentFit="cover" cachePolicy="memory-disk" transition={150} />
             ) : (
               <View style={[t.avatar, t.avatarFallback]} />
             )}

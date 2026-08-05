@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { memo, useState, useEffect } from 'react'
 import {
-  View, Text, StyleSheet, FlatList, Pressable, Image,
+  View, Text, StyleSheet, FlatList, Pressable,
   ActivityIndicator,
 } from 'react-native'
+import { Image } from 'expo-image'
 import { router } from 'expo-router'
 import { Flame, RefreshCw, Ghost, Search } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
@@ -54,7 +55,7 @@ function formatLastMessage(conv: Conversation, currentUserId: string | null): st
 
 // ── Conversation row ──────────────────────────────────────────────────────────
 
-function ConvRow({ conv, onPress, onLongPress, onAvatarPress, currentUserId }: {
+const ConvRow = memo(function ConvRow({ conv, onPress, onLongPress, onAvatarPress, currentUserId }: {
   conv: Conversation; onPress: () => void; onLongPress: () => void; onAvatarPress: () => void; currentUserId: string | null
 }) {
   const isLocked   = conv.status === 'pending'
@@ -69,7 +70,13 @@ function ConvRow({ conv, onPress, onLongPress, onAvatarPress, currentUserId }: {
             <Ghost size={20} color={Colors.inkDisabled} strokeWidth={1.5} />
           </View>
         ) : conv.partner_avatar ? (
-          <Image source={{ uri: conv.partner_avatar }} style={s.convAvatar} />
+          <Image
+            source={{ uri: conv.partner_avatar }}
+            style={s.convAvatar}
+            cachePolicy="memory-disk"
+            priority="low"
+            transition={150}
+          />
         ) : (
           <View style={[s.convAvatar, s.convAvatarFallback]}>
             <Text style={s.convAvatarInitial}>{(conv.partner_name ?? '?').charAt(0)}</Text>
@@ -102,7 +109,7 @@ function ConvRow({ conv, onPress, onLongPress, onAvatarPress, currentUserId }: {
       </View>
     </Pressable>
   )
-}
+})
 
 // ── Loading skeleton ─────────────────────────────────────────────────────────
 

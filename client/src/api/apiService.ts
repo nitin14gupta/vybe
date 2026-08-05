@@ -108,6 +108,34 @@ function checkMaintenanceMode(status: number, err: any): boolean {
   return false
 }
 
+// Generic, safe-to-show fallback when the response gave us nothing usable —
+// never mentions a status code or exposes anything backend-internal.
+function friendlyStatusMessage(status: number): string {
+  if (status === 429) return "You're doing that too fast. Please wait a moment and try again."
+  if (status === 404) return "That couldn't be found."
+  if (status >= 500 || status === 0) return 'Something went wrong on our end. Please try again.'
+  return 'Something went wrong. Please try again.'
+}
+
+// Turns a parsed error-response body into a message that's always safe to
+// put straight into a pill/toast.
+// - A string `detail` is hand-authored by a route handler (e.g.
+//   `HTTPException(detail="You must be 18+")`) — that's deliberate,
+//   user-facing copy, so it's shown verbatim.
+// - An array `detail` is Pydantic's raw per-field validation dump (e.g.
+//   "field required", "value is not a valid email address") — never meant
+//   for a user, so it collapses to one generic message instead of being
+//   joined and shown as-is.
+// - An object `detail` that isn't the ACCOUNT_LOCKED/MAINTENANCE shape
+//   (those are handled by the caller via checkAccountLocked/checkMaintenanceMode
+//   before this runs) is an internal error code, not copy — same generic fallback.
+function friendlyErrorMessage(status: number, err: any): string {
+  const detail = err?.detail
+  if (typeof detail === 'string' && detail.trim()) return detail
+  if (detail == null && typeof err?.message === 'string' && err.message.trim()) return err.message
+  return friendlyStatusMessage(status)
+}
+
 class ApiService {
   // ── Private helpers ────────────────────────────────────────────────────────
 
@@ -121,7 +149,16 @@ class ApiService {
   private static fetchWithTimeout(url: string, opts: RequestInit, ms = 10000): Promise<Response> {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), ms)
-    return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timer))
+    return fetch(url, { ...opts, signal: controller.signal })
+      .catch((e) => {
+        // Network failure or our own timeout abort — never let the raw
+        // TypeError/AbortError text (e.g. "Network request failed") reach a pill.
+        const message = e?.name === 'AbortError'
+          ? "That's taking too long. Check your connection and try again."
+          : "Can't reach Gorave. Check your internet connection and try again."
+        throw Object.assign(new Error(message), { status: 0 })
+      })
+      .finally(() => clearTimeout(timer))
   }
 
   // Shared mutex — concurrent 401s (e.g. a batch of media uploads firing at once)
@@ -165,15 +202,33 @@ class ApiService {
   private static async fsUpload(
     url: string, uri: string, mime: string, token: string | null, parameters?: Record<string, string>
   ): Promise<{ status: number; body: string }> {
-    const result = await FileSystem.uploadAsync(url, uri, {
-      httpMethod: 'POST',
-      uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-      fieldName: 'file',
-      mimeType: mime,
-      parameters,
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
-    return { status: result.status, body: result.body }
+    try {
+      const result = await FileSystem.uploadAsync(url, uri, {
+        httpMethod: 'POST',
+        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+        fieldName: 'file',
+        mimeType: mime,
+        parameters,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      return { status: result.status, body: result.body }
+    } catch {
+      throw Object.assign(
+        new Error("Can't reach Gorave. Check your internet connection and try again."),
+        { status: 0 },
+      )
+    }
+  }
+
+  // Shared by every upload* method below — replaces the per-call duplicated
+  // (and previously buggy — `new Error(arrayOrObject)` stringifies badly)
+  // error-body parsing with the same safe logic handleResponse uses.
+  private static parseUploadError(status: number, rawBody: string): Error {
+    let err: any = null
+    try { err = JSON.parse(rawBody) } catch { }
+    checkAccountLocked(status, err)
+    checkMaintenanceMode(status, err)
+    return Object.assign(new Error(friendlyErrorMessage(status, err)), { status })
   }
 
   private static async handleResponse<T>(
@@ -187,21 +242,11 @@ class ApiService {
     }
 
     if (!response.ok) {
-      let detail = `Request failed (${response.status})`
-      try {
-        const err = await response.json()
-        checkAccountLocked(response.status, err)
-        checkMaintenanceMode(response.status, err)
-        // Pydantic v2 returns detail as an array on validation errors
-        if (Array.isArray(err.detail)) {
-          detail = err.detail.map((d: any) => d.msg ?? String(d)).join(', ')
-        } else if (err.detail && typeof err.detail === 'object') {
-          detail = err.detail.reason ?? err.detail.code ?? detail
-        } else {
-          detail = String(err.detail ?? err.message ?? detail)
-        }
-      } catch { }
-      throw Object.assign(new Error(detail), { status: response.status })
+      let err: any = null
+      try { err = await response.json() } catch { }
+      checkAccountLocked(response.status, err)
+      checkMaintenanceMode(response.status, err)
+      throw Object.assign(new Error(friendlyErrorMessage(response.status, err)), { status: response.status })
     }
 
     return response.json() as Promise<T>
@@ -279,7 +324,7 @@ class ApiService {
   }
 
   static async refreshToken(refreshToken: string): Promise<TokenResponse> {
-    const response = await fetch(`${API_BASE_URL}${ENDPOINTS.REFRESH_TOKEN}`, {
+    const response = await this.fetchWithTimeout(`${API_BASE_URL}${ENDPOINTS.REFRESH_TOKEN}`, {
       method: 'POST',
       headers: DEFAULT_HEADERS,
       body: JSON.stringify({ refresh_token: refreshToken }),
@@ -794,14 +839,7 @@ class ApiService {
     }
 
     if (res.status < 200 || res.status >= 300) {
-      let detail = `Upload failed (${res.status})`
-      try {
-        const err = JSON.parse(res.body)
-        checkAccountLocked(res.status, err)
-        checkMaintenanceMode(res.status, err)
-        detail = err?.detail ?? detail
-      } catch { }
-      throw Object.assign(new Error(detail), { status: res.status })
+      throw this.parseUploadError(res.status, res.body)
     }
     try {
       return JSON.parse(res.body).url
@@ -824,14 +862,7 @@ class ApiService {
     }
 
     if (res.status < 200 || res.status >= 300) {
-      let detail = `Upload failed (${res.status})`
-      try {
-        const err = JSON.parse(res.body)
-        checkAccountLocked(res.status, err)
-        checkMaintenanceMode(res.status, err)
-        detail = err?.detail ?? detail
-      } catch { }
-      throw new Error(detail)
+      throw this.parseUploadError(res.status, res.body)
     }
     try {
       return JSON.parse(res.body).url
@@ -869,14 +900,7 @@ class ApiService {
     }
 
     if (result.status < 200 || result.status >= 300) {
-      let detail = `Upload failed (${result.status})`
-      try {
-        const err = JSON.parse(result.body)
-        checkAccountLocked(result.status, err)
-        checkMaintenanceMode(result.status, err)
-        detail = err?.detail ?? detail
-      } catch { }
-      throw new Error(detail)
+      throw this.parseUploadError(result.status, result.body)
     }
 
     try {
@@ -899,14 +923,7 @@ class ApiService {
     }
 
     if (result.status < 200 || result.status >= 300) {
-      let detail = `Upload failed (${result.status})`
-      try {
-        const err = JSON.parse(result.body)
-        checkAccountLocked(result.status, err)
-        checkMaintenanceMode(result.status, err)
-        detail = err?.detail ?? detail
-      } catch { }
-      throw new Error(detail)
+      throw this.parseUploadError(result.status, result.body)
     }
 
     try {
@@ -934,14 +951,7 @@ class ApiService {
     }
 
     if (result.status < 200 || result.status >= 300) {
-      let detail = `Upload failed (${result.status})`
-      try {
-        const err = JSON.parse(result.body)
-        checkAccountLocked(result.status, err)
-        checkMaintenanceMode(result.status, err)
-        detail = err?.detail ?? detail
-      } catch { }
-      throw new Error(detail)
+      throw this.parseUploadError(result.status, result.body)
     }
 
     try {
@@ -956,12 +966,12 @@ class ApiService {
 
   static async removeDeviceToken(token: string): Promise<void> {
     const { accessToken } = useAuthStore.getState()
-    const res = await fetch(`${API_BASE_URL}${ENDPOINTS.DEVICE_TOKEN}`, {
+    const res = await this.fetchWithTimeout(`${API_BASE_URL}${ENDPOINTS.DEVICE_TOKEN}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
       body: JSON.stringify({ expo_token: token }),
     })
-    if (!res.ok) throw new Error('remove token failed')
+    if (!res.ok) throw new Error('Failed to remove device token')
   }
 }
 

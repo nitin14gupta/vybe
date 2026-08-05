@@ -16,6 +16,12 @@ interface Options {
 const MAX_SELECTION = 12
 const MAX_VIDEO_DURATION_SEC = 60
 
+// Video picking is disabled for now — chat-media upload has no server-side
+// transcoding/compression, so raw phone-camera video would upload and store
+// at whatever codec/bitrate/size the device produced. Re-enable by adding
+// 'videos' back to the mediaTypes arrays below once that's in place.
+const ALLOW_VIDEO = false
+
 export function useMediaPicker({ onMediaSend }: Options) {
   const showPill = usePillStore(s => s.show)
   const [pendingMedia, setPendingMedia] = useState<PendingMedia[]>([])
@@ -27,7 +33,7 @@ export function useMediaPicker({ onMediaSend }: Options) {
       return
     }
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images', 'videos'],
+      mediaTypes: ALLOW_VIDEO ? ['images', 'videos'] : ['images'],
       quality: 0.85,
       videoMaxDuration: MAX_VIDEO_DURATION_SEC,
     })
@@ -54,7 +60,7 @@ export function useMediaPicker({ onMediaSend }: Options) {
       return
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images', 'videos'],
+      mediaTypes: ALLOW_VIDEO ? ['images', 'videos'] : ['images'],
       quality: 0.85,
       allowsMultipleSelection: true,
       selectionLimit: MAX_SELECTION,

@@ -18,17 +18,32 @@ export default function EventMapScreen() {
   const router = useRouter()
   const [event, setEvent] = useState<EventDetail | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const { lat: userLat, lng: userLng, heading: userHeading } = useLiveLocation()
 
   useFocusEffect(useCallback(() => {
     if (!id) return
-    ApiService.getEvent(id).then(setEvent).catch(() => {}).finally(() => setLoading(false))
+    ApiService.getEvent(id)
+      .then(ev => { setEvent(ev); setLoadError(false) })
+      .catch(() => setLoadError(true))
+      .finally(() => setLoading(false))
   }, [id]))
 
-  if (loading || !event) {
+  if (loading || (!event && !loadError)) {
     return (
       <View style={[s.root, s.center]}>
         <BrandedLoader />
+      </View>
+    )
+  }
+
+  if (!event) {
+    return (
+      <View style={[s.root, s.center]}>
+        <Text style={s.errorText}>Couldn't load this event</Text>
+        <Pressable style={s.iconBtn} onPress={() => router.back()} hitSlop={10}>
+          <ArrowLeft size={22} color="#fff" strokeWidth={2} />
+        </Pressable>
       </View>
     )
   }
@@ -79,7 +94,8 @@ export default function EventMapScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
-  center: { alignItems: 'center', justifyContent: 'center' },
+  center: { alignItems: 'center', justifyContent: 'center', gap: 16 },
+  errorText: { fontFamily: FontFamily.bodyMedium, fontSize: 15, color: Colors.inkSecondary },
   leftGlow: { position: 'absolute', top: 0, bottom: 0, left: 0, width: 90, opacity: 0.28 },
   rightGlow: { position: 'absolute', top: 0, bottom: 0, right: 0, width: 90, opacity: 0.28 },
   header: {

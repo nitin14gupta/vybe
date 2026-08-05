@@ -1,5 +1,6 @@
+import { memo } from 'react'
 import { Pressable, View, Text, StyleSheet } from 'react-native'
-import { Image } from 'expo-image'
+import { Image, type ImageProps } from 'expo-image'
 import { router } from 'expo-router'
 import { MapPin, ChevronRight, Calendar } from 'lucide-react-native'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
@@ -13,7 +14,15 @@ function formatPrice(price: number, isFree: boolean) {
   return '₹' + price
 }
 
-export function EventListCard({ event, onPress }: { event: EventSummary; onPress?: () => void }) {
+function EventListCardBase({
+  event,
+  onPress,
+  priority = 'normal',
+}: {
+  event: EventSummary
+  onPress?: () => void
+  priority?: ImageProps['priority']
+}) {
   const cover = event.cover_photos?.[0]?.url
   const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
 
@@ -21,7 +30,14 @@ export function EventListCard({ event, onPress }: { event: EventSummary; onPress
     <Pressable style={s.row} onPress={onPress ?? (() => router.push(`/(events)/${event.id}` as any))}>
       <View style={s.thumb}>
         {cover ? (
-          <Image source={{ uri: cover }} style={s.thumbImg} contentFit="cover" />
+          <Image
+            source={{ uri: cover }}
+            style={s.thumbImg}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={150}
+            priority={priority}
+          />
         ) : (
           <View style={[s.thumbImg, s.thumbFallback]}>
             <TypeIcon size={22} color={Colors.inkDisabled} strokeWidth={1.5} />
@@ -29,7 +45,13 @@ export function EventListCard({ event, onPress }: { event: EventSummary; onPress
         )}
         {event.host_name && !event.host_is_deleted ? (
           event.host_avatar ? (
-            <Image source={{ uri: event.host_avatar }} style={s.hostBadge} />
+            <Image
+              source={{ uri: event.host_avatar }}
+              style={s.hostBadge}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              transition={150}
+            />
           ) : (
             <View style={[s.hostBadge, s.hostBadgeFallback]}>
               <Text style={s.hostInitial}>{event.host_name.charAt(0).toUpperCase()}</Text>
@@ -61,6 +83,8 @@ export function EventListCard({ event, onPress }: { event: EventSummary; onPress
     </Pressable>
   )
 }
+
+export const EventListCard = memo(EventListCardBase)
 
 // Same shape as the real row, shimmering — shown while events are still
 // loading.

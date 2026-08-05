@@ -1,9 +1,10 @@
+import { memo } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { LogoMark } from '@/components/ui'
 import { Colors, FontFamily, Radius } from '@/constants'
 import { BadgeLadder } from './BadgeLadder'
 
-export function BadgesStep() {
+function BadgesStepBase() {
   return (
     <View style={s.content}>
       <LogoMark size={64} style={s.logo} />
@@ -27,6 +28,8 @@ export function BadgesStep() {
     </View>
   )
 }
+
+export const BadgesStep = memo(BadgesStepBase)
 
 const s = StyleSheet.create({
   content: { width: '100%', alignItems: 'center' },

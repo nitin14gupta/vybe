@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import {
-  Modal, View, Text, Image, StyleSheet, ScrollView,
+  Modal, View, Text, StyleSheet, ScrollView,
 } from 'react-native'
+import { Image } from 'expo-image'
 import { X, Heart } from 'lucide-react-native'
 import { hSuccess, hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
@@ -51,7 +52,7 @@ export function VybeReviewModal({ visible, request, onAccept, onPass, onClose }:
               {/* Profile photo */}
               <View style={styles.photoContainer}>
                 {avatar ? (
-                  <Image source={{ uri: avatar }} style={styles.photo} />
+                  <Image source={{ uri: avatar }} style={styles.photo} cachePolicy="memory-disk" priority="high" transition={150} />
                 ) : (
                   <View style={[styles.photo, styles.photoFallback]}>
                     <Text style={styles.photoInitial}>{(request.name ?? '?').charAt(0)}</Text>

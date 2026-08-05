@@ -1,5 +1,7 @@
 import asyncio
 import json
+import time
+from collections import deque
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
@@ -57,6 +59,38 @@ async def _broadcast_user_local(user_id: str, data: dict) -> None:
     room -= dead
 
 
+class RateLimiter:
+    """Simple in-memory sliding-window limiter, one bucket per key. Not shared
+    across processes — same tradeoff as _conv_sockets/_user_sockets above,
+    which are already per-worker-only with Redis pub/sub as the cross-server
+    fallback. Good enough to stop a single abusive/buggy client from spamming
+    DB writes + broadcasts + push notifications."""
+
+    def __init__(self, max_events: int, window_seconds: float):
+        self.max_events = max_events
+        self.window_seconds = window_seconds
+        self._buckets: dict[str, deque] = {}
+
+    def allow(self, key: str) -> bool:
+        now = time.monotonic()
+        bucket = self._buckets.setdefault(key, deque())
+        while bucket and now - bucket[0] > self.window_seconds:
+            bucket.popleft()
+        if len(bucket) >= self.max_events:
+            return False
+        bucket.append(now)
+        return True
+
+    def discard(self, key: str) -> None:
+        self._buckets.pop(key, None)
+
+
+# Message sends: ~1.5/sec sustained, bursts up to 15 in a 10s window.
+_message_limiter = RateLimiter(max_events=15, window_seconds=10)
+_typing_limiter = RateLimiter(max_events=20, window_seconds=10)
+_reaction_limiter = RateLimiter(max_events=20, window_seconds=10)
+
+
 async def _notify_inbox(participant_ids: set[str], conv_id: str) -> None:
     """Tells both participants' conversation-list screens that this
     conversation has a new last message, so they can bump it to the top —
@@ -72,6 +106,18 @@ async def _notify_inbox(participant_ids: set[str], conv_id: str) -> None:
 # ── Redis helpers ─────────────────────────────────────────────────────────────
 
 _redis = None
+_redis_last_warn = 0.0
+_REDIS_WARN_COOLDOWN_SECONDS = 60.0
+
+
+def _warn_redis(context: str, e: Exception) -> None:
+    global _redis_last_warn
+    now = time.monotonic()
+    if now - _redis_last_warn > _REDIS_WARN_COOLDOWN_SECONDS:
+        _redis_last_warn = now
+        print(f"[CHAT] Redis unavailable ({context}): {e!r} — "
+              f"caching disabled, cross-server broadcast degraded", flush=True)
+
 
 async def _get_redis():
     global _redis
@@ -80,8 +126,9 @@ async def _get_redis():
             import redis.asyncio as aioredis
             _redis = aioredis.from_url("redis://localhost:6379", decode_responses=True)
             await _redis.ping()
-        except Exception:
+        except Exception as e:
             _redis = None
+            _warn_redis("connect", e)
     return _redis
 
 
@@ -90,8 +137,8 @@ async def _publish(channel: str, data: dict) -> None:
     if r:
         try:
             await r.publish(channel, json.dumps(data))
-        except Exception:
-            pass
+        except Exception as e:
+            _warn_redis("publish", e)
 
 
 # ── Auth helper for WebSocket ─────────────────────────────────────────────────
@@ -283,8 +330,8 @@ async def list_messages(
                 cached = await r.get(cache_key)
                 if cached:
                     cached_result = json.loads(cached)
-            except Exception:
-                pass
+            except Exception as e:
+                _warn_redis("get message cache", e)
 
     if cached_result is not None:
         result = cached_result
@@ -339,8 +386,8 @@ async def list_messages(
             if r:
                 try:
                     await r.set(cache_key, json.dumps(result), ex=MSG_CACHE_TTL_SECONDS)
-                except Exception:
-                    pass
+                except Exception as e:
+                    _warn_redis("set message cache", e)
 
     # Per-request filtering: hide messages this user deleted-for-themselves,
     # and never leak the deleted_for list itself to any client.
@@ -451,8 +498,8 @@ async def unsend_message(msg_id: str, current_user: dict = Depends(get_current_u
     if r:
         try:
             await r.delete(_msg_cache_key(conv_id))
-        except Exception:
-            pass
+        except Exception as e:
+            _warn_redis("invalidate cache on unsend", e)
     payload = {"type": "message_unsent", "message_id": msg_id, "conversation_id": conv_id}
     await _broadcast_local(conv_id, payload)
     await _publish(f"conv:{conv_id}", payload)
@@ -511,8 +558,8 @@ async def edit_message(msg_id: str, body: EditMessageBody, current_user: dict = 
     if r:
         try:
             await r.delete(_msg_cache_key(conv_id))
-        except Exception:
-            pass
+        except Exception as e:
+            _warn_redis("invalidate cache on edit", e)
     payload = {
         "type": "message_edited", "message_id": msg_id, "conversation_id": conv_id,
         "content": content, "edited_at": edited_at,
@@ -558,6 +605,11 @@ async def send_message_rest(
     current_user: dict = Depends(get_current_user),
 ):
     uid = current_user["id"]
+    # Shares a bucket with the WS "message" path (keyed by uid) — spam sent
+    # via REST fallback and spam sent via the socket are bounded together.
+    if not _message_limiter.allow(f"msg:{uid}"):
+        raise HTTPException(status_code=429, detail="You're sending messages too fast")
+
     partner_id = None
     with get_db() as (cur, conn):
         conv = _get_conversation(cur, conv_id, uid)
@@ -603,14 +655,15 @@ async def send_message_rest(
     if r:
         try:
             await r.delete(_msg_cache_key(conv_id))
-        except Exception:
-            pass
+        except Exception as e:
+            _warn_redis("invalidate cache on REST send", e)
     asyncio.create_task(_publish(f"conv:{conv_id}", {"type": "message", **out}))
     asyncio.create_task(_notify_inbox({uid, partner_id}, conv_id))
 
     if partner_id:
-        # Text content is end-to-end encrypted — the server can't read it to
-        # build a preview, so text messages get the same generic copy media does.
+        # Deliberately generic — no message preview in the push payload, even
+        # though the server can read the plaintext, to avoid leaking content
+        # into notification trays/lockscreens. Same copy for text and media.
         preview = "Sent you a message"
         background_tasks.add_task(
             send_push, partner_id, sender_name, preview,
@@ -682,14 +735,21 @@ async def chat_websocket(
                             await websocket.send_text(json.dumps(data))
                         except Exception:
                             break
-        except Exception:
-            pass
+        except Exception as e:
+            _warn_redis(f"pubsub listener conv:{conv_id}", e)
 
     listener_task = asyncio.create_task(redis_listener())
 
+    async def _mark_online():
+        if not r:
+            return
+        try:
+            await r.set(f"online:{uid}", "1", ex=35)
+        except Exception as e:
+            _warn_redis("set online presence", e)
+
     # Mark user online
-    if r:
-        await r.set(f"online:{uid}", "1", ex=35)
+    await _mark_online()
 
     try:
         while True:
@@ -698,8 +758,7 @@ async def chat_websocket(
             except asyncio.TimeoutError:
                 # Keepalive ping
                 await websocket.send_text(json.dumps({"type": "pong"}))
-                if r:
-                    await r.set(f"online:{uid}", "1", ex=35)
+                await _mark_online()
                 continue
 
             data = json.loads(raw)
@@ -707,10 +766,11 @@ async def chat_websocket(
 
             if msg_type == "ping":
                 await websocket.send_text(json.dumps({"type": "pong"}))
-                if r:
-                    await r.set(f"online:{uid}", "1", ex=35)
+                await _mark_online()
 
             elif msg_type == "typing":
+                if not _typing_limiter.allow(f"typing:{uid}"):
+                    continue
                 payload = {
                     "type": "typing",
                     "user_id": uid,
@@ -734,6 +794,8 @@ async def chat_websocket(
                 await _publish(f"conv:{conv_id}", {"type": "read", "user_id": uid})
 
             elif msg_type == "reaction":
+                if not _reaction_limiter.allow(f"reaction:{uid}"):
+                    continue
                 msg_id = data.get("message_id")
                 emoji = data.get("emoji")
                 if msg_id and emoji:
@@ -775,6 +837,10 @@ async def chat_websocket(
                     await _publish(f"conv:{conv_id}", payload)
 
             elif msg_type == "message":
+                if not _message_limiter.allow(f"msg:{uid}"):
+                    await websocket.send_text(json.dumps({"type": "error", "code": "rate_limited"}))
+                    continue
+
                 content = data.get("content")
                 content_type = data.get("content_type", "text")
                 metadata = data.get("metadata")
@@ -826,8 +892,8 @@ async def chat_websocket(
                 if r:
                     try:
                         await r.delete(_msg_cache_key(conv_id))
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        _warn_redis("invalidate cache on WS message", e)
                 # Echo back to sender immediately
                 await websocket.send_text(json.dumps(out))
                 # Broadcast to partner — in-memory first (always works), Redis as fallback for multi-server
@@ -841,7 +907,7 @@ async def chat_websocket(
                         cur.execute("SELECT name FROM users WHERE id = %s::uuid", (uid,))
                         ws_sender_row = cur.fetchone()
                         ws_sender_name = ws_sender_row["name"] if ws_sender_row else "Someone"
-                    # Text content is end-to-end encrypted — server can't preview it.
+                    # Same deliberate no-preview policy as the REST send path above.
                     ws_preview = "Sent you a message"
                     asyncio.create_task(asyncio.to_thread(
                         send_push, partner_id, ws_sender_name, ws_preview,
@@ -856,11 +922,14 @@ async def chat_websocket(
         listener_task.cancel()
         # Deregister from in-memory room
         _conv_sockets.get(conv_id, set()).discard(websocket)
+        _message_limiter.discard(f"msg:{uid}")
+        _typing_limiter.discard(f"typing:{uid}")
+        _reaction_limiter.discard(f"reaction:{uid}")
         if r:
             try:
                 await r.delete(f"online:{uid}")
-            except Exception:
-                pass
+            except Exception as e:
+                _warn_redis("clear online presence", e)
 
 
 @router.websocket("/ws/inbox")
@@ -894,8 +963,8 @@ async def inbox_websocket(websocket: WebSocket, token: str = Query(...)):
                         await websocket.send_text(raw["data"])
                     except Exception:
                         break
-        except Exception:
-            pass
+        except Exception as e:
+            _warn_redis(f"pubsub listener inbox:{uid}", e)
 
     listener_task = asyncio.create_task(redis_listener())
 

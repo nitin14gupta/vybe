@@ -1,394 +1,33 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
-import {
-  ActivityIndicator,
-  Dimensions,
-  FlatList,
-  Linking,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
-import * as Clipboard from 'expo-clipboard'
-// ActivityIndicator kept for attendees loading spinner
-import { hTap, hSuccess, hSelection } from '@/lib/haptics'
-import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
-import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
-import { PrimaryButton, BrandedLoader } from '@/components/ui'
-import { StaticEventMap } from '@/components/maps'
-import { LinearGradient } from 'expo-linear-gradient'
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
+import React from 'react'
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { useLocalSearchParams } from 'expo-router'
 import { useGoBack } from '@/hooks/useGoBack'
-import { Image } from 'expo-image'
+import { useEventDetail } from '@/hooks/useEventDetail'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import {
-  ArrowLeft,
-  Calendar,
-  ChevronRight,
-  Clock,
-  Flag,
-  Ghost,
-  MapPin,
-  MoreVertical,
-  PartyPopper,
-  Pencil,
-  QrCode,
-  ScanLine,
-  Share2,
-  Shield,
-  Star,
-  Users,
-  X as XIcon,
-} from 'lucide-react-native'
-import { Colors, FontFamily, EVENT_ICONS, EVENT_ICON_FALLBACK, HOST_BADGE_IMAGES } from '@/constants'
-import ApiService, { type EventDetail, type EventAttendee, type EventGuest } from '@/api/apiService'
-import { useAuthStore } from '@/store/auth'
-import { useRecentEventsStore } from '@/store/recentEventsStore'
-import { usePillStore } from '@/store/pillStore'
+import { ArrowLeft, Ghost } from 'lucide-react-native'
+import { Colors, FontFamily } from '@/constants'
+import { BrandedLoader } from '@/components/ui'
 import { ConfirmSheet, GuestListSheet, EventShareSheet, DotsSheet } from '@/components/ui'
 import { ReportEventSheet } from '@/components/events/ReportEventSheet'
+import { EventOptionsSheet } from '@/components/events/EventOptionsSheet'
+import { EventPhotoHero } from '@/components/events/EventPhotoHero'
+import { EventInfoHeader } from '@/components/events/EventInfoHeader'
+import { EventHostCard } from '@/components/events/EventHostCard'
+import { EventGuestListPreview } from '@/components/events/EventGuestListPreview'
+import { EventDetailsSection } from '@/components/events/EventDetailsSection'
+import { EventRsvpBar } from '@/components/events/EventRsvpBar'
+import { EventCancelledScreen } from '@/components/events/EventCancelledScreen'
+import { EventLockedScreen } from '@/components/events/EventLockedScreen'
 import { buildEventShareUrl } from '@/lib/deepLink'
-
-// ── Event options bottom sheet ────────────────────────────────────────────────
-
-function renderOptionsBackdrop(props: BottomSheetBackdropProps) {
-  return <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close" opacity={0.5} />
-}
-
-function EventOptionsSheetCore({ id, onEdit, onCancel, onWaitlist, onClose, showWaitlist }: { id: string; onEdit: () => void; onCancel: () => void; onWaitlist: () => void; onClose: () => void; showWaitlist: boolean }) {
-  const sheetRef = useRef<BottomSheetModal>(null)
-  useEffect(() => { sheetRef.current?.present() }, [])
-  return (
-    <BottomSheetModal
-      ref={sheetRef}
-      snapPoints={[showWaitlist ? '42%' : '28%']}
-      enableDynamicSizing={false}
-      enablePanDownToClose
-      onDismiss={onClose}
-      backdropComponent={renderOptionsBackdrop}
-      backgroundStyle={styles.optionsBg}
-      handleIndicatorStyle={styles.optionsHandle}
-    >
-      <BottomSheetView style={styles.optionsContent}>
-        <Pressable style={styles.optionItem} onPress={() => { onClose(); onEdit() }}>
-          <Pencil size={20} color={Colors.inkPrimary} strokeWidth={1.8} />
-          <Text style={styles.optionText}>Edit Event</Text>
-        </Pressable>
-        {showWaitlist && (
-          <>
-            <View style={styles.optionDivider} />
-            <Pressable style={styles.optionItem} onPress={() => { onClose(); onWaitlist() }}>
-              <Users size={20} color={Colors.inkPrimary} strokeWidth={1.8} />
-              <Text style={styles.optionText}>Manage Waitlist</Text>
-            </Pressable>
-          </>
-        )}
-        <View style={styles.optionDivider} />
-        <Pressable style={styles.optionItem} onPress={() => { onClose(); onCancel() }}>
-          <XIcon size={20} color={Colors.brandCoral} strokeWidth={1.8} />
-          <Text style={[styles.optionText, { color: Colors.brandCoral }]}>Cancel Event</Text>
-        </Pressable>
-      </BottomSheetView>
-    </BottomSheetModal>
-  )
-}
-
-function EventOptionsSheet({ visible, id, onEdit, onCancel, onWaitlist, onClose, showWaitlist }: { visible: boolean; id: string; onEdit: () => void; onCancel: () => void; onWaitlist: () => void; onClose: () => void; showWaitlist: boolean }) {
-  if (!visible) return null
-  return <EventOptionsSheetCore id={id} onEdit={onEdit} onCancel={onCancel} onWaitlist={onWaitlist} onClose={onClose} showWaitlist={showWaitlist} />
-}
-
-const { width: W } = Dimensions.get('window')
-const HERO_HEIGHT = W * (9 / 16) // true 16:9 — matches EventCard's cover crop
-
-
-
-function parseDate(iso: string | null | undefined): Date | null {
-  if (!iso) return null
-  const d = new Date(iso.replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'))
-  return isNaN(d.getTime()) ? null : d
-}
-
-const hoursUntil = (iso: string) => {
-  const d = parseDate(iso)
-  return d ? (d.getTime() - Date.now()) / 3_600_000 : Infinity
-}
-
-function calcAge(dob: string): number {
-  const d = new Date(dob)
-  const now = new Date()
-  let age = now.getFullYear() - d.getFullYear()
-  const m = now.getMonth() - d.getMonth()
-  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--
-  return age
-}
-
-function formatDateTime(iso: string | null | undefined) {
-  const d = parseDate(iso)
-  if (!d) return 'Date TBC'
-  return d.toLocaleDateString('en-IN', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-function daysUntil(iso: string) {
-  const eventDate = parseDate(iso)
-  if (!eventDate) return ''
-  const now = new Date()
-  // Strip time — compare calendar dates only
-  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const eventMidnight = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate())
-  const diffDays = Math.round((eventMidnight.getTime() - todayMidnight.getTime()) / 86400000)
-  if (diffDays <= 0) return 'Today'
-  if (diffDays === 1) return 'Tomorrow'
-  return `${diffDays} days away`
-}
-
-function formatPrice(price: number, isFree: boolean) {
-  if (isFree) return 'Free'
-  return `₹${price}`
-}
-
-function fmtCountdown(s: number) {
-  const h = Math.floor(s / 3600)
-  const m = Math.floor((s % 3600) / 60)
-  const sec = s % 60
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
-}
-
-type RsvpStatus = 'idle' | 'going' | 'waitlist' | 'loading'
-
-const EVENT_PAST_THRESHOLD_MS = 0 // show rate button as soon as date_time passes
+import { formatDateTime } from '@/components/events/eventDetailUtils'
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const insets = useSafeAreaInsets()
-  const router = useRouter()
   const goBack = useGoBack()
-  const myId = useAuthStore(s => s.userId)
-  const [event, setEvent] = useState<EventDetail | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [rsvpStatus, setRsvpStatus] = useState<RsvpStatus>('idle')
-  const [photoIdx, setPhotoIdx] = useState(0)
-  const [showFullDesc, setShowFullDesc] = useState(false)
-  const [optionsOpen, setOptionsOpen] = useState(false)
-  const [cancelConfirm, setCancelConfirm] = useState(false)
-  const [reportOpen, setReportOpen] = useState(false)
-  const [lockedReason, setLockedReason] = useState<null | 'checkin' | 'edit' | 'cancel' | 'age'>(null)
-  const myDob = useAuthStore(s => s.dob)
-  const showPill = usePillStore(s => s.show)
-  const [attendees, setAttendees] = useState<EventAttendee[]>([])
-  const [attendeesLoading, setAttendeesLoading] = useState(false)
-  const [guests, setGuests] = useState<EventGuest[]>([])
-  const [guestTotal, setGuestTotal] = useState(0)
-  const [guestWaitlist, setGuestWaitlist] = useState<EventGuest[]>([])
-  const [guestsLoading, setGuestsLoading] = useState(false)
-  const [guestSheetOpen, setGuestSheetOpen] = useState(false)
+  const d = useEventDetail(id)
 
-  const [offerSecondsLeft, setOfferSecondsLeft] = useState<number | null>(null)
-
-  const [shareSheetOpen, setShareSheetOpen] = useState(false)
-  const [addressSheetOpen, setAddressSheetOpen] = useState(false)
-
-  useFocusEffect(useCallback(() => {
-    if (!id) return
-    ApiService.getEvent(id)
-      .then(ev => {
-        setEvent(ev)
-        useRecentEventsStore.getState().add(ev)
-        if (ev.my_rsvp_status === 'going' || ev.my_rsvp_status === 'waitlist') {
-          setRsvpStatus(ev.my_rsvp_status)
-        }
-        if (ev.host_id === myId) {
-          setAttendeesLoading(true)
-          ApiService.getEventAttendees(id)
-            .then(r => setAttendees(r.attendees))
-            .catch(() => { })
-            .finally(() => setAttendeesLoading(false))
-        }
-        setGuestsLoading(true)
-        ApiService.getEventGuests(id)
-          .then(r => {
-            setGuests(r.guests)
-            setGuestTotal(r.total)
-            setGuestWaitlist(r.waitlist)
-          })
-          .catch(() => { })
-          .finally(() => setGuestsLoading(false))
-      })
-      .catch(() => showPill("Couldn't load this event", 'error'))
-      .finally(() => setLoading(false))
-  }, [id, myId]))
-
-  useEffect(() => {
-    if (!event?.my_offer_expires_at) { setOfferSecondsLeft(null); return }
-    const tick = () => {
-      const offerExpiry = parseDate(event.my_offer_expires_at)
-      const eventStart = parseDate(event.date_time)
-      if (!offerExpiry) return
-      // Confirm deadline = whichever comes first: offer window OR event start
-      const deadline = eventStart
-        ? Math.min(offerExpiry.getTime(), eventStart.getTime())
-        : offerExpiry.getTime()
-      setOfferSecondsLeft(Math.max(0, Math.floor((deadline - Date.now()) / 1000)))
-    }
-    tick()
-    const t = setInterval(tick, 1000)
-    return () => clearInterval(t)
-  }, [event?.my_offer_expires_at, event?.date_time])
-
-  const [refreshing, setRefreshing] = useState(false)
-
-  const handleRefresh = useCallback(async () => {
-    if (!id) return
-    setRefreshing(true)
-    try {
-      const ev = await ApiService.getEvent(id)
-      setEvent(ev)
-    } catch { }
-    finally { setRefreshing(false) }
-  }, [id])
-
-  const handleRsvp = async () => {
-    if (!event) return
-    if (event.age_restriction) {
-      let dob = myDob
-      if (!dob) {
-        try {
-          const me = await ApiService.getMe()
-          dob = me.dob ?? null
-          if (dob) useAuthStore.getState().setDob(dob)
-        } catch { }
-      }
-      if (dob && calcAge(dob) < event.age_restriction) {
-        setLockedReason('age')
-        return
-      }
-    }
-    router.push(`/(events)/${id}/book` as any)
-  }
-
-  const handleScanner = () => {
-    if (!event) return
-    if (hoursUntil(event.date_time) > 3) {
-      setLockedReason('checkin')
-    } else {
-      router.push(`/(events)/${id}/scanner` as any)
-    }
-  }
-
-  const handleEditEvent = () => {
-    if (!event) return
-    if (hoursUntil(event.date_time) < 2) {
-      setLockedReason('edit')
-    } else {
-      router.push(`/(events)/${id}/edit` as any)
-    }
-  }
-
-  const handleCancelEvent = () => {
-    if (!event) return
-    if (hoursUntil(event.date_time) < 48) {
-      setLockedReason('cancel')
-    } else {
-      setCancelConfirm(true)
-    }
-  }
-
-  const doCancelEvent = async () => {
-    try {
-      await ApiService.cancelEvent(id!)
-      setEvent(prev => prev ? { ...prev, is_cancelled: true } : prev)
-      useRecentEventsStore.getState().remove(id!)
-      showPill('Event cancelled', 'default')
-    } catch (e: any) {
-      showPill("Couldn't cancel this event, try again", 'error')
-    }
-  }
-
-  const handleShare = () => {
-    if (!event) return
-    setShareSheetOpen(true)
-  }
-
-  const handleJoinWaitlist = async () => {
-    if (!event) return
-    setRsvpStatus('loading')
-    try {
-      const res = await ApiService.rsvpEvent(id!, 'going')
-      if (res.status === 'waitlist') {
-        setRsvpStatus('waitlist')
-        setEvent(prev => prev ? { ...prev, spots_left: 0 } : prev)
-        router.push({
-          pathname: '/(events)/[id]/waitlist-joined' as any,
-          params: {
-            id: id!,
-            position: String(res.position ?? 1),
-            coverUrl: event.cover_photos?.[0]?.url ?? '',
-            title: event.title,
-          },
-        })
-      } else if (res.status === 'going') {
-        setRsvpStatus('going')
-      }
-    } catch (e: any) {
-      setRsvpStatus('idle')
-      showPill(e?.message ?? "Couldn't join waitlist", 'error')
-    }
-  }
-
-  const handleLeaveWaitlist = async () => {
-    if (!event) return
-    setRsvpStatus('loading')
-    try {
-      await ApiService.rsvpEvent(id!, 'cancel')
-      setRsvpStatus('idle')
-      setEvent(prev => prev ? {
-        ...prev,
-        my_offer_expires_at: null,
-        my_waitlist_position: null,
-      } : prev)
-      showPill("You've left the waitlist", 'default')
-    } catch (e: any) {
-      setRsvpStatus('waitlist')
-      showPill(e?.message ?? "Couldn't leave waitlist", 'error')
-    }
-  }
-
-  const handleManageWaitlist = () => {
-    router.push(`/(events)/${id}/waitlist` as any)
-  }
-
-  const handleAddressAction = (key: string) => {
-    if (!event) return
-    if (key === 'copy') {
-      Clipboard.setStringAsync(event.location_name ?? '')
-      showPill('Address copied', 'default')
-    } else if (key === 'maps') {
-      const query = event.location_lat != null && event.location_lng != null
-        ? `${event.location_lat},${event.location_lng}`
-        : encodeURIComponent(event.location_name ?? '')
-      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`)
-    }
-  }
-
-  const now = new Date()
-  const eventStart = event ? parseDate(event.date_time) : null
-  const eventEnd = event?.end_time ? parseDate(event.end_time) : null
-  const isStarted = !!eventStart && eventStart < now
-  const isEnded = isStarted && (eventEnd ? eventEnd < now : true)
-  const isInProgress = isStarted && !isEnded
-  const isPast = isEnded
-  const hasTicket = !!(event?.my_ticket_token)
-
-  if (loading) {
+  if (d.loading) {
     return (
       <View style={[styles.root, styles.center]}>
         <BrandedLoader />
@@ -396,7 +35,7 @@ export default function EventDetailScreen() {
     )
   }
 
-  if (!event) {
+  if (!d.event) {
     return (
       <View style={[styles.root, styles.center]}>
         <Pressable onPress={goBack} style={[styles.backBtn, { position: 'absolute', top: insets.top + 8, left: 0 }]}>
@@ -411,89 +50,29 @@ export default function EventDetailScreen() {
     )
   }
 
-  if (lockedReason) {
-    return <LockedScreen reason={lockedReason} event={event} onBack={() => setLockedReason(null)} />
+  const { event } = d
+
+  if (d.lockedReason) {
+    return <EventLockedScreen reason={d.lockedReason} event={event} onBack={() => d.setLockedReason(null)} />
   }
 
   if (event.is_cancelled) {
-    return <CancelledScreen event={event} isHost={event.host_id === myId} onBack={goBack} />
+    return <EventCancelledScreen event={event} isHost={event.host_id === d.myId} onBack={goBack} />
   }
 
-  // True when user must join waitlist: either no seats OR active (non-promoted) waitlist exists
-  const shouldWaitlist = event.spots_left === 0 || (event.waitlist_count ?? 0) > 0
-  const spotsLow = !shouldWaitlist && event.spots_left <= 10 && !event.is_free
-  const isGoing = rsvpStatus === 'going'
-  const isWaitlist = rsvpStatus === 'waitlist'
-  const coverPhotos = event.cover_photos ?? []
+  const isHost = event.host_id === d.myId
 
   return (
     <View style={styles.root}>
-      {/* Hero photo carousel */}
-      <View style={styles.hero}>
-        {coverPhotos.length > 0 ? (
-          <>
-            <FlatList
-              data={coverPhotos}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              keyExtractor={(_, i) => String(i)}
-              onMomentumScrollEnd={e => {
-                setPhotoIdx(Math.round(e.nativeEvent.contentOffset.x / W))
-              }}
-              renderItem={({ item }) => (
-                <Image source={{ uri: item.url }} style={{ width: W, height: HERO_HEIGHT }} contentFit="cover" />
-              )}
-            />
-            {coverPhotos.length > 1 && (
-              <View style={styles.photoDots}>
-                {coverPhotos.map((_, i) => (
-                  <View key={i} style={[styles.photoDot, i === photoIdx && styles.photoDotActive]} />
-                ))}
-              </View>
-            )}
-          </>
-        ) : (
-          <LinearGradient
-            colors={['#1A1A1A', '#111111']}
-            style={[{ width: W, height: HERO_HEIGHT }, styles.heroPlaceholder]}
-          >
-            {(() => {
-              const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
-              return <TypeIcon size={44} color={Colors.inkDisabled} strokeWidth={1.5} />
-            })()}
-          </LinearGradient>
-        )}
-
-        {/* Scrim — keeps overlay icons legible over any photo, without per-icon circles */}
-        <LinearGradient
-          colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0)']}
-          style={[styles.heroScrim, { height: insets.top + 72 }]}
-          pointerEvents="none"
-        />
-
-        {/* Overlay buttons */}
-        <View style={[styles.heroOverlay, { top: insets.top + 8 }]}>
-          <Pressable style={styles.heroIconBtn} onPress={goBack} hitSlop={10}>
-            <ArrowLeft size={22} color="#fff" strokeWidth={2} />
-          </Pressable>
-          <View style={{ flexDirection: 'row', gap: 4 }}>
-            <Pressable style={styles.heroIconBtn} onPress={() => { hTap(); handleShare() }} hitSlop={10}>
-              <Share2 size={20} color="#fff" strokeWidth={2} />
-            </Pressable>
-            {event?.host_id === myId ? (
-              <Pressable style={styles.heroIconBtn} onPress={() => { hTap(); setOptionsOpen(true) }} hitSlop={10}>
-                <MoreVertical size={20} color="#fff" strokeWidth={2} />
-              </Pressable>
-            ) : (
-              <Pressable style={styles.heroIconBtn} onPress={() => { hTap(); setReportOpen(true) }} hitSlop={10}>
-                <Flag size={20} color="#fff" strokeWidth={2} />
-              </Pressable>
-            )}
-          </View>
-        </View>
-
-      </View>
+      <EventPhotoHero
+        event={event}
+        isHost={isHost}
+        topInset={insets.top}
+        onBack={goBack}
+        onShare={d.handleShare}
+        onOptions={() => d.setOptionsOpen(true)}
+        onReport={() => d.setReportOpen(true)}
+      />
 
       {/* Scrollable content — overlaps the hero photo with rounded top corners */}
       <View style={styles.sheet}>
@@ -502,543 +81,104 @@ export default function EventDetailScreen() {
           style={styles.scroll}
           contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.brandOrange} colors={[Colors.brandOrange]} />}
+          refreshControl={<RefreshControl refreshing={d.refreshing} onRefresh={d.handleRefresh} tintColor={Colors.brandOrange} colors={[Colors.brandOrange]} />}
         >
-          {/* Category + title */}
-          <View style={styles.categoryRow}>
-            <View style={styles.categoryChip}>
-              {(() => {
-                const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
-                return <TypeIcon size={12} color={Colors.brandOrange} strokeWidth={2} />
-              })()}
-              <Text style={styles.categoryChipText}>{event.event_type.replace('_', ' ')}</Text>
-            </View>
-            {event.age_restriction && (
-              <View style={styles.ageBadge}>
-                <Shield size={12} color={Colors.inkSecondary} />
-                <Text style={styles.ageBadgeText}>{event.age_restriction}+</Text>
-              </View>
-            )}
-          </View>
+          <EventInfoHeader event={event} onPressAddress={() => d.setAddressSheetOpen(true)} />
 
-          <Text style={styles.title}>{event.title}</Text>
-          <Text style={styles.daysAway}>{daysUntil(event.date_time)}</Text>
+          <EventHostCard event={event} isHost={isHost} />
 
-          {/* Info card */}
-          <View style={styles.infoCard}>
-            <View style={styles.infoRow}>
-              <Calendar size={16} color={Colors.brandOrange} />
-              <Text style={styles.infoText}>{formatDateTime(event.date_time)}</Text>
-            </View>
-            {event.end_time && (
-              <>
-                <View style={styles.infoDivider} />
-                <View style={styles.infoRow}>
-                  <Clock size={16} color={Colors.inkSecondary} />
-                  <Text style={styles.infoText}>Ends {formatDateTime(event.end_time)}</Text>
-                </View>
-              </>
-            )}
-            {event.location_name && (
-              <>
-                <View style={styles.infoDivider} />
-                <Pressable
-                  style={styles.infoRow}
-                  onPress={() => { hTap(); setAddressSheetOpen(true) }}
-                  onLongPress={() => {
-                    hSuccess()
-                    Clipboard.setStringAsync(event.location_name ?? '')
-                    showPill('Address copied', 'default')
-                  }}
-                >
-                  <MapPin size={16} color={Colors.brandOrange} />
-                  <Text style={styles.infoText}>{event.location_name}</Text>
-                  <ChevronRight size={16} color={Colors.inkDisabled} strokeWidth={1.8} />
-                </Pressable>
-              </>
-            )}
-            <View style={styles.infoDivider} />
-            <View style={styles.infoRow}>
-              <Users size={16} color={Colors.inkSecondary} />
-              <Text style={styles.infoText}>
-                {event.attendee_count} going · {event.spots_left} spots left
-              </Text>
-            </View>
-          </View>
+          <EventGuestListPreview
+            guests={d.guests}
+            guestTotal={d.guestTotal}
+            onPress={() => d.setGuestSheetOpen(true)}
+          />
 
-          {/* Host card */}
-          {event.host_name && (
-            <Pressable
-              style={styles.hostCard}
-              onPress={() => router.push(event.host_id === myId ? '/(tabs)/profile' : `/(profile)/${event.host_id}` as any)}
-            >
-              <View style={styles.hostAvatarWrap}>
-                <View style={[styles.hostAvatar, event.host_is_deleted && styles.hostAvatarDeleted]}>
-                  {event.host_is_deleted ? (
-                    <Ghost size={20} color={Colors.inkDisabled} strokeWidth={1.5} />
-                  ) : event.host_avatar ? (
-                    <Image source={{ uri: event.host_avatar }} style={styles.hostAvatarImg} contentFit="cover" />
-                  ) : (
-                    <Text style={styles.hostAvatarFallback}>{event.host_name[0]}</Text>
-                  )}
-                </View>
-                {!event.host_is_deleted && (() => {
-                  const hostBadgeName = event.host_badges?.find(b => HOST_BADGE_IMAGES[b])
-                  const hostBadgeImage = hostBadgeName ? HOST_BADGE_IMAGES[hostBadgeName] : null
-                  return hostBadgeImage ? (
-                    <View style={styles.hostBadgeChip}>
-                      <Image source={hostBadgeImage} style={styles.hostBadgeImg} contentFit="contain" />
-                    </View>
-                  ) : null
-                })()}
-              </View>
-              <View style={styles.hostInfo}>
-                <Text style={styles.hostLabel}>Hosted by</Text>
-                <Text style={[styles.hostName, event.host_is_deleted && styles.hostNameDeleted]}>
-                  {event.host_is_deleted ? '[deleted]' : event.host_id === myId ? 'You' : event.host_name}
-                </Text>
-              </View>
-            </Pressable>
-          )}
-
-          {/* Guest List */}
-          {guestTotal > 0 && (
-            <Pressable
-              style={styles.guestCard}
-              onPress={() => { hTap(); setGuestSheetOpen(true) }}
-            >
-              <View style={styles.guestCardTop}>
-                <Text style={styles.guestCardTitle}>Guest List</Text>
-                <View style={styles.viewAllPill}>
-                  <Text style={styles.viewAllText}>View all</Text>
-                  <ChevronRight size={14} color={Colors.brandOrange} strokeWidth={2} />
-                </View>
-              </View>
-              <View style={styles.guestCardBottom}>
-                <View style={styles.guestStack}>
-                  {guests.slice(0, 7).map((g, i) => (
-                    <View key={g.id} style={[styles.guestStackAvatar, { marginLeft: i === 0 ? 0 : -12, zIndex: 7 - i }]}>
-                      {g.avatar ? (
-                        <Image source={{ uri: g.avatar }} style={styles.guestStackImg} contentFit="cover" />
-                      ) : (
-                        <View style={[styles.guestStackImg, styles.guestStackFallback]}>
-                          <Text style={styles.guestStackInitial}>{(g.name ?? '?').charAt(0).toUpperCase()}</Text>
-                        </View>
-                      )}
-                    </View>
-                  ))}
-                  {guestTotal > 7 && (
-                    <View style={[styles.guestStackAvatar, styles.guestStackMore, { marginLeft: -12 }]}>
-                      <Text style={styles.guestStackMoreText}>+{guestTotal - 7}</Text>
-                    </View>
-                  )}
-                </View>
-                <Text style={styles.guestCardCount}>{guestTotal} going</Text>
-              </View>
-            </Pressable>
-          )}
-
-          {/* About */}
-          {event.description ? (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>About</Text>
-              <Text
-                style={styles.sectionBody}
-                numberOfLines={showFullDesc ? undefined : 3}
-              >
-                {event.description}
-              </Text>
-              {event.description.length > 140 && (
-                <Pressable onPress={() => { hSelection(); setShowFullDesc(p => !p) }}>
-                  <Text style={styles.readMore}>{showFullDesc ? 'Show less' : 'Read more'}</Text>
-                </Pressable>
-              )}
-            </View>
-          ) : null}
-
-          {/* Rules */}
-          {event.rules ? (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>House Rules</Text>
-              <Text style={styles.sectionBody}>{event.rules}</Text>
-            </View>
-          ) : null}
-
-          {/* Mini map */}
-          {event.location_lat != null && event.location_lng != null && (
-            <Pressable
-              style={styles.miniMapWrap}
-              onPress={() => { hTap(); router.push(`/(events)/${id}/map` as any) }}
-            >
-              <StaticEventMap
-                lat={event.location_lat}
-                lng={event.location_lng}
-                eventType={event.event_type}
-              />
-            </Pressable>
-          )}
+          <EventDetailsSection event={event} eventId={id ?? ''} />
         </ScrollView>
       </View>
 
-      {/* Sticky bottom bar */}
-      <View style={[styles.stickyBar, { paddingBottom: insets.bottom + 12 }]}>
-        {event.host_id === myId ? (
-          /* ── Host view ── */
-          <View style={styles.hostBar}>
-            <View style={styles.hostMeta}>
-              <Text style={styles.stickyPrice}>{formatPrice(event.price_inr, event.is_free)}</Text>
-              {attendeesLoading ? (
-                <ActivityIndicator size="small" color={Colors.inkSecondary} />
-              ) : (
-                <Text style={styles.hostAttendeeCount}>
-                  {attendees.length} / {event.capacity} going
-                </Text>
-              )}
-            </View>
-            <View style={styles.hostActions}>
-              <Pressable
-                style={styles.hostBtn}
-                onPress={() => router.push(`/(events)/${id}/attendees` as any)}
-              >
-                <Users size={16} color={Colors.inkPrimary} strokeWidth={1.8} />
-                <Text style={styles.hostBtnText}>Attendees</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.hostBtn, styles.hostBtnPrimary]}
-                onPress={isPast
-                  ? () => router.push(`/(events)/${id}/reviews` as any)
-                  : handleScanner}
-              >
-                <LinearGradient
-                  colors={['#FF6B35', '#FF3864']}
-                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                  style={styles.hostBtnGradient}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    {isPast
-                      ? <Star size={16} color="#111" strokeWidth={2} />
-                      : <ScanLine size={16} color="#111" strokeWidth={2} />}
-                    <Text style={styles.hostBtnPrimaryText}>
-                      {isPast ? 'Review' : 'Scanner'}
-                    </Text>
-                  </View>
-                </LinearGradient>
-              </Pressable>
-            </View>
-          </View>
-        ) : (
-          /* ── Attendee view ── */
-          <>
-            <View style={styles.stickyLeft}>
-              {spotsLow && !isGoing && !isWaitlist && (
-                <View style={styles.spotsAlert}>
-                  <View style={styles.spotsDot} />
-                  <Text style={styles.spotsText}>Only {event.spots_left} left</Text>
-                </View>
-              )}
-              <Text style={styles.stickyPrice}>{formatPrice(event.price_inr, event.is_free)}</Text>
-            </View>
-
-            {event.is_cancelled ? (
-              <View style={styles.cancelledBadge}>
-                <Text style={styles.cancelledText}>Cancelled</Text>
-              </View>
-            ) : isPast && (isGoing || hasTicket) ? (
-              event?.my_review_rating ? (
-                <View style={styles.reviewedPill}>
-                  <Star size={13} color={Colors.brandOrange} fill={Colors.brandOrange} strokeWidth={1.5} />
-                  <Text style={styles.reviewedPillText}>Reviewed ✓</Text>
-                </View>
-              ) : (
-                <PrimaryButton
-                  label="Rate Event"
-                  onPress={() => router.push(`/(events)/${id}/review` as any)}
-                  style={{ minWidth: 140 }}
-                />
-              )
-            ) : isGoing || hasTicket ? (
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <View style={styles.goingBtn}>
-                  <Text style={styles.goingBtnText}>Going ✓</Text>
-                </View>
-                <Pressable
-                  style={styles.ticketBtn}
-                  onPress={() => router.push(`/(events)/${id}/ticket` as any)}
-                >
-                  <QrCode size={16} color={Colors.brandOrange} />
-                  <Text style={styles.ticketBtnText}>Ticket</Text>
-                </Pressable>
-              </View>
-            ) : isInProgress ? (
-              <View style={styles.inProgressBtn}>
-                <Text style={styles.inProgressText}>Event in Progress</Text>
-              </View>
-            ) : rsvpStatus === 'loading' ? (
-              <View style={styles.waitlistBtn}>
-                <ActivityIndicator color={Colors.brandOrange} />
-              </View>
-            ) : isWaitlist && event.my_offer_expires_at ? (
-              <Pressable style={styles.offerBtn} onPress={() => { hSuccess(); handleRsvp() }}>
-                <LinearGradient
-                  colors={[Colors.brandOrange, Colors.brandCoral]}
-                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                  style={styles.offerGradient}
-                >
-                  <View style={styles.offerTitleRow}>
-                    <Text style={styles.offerTitle}>Spot Reserved!</Text>
-                    <PartyPopper size={13} color="#fff" strokeWidth={2} />
-                  </View>
-                  <Text style={styles.offerTimer}>
-                    Confirm by {offerSecondsLeft != null ? fmtCountdown(offerSecondsLeft) : '...'}
-                  </Text>
-                </LinearGradient>
-              </Pressable>
-            ) : isWaitlist ? (
-              <Pressable
-                style={styles.waitlistActiveBtn}
-                onPress={() => {
-                  hTap()
-                  router.push({
-                    pathname: '/(events)/[id]/waitlist-joined' as any,
-                    params: {
-                      id: id!,
-                      position: String(event.my_waitlist_position ?? 1),
-                      coverUrl: event.cover_photos?.[0]?.url ?? '',
-                      title: event.title,
-                    },
-                  })
-                }}
-              >
-                <Text style={styles.waitlistActiveBtnText}>
-                  On Waitlist{event.my_waitlist_position ? ` · #${event.my_waitlist_position}` : ''}
-                </Text>
-                <ChevronRight size={14} color={Colors.brandOrange} strokeWidth={2} />
-              </Pressable>
-            ) : shouldWaitlist && hoursUntil(event.date_time) < 2 ? (
-              <View style={styles.eventFullBtn}>
-                <Text style={styles.waitlistBtnText}>Event starts soon</Text>
-              </View>
-            ) : shouldWaitlist && event.is_waitlist_full ? (
-              <View style={styles.waitlistFullBtn}>
-                <Text style={styles.waitlistBtnText}>Waitlist Full</Text>
-              </View>
-            ) : shouldWaitlist ? (
-              <Pressable style={styles.waitlistJoinBtn} onPress={() => { hSuccess(); handleJoinWaitlist() }}>
-                <Text style={styles.waitlistJoinText}>Join Waitlist</Text>
-              </Pressable>
-            ) : (
-              <Pressable style={styles.bookBtn} onPress={() => { hSuccess(); handleRsvp() }}>
-                <LinearGradient
-                  colors={['#FF6B35', '#FF3864']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.bookGradient}
-                >
-                  <Text style={styles.bookBtnText}>
-                    {event.is_free ? 'RSVP Free' : 'Book Now'}
-                  </Text>
-                </LinearGradient>
-              </Pressable>
-            )}
-          </>
-        )}
-      </View>
+      <EventRsvpBar
+        event={event}
+        eventId={id ?? ''}
+        isHost={isHost}
+        rsvpStatus={d.rsvpStatus}
+        attendeesCount={d.attendees.length}
+        attendeesLoading={d.attendeesLoading}
+        isPast={d.isPast}
+        isInProgress={d.isInProgress}
+        isGoing={d.isGoing}
+        isWaitlist={d.isWaitlist}
+        hasTicket={d.hasTicket}
+        shouldWaitlist={d.shouldWaitlist}
+        spotsLow={d.spotsLow}
+        offerSecondsLeft={d.offerSecondsLeft}
+        bottomInset={insets.bottom}
+        onScanner={d.handleScanner}
+        onRsvp={d.handleRsvp}
+        onJoinWaitlist={d.handleJoinWaitlist}
+      />
 
       <EventOptionsSheet
-        visible={optionsOpen}
-        id={id ?? ''}
-        onEdit={handleEditEvent}
-        onCancel={handleCancelEvent}
-        onWaitlist={handleManageWaitlist}
-        onClose={() => setOptionsOpen(false)}
+        visible={d.optionsOpen}
+        onEdit={d.handleEditEvent}
+        onCancel={d.handleCancelEvent}
+        onWaitlist={d.handleManageWaitlist}
+        onClose={() => d.setOptionsOpen(false)}
         showWaitlist={(event?.waitlist_count ?? 0) > 0}
       />
       <ConfirmSheet
-        visible={cancelConfirm}
+        visible={d.cancelConfirm}
         title="Cancel Event"
         body="Are you sure? Attendees will be notified. This cannot be undone."
         confirmLabel="Cancel Event"
         destructive
-        onConfirm={doCancelEvent}
-        onClose={() => setCancelConfirm(false)}
+        onConfirm={d.doCancelEvent}
+        onClose={() => d.setCancelConfirm(false)}
       />
       <ReportEventSheet
-        visible={reportOpen}
+        visible={d.reportOpen}
         eventId={id ?? ''}
-        onClose={() => setReportOpen(false)}
+        onClose={() => d.setReportOpen(false)}
       />
       <DotsSheet
-        visible={addressSheetOpen}
+        visible={d.addressSheetOpen}
         title={event.location_name}
         actions={[
           { key: 'copy', label: 'Copy Address' },
           { key: 'maps', label: 'Open in Google Maps' },
         ]}
-        onAction={handleAddressAction}
-        onClose={() => setAddressSheetOpen(false)}
+        onAction={d.handleAddressAction}
+        onClose={() => d.setAddressSheetOpen(false)}
       />
       <GuestListSheet
-        visible={guestSheetOpen}
+        visible={d.guestSheetOpen}
         eventId={id ?? ''}
-        guests={guests}
-        total={guestTotal}
-        waitlist={guestWaitlist}
-        canViewFull={event.host_id === myId || isGoing || hasTicket}
-        loading={guestsLoading}
-        onClose={() => setGuestSheetOpen(false)}
+        guests={d.guests}
+        total={d.guestTotal}
+        waitlist={d.guestWaitlist}
+        canViewFull={isHost || d.isGoing || d.hasTicket}
+        loading={d.guestsLoading}
+        onClose={() => d.setGuestSheetOpen(false)}
       />
 
-      {event && (
-        <EventShareSheet
-          visible={shareSheetOpen}
-          onClose={() => setShareSheetOpen(false)}
-          eventId={event.id}
-          title={event.title}
-          dateTimeLabel={formatDateTime(event.date_time)}
-          coverUrl={event.cover_photos?.[0]?.url}
-          shareUrl={buildEventShareUrl(event.id)}
-          hostName={event.host_name}
-          hostAvatarUrl={event.host_avatar}
-        />
-      )}
+      <EventShareSheet
+        visible={d.shareSheetOpen}
+        onClose={() => d.setShareSheetOpen(false)}
+        eventId={event.id}
+        title={event.title}
+        dateTimeLabel={formatDateTime(event.date_time)}
+        coverUrl={event.cover_photos?.[0]?.url}
+        shareUrl={buildEventShareUrl(event.id)}
+        hostName={event.host_name}
+        hostAvatarUrl={event.host_avatar}
+      />
     </View>
   )
 }
-
-// ── Cancelled screen ───────────────────────────────────────────────────────────
-
-function CancelledScreen({
-  event,
-  isHost,
-  onBack,
-}: {
-  event: EventDetail
-  isHost: boolean
-  onBack: () => void
-}) {
-  const insets = useSafeAreaInsets()
-  const subtitle = isHost
-    ? 'You cancelled this event. Attendees have been notified, and anyone who paid has been refunded to their Gorave Wallet.'
-    : event.is_free
-      ? 'The host cancelled this event. It is no longer happening.'
-      : 'The host cancelled this event. Your payment has been refunded to your Gorave Wallet.'
-
-  return (
-    <View style={[styles.root, { paddingTop: insets.top + 8, paddingHorizontal: 24 }]}>
-      <Pressable style={styles.lockedBack} onPress={onBack}>
-        <ArrowLeft size={20} color={Colors.inkSecondary} />
-        <Text style={styles.lockedBackText}>Back</Text>
-      </Pressable>
-      <View style={styles.lockedBody}>
-        <View style={[styles.lockedIconWrap, { backgroundColor: 'rgba(255,56,100,0.12)' }]}>
-          <XIcon size={40} color={Colors.brandCoral} strokeWidth={2} />
-        </View>
-        <Text style={styles.lockedTitle}>Event Cancelled</Text>
-        <Text style={styles.deletedBody} numberOfLines={1}>{event.title}</Text>
-        <Text style={[styles.lockedSubtitle, { marginTop: 14 }]}>{subtitle}</Text>
-      </View>
-    </View>
-  )
-}
-
-// ── Locked screen ─────────────────────────────────────────────────────────────
-
-function LockedScreen({
-  reason,
-  event,
-  onBack,
-}: {
-  reason: 'checkin' | 'edit' | 'cancel' | 'age'
-  event: EventDetail
-  onBack: () => void
-}) {
-  const insets = useSafeAreaInsets()
-  const eventStart = parseDate(event.date_time)
-
-  let title: string
-  let subtitle: string
-  let icon: React.ReactNode
-
-  if (reason === 'checkin') {
-    const opensAt = eventStart
-      ? new Date(eventStart.getTime() - 3 * 3600_000).toLocaleTimeString('en-IN', {
-        hour: '2-digit',
-        minute: '2-digit',
-        day: 'numeric',
-        month: 'short',
-      })
-      : '3 hours before the event'
-    title = 'Check-in not open yet'
-    subtitle = `Scanner unlocks 3 hours before the event starts.\n\nComes alive at ${opensAt}.`
-    icon = <Clock size={40} color={Colors.brandOrange} strokeWidth={1.5} />
-  } else if (reason === 'edit') {
-    title = 'Editing is closed'
-    subtitle = 'Events can only be edited up to 7 hours before they start.\n\nThis window has passed for this event.'
-    icon = <Clock size={40} color={Colors.brandOrange} strokeWidth={1.5} />
-  } else if (reason === 'cancel') {
-    title = 'Cancellation is closed'
-    subtitle = 'Events can only be cancelled at least 48 hours in advance.\n\nThis window has passed for this event.'
-    icon = <Clock size={40} color={Colors.brandOrange} strokeWidth={1.5} />
-  } else {
-    title = `${event.age_restriction}+ Only`
-    subtitle = `This event has an age restriction of ${event.age_restriction}+.\n\nYou must be ${event.age_restriction} or older to attend.`
-    icon = <Shield size={40} color={Colors.brandCoral} strokeWidth={1.5} />
-  }
-
-  return (
-    <View style={[styles.root, { paddingTop: insets.top + 8, paddingHorizontal: 24 }]}>
-      <Pressable style={styles.lockedBack} onPress={onBack}>
-        <ArrowLeft size={20} color={Colors.inkSecondary} />
-        <Text style={styles.lockedBackText}>Back to Event</Text>
-      </Pressable>
-      <View style={styles.lockedBody}>
-        <View style={[styles.lockedIconWrap, reason === 'age' && { backgroundColor: 'rgba(255,56,100,0.12)' }]}>
-          {icon}
-        </View>
-        <Text style={styles.lockedTitle}>{title}</Text>
-        <Text style={styles.lockedSubtitle}>{subtitle}</Text>
-      </View>
-    </View>
-  )
-}
-
-// ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
   center: { alignItems: 'center', justifyContent: 'center' },
-
-  hero: { height: HERO_HEIGHT, backgroundColor: Colors.surface },
-  heroPlaceholder: { alignItems: 'center', justifyContent: 'center' },
-  heroScrim: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0,
-  },
-  heroOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-  },
-  heroIconBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  photoDots: {
-    position: 'absolute',
-    bottom: 12,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  photoDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.4)' },
-  photoDotActive: { backgroundColor: '#fff', width: 18 },
 
   sheet: {
     flex: 1,
@@ -1059,347 +199,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { padding: 20, paddingTop: 14 },
 
-  categoryRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  categoryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'rgba(255,107,53,0.15)',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  categoryChipText: {
-    color: Colors.brandOrange,
-    fontFamily: FontFamily.bodyMedium,
-    fontSize: 12,
-    textTransform: 'capitalize',
-  },
-  ageBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.surface, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  ageBadgeText: { color: Colors.inkSecondary, fontFamily: FontFamily.bodyMedium, fontSize: 12 },
-
-  title: { fontFamily: FontFamily.headingBold, fontSize: 28, color: Colors.inkPrimary, lineHeight: 34, marginBottom: 4 },
-  daysAway: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.brandOrange, marginBottom: 20 },
-
-  infoCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.divider,
-    padding: 16,
-    marginBottom: 16,
-    gap: 12,
-  },
-  infoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  infoText: { flex: 1, fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkPrimary, lineHeight: 20 },
-  infoDivider: { height: 1, backgroundColor: Colors.divider },
-
-  hostCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.divider,
-    padding: 14,
-    marginBottom: 16,
-  },
-  hostAvatarWrap: { position: 'relative' },
-  hostAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.elevated,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  hostAvatarImg: { width: '100%', height: '100%' },
-  hostAvatarFallback: { color: Colors.inkPrimary, fontFamily: FontFamily.headingBold, fontSize: 18 },
-  hostAvatarDeleted: { backgroundColor: Colors.surface },
-  hostBadgeChip: {
-    position: 'absolute',
-    bottom: -3,
-    right: -3,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: Colors.surface,
-    borderWidth: 1.5,
-    borderColor: Colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  hostBadgeImg: { width: 14, height: 14 },
-  hostInfo: { flex: 1 },
-  hostLabel: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, marginBottom: 2 },
-  hostName: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
-  hostNameDeleted: { color: Colors.inkDisabled, fontFamily: FontFamily.headingBold },
-
-  guestCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.divider,
-    padding: 16,
-    marginBottom: 16,
-    gap: 14,
-  },
-  guestCardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  guestCardTitle: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
-  viewAllPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 2,
-    backgroundColor: 'rgba(255,107,53,0.1)',
-    paddingHorizontal: 12, paddingVertical: 6,
-    borderRadius: 999,
-  },
-  viewAllText: { fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: Colors.brandOrange },
-  guestCardBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  guestStack: { flexDirection: 'row', alignItems: 'center' },
-  guestStackAvatar: {
-    width: 40, height: 40, borderRadius: 20,
-    borderWidth: 2, borderColor: Colors.surface,
-    overflow: 'hidden',
-  },
-  guestStackImg: { width: '100%', height: '100%' },
-  guestStackFallback: { backgroundColor: Colors.elevated, alignItems: 'center', justifyContent: 'center' },
-  guestStackInitial: { fontFamily: FontFamily.headingBold, fontSize: 14, color: Colors.inkPrimary },
-  guestStackMore: {
-    backgroundColor: Colors.elevated,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  guestStackMoreText: { fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: Colors.inkSecondary },
-  guestCardCount: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.inkSecondary },
-
-  section: { marginBottom: 20 },
-  sectionTitle: { fontFamily: FontFamily.headingBold, fontSize: 17, color: Colors.inkPrimary, marginBottom: 8 },
-  sectionBody: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, lineHeight: 22 },
-  readMore: { color: Colors.brandOrange, fontFamily: FontFamily.bodyMedium, fontSize: 13, marginTop: 6 },
-
-  miniMapWrap: { height: 160, borderRadius: 16, overflow: 'hidden', marginBottom: 16 },
-  miniMapPin: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.surface,
-    borderWidth: 2,
-    borderColor: Colors.brandOrange,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  stickyBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    backgroundColor: 'rgba(17,17,17,0.95)',
-    // borderTopWidth: 1,
-    // borderTopColor: Colors.divider,
-    gap: 16,
-  },
-  stickyLeft: { flex: 1 },
-  spotsAlert: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 2 },
-  spotsDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.brandCoral },
-  spotsText: { color: Colors.brandCoral, fontFamily: FontFamily.bodyMedium, fontSize: 12 },
-  stickyPrice: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.inkPrimary },
-
-  bookBtn: { borderRadius: 14, overflow: 'hidden' },
-  bookGradient: { paddingHorizontal: 28, paddingVertical: 14, borderRadius: 14, alignItems: 'center', minWidth: 120 },
-  bookBtnText: { color: '#fff', fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
-  reviewedPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 18, height: 48,
-    borderRadius: 24, borderWidth: 1,
-    borderColor: 'rgba(255,107,53,0.3)',
-    backgroundColor: 'rgba(255,107,53,0.08)',
-  },
-  reviewedPillText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandOrange },
-
-  goingBtn: {
-    backgroundColor: Colors.accentGreen,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    minWidth: 120,
-  },
-  goingBtnText: { color: '#fff', fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
-
-  waitlistActiveBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255,107,53,0.1)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,107,53,0.35)',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 999,
-    minWidth: 120,
-  },
-  waitlistActiveBtnText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 14,
-    color: Colors.brandOrange,
-  },
-  waitlistBtn: {
-    backgroundColor: Colors.elevated,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.divider,
-    minWidth: 120,
-  },
-  waitlistBtnText: { color: Colors.inkSecondary, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
-  waitlistJoinBtn: {
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: Colors.brandOrange,
-    minWidth: 130,
-  },
-  waitlistJoinText: { color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
-
-  offerBtn: { borderRadius: 16, overflow: 'hidden', minWidth: 150 },
-  offerGradient: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    alignItems: 'center',
-    gap: 2,
-  },
-  offerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  offerTitle: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 13,
-    color: '#fff',
-  },
-  offerTimer: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 16,
-    color: '#fff',
-    letterSpacing: 0.5,
-  },
-  eventFullBtn: {
-    backgroundColor: Colors.elevated,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.divider,
-    minWidth: 120,
-  },
-  waitlistFullBtn: {
-    backgroundColor: Colors.elevated,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.divider,
-    minWidth: 120,
-  },
-
-  inProgressBtn: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.divider,
-    minWidth: 140,
-  },
-  inProgressText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 14,
-    color: Colors.inkSecondary,
-    letterSpacing: 0.1,
-  },
-
-  cancelledBadge: {
-    backgroundColor: 'rgba(255,56,100,0.15)',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.brandCoral,
-  },
-  cancelledText: { color: Colors.brandCoral, fontFamily: FontFamily.bodySemiBold, fontSize: 14 },
-
-  errorText: { color: Colors.inkSecondary, fontFamily: FontFamily.bodyRegular, fontSize: 16, marginBottom: 16 },
   backBtn: { marginTop: 8 },
-  backBtnText: { color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
-
-  ticketBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 14, paddingVertical: 14, borderRadius: 14,
-    borderWidth: 1, borderColor: Colors.brandOrange,
-  },
-  ticketBtnText: { color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold, fontSize: 14 },
-
-  optionsBg: { backgroundColor: Colors.surface },
-  optionsHandle: { backgroundColor: 'rgba(255,255,255,0.2)' },
-  optionsContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
-  optionItem: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16 },
-  optionText: { fontFamily: FontFamily.bodyMedium, fontSize: 16, color: Colors.inkPrimary },
-  optionDivider: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.divider },
-
-  // Locked screen
-  lockedBack: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 40 },
-  lockedBackText: { fontFamily: FontFamily.bodyMedium, fontSize: 15, color: Colors.inkSecondary },
-  lockedBody: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 80 },
-  lockedIconWrap: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: 'rgba(255,107,53,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  lockedTitle: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 26,
-    color: Colors.inkPrimary,
-    textAlign: 'center',
-    lineHeight: 32,
-    marginBottom: 14,
-  },
-  lockedSubtitle: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 15,
-    color: Colors.inkSecondary,
-    textAlign: 'center',
-    lineHeight: 23,
-  },
-
-  // Host bar
-  hostBar: { flex: 1, gap: 10 },
-  hostMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  hostAttendeeCount: {
-    fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary,
-  },
-  hostActions: { flexDirection: 'row', gap: 10 },
-  hostBtn: {
-    flex: 1, height: 48, borderRadius: 24,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)',
-  },
-  hostBtnPrimary: { borderWidth: 0, overflow: 'hidden' },
-  hostBtnGradient: {
-    flex: 1, width: '100%', height: '100%',
-    alignItems: 'center', justifyContent: 'center',
-    borderRadius: 24,
-  },
-  hostBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkPrimary },
-  hostBtnPrimaryText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: '#fff' },
 
   deletedIconWrap: {
     width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.surface,

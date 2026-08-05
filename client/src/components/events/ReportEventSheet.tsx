@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
@@ -35,17 +35,22 @@ function ReportEventSheetCore({ eventId, onClose }: Omit<Props, 'visible'>) {
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
   const showPill = usePillStore(s => s.show)
+  const doneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => { sheetRef.current?.present() }, [])
 
-  const handleSubmit = async () => {
+  useEffect(() => () => {
+    if (doneTimerRef.current) clearTimeout(doneTimerRef.current)
+  }, [])
+
+  const handleSubmit = useCallback(async () => {
     if (!selected || loading) return
     hSuccess()
     setLoading(true)
     try {
       await ApiService.reportEvent(eventId, selected, description.trim() || undefined)
       setDone(true)
-      setTimeout(() => {
+      doneTimerRef.current = setTimeout(() => {
         setDone(false)
         setSelected(null)
         setDescription('')
@@ -62,7 +67,7 @@ function ReportEventSheetCore({ eventId, onClose }: Omit<Props, 'visible'>) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [selected, loading, eventId, description, showPill, onClose])
 
   return (
     <BottomSheetModal

@@ -116,7 +116,14 @@ export function Step5Photos({ form, set, errors, setErrors, disabled, inline }: 
         >
           {coverUri ? (
             <>
-              <Image source={{ uri: coverUri }} style={StyleSheet.absoluteFill} contentFit="cover" />
+              <Image
+                source={{ uri: coverUri }}
+                style={StyleSheet.absoluteFill}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                priority="high"
+                transition={150}
+              />
               {isCoverUploading && (
                 <View style={s.uploadOverlay}>
                   <ActivityIndicator size="large" color="#fff" />
@@ -153,7 +160,14 @@ export function Step5Photos({ form, set, errors, setErrors, disabled, inline }: 
               >
                 {uri ? (
                   <>
-                    <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" />
+                    <Image
+                      source={{ uri }}
+                      style={StyleSheet.absoluteFill}
+                      contentFit="cover"
+                      cachePolicy="memory-disk"
+                      priority="normal"
+                      transition={150}
+                    />
                     {uploading && (
                       <View style={s.uploadOverlay}>
                         <ActivityIndicator size="small" color="#fff" />

@@ -64,12 +64,16 @@ export function useVoice() {
   }, [recordingSeconds, isRecording])
 
   const stopRecording = async () => {
-    await audioRecorder.stop()
-    const uri = audioRecorder.uri
-    if (uri) {
-      store.setField('voiceUri', uri)
-      player.replace({ uri })
-      setRecorded(true)
+    try {
+      await audioRecorder.stop()
+      const uri = audioRecorder.uri
+      if (uri) {
+        store.setField('voiceUri', uri)
+        player.replace({ uri })
+        setRecorded(true)
+      }
+    } catch {
+      showPill("Recording stopped unexpectedly, try again", 'error')
     }
   }
 
@@ -89,8 +93,12 @@ export function useVoice() {
 
       setRecorded(false)
       store.setField('voiceUri', '')
-      await audioRecorder.prepareToRecordAsync()
-      audioRecorder.record()
+      try {
+        await audioRecorder.prepareToRecordAsync()
+        audioRecorder.record()
+      } catch {
+        showPill("Couldn't start recording, try again", 'error')
+      }
     }
   }
 

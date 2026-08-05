@@ -1,8 +1,8 @@
-import type { ReactNode } from 'react'
+import { memo, type ReactNode } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { Colors, FontFamily, Radius } from '@/constants'
 
-export function InfoRow({
+function InfoRowBase({
   icon,
   iconBg,
   number,
@@ -27,6 +27,8 @@ export function InfoRow({
     </View>
   )
 }
+
+export const InfoRow = memo(InfoRowBase)
 
 const s = StyleSheet.create({
   row: {

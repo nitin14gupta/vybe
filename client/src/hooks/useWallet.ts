@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useFocusEffect } from 'expo-router'
 import ApiService, { type WalletTransaction } from '@/api/apiService'
+import { usePillStore } from '@/store/pillStore'
 
 export interface WalletState {
   balance: number
@@ -11,6 +12,7 @@ export interface WalletState {
 }
 
 export function useWallet(): WalletState {
+  const showPill = usePillStore(s => s.show)
   const [balance, setBalance] = useState(0)
   const [transactions, setTransactions] = useState<WalletTransaction[]>([])
   const [loading, setLoading] = useState(true)
@@ -24,12 +26,12 @@ export function useWallet(): WalletState {
       setBalance(data.balance)
       setTransactions(data.transactions)
     } catch {
-      // silent — screen shows empty state
+      showPill("Couldn't load your wallet, try again", 'error')
     } finally {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [])
+  }, [showPill])
 
   useFocusEffect(useCallback(() => { load() }, [load]))
 

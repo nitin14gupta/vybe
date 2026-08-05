@@ -16,7 +16,7 @@ import { ArrowLeft } from 'lucide-react-native'
 import { hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import { DateTimePickerSheet, BrandedLoader } from '@/components/ui'
-import { Step1Basics, Step2When, Step3Where, Step4Pricing, Step5Photos } from '@/components/event-form'
+import { Step1Basics, Step2When, Step3Where, Step4Pricing, Step5Photos, LockedBanner, DateShiftBanner } from '@/components/event-form'
 import { useCreateEvent, type CreateEventForm } from '@/hooks/useCreateEvent'
 import { useEventDateTimePickers } from '@/hooks/useEventDateTimePickers'
 import ApiService, { type EventDetail } from '@/api/apiService'
@@ -223,31 +223,13 @@ export default function EditEventScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      {locked && (
-        <View style={s.lockedBanner}>
-          <Text style={s.lockedText}>
-            {capacityLocked
-              ? 'Editing closed — event starts in under 2 hours'
-              : 'Event is locked for editing. You can still increase capacity to let in waitlisted guests.'}
-          </Text>
-        </View>
-      )}
+      {locked && <LockedBanner capacityLocked={capacityLocked} />}
 
       {largeDateShiftPending && (
-        <View style={s.dateShiftBanner}>
-          <Text style={s.dateShiftTitle}>Large date change</Text>
-          <Text style={s.dateShiftBody}>
-            You moved this event by more than 7 days. All attendees will be notified and given 48 hours to cancel for a full refund.
-          </Text>
-          <View style={s.dateShiftBtns}>
-            <Pressable style={s.dateShiftCancel} onPress={() => setLargeDateShiftPending(false)}>
-              <Text style={s.dateShiftCancelText}>Go back</Text>
-            </Pressable>
-            <Pressable style={s.dateShiftConfirm} onPress={() => handleSave(true)}>
-              <Text style={s.dateShiftConfirmText}>Yes, update</Text>
-            </Pressable>
-          </View>
-        </View>
+        <DateShiftBanner
+          onCancel={() => setLargeDateShiftPending(false)}
+          onConfirm={() => handleSave(true)}
+        />
       )}
 
       <ScrollView
@@ -337,33 +319,6 @@ const s = StyleSheet.create({
   },
   backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontFamily: FontFamily.headingBold, fontSize: 17, color: Colors.inkPrimary },
-  lockedBanner: {
-    backgroundColor: 'rgba(255,56,100,0.12)',
-    borderBottomWidth: 1, borderBottomColor: Colors.brandCoral,
-    paddingVertical: 10, paddingHorizontal: 20,
-  },
-  lockedText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.brandCoral, textAlign: 'center' },
-
-  dateShiftBanner: {
-    backgroundColor: 'rgba(255,184,48,0.08)',
-    borderBottomWidth: 1, borderBottomColor: 'rgba(255,184,48,0.3)',
-    paddingVertical: 14, paddingHorizontal: 20, gap: 8,
-  },
-  dateShiftTitle: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.accentGold },
-  dateShiftBody: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, lineHeight: 18 },
-  dateShiftBtns: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  dateShiftCancel: {
-    flex: 1, height: 38, borderRadius: 20,
-    borderWidth: 1, borderColor: Colors.divider,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  dateShiftCancelText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.inkSecondary },
-  dateShiftConfirm: {
-    flex: 1, height: 38, borderRadius: 20,
-    backgroundColor: Colors.accentGold,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  dateShiftConfirmText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: '#111' },
 
   scroll: { flex: 1 },
   content: { padding: 20, gap: 12 },

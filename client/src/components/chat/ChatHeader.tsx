@@ -1,4 +1,5 @@
-import { View, Text, Image, Pressable, StyleSheet } from 'react-native'
+import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { ChevronLeft, MoreVertical, Ghost, X } from 'lucide-react-native'
@@ -12,6 +13,8 @@ interface Props {
   partnerIsDeleted?: boolean
   isPartnerOnline: boolean
   isWsConnected: boolean
+  reconnectFailed?: boolean
+  onManualReconnect?: () => void
   loading: boolean
   onMenuPress: () => void
   /** Bulk-select mode — swaps the back chevron for an X (exits select mode
@@ -24,7 +27,7 @@ interface Props {
 
 export function ChatHeader({
   partnerName, partnerUsername, partnerAvatar, partnerId, partnerIsDeleted,
-  isPartnerOnline, isWsConnected, loading, onMenuPress,
+  isPartnerOnline, isWsConnected, reconnectFailed, onManualReconnect, loading, onMenuPress,
   selectMode, selectedCount = 0, onExitSelect,
 }: Props) {
   const insets = useSafeAreaInsets()
@@ -59,7 +62,15 @@ export function ChatHeader({
               </View>
             )
             : partnerAvatar
-            ? <Image source={{ uri: partnerAvatar }} style={s.avatar} />
+            ? (
+              <Image
+                source={{ uri: partnerAvatar }}
+                style={s.avatar}
+                cachePolicy="memory-disk"
+                priority="high"
+                transition={150}
+              />
+            )
             : (
               <View style={[s.avatar, s.avatarFallback]}>
                 <Text style={s.avatarInitial}>{(partnerName ?? '?').charAt(0)}</Text>
@@ -86,7 +97,12 @@ export function ChatHeader({
         </Pressable>
       </View>
 
-      {!isWsConnected && !loading && (
+      {reconnectFailed && !loading && (
+        <Pressable style={s.reconnectBanner} onPress={onManualReconnect} hitSlop={4}>
+          <Text style={s.reconnectText}>Can't connect — tap to retry</Text>
+        </Pressable>
+      )}
+      {!reconnectFailed && !isWsConnected && !loading && (
         <View style={s.reconnectBanner}>
           <Text style={s.reconnectText}>Reconnecting…</Text>
         </View>
