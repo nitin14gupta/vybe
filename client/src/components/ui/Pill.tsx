@@ -2,32 +2,42 @@ import React, { useEffect, useRef } from 'react'
 import { Dimensions, StyleSheet, Text } from 'react-native'
 import Animated, {
   useSharedValue, useAnimatedStyle,
-  withTiming, runOnJS,
+  withTiming, withSpring, runOnJS, Easing,
 } from 'react-native-reanimated'
 import { usePillStore } from '@/store/pillStore'
 import { FontFamily } from '@/constants'
 
 const { height } = Dimensions.get('window')
 
+// Same spring-in feel as FilterUpdatedToast.tsx — a slide with a little
+// overshoot reads as far more "alive" than a flat opacity fade, and this
+// component is the one every showPill() call in the app renders through.
 export function PillOverlay() {
   const { message, visible, type, hide } = usePillStore()
   const opacity = useSharedValue(0)
+  const translateY = useSharedValue(16)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (visible) {
       if (timerRef.current) clearTimeout(timerRef.current)
       opacity.value = withTiming(1, { duration: 150 })
+      translateY.value = withSpring(0, { damping: 16, stiffness: 180 })
       timerRef.current = setTimeout(() => {
-        opacity.value = withTiming(0, { duration: 250 }, () => runOnJS(hide)())
+        opacity.value = withTiming(0, { duration: 220 }, () => runOnJS(hide)())
+        translateY.value = withTiming(10, { duration: 220, easing: Easing.in(Easing.cubic) })
       }, 2200)
     } else {
       opacity.value = withTiming(0, { duration: 200 })
+      translateY.value = 16
     }
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
   }, [visible, message])
 
-  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }))
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }))
 
   const bg =
     type === 'success' ? 'rgba(255,107,53,0.92)' :

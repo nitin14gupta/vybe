@@ -1,4 +1,3 @@
-export { StepDots } from './StepDots'
 export { InfoRow } from './InfoRow'
 export { BadgeLadder } from './BadgeLadder'
 export { WelcomeStep } from './WelcomeStep'

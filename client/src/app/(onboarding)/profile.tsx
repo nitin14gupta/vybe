@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react'
 import { View, Text, StyleSheet, TextInput, Pressable, BackHandler } from 'react-native'
 import { router } from 'expo-router'
 import { useFocusEffect } from 'expo-router'
-import { Input, GenderSelector, ProgressBar, PrimaryButton, Screen, KeyboardAvoidingWrapper, DateTimePickerSheet, useDateTimePicker, BioInput } from '@/components/ui'
+import { Input, GenderSelector, StepDots, PrimaryButton, Screen, KeyboardAvoidingWrapper, DateTimePickerSheet, useDateTimePicker, BioInput } from '@/components/ui'
 import { useOnboardingStore } from '@/store/onboarding'
 import { createProfile } from '@/api/user'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
@@ -101,7 +101,7 @@ export default function ProfileScreen() {
   return (
     <Screen>
       <View style={styles.topSpacer} />
-      <ProgressBar step={1} />
+      <StepDots step={1} />
       <View style={styles.header}>
         <Text style={styles.title}>Let's set up your profile</Text>
         <Text style={styles.subtitle}>Tell us a little about yourself</Text>

@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, Pressable, FlatList, KeyboardAvoidingView, Plat
 import { router } from 'expo-router'
 import { hTap, hSelection } from '@/lib/haptics'
 import { Search, MapPin, Check } from 'lucide-react-native'
-import { OutlineButton, ProgressBar, Input, PrimaryButton, Screen } from '@/components/ui'
+import { OutlineButton, StepDots, Input, PrimaryButton, Screen } from '@/components/ui'
 import { useLocation } from '@/hooks/useLocation'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 
@@ -24,7 +24,7 @@ export default function LocationScreen() {
 
   return (
     <Screen>
-      <ProgressBar step={5} />
+      <StepDots step={5} />
 
       <KeyboardAvoidingView
         style={styles.flex}

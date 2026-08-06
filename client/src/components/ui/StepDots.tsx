@@ -29,7 +29,7 @@ const Dot = memo(function Dot({ isActive, isDone, delay }: { isActive: boolean; 
   return <Animated.View style={[s.dot, style]} />
 })
 
-function StepDotsBase({ step, total }: { step: number; total: number }) {
+function StepDotsBase({ step, total = 5 }: { step: number; total?: number }) {
   return (
     <Animated.View entering={FadeIn.duration(350)} style={s.row}>
       {Array.from({ length: total }).map((_, i) => (
@@ -47,6 +47,8 @@ const s = StyleSheet.create({
     gap: 6,
     justifyContent: 'center',
     paddingHorizontal: Spacing.screenPadding,
+    paddingTop: 10,
+    paddingBottom: Spacing.sectionGap,
   },
   dot: {
     height: DOT_SIZE,

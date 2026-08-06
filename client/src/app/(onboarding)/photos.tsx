@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Pressable, Dimensions, ScrollView } from 'react-native'
 import { router } from 'expo-router'
-import { OutlineButton, ProgressBar, PrimaryButton, Screen, PhotoSlot } from '@/components/ui'
+import { OutlineButton, StepDots, PrimaryButton, Screen, PhotoSlot } from '@/components/ui'
 import { MediaPreviewModal } from '@/components/chat/MediaPreviewModal'
 import { usePhotos } from '@/hooks/usePhotos'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
@@ -26,7 +26,7 @@ export default function PhotosScreen() {
 
   return (
     <Screen>
-      <ProgressBar step={2} />
+      <StepDots step={2} />
 
       <View style={styles.header}>
         <Text style={styles.title}>Add your photos</Text>

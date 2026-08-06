@@ -11,7 +11,7 @@ import Animated, {
   withTiming,
   cancelAnimation,
 } from 'react-native-reanimated'
-import { OutlineButton, ProgressBar, PrimaryButton, TextLinkButton, Screen, RecordingWave, PlaybackWave, Orb } from '@/components/ui'
+import { OutlineButton, StepDots, PrimaryButton, TextLinkButton, Screen, RecordingWave, PlaybackWave, Orb } from '@/components/ui'
 import { useVoice } from '@/hooks/useVoice'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 
@@ -59,7 +59,7 @@ export default function VoiceScreen() {
 
   return (
     <Screen>
-      <ProgressBar step={3} />
+      <StepDots step={3} />
 
       <View style={styles.header}>
         <Text style={styles.title}>Record your voice intro</Text>

@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native'
 import { router } from 'expo-router'
-import { OutlineButton, ProgressBar, InterestChip, PrimaryButton, Screen } from '@/components/ui'
+import { OutlineButton, StepDots, InterestChip, PrimaryButton, Screen } from '@/components/ui'
 import { useInterests } from '@/hooks/useInterests'
 import { Colors, FontFamily, Spacing } from '@/constants'
 
@@ -9,7 +9,7 @@ export default function InterestsScreen() {
 
   return (
     <Screen>
-      <ProgressBar step={4} />
+      <StepDots step={4} />
 
       <View style={styles.header}>
         <Text style={styles.title}>What are you into?</Text>

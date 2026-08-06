@@ -3,10 +3,9 @@ import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Key
 import { router } from 'expo-router'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 import { hTap, hSuccess } from '@/lib/haptics'
-import { OutlineButton, PrimaryButton, Screen, BrandedLoader } from '@/components/ui'
+import { OutlineButton, PrimaryButton, Screen, BrandedLoader, StepDots } from '@/components/ui'
 import { Colors, FontFamily, Spacing } from '@/constants'
 import {
-  StepDots,
   WelcomeStep,
   BadgesStep,
   WhatToExpectStep,
@@ -175,11 +174,7 @@ export default function HostOnboardingScreen() {
             {body}
           </ScrollView>
 
-          {!keyboardVisible && (
-            <View style={styles.dotsWrap}>
-              <StepDots step={step} total={TOTAL_STEPS} />
-            </View>
-          )}
+          {!keyboardVisible && <StepDots step={step} total={TOTAL_STEPS} />}
           <View style={styles.footer}>
             <OutlineButton label="Back" onPress={handleBack} style={styles.backBtn} disabled={saving} />
             <View style={styles.nextBtn}>
@@ -191,9 +186,7 @@ export default function HostOnboardingScreen() {
         <>
           <View style={styles.body}>{body}</View>
 
-          <View style={styles.dotsWrap}>
-            <StepDots step={step} total={TOTAL_STEPS} />
-          </View>
+          <StepDots step={step} total={TOTAL_STEPS} />
           <View style={styles.footer}>
             <OutlineButton label="Back" onPress={handleBack} style={styles.backBtn} />
             <View style={styles.nextBtn}>
@@ -217,7 +210,6 @@ const styles = StyleSheet.create({
   body: { flex: 1, justifyContent: 'center', paddingHorizontal: Spacing.screenPadding },
   scrollContent: { paddingHorizontal: Spacing.screenPadding, paddingTop: 32, paddingBottom: 24 },
   stepContent: { width: '100%' },
-  dotsWrap: { paddingBottom: 20 },
   footer: { flexDirection: 'row', gap: 12, paddingHorizontal: Spacing.screenPadding, paddingBottom: 16 },
   backBtn: { width: 96 },
   nextBtn: { flex: 1 },
