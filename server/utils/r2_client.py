@@ -28,9 +28,6 @@ class R2Client:
         if missing:
             print(f"[R2] WARNING: missing env vars: {missing} — uploads will fail", flush=True)
 
-        import urllib3
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
         self.r2_client = boto3.client(
             "s3",
             endpoint_url=f"https://{self.r2_account_id}.r2.cloudflarestorage.com",
@@ -135,6 +132,10 @@ class R2Client:
             )
             return True
         except Exception as e:
+            # Swallowed on purpose (best-effort — callers shouldn't fail a
+            # user-facing action just because storage cleanup didn't work),
+            # but must be visible somewhere or orphaned files go unnoticed.
+            print(f"[R2] delete_file failed for {file_path!r}: {e!r}", flush=True)
             return False
 
 # Create a singleton instance

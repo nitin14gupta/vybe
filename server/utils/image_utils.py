@@ -4,6 +4,15 @@ from pillow_heif import register_heif_opener
 
 register_heif_opener()
 
+
+class ImageConversionError(Exception):
+    """Raised when `contents` can't be decoded as a real image — covers
+    corrupt files, non-image content masquerading as an image (spoofed
+    content-type/extension), and oversized images (Pillow's built-in
+    Image.MAX_IMAGE_PIXELS decompression-bomb guard raises through here too).
+    Callers must reject the upload on this, not fall back to the raw bytes."""
+
+
 def convert_to_webp(
     contents: bytes,
     quality: int = 85,
@@ -28,6 +37,8 @@ def convert_to_webp(
     """
     try:
         with Image.open(io.BytesIO(contents)) as img:
+            img.load()  # forces full decode now (Image.open only reads the header
+                        # lazily) — this is where a spoofed/corrupt/bomb file fails.
             # Convert to RGB if necessary (e.g., RGBA or P)
             if img.mode in ("RGBA", "P"):
                 img = img.convert("RGB")
@@ -59,6 +70,4 @@ def convert_to_webp(
             img.save(output, format="WEBP", quality=quality)
             return output.getvalue()
     except Exception as e:
-        print(f"[IMAGE_UTILS] Failed to convert image to WebP: {e}")
-        # If conversion fails, return the original contents
-        return contents
+        raise ImageConversionError(f"Could not process image: {e}") from e

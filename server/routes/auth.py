@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, Request, status, Depends
 from datetime import datetime, timezone
 from schemas.auth import PhoneSendRequest, OTPVerifyRequest, TokenResponse, RefreshRequest
 from utils.twilio_client import send_otp, verify_otp
@@ -7,31 +7,44 @@ from utils.jwt import (
     decode_token, hash_token, refresh_token_expires_at,
 )
 from middleware.auth import get_current_user
+from middleware.rate_limit import enforce_rate_limit, client_ip
 from db.config import get_db
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/send-otp", status_code=status.HTTP_200_OK)
-def send_otp_route(body: PhoneSendRequest):
+def send_otp_route(body: PhoneSendRequest, request: Request):
     full_phone = f"{body.country_code}{body.phone}"
+    # Primary control: follows the phone being targeted, so an attacker
+    # rotating IPs still can't OTP-bomb one victim's number.
+    enforce_rate_limit(f"otp:send:phone:{full_phone}", max_events=5, window_seconds=3600,
+                        message="Too many OTP requests for this phone number. Try again later.")
+    # Secondary net: catches one IP spraying across many phone numbers.
+    enforce_rate_limit(f"otp:send:ip:{client_ip(request)}", max_events=20, window_seconds=3600)
     try:
         ok = send_otp(full_phone)
     except Exception as e:
-        raise HTTPException(status_code=503, detail=f"SMS service unavailable: {str(e)}")
+        print(f"[AUTH] send_otp failed for {full_phone}: {e!r}", flush=True)
+        raise HTTPException(status_code=503, detail="SMS service unavailable, please try again shortly")
     if not ok:
         raise HTTPException(status_code=500, detail="Failed to send OTP")
     return {"message": "OTP sent"}
 
 
 @router.post("/verify-otp", response_model=TokenResponse)
-def verify_otp_route(body: OTPVerifyRequest):
+def verify_otp_route(body: OTPVerifyRequest, request: Request):
     full_phone = f"{body.country_code}{body.phone}"
+
+    enforce_rate_limit(f"otp:verify:phone:{full_phone}", max_events=5, window_seconds=900,
+                        message="Too many verification attempts for this phone number. Try again in 15 minutes.")
+    enforce_rate_limit(f"otp:verify:ip:{client_ip(request)}", max_events=40, window_seconds=3600)
 
     try:
         approved = verify_otp(full_phone, body.code)
     except Exception as e:
-        raise HTTPException(status_code=503, detail=f"Verification service unavailable: {str(e)}")
+        print(f"[AUTH] verify_otp failed for {full_phone}: {e!r}", flush=True)
+        raise HTTPException(status_code=503, detail="Verification service unavailable, please try again shortly")
 
     if not approved:
         raise HTTPException(status_code=400, detail="Invalid or expired OTP")

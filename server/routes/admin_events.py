@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query, Depends, BackgroundTasks
 
 from db.config import get_db
-from middleware.admin_auth import get_current_admin
+from middleware.admin_auth import get_current_admin, require_admin_role
 from routes.events import _cancel_event_and_refund
 from utils.admin_audit import log_action
 
@@ -181,7 +181,7 @@ def get_event_detail(event_id: str, current_admin: dict = Depends(get_current_ad
 # ── POST /admin/events/{event_id}/cancel ──────────────────────────────────────
 
 @router.post("/{event_id}/cancel")
-def force_cancel_event(event_id: str, background_tasks: BackgroundTasks, current_admin: dict = Depends(get_current_admin)):
+def force_cancel_event(event_id: str, background_tasks: BackgroundTasks, current_admin: dict = Depends(require_admin_role("super_admin"))):
     with get_db() as (cur, _):
         cur.execute("SELECT is_cancelled FROM events WHERE id = %s::uuid", (event_id,))
         ev = cur.fetchone()

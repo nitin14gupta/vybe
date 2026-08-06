@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from utils.jwt import decode_token
+from utils.admin_jwt import decode_admin_token
 from db.config import get_db
 
 admin_bearer_scheme = HTTPBearer()
@@ -16,7 +16,7 @@ def get_current_admin(
     signed with the same JWT_SECRET_KEY.
     """
     token = credentials.credentials
-    payload = decode_token(token)
+    payload = decode_admin_token(token)
 
     if payload is None or payload.get("type") != "admin_access":
         raise HTTPException(
@@ -43,3 +43,20 @@ def get_current_admin(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin account is deactivated")
 
     return dict(admin)
+
+
+def require_admin_role(*roles: str):
+    """Dependency factory gating a route to specific admin_users.role values,
+    e.g. Depends(require_admin_role("super_admin")). Every admin already
+    passes get_current_admin (authentication); this adds authorization on
+    top for destructive/sensitive actions."""
+
+    def _check(current_admin: dict = Depends(get_current_admin)) -> dict:
+        if current_admin.get("role") not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"This action requires one of these roles: {', '.join(roles)}",
+            )
+        return current_admin
+
+    return _check

@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from middleware.auth import get_current_user
 from utils.r2_client import r2_client
 from utils.face_detect import has_face
-from utils.image_utils import convert_to_webp
+from utils.image_utils import convert_to_webp, ImageConversionError
 from db.config import get_db
 
 router = APIRouter(prefix="/upload", tags=["upload"])
@@ -14,8 +14,29 @@ ALLOWED_IMAGE_TYPES = {
     # React Native / Android sometimes sends these
     "application/octet-stream",
 }
-MAX_PHOTO_SIZE = 10 * 1024 * 1024  # 10 MB
+MAX_PHOTO_SIZE = 10 * 1024 * 1024  # 10 MB — enforced on the converted WebP output
 MAX_VOICE_SIZE = 5 * 1024 * 1024   # 5 MB
+# Raw upload ceiling read from the wire before any processing — generous
+# headroom above MAX_PHOTO_SIZE since an unconverted phone-camera JPEG/HEIC
+# is much larger than its final WebP output. Just a DoS backstop so a client
+# can't force the server to buffer an unbounded body into memory.
+RAW_IMAGE_UPLOAD_CAP = 25 * 1024 * 1024
+
+
+async def _read_capped(file: UploadFile, max_size: int, too_large_detail: str) -> bytes:
+    """Reads `file` in chunks, rejecting as soon as `max_size` is exceeded —
+    avoids buffering an unbounded body into memory before the size check."""
+    chunks = []
+    total = 0
+    while True:
+        chunk = await file.read(1024 * 1024)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > max_size:
+            raise HTTPException(status_code=400, detail=too_large_detail)
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 
 def _is_image(file: UploadFile) -> bool:
@@ -39,16 +60,17 @@ async def upload_photo(
     if not _is_image(file):
         raise HTTPException(status_code=400, detail=f"Unsupported image type: {file.content_type}")
 
-    contents = await file.read()
-    contents = convert_to_webp(contents, force_square=True)
+    raw = await _read_capped(file, RAW_IMAGE_UPLOAD_CAP, "Photo is too large")
+    if len(raw) == 0:
+        raise HTTPException(status_code=400, detail="Empty file received")
+    try:
+        contents = convert_to_webp(raw, force_square=True)
+    except ImageConversionError as e:
+        raise HTTPException(status_code=400, detail="Could not process this image — is it a valid photo?") from e
     print(f"[UPLOAD] read {len(contents)} bytes (converted to webp)", flush=True)
 
     if len(contents) > MAX_PHOTO_SIZE:
         raise HTTPException(status_code=400, detail="Photo must be under 10 MB")
-
-    if len(contents) == 0:
-        raise HTTPException(status_code=400, detail="Empty file received")
-
 
     if position == 0 and not has_face(contents):
         raise HTTPException(
@@ -65,8 +87,8 @@ async def upload_photo(
         )
         print(f"[UPLOAD] R2 success → {result['url']}", flush=True)
     except Exception as e:
-        print(f"[UPLOAD] R2 error: {e}", flush=True)
-        raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
+        print(f"[UPLOAD] R2 error: {e!r}", flush=True)
+        raise HTTPException(status_code=500, detail="Storage upload failed, please try again")
 
     with get_db() as (cur, _):
         cur.execute(
@@ -98,12 +120,15 @@ async def upload_event_photo(
     if not _is_image(file):
         raise HTTPException(status_code=400, detail=f"Unsupported image type: {file.content_type}")
 
-    contents = await file.read()
-    contents = convert_to_webp(contents, aspect_ratio=16 / 9)
+    raw = await _read_capped(file, RAW_IMAGE_UPLOAD_CAP, "Photo is too large")
+    if len(raw) == 0:
+        raise HTTPException(status_code=400, detail="Empty file received")
+    try:
+        contents = convert_to_webp(raw, aspect_ratio=16 / 9)
+    except ImageConversionError as e:
+        raise HTTPException(status_code=400, detail="Could not process this image — is it a valid photo?") from e
     if len(contents) > MAX_PHOTO_SIZE:
         raise HTTPException(status_code=400, detail="Photo must be under 10 MB")
-    if len(contents) == 0:
-        raise HTTPException(status_code=400, detail="Empty file received")
 
     try:
         filename = (file.filename or "cover").rsplit(".", 1)[0] + ".webp"
@@ -113,7 +138,8 @@ async def upload_event_photo(
             folder=f"events/{current_user['id']}/covers",
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
+        print(f"[UPLOAD] R2 error: {e!r}", flush=True)
+        raise HTTPException(status_code=500, detail="Storage upload failed, please try again")
 
     return {"url": result["url"]}
 
@@ -126,11 +152,8 @@ async def upload_voice(
     print(f"\n[UPLOAD] voice — user={current_user['id']} "
           f"content_type={file.content_type!r} filename={file.filename!r}", flush=True)
 
-    contents = await file.read()
+    contents = await _read_capped(file, MAX_VOICE_SIZE, "Voice intro must be under 5 MB")
     print(f"[UPLOAD] voice read {len(contents)} bytes", flush=True)
-
-    if len(contents) > MAX_VOICE_SIZE:
-        raise HTTPException(status_code=400, detail="Voice intro must be under 5 MB")
 
     if len(contents) == 0:
         raise HTTPException(status_code=400, detail="Empty audio file received")
@@ -142,7 +165,8 @@ async def upload_voice(
             folder=f"users/{current_user['id']}/voice",
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
+        print(f"[UPLOAD] R2 error: {e!r}", flush=True)
+        raise HTTPException(status_code=500, detail="Storage upload failed, please try again")
 
     with get_db() as (cur, _):
         cur.execute(
@@ -158,10 +182,7 @@ async def upload_chat_voice(
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user),
 ):
-    contents = await file.read()
-
-    if len(contents) > MAX_VOICE_SIZE:
-        raise HTTPException(status_code=400, detail="Voice message must be under 5 MB")
+    contents = await _read_capped(file, MAX_VOICE_SIZE, "Voice message must be under 5 MB")
 
     if len(contents) == 0:
         raise HTTPException(status_code=400, detail="Empty audio file received")
@@ -173,7 +194,8 @@ async def upload_chat_voice(
             folder="chat/voice",
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
+        print(f"[UPLOAD] R2 error: {e!r}", flush=True)
+        raise HTTPException(status_code=500, detail="Storage upload failed, please try again")
 
     return {"url": result["url"]}
 
@@ -199,12 +221,17 @@ async def upload_chat_media(
     is_gif = ct == "image/gif" or name.endswith(".gif")
 
     max_size = MAX_MEDIA_SIZE if is_video else MAX_PHOTO_SIZE
-    contents = await file.read()
-    if not is_video and not is_gif:
-        contents = convert_to_webp(contents, max_dimension=CHAT_IMAGE_MAX_DIMENSION)
-
+    raw_cap = MAX_MEDIA_SIZE if is_video else (MAX_PHOTO_SIZE if is_gif else RAW_IMAGE_UPLOAD_CAP)
+    contents = await _read_capped(file, raw_cap, "File too large")
     if len(contents) == 0:
         raise HTTPException(status_code=400, detail="Empty file received")
+
+    if not is_video and not is_gif:
+        try:
+            contents = convert_to_webp(contents, max_dimension=CHAT_IMAGE_MAX_DIMENSION)
+        except ImageConversionError as e:
+            raise HTTPException(status_code=400, detail="Could not process this image — is it a valid photo?") from e
+
     if len(contents) > max_size:
         raise HTTPException(status_code=400, detail="File too large")
 
@@ -215,14 +242,15 @@ async def upload_chat_media(
             filename = file.filename or "image.gif"
         else:
             filename = (file.filename or "image").rsplit(".", 1)[0] + ".webp"
-            
+
         result = r2_client.upload_file(
             io.BytesIO(contents),
             filename,
             folder="chat/media",
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
+        print(f"[UPLOAD] R2 error: {e!r}", flush=True)
+        raise HTTPException(status_code=500, detail="Storage upload failed, please try again")
 
     media_type = "video" if is_video else ("gif" if is_gif else "image")
     return {"url": result["url"], "media_type": media_type}

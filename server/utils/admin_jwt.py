@@ -1,12 +1,27 @@
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
-from jose import jwt
+from typing import Optional
+from jose import JWTError, jwt
 from dotenv import load_dotenv
 
-from utils.jwt import SECRET_KEY, ALGORITHM  # same signing key/algorithm, distinct token "type" claim
+from utils.jwt import SECRET_KEY as _USER_SECRET_KEY, ALGORITHM
 
 load_dotenv()
+
+# Distinct secret from the mobile app's user tokens, so a leaked user-token
+# secret alone can't be used to forge admin sessions. Falls back to the user
+# secret (with a loud warning) if not yet configured, so this doesn't break
+# an existing deploy that hasn't set ADMIN_JWT_SECRET_KEY.
+SECRET_KEY = os.getenv("ADMIN_JWT_SECRET_KEY")
+if not SECRET_KEY:
+    print(
+        "[ADMIN_JWT] ADMIN_JWT_SECRET_KEY is not set — reusing JWT_SECRET_KEY for admin "
+        "tokens. Set a distinct ADMIN_JWT_SECRET_KEY so a leaked user-token secret can't "
+        "be used to forge admin sessions.",
+        flush=True,
+    )
+    SECRET_KEY = _USER_SECRET_KEY
 
 # Shorter-lived than the mobile app's 100-day refresh token — this is a
 # privileged admin session, not a consumer app that should stay signed in
@@ -35,3 +50,10 @@ def create_admin_refresh_token(admin_id: str) -> str:
 
 def admin_refresh_token_expires_at() -> datetime:
     return datetime.now(timezone.utc) + timedelta(days=ADMIN_REFRESH_TOKEN_EXPIRE_DAYS)
+
+
+def decode_admin_token(token: str) -> Optional[dict]:
+    try:
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        return None

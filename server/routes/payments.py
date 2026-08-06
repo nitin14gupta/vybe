@@ -16,6 +16,7 @@ from typing import Optional
 
 from db.config import get_db
 from middleware.auth import get_current_user
+from middleware.rate_limit import enforce_rate_limit
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
@@ -84,6 +85,7 @@ def get_public_key(current_user: dict = Depends(get_current_user)):
 @router.post("/create-order")
 def create_order(body: CreateOrderBody, current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]
+    enforce_rate_limit(f"payments:create-order:user:{uid}", max_events=30, window_seconds=3600)
 
     with get_db() as (cur, _):
         cur.execute(
@@ -194,6 +196,7 @@ def verify_payment(body: VerifyPaymentBody, current_user: dict = Depends(get_cur
 @router.post("/wallet-pay")
 def wallet_pay(body: WalletPayBody, current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]
+    enforce_rate_limit(f"payments:wallet-pay:user:{uid}", max_events=20, window_seconds=3600)
 
     with get_db() as (cur, _):
         cur.execute(
@@ -213,18 +216,21 @@ def wallet_pay(body: WalletPayBody, current_user: dict = Depends(get_current_use
         platform_fee = ev["platform_fee_inr"]
         total = ticket_price + platform_fee
 
-        cur.execute("SELECT wallet_balance, name FROM users WHERE id = %s::uuid", (uid,))
+        cur.execute("SELECT name FROM users WHERE id = %s::uuid", (uid,))
         user = cur.fetchone()
-        bal = user["wallet_balance"] if user else 0
         buyer_name = user["name"] if user else "Someone"
-        if bal < total:
-            raise HTTPException(status_code=400, detail="Insufficient wallet balance")
 
     with get_db() as (cur, conn):
+        # Atomic guard: the WHERE clause makes this a no-op (rowcount 0) if the
+        # balance has dropped below `total` since the check above — closes the
+        # race where two concurrent wallet-pay calls could both pass a
+        # SELECT-then-UPDATE check and drive the balance negative.
         cur.execute(
-            "UPDATE users SET wallet_balance = wallet_balance - %s WHERE id = %s::uuid",
-            (total, uid),
+            "UPDATE users SET wallet_balance = wallet_balance - %s WHERE id = %s::uuid AND wallet_balance >= %s",
+            (total, uid, total),
         )
+        if cur.rowcount == 0:
+            raise HTTPException(status_code=400, detail="Insufficient wallet balance")
         cur.execute(
             """
             INSERT INTO wallet_transactions
@@ -330,6 +336,20 @@ def _finalise_rsvp(*, order_id: str, event_id: str, uid: str, payment_id: str, w
     from routes.notifications import notify_payment_confirmed
 
     with get_db() as (cur, conn):
+        # Atomic claim: the WHERE clause means only one concurrent call to
+        # this function for the same order can ever see rowcount 1 — closes
+        # the race where two near-simultaneous /verify calls for the same
+        # order both pass the "not yet paid" check in the route handler and
+        # both try to finalise (double wallet-debit, double spots_left decrement).
+        cur.execute(
+            "UPDATE payment_orders SET status = 'paid', razorpay_payment_id = %s "
+            "WHERE razorpay_order_id = %s AND status != 'paid'",
+            (payment_id, order_id),
+        )
+        if cur.rowcount == 0:
+            conn.commit()
+            return
+
         cur.execute("SELECT title, host_id::text, spots_left FROM events WHERE id = %s", (event_id,))
         ev_row = cur.fetchone()
         ev_title = ev_row["title"] if ev_row else ""
@@ -353,10 +373,6 @@ def _finalise_rsvp(*, order_id: str, event_id: str, uid: str, payment_id: str, w
                 """,
                 (uid, wallet_amount, event_id),
             )
-        cur.execute(
-            "UPDATE payment_orders SET status = 'paid', razorpay_payment_id = %s WHERE razorpay_order_id = %s",
-            (payment_id, order_id),
-        )
         cur.execute(
             """
             INSERT INTO event_attendees (event_id, user_id, status, payment_id)
@@ -444,6 +460,7 @@ def save_upi(body: SaveUpiBody, current_user: dict = Depends(get_current_user)):
 @router.post("/create-qr")
 def create_qr(body: CreateQrBody, current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]
+    enforce_rate_limit(f"payments:create-qr:user:{uid}", max_events=20, window_seconds=3600)
 
     with get_db() as (cur, _):
         cur.execute(
@@ -606,6 +623,16 @@ def _finalise_qr_rsvp(*, order_db_id: str, qr_code_id: str, event_id: str,
     from routes.notifications import notify_payment_confirmed
 
     with get_db() as (cur, conn):
+        # Same atomic-claim pattern as _finalise_rsvp above.
+        cur.execute(
+            "UPDATE payment_orders SET status = 'paid', razorpay_payment_id = %s "
+            "WHERE id = %s::uuid AND status != 'paid'",
+            (payment_id, order_db_id),
+        )
+        if cur.rowcount == 0:
+            conn.commit()
+            return
+
         cur.execute("SELECT title, host_id::text, spots_left FROM events WHERE id = %s", (event_id,))
         ev_row = cur.fetchone()
         ev_title = ev_row["title"] if ev_row else ""
@@ -629,10 +656,6 @@ def _finalise_qr_rsvp(*, order_db_id: str, qr_code_id: str, event_id: str,
                 """,
                 (uid, wallet_amount, event_id),
             )
-        cur.execute(
-            "UPDATE payment_orders SET status = 'paid', razorpay_payment_id = %s WHERE id = %s::uuid",
-            (payment_id, order_db_id),
-        )
         cur.execute(
             """
             INSERT INTO event_attendees (event_id, user_id, status, payment_id)

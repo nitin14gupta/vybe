@@ -1,13 +1,14 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, Request, status, Depends
 from pydantic import BaseModel, EmailStr
 
 from utils.admin_jwt import (
     create_admin_access_token, create_admin_refresh_token,
-    admin_refresh_token_expires_at,
+    admin_refresh_token_expires_at, decode_admin_token,
 )
-from utils.jwt import decode_token, hash_token
+from utils.jwt import hash_token
 from utils.password import verify_password
 from middleware.admin_auth import get_current_admin
+from middleware.rate_limit import enforce_rate_limit, client_ip
 from db.config import get_db
 
 router = APIRouter(prefix="/admin/auth", tags=["admin-auth"])
@@ -35,7 +36,12 @@ class AdminTokenResponse(BaseModel):
 # ── POST /admin/auth/login ────────────────────────────────────────────────────
 
 @router.post("/login", response_model=AdminTokenResponse)
-def admin_login(body: AdminLoginBody):
+def admin_login(body: AdminLoginBody, request: Request):
+    email = body.email.lower()
+    enforce_rate_limit(f"admin:login:email:{email}", max_events=10, window_seconds=900,
+                        message="Too many login attempts for this account. Try again in 15 minutes.")
+    enforce_rate_limit(f"admin:login:ip:{client_ip(request)}", max_events=30, window_seconds=3600)
+
     with get_db() as (cur, _):
         cur.execute(
             "SELECT id, email, name, role, password_hash, is_active FROM admin_users WHERE email = %s",
@@ -75,7 +81,7 @@ def admin_login(body: AdminLoginBody):
 
 @router.post("/refresh", response_model=AdminTokenResponse)
 def admin_refresh(body: AdminRefreshBody):
-    payload = decode_token(body.refresh_token)
+    payload = decode_admin_token(body.refresh_token)
     if not payload or payload.get("type") != "admin_refresh":
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 

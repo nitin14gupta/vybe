@@ -18,6 +18,7 @@ import { ImageModal } from '@/components/ui/ImageModal'
 import { IconChip } from '@/components/ui/IconChip'
 import { formatDate, formatInr, formatRelative } from '@/lib/formatters'
 import { useToast } from '@/hooks/useToast'
+import { useAdminAuth } from '@/hooks/useAdminAuth'
 import type { UserDetail, PayoutDetails } from '@/types/user'
 
 export default function UserDetailPage() {
@@ -25,6 +26,8 @@ export default function UserDetailPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const toast = useToast()
+  const { admin } = useAdminAuth()
+  const isSuperAdmin = admin?.role === 'super_admin'
   const [lockDialogOpen, setLockDialogOpen] = useState(false)
   const [unlockDialogOpen, setUnlockDialogOpen] = useState(false)
 
@@ -116,14 +119,16 @@ export default function UserDetailPage() {
             </div>
           </div>
 
-          {user.is_locked ? (
-            <Button variant="outline" onClick={() => setUnlockDialogOpen(true)}>
-              <Unlock className="h-4 w-4" /> Unlock account
-            </Button>
-          ) : (
-            <Button variant="destructive" onClick={() => setLockDialogOpen(true)}>
-              <Lock className="h-4 w-4" /> Lock account
-            </Button>
+          {isSuperAdmin && (
+            user.is_locked ? (
+              <Button variant="outline" onClick={() => setUnlockDialogOpen(true)}>
+                <Unlock className="h-4 w-4" /> Unlock account
+              </Button>
+            ) : (
+              <Button variant="destructive" onClick={() => setLockDialogOpen(true)}>
+                <Lock className="h-4 w-4" /> Lock account
+              </Button>
+            )
           )}
         </CardContent>
       </Card>
@@ -149,7 +154,15 @@ export default function UserDetailPage() {
           <WalletTab data={data} />
         </TabsContent>
         <TabsContent value="payout">
-          <PayoutTab userId={id} isHostOnboarded={user.is_host_onboarding_finished} />
+          {isSuperAdmin ? (
+            <PayoutTab userId={id} isHostOnboarded={user.is_host_onboarding_finished} />
+          ) : (
+            <Card>
+              <CardContent className="py-8 text-center text-sm text-zinc-500">
+                Only super admins can view decrypted payout details.
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
         <TabsContent value="safety">
           <SafetyTab data={data} />

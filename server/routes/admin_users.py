@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel
 
 from db.config import get_db
-from middleware.admin_auth import get_current_admin
+from middleware.admin_auth import get_current_admin, require_admin_role
 from utils.push import send_push
 from utils.account_purge import PURGE_AFTER_DAYS
 from utils.admin_audit import log_action
@@ -238,7 +238,7 @@ def get_user_detail(user_id: str, current_admin: dict = Depends(get_current_admi
 # ── PATCH /admin/users/{user_id}/lock ─────────────────────────────────────────
 
 @router.patch("/{user_id}/lock")
-def lock_user(user_id: str, body: LockBody, current_admin: dict = Depends(get_current_admin)):
+def lock_user(user_id: str, body: LockBody, current_admin: dict = Depends(require_admin_role("super_admin"))):
     with get_db() as (cur, conn):
         cur.execute("SELECT id FROM users WHERE id = %s::uuid", (user_id,))
         if not cur.fetchone():
@@ -272,7 +272,7 @@ def lock_user(user_id: str, body: LockBody, current_admin: dict = Depends(get_cu
 # ── PATCH /admin/users/{user_id}/unlock ───────────────────────────────────────
 
 @router.patch("/{user_id}/unlock")
-def unlock_user(user_id: str, current_admin: dict = Depends(get_current_admin)):
+def unlock_user(user_id: str, current_admin: dict = Depends(require_admin_role("super_admin"))):
     with get_db() as (cur, conn):
         cur.execute("SELECT id FROM users WHERE id = %s::uuid", (user_id,))
         if not cur.fetchone():
@@ -297,7 +297,7 @@ def unlock_user(user_id: str, current_admin: dict = Depends(get_current_admin)):
 # ── GET /admin/users/{user_id}/payout-details ─────────────────────────────────
 
 @router.get("/{user_id}/payout-details")
-def get_user_payout_details(user_id: str, current_admin: dict = Depends(get_current_admin)):
+def get_user_payout_details(user_id: str, current_admin: dict = Depends(require_admin_role("super_admin"))):
     with get_db() as (cur, _):
         cur.execute("SELECT id FROM users WHERE id = %s::uuid", (user_id,))
         if not cur.fetchone():

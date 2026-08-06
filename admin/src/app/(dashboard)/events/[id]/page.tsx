@@ -19,6 +19,7 @@ import { ImageModal } from '@/components/ui/ImageModal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { formatDate, formatInr } from '@/lib/formatters'
 import { useToast } from '@/hooks/useToast'
+import { useAdminAuth } from '@/hooks/useAdminAuth'
 import type { EventDetailResponse } from '@/types/event'
 
 export default function EventDetailPage() {
@@ -26,6 +27,8 @@ export default function EventDetailPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const toast = useToast()
+  const { admin } = useAdminAuth()
+  const isSuperAdmin = admin?.role === 'super_admin'
   const [cancelOpen, setCancelOpen] = useState(false)
   const [galleryOpen, setGalleryOpen] = useState(false)
 
@@ -116,7 +119,7 @@ export default function EventDetailPage() {
               )}
             </div>
 
-            {!event.is_cancelled && (
+            {!event.is_cancelled && isSuperAdmin && (
               <div>
                 <Button variant="destructive" onClick={() => setCancelOpen(true)}>
                   <Ban className="h-4 w-4" /> Force-cancel event
