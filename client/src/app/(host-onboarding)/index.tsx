@@ -102,9 +102,9 @@ export default function HostOnboardingScreen() {
       setTimeout(() => router.replace('/(events)/create'), FINISHING_DELAY_MS)
     } catch (err: any) {
       if (err?.status === 409) {
-        setDuplicateError(err?.detail ?? err?.message ?? 'This payout account is already linked to another Gorave account.')
+        setDuplicateError(err?.message ?? 'This payout account is already linked to another Gorave account.')
       } else {
-        showPill(err?.detail ?? 'Could not save payout details. Try again.', 'error')
+        showPill(err?.message ?? 'Could not save payout details. Try again.', 'error')
       }
       setSaving(false)
     }

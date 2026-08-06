@@ -160,6 +160,23 @@ export function usePhotos() {
     })
   }
 
+  const retryUpload = async (id: string) => {
+    const currentItems = itemsRef.current
+    const index = currentItems.findIndex(i => i.id === id)
+    const item = currentItems[index]
+    if (!item?.uri || item.state !== 'error') return
+
+    updateItem(id, { state: 'uploading' })
+    try {
+      const url = await uploadPhoto(item.uri, index)
+      updateItem(id, { state: url ? 'done' : 'error', serverUrl: url ?? null })
+      if (!url) showPill('Upload failed, try again', 'error')
+    } catch (e: any) {
+      updateItem(id, { state: 'error' })
+      showPill(e?.message || 'Upload failed, try again', 'error')
+    }
+  }
+
   const removePhoto = (id: string) => {
     const item = itemsRef.current.find(i => i.id === id)
     if (!item?.uri) return
@@ -234,7 +251,7 @@ export function usePhotos() {
     nextLoading,
     hasAnyPhoto,
     onSlotPress,
-    retryUpload: () => { }, // No-op now since we do batch upload
+    retryUpload,
     removePhoto,
     handleNext,
     pendingMedia,

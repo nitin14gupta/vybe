@@ -13,7 +13,7 @@ export type { CityResponse }
 export function useLocation() {
   const store = useOnboardingStore()
   const showPill = usePillStore.getState().show
-  const { cities, loading: citiesLoading } = useCities()
+  const { cities, loading: citiesLoading, error: citiesError, retry: retryCities } = useCities()
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [detecting, setDetecting] = useState(false)
@@ -124,6 +124,9 @@ export function useLocation() {
     selectedCity: store.city,
     loading,
     detecting,
+    citiesLoading,
+    citiesError,
+    retryCities,
     selectCity,
     detectLocation,
     handleContinue,

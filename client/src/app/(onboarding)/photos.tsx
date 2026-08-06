@@ -21,6 +21,7 @@ export default function PhotosScreen() {
     cancelPendingPhotos,
     removePendingPhoto,
     updatePendingPhoto,
+    retryUpload,
   } = usePhotos()
 
   return (
@@ -42,7 +43,7 @@ export default function PhotosScreen() {
             item={item}
             index={index}
             onSlotPress={onSlotPress}
-            retryUpload={() => {}}
+            retryUpload={retryUpload}
             removePhoto={removePhoto}
           />
         ))}

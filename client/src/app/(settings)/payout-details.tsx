@@ -2,20 +2,25 @@ import { useCallback, useState } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native'
 import { router, useFocusEffect } from 'expo-router'
 import { ArrowLeft, Landmark, CheckCircle2 } from 'lucide-react-native'
-import { AppHeader, HeaderIconBtn } from '@/components/ui'
+import { AppHeader, HeaderIconBtn, PrimaryButton } from '@/components/ui'
 import ApiService, { type PayoutDetailsResponse } from '@/api/apiService'
 import { Colors, FontFamily, Radius } from '@/constants'
 
 export default function PayoutDetailsScreen() {
   const [details, setDetails] = useState<PayoutDetailsResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  useFocusEffect(useCallback(() => {
+  const load = useCallback(() => {
+    setLoading(true)
+    setError(null)
     ApiService.getPayoutDetails()
       .then(setDetails)
-      .catch(() => {})
+      .catch((e: any) => setError(e?.message || 'Could not load payout details'))
       .finally(() => setLoading(false))
-  }, []))
+  }, [])
+
+  useFocusEffect(load)
 
   return (
     <View style={s.root}>
@@ -28,11 +33,24 @@ export default function PayoutDetailsScreen() {
         <View style={s.center}>
           <ActivityIndicator color={Colors.brandOrange} />
         </View>
+      ) : error ? (
+        <View style={s.center}>
+          <Landmark size={48} color={Colors.inkDisabled} strokeWidth={1.2} />
+          <Text style={s.emptyTitle}>Couldn't load payout details</Text>
+          <Text style={s.emptySub}>{error}</Text>
+          <PrimaryButton label="Retry" size="small" style={s.emptyCta} onPress={load} />
+        </View>
       ) : !details?.payout_method ? (
         <View style={s.center}>
           <Landmark size={48} color={Colors.inkDisabled} strokeWidth={1.2} />
           <Text style={s.emptyTitle}>No payout details yet</Text>
-          <Text style={s.emptySub}>You'll add these the first time you create an event.</Text>
+          <Text style={s.emptySub}>Add your bank or UPI details so we know where to send your ticket earnings.</Text>
+          <PrimaryButton
+            label="Add Payout Details"
+            size="small"
+            style={s.emptyCta}
+            onPress={() => router.push('/(host-onboarding)' as any)}
+          />
         </View>
       ) : (
         <View style={s.content}>
@@ -77,6 +95,7 @@ const s = StyleSheet.create({
     fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary,
     textAlign: 'center', lineHeight: 20,
   },
+  emptyCta: { marginTop: 4, minWidth: 180 },
   content: { padding: 20 },
   sectionLabel: {
     fontFamily: FontFamily.bodyMedium,

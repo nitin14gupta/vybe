@@ -14,6 +14,9 @@ export default function LocationScreen() {
     selectedCity,
     loading,
     detecting,
+    citiesLoading,
+    citiesError,
+    retryCities,
     selectCity,
     detectLocation,
     handleContinue,
@@ -77,6 +80,24 @@ export default function LocationScreen() {
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           showsVerticalScrollIndicator={false}
           style={styles.list}
+          ListEmptyComponent={
+            citiesLoading ? null : (
+              <View style={styles.emptyState}>
+                {citiesError ? (
+                  <>
+                    <Text style={styles.emptyTitle}>Couldn't load cities</Text>
+                    <Text style={styles.emptyBody}>Check your connection and try again</Text>
+                    <PrimaryButton label="Retry" onPress={retryCities} style={styles.emptyBtn} />
+                  </>
+                ) : query ? (
+                  <>
+                    <Text style={styles.emptyTitle}>No cities match "{query}"</Text>
+                    <PrimaryButton label="Clear search" onPress={() => setQuery('')} style={styles.emptyBtn} />
+                  </>
+                ) : null}
+              </View>
+            )
+          }
         />
 
         <View style={styles.footer}>
@@ -163,4 +184,24 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', gap: 12, paddingHorizontal: Spacing.screenPadding, paddingBottom: 16 },
   backBtn: { width: 96 },
   nextBtn: { flex: 1 },
+  emptyState: {
+    alignItems: 'center',
+    paddingHorizontal: Spacing.screenPadding,
+    paddingTop: 40,
+  },
+  emptyTitle: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 15,
+    color: Colors.inkPrimary,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  emptyBody: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 13,
+    color: Colors.inkSecondary,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  emptyBtn: { width: '100%', marginTop: 16 },
 })

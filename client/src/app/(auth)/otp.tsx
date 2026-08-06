@@ -101,7 +101,7 @@ export default function OTPScreen() {
           ) : null}
 
           <View style={styles.resendArea}>
-            {!isExpired ? (
+            {!isExpired && !tooManyAttempts ? (
               <Text style={styles.countdown}>
                 Resend code in{' '}
                 <Text style={styles.countdownTimer}>

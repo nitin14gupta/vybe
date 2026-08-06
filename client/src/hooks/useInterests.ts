@@ -4,21 +4,12 @@ import { useOnboardingStore } from '@/store/onboarding'
 import { setInterests, getInterests } from '@/api/user'
 import type { InterestResponse } from '@/api/user'
 import { usePillStore } from '@/store/pillStore'
+import { INTERESTS } from '@/constants/onboarding'
 
 const MAX_INTERESTS = 4
 
 // Fallback if backend is unreachable
-const FALLBACK: InterestResponse[] = [
-  { name: 'Music', emoji: '🎵' }, { name: 'Travel', emoji: '✈️' },
-  { name: 'Food', emoji: '🍕' }, { name: 'Sports', emoji: '⚽' },
-  { name: 'Art', emoji: '🎨' }, { name: 'Movies', emoji: '🎬' },
-  { name: 'Gaming', emoji: '🎮' }, { name: 'Dance', emoji: '💃' },
-  { name: 'Fitness', emoji: '🏋️' }, { name: 'Comedy', emoji: '😂' },
-  { name: 'Photography', emoji: '📸' }, { name: 'Fashion', emoji: '👗' },
-  { name: 'Tech', emoji: '💻' }, { name: 'Books', emoji: '📚' },
-  { name: 'Cooking', emoji: '🍳' }, { name: 'Nightlife', emoji: '🌃' },
-  { name: 'Hiking', emoji: '🥾' }, { name: 'Yoga', emoji: '🧘' },
-]
+const FALLBACK: InterestResponse[] = INTERESTS.map(([name, emoji]) => ({ name, emoji }))
 
 export function useInterests() {
   const store = useOnboardingStore()

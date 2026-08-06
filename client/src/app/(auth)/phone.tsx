@@ -23,8 +23,8 @@ export default function PhoneScreen() {
     try {
       await handleSendOTP(phone)
       router.push({ pathname: '/(auth)/otp', params: { phone } })
-    } catch {
-      setError('Failed to send OTP. Please try again.')
+    } catch (e: any) {
+      setError(e?.message || 'Failed to send OTP. Please try again.')
     } finally {
       setLoading(false)
     }
