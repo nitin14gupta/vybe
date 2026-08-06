@@ -1,8 +1,9 @@
-import React from 'react'
-import { View, Text, StyleSheet, Pressable } from 'react-native'
+import React, { useRef } from 'react'
+import { View, Text, StyleSheet, Pressable, Animated } from 'react-native'
+import { Swipeable } from 'react-native-gesture-handler'
 import { Image } from 'expo-image'
-import { hTap } from '@/lib/haptics'
-import { Bell, UserPlus, Flame, MessageCircle, PartyPopper, ShieldCheck, Trophy } from 'lucide-react-native'
+import { hTap, hMedium } from '@/lib/haptics'
+import { Bell, UserPlus, Flame, MessageCircle, PartyPopper, ShieldCheck, Trophy, Trash2 } from 'lucide-react-native'
 import type { AppNotification } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
 import { OutlineButton, PrimaryButton } from '@/components/ui'
@@ -35,17 +36,37 @@ const TYPE_FALLBACK: Record<string, { Icon: any; bg: string; color: string }> = 
   review_milestone: { Icon: Trophy, bg: 'rgba(255,107,53,0.16)', color: Colors.brandOrange },
 }
 
-export const NotificationRow = React.memo(function NotificationRow({ item, onPress, onAction }: {
+export const NotificationRow = React.memo(function NotificationRow({ item, onPress, onAction, onDismiss }: {
   item: AppNotification
   onPress: () => void
   onAction: (item: AppNotification) => void
+  onDismiss: () => void
 }) {
   const unread = !item.read_at
   const ActionIcon = item.action ? ACTION_ICON[item.action] : null
   const isPrimary = item.action === 'send_vybe' || item.action === 'message'
   const fallback = TYPE_FALLBACK[item.type]
+  const swipeableRef = useRef<Swipeable>(null)
+
+  const renderRightActions = (
+    _progress: Animated.AnimatedInterpolation<number>,
+    dragX: Animated.AnimatedInterpolation<number>,
+  ) => {
+    const scale = dragX.interpolate({ inputRange: [-80, 0], outputRange: [1, 0.5], extrapolate: 'clamp' })
+    return (
+      <Pressable
+        style={s.dismissAction}
+        onPress={() => { hMedium(); swipeableRef.current?.close(); onDismiss() }}
+      >
+        <Animated.View style={{ transform: [{ scale }] }}>
+          <Trash2 size={20} color="#fff" strokeWidth={2} />
+        </Animated.View>
+      </Pressable>
+    )
+  }
 
   return (
+    <Swipeable ref={swipeableRef} renderRightActions={renderRightActions} overshootRight={false} rightThreshold={40}>
     <View style={s.row}>
       <Pressable style={s.rowMain} onPress={() => { hTap(); onPress() }}>
         <View style={s.avatarWrap}>
@@ -104,12 +125,20 @@ export const NotificationRow = React.memo(function NotificationRow({ item, onPre
         </View>
       ) : null}
     </View>
+    </Swipeable>
   )
 })
 
 const s = StyleSheet.create({
+  dismissAction: {
+    width: 80,
+    backgroundColor: Colors.brandCoral,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   row: {
     flexDirection: 'row', alignItems: 'center',
+    backgroundColor: Colors.background,
     paddingHorizontal: 20, paddingVertical: 14, gap: 10,
   },
   rowMain: {

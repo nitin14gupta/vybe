@@ -1,9 +1,9 @@
 import React from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
 import { FlashList } from '@shopify/flash-list'
-import { RefreshControl } from 'react-native'
 import { Users } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
+import { BrandedRefreshControl } from '@/components/ui'
 import { UserFollowCard } from '@/components/profile/UserFollowCard'
 import { PeopleListSkeleton } from '@/components/profile/PeopleListSkeleton'
 import type { FollowUser } from '@/api/apiService'
@@ -64,10 +64,9 @@ export function FollowsPane({ type, list, sorted, bottomInset, onFollow, onUnfol
       onEndReachedThreshold={0.4}
       contentContainerStyle={{ paddingBottom: bottomInset + 16 }}
       refreshControl={
-        <RefreshControl
+        <BrandedRefreshControl
           refreshing={list.refreshing}
           onRefresh={() => list.load(true)}
-          tintColor={Colors.brandOrange}
         />
       }
       ListEmptyComponent={

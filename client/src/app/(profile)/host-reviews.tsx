@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
-  RefreshControl,
   StyleSheet,
   Text,
   View,
@@ -12,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, Star } from 'lucide-react-native'
 import { Colors, FontFamily, Spacing } from '@/constants'
-import { BrandedLoader, SortSheet } from '@/components/ui'
+import { BrandedLoader, SortSheet, BrandedRefreshControl } from '@/components/ui'
 import { ReviewCard } from '@/components/reviews/ReviewParts'
 import { HostReviewsSummary } from '@/components/reviews/HostReviewsSummary'
 import { useAuthStore } from '@/store/auth'
@@ -101,7 +100,7 @@ export default function HostReviewsScreen() {
           onEndReachedThreshold={0.4}
           onEndReached={loadMore}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => fetchFirstPage(true)} tintColor={Colors.brandOrange} colors={[Colors.brandOrange]} />
+            <BrandedRefreshControl refreshing={refreshing} onRefresh={() => fetchFirstPage(true)} />
           }
           ListHeaderComponent={
             <HostReviewsSummary

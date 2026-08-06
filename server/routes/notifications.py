@@ -376,7 +376,7 @@ def list_notifications(
 ):
     uid = current_user["id"]
     with get_db() as (cur, _):
-        conditions = ["n.user_id = %s::uuid"]
+        conditions = ["n.user_id = %s::uuid", "n.dismissed_at IS NULL"]
         params: list = [uid]
 
         if before:
@@ -430,6 +430,24 @@ def mark_one_read(notif_id: str, current_user: dict = Depends(get_current_user))
     with get_db() as (cur, conn):
         cur.execute(
             "UPDATE notifications SET read_at = NOW() WHERE id = %s::uuid AND user_id = %s::uuid AND read_at IS NULL",
+            (notif_id, current_user["id"]),
+        )
+        conn.commit()
+    return {"ok": True}
+
+
+@router.delete("/{notif_id}", status_code=200)
+def dismiss_notification(notif_id: str, current_user: dict = Depends(get_current_user)):
+    """Swipe-to-dismiss — the user never wants to see this one again. Soft
+    delete (dismissed_at) rather than a hard DELETE so it stays available for
+    any future audit/debugging without cluttering the user's own list."""
+    with get_db() as (cur, conn):
+        cur.execute(
+            """
+            UPDATE notifications
+            SET dismissed_at = NOW(), read_at = COALESCE(read_at, NOW())
+            WHERE id = %s::uuid AND user_id = %s::uuid AND dismissed_at IS NULL
+            """,
             (notif_id, current_user["id"]),
         )
         conn.commit()

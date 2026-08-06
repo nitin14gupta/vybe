@@ -210,6 +210,7 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   title text NOT NULL,
   body text,
   read_at timestamp with time zone,
+  dismissed_at timestamp with time zone,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT notifications_pkey PRIMARY KEY (id)
 );

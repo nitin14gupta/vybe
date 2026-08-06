@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
-import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native'
 import { router } from 'expo-router'
 import { hTap } from '@/lib/haptics'
 import { Pencil, Settings, Share } from 'lucide-react-native'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
-import { AppHeader, HeaderIconBtn, BrandedLoader, PrimaryButton } from '@/components/ui'
+import { AppHeader, HeaderIconBtn, BrandedLoader, BrandedRefreshControl, PrimaryButton } from '@/components/ui'
 import { ProfileAvatarHeader } from '@/components/profile/ProfileAvatarHeader'
 import { ProfileStatsRow } from '@/components/profile/ProfileStatsRow'
 import { ProfileBioVoiceCard } from '@/components/profile/ProfileBioVoiceCard'
@@ -106,7 +106,7 @@ export default function ProfileScreen() {
         }
       />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={Colors.brandOrange} colors={[Colors.brandOrange]} />}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}>
 
         <ProfileAvatarHeader
           name={name}

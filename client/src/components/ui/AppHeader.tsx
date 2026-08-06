@@ -68,8 +68,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
   },
+  // Fixed (not min) width, equal on both sides — the center column is only
+  // truly centered on screen when both flanking columns are the same width,
+  // regardless of how much content either one actually holds. Sized to fit
+  // the widest real usage (two 36px icon buttons + gap).
   side: {
-    minWidth: 40,
+    width: 80,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',

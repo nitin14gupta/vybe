@@ -1,7 +1,7 @@
-import { View, Text, StyleSheet, FlatList, RefreshControl } from 'react-native'
+import { View, Text, StyleSheet, FlatList } from 'react-native'
 import { router } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
-import { AppHeader, HeaderIconBtn } from '@/components/ui'
+import { AppHeader, HeaderIconBtn, BrandedRefreshControl } from '@/components/ui'
 import { Colors, FontFamily } from '@/constants'
 import { useWallet } from '@/hooks/useWallet'
 import { WalletBalanceCard } from '@/components/settings/WalletBalanceCard'
@@ -23,11 +23,9 @@ export default function WalletScreen() {
         keyExtractor={item => item.id}
         renderItem={({ item }) => <WalletTransactionRow item={item} />}
         refreshControl={
-          <RefreshControl
+          <BrandedRefreshControl
             refreshing={refreshing}
             onRefresh={() => reload(true)}
-            tintColor={Colors.brandOrange}
-            colors={[Colors.brandOrange]}
           />
         }
         ListHeaderComponent={

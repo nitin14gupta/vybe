@@ -2,7 +2,6 @@ import React, { memo } from 'react'
 import {
   ActivityIndicator,
   FlatList,
-  RefreshControl,
   StyleSheet,
   Text,
   TextInput,
@@ -13,7 +12,7 @@ import { CheckCircle, Search, UserCheck, Users } from 'lucide-react-native'
 import { hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import type { EventAttendee } from '@/api/apiService'
-import { PrimaryButton } from '@/components/ui'
+import { PrimaryButton, BrandedRefreshControl } from '@/components/ui'
 
 const AttendeeListRow = memo(function AttendeeListRow({
   item,
@@ -113,7 +112,7 @@ export function AttendeeCheckinList({
           data={attendees}
           keyExtractor={a => a.id}
           contentContainerStyle={s.listContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.brandOrange} colors={[Colors.brandOrange]} />}
+          refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           ListEmptyComponent={
             <View style={s.emptyState}>
               <Users size={36} color={Colors.inkDisabled} />

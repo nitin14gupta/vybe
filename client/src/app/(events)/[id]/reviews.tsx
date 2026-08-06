@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
-  RefreshControl,
   StyleSheet,
   Text,
   View,
@@ -12,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, Star } from 'lucide-react-native'
 import { Colors, FontFamily, Spacing } from '@/constants'
-import { BrandedLoader } from '@/components/ui'
+import { BrandedLoader, BrandedRefreshControl } from '@/components/ui'
 import { StarRow, RatingDistribution, RatingFilterRow, ReviewCard } from '@/components/reviews/ReviewParts'
 import ApiService, { type ReviewItem } from '@/api/apiService'
 
@@ -104,7 +103,7 @@ export default function ReviewsScreen() {
           onEndReachedThreshold={0.4}
           onEndReached={loadMore}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => fetchFirstPage(true)} tintColor={Colors.brandOrange} colors={[Colors.brandOrange]} />
+            <BrandedRefreshControl refreshing={refreshing} onRefresh={() => fetchFirstPage(true)} />
           }
           ListHeaderComponent={
             <View>

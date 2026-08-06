@@ -411,6 +411,10 @@ class ApiService {
     return this.get<{ users: DiscoverUser[]; total: number }>(`${ENDPOINTS.SEARCH_USERS}?${params}`)
   }
 
+  static async getSuggestedUsers(limit = 10): Promise<{ users: DiscoverUser[] }> {
+    return this.get<{ users: DiscoverUser[] }>(`${ENDPOINTS.SUGGESTED_USERS}?limit=${limit}`)
+  }
+
   static async followUser(userId: string): Promise<void> {
     const endpoint = ENDPOINTS.FOLLOW_USER.replace(':id', userId)
     await this.post<{ ok: boolean }>(endpoint, {})
@@ -573,6 +577,11 @@ class ApiService {
   static async markNotificationRead(notifId: string): Promise<void> {
     const endpoint = ENDPOINTS.NOTIFICATION_READ.replace(':id', notifId)
     await this.patch<{ ok: boolean }>(endpoint, {})
+  }
+
+  static async dismissNotification(notifId: string): Promise<void> {
+    const endpoint = ENDPOINTS.NOTIFICATION_DISMISS.replace(':id', notifId)
+    await this.delete<{ ok: boolean }>(endpoint)
   }
 
   static async getNotificationPrefs(): Promise<NotificationPrefs> {

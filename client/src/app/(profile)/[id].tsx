@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { hMedium, hSuccess } from "@/lib/haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, Ghost } from "lucide-react-native";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
-import { VybeRequestModal, VybeIcebreakerModal, ProfileMenuSheet, BrandedLoader } from "@/components/ui";
+import { VybeRequestModal, VybeIcebreakerModal, ProfileMenuSheet, BrandedLoader, BrandedRefreshControl } from "@/components/ui";
 import ApiService, { ExtendedProfile } from "@/api/apiService";
 import { Colors, FontFamily, HOST_BADGE_IMAGES } from "@/constants";
 import { usePillStore } from "@/store/pillStore";
@@ -235,11 +235,9 @@ export default function UserProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
         refreshControl={
-          <RefreshControl
+          <BrandedRefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={Colors.brandOrange}
-            colors={[Colors.brandOrange]}
           />
         }
       >

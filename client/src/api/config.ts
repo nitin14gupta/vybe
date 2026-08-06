@@ -47,6 +47,7 @@ export const ENDPOINTS = {
   USER_FOLLOWING: '/users/:id/following',
   REMOVE_FOLLOWER: '/users/followers/:id',
   SEARCH_USERS: '/users/search',
+  SUGGESTED_USERS: '/users/suggested',
   CHECK_USERNAME: '/users/check-username',
   USER_REVIEWS: '/users/:id/reviews',
 
@@ -88,6 +89,7 @@ export const ENDPOINTS = {
   NOTIFICATIONS: '/notifications',
   NOTIFICATIONS_READ_ALL: '/notifications/read-all',
   NOTIFICATION_READ: '/notifications/:id/read',
+  NOTIFICATION_DISMISS: '/notifications/:id',
   NOTIFICATION_PREFS: '/notifications/preferences',
 
   // Device tokens

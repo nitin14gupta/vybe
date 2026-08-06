@@ -1,5 +1,5 @@
 import psycopg2
-from fastapi import APIRouter, BackgroundTasks, HTTPException, status, Depends
+from fastapi import APIRouter, BackgroundTasks, HTTPException, status, Depends, Query
 from pydantic import BaseModel
 from datetime import date, datetime, timezone, timedelta
 from typing import Optional
@@ -464,6 +464,85 @@ def check_username(username: str, current_user: dict = Depends(get_current_user)
         )
         taken = cur.fetchone() is not None
     return {"available": not taken}
+
+
+@router.get("/suggested")
+def suggested_users(
+    limit: int = Query(10, ge=1, le=20),
+    current_user: dict = Depends(get_current_user),
+):
+    """People worth surfacing when the search screen is empty — same
+    relevance signals as /search (mutual follow, same city, shared
+    interests), just without a text filter. Not "trending" (that would need
+    actual search-frequency tracking, which doesn't exist yet)."""
+    viewer_id = current_user["id"]
+    with get_db() as (cur, _):
+        cur.execute("""
+            SELECT
+                u.id::text, u.name, u.username, u.gender, u.bio, u.city, u.interests, u.voice_url,
+                NULL::float AS distance_km,
+                0 AS match_pct,
+                COALESCE(
+                    json_agg(
+                        json_build_object('id', p.id::text, 'url', p.url, 'position', p.position)
+                        ORDER BY p.position
+                    ) FILTER (WHERE p.id IS NOT NULL),
+                    '[]'::json
+                ) AS photos,
+                (SELECT EXTRACT(YEAR FROM age(u.dob))::int) AS age,
+                EXISTS(
+                    SELECT 1 FROM follows
+                    WHERE follower_id = %s::uuid AND following_id = u.id
+                ) AS is_following,
+                EXISTS(
+                    SELECT 1 FROM follows
+                    WHERE follower_id = u.id AND following_id = %s::uuid
+                ) AS is_mutual,
+                EXISTS(
+                    SELECT 1 FROM conversations
+                    WHERE status = 'active'
+                      AND ((user1_id = %s::uuid AND user2_id = u.id)
+                        OR (user1_id = u.id AND user2_id = %s::uuid))
+                ) AS has_connection,
+                (
+                    u.city IS NOT NULL
+                    AND (SELECT city FROM users WHERE id = %s::uuid) = u.city
+                ) AS same_city,
+                cardinality(ARRAY(
+                    SELECT unnest(u.interests)
+                    INTERSECT
+                    SELECT unnest((SELECT interests FROM users WHERE id = %s::uuid))
+                )) AS shared_interests_count
+            FROM users u
+            LEFT JOIN user_photos p ON p.user_id = u.id
+            WHERE u.id != %s::uuid
+              AND u.profile_complete = true
+              AND COALESCE(u.is_deleted, FALSE) = FALSE
+              AND NOT EXISTS (
+                  SELECT 1 FROM user_blocks
+                  WHERE (blocker_id = %s::uuid AND blocked_id = u.id)
+                     OR (blocker_id = u.id AND blocked_id = %s::uuid)
+              )
+            GROUP BY u.id
+            ORDER BY
+                is_mutual DESC,
+                has_connection DESC,
+                same_city DESC,
+                shared_interests_count DESC,
+                u.created_at DESC
+            LIMIT %s
+        """, (
+            viewer_id, viewer_id, viewer_id, viewer_id, viewer_id, viewer_id,
+            viewer_id, viewer_id, viewer_id, limit,
+        ))
+        rows = cur.fetchall()
+    users = []
+    for row in rows:
+        d = dict(row)
+        d["interests"] = d.get("interests") or []
+        d["photos"] = d.get("photos") or []
+        users.append(d)
+    return {"users": users}
 
 
 @router.get("/search")

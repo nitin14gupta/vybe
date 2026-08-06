@@ -1,8 +1,8 @@
 import { useEffect, type ReactNode, type ReactElement } from 'react'
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl } from 'react-native'
+import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native'
 import { router } from 'expo-router'
 import { Colors, FontFamily } from '@/constants'
-import { EventListCard, EventListCardSkeleton, PrimaryButton } from '@/components/ui'
+import { EventListCard, EventListCardSkeleton, PrimaryButton, BrandedRefreshControl } from '@/components/ui'
 import { EventCardSkeleton } from '@/components/events/EventCard'
 import type { useMyEventsPage } from '@/hooks/useMyEventsPage'
 import type { EventSummary } from '@/api/apiService'
@@ -56,7 +56,7 @@ export function EventsPane({
       onEndReached={page.loadMore}
       onEndReachedThreshold={0.4}
       refreshControl={
-        <RefreshControl refreshing={page.refreshing} onRefresh={() => page.fetchFirstPage(true)} tintColor={Colors.brandOrange} />
+        <BrandedRefreshControl refreshing={page.refreshing} onRefresh={() => page.fetchFirstPage(true)} />
       }
       ListFooterComponent={
         page.loadingMore ? (

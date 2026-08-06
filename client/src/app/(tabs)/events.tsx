@@ -4,7 +4,6 @@ import {
   BackHandler,
   FlatList,
   Pressable,
-  RefreshControl,
   StyleSheet,
   Text,
   View,
@@ -22,7 +21,7 @@ import { EventSearchModal } from "@/components/events/EventSearchModal";
 import { EventPreviewStrip, PreviewCard } from "@/components/events/EventPreviewStrip";
 import { MapFloatingHeader, ListModeHeader, ViewModeTogglePill, FilterChipsRow } from "@/components/events/EventsScreenHeader";
 import { MapErrorOverlay, MapEmptyOverlay, ListErrorState, ListEmptyState } from "@/components/events/EventsStateViews";
-import { LocationWarning, CreateEventSheet, EventListCard, EventListCardSkeleton, ViewModeToggle } from "@/components/ui";
+import { LocationWarning, CreateEventSheet, EventListCard, EventListCardSkeleton, ViewModeToggle, BrandedRefreshControl } from "@/components/ui";
 import { usePermissionSheetStore } from "@/store/permissionSheetStore";
 import { useEventViewModeStore } from "@/store/eventViewModeStore";
 
@@ -277,7 +276,7 @@ export default function EventsScreen() {
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={loading} onRefresh={reload} tintColor={Colors.brandOrange} />
+            <BrandedRefreshControl refreshing={loading} onRefresh={reload} />
           }
           ListFooterComponent={
             hasMore ? (

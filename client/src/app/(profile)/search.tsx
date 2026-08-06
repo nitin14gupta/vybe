@@ -13,6 +13,43 @@ import { PeopleListSkeleton } from '@/components/profile/PeopleListSkeleton'
 import { SearchHistoryList } from '@/components/profile/SearchHistoryList'
 import { SearchResultRow } from '@/components/profile/SearchResultRow'
 
+function SuggestedList({ onTap }: { onTap: (user: DiscoverUser) => void }) {
+  const [suggested, setSuggested] = useState<DiscoverUser[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    ApiService.getSuggestedUsers()
+      .then(res => setSuggested(res.users))
+      .catch(e => console.warn('[search] getSuggestedUsers failed:', e?.message ?? e))
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading) return <PeopleListSkeleton />
+
+  if (suggested.length === 0) {
+    return (
+      <View style={s.center}>
+        <Users size={52} color={Colors.inkDisabled} strokeWidth={1.2} />
+        <Text style={s.emptyTitle}>Find people</Text>
+        <Text style={s.emptySub}>Search by name or @username</Text>
+      </View>
+    )
+  }
+
+  return (
+    <FlatList
+      data={suggested}
+      keyExtractor={u => u.id}
+      contentContainerStyle={s.listContent}
+      showsVerticalScrollIndicator={false}
+      ListHeaderComponent={<Text style={s.suggestedLabel}>Suggested for you</Text>}
+      renderItem={({ item }) => (
+        <SearchResultRow user={item} onTap={() => onTap(item)} />
+      )}
+    />
+  )
+}
+
 export default function SearchScreen() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<DiscoverUser[]>([])
@@ -112,11 +149,7 @@ export default function SearchScreen() {
           onClear={() => { hTap(); clear() }}
         />
       ) : !searched ? (
-        <View style={s.center}>
-          <Users size={52} color={Colors.inkDisabled} strokeWidth={1.2} />
-          <Text style={s.emptyTitle}>Find people</Text>
-          <Text style={s.emptySub}>Search by name or @username</Text>
-        </View>
+        <SuggestedList onTap={handleResultTap} />
       ) : searchError ? (
         <View style={s.center}>
           <Text style={s.emptyTitle}>Search failed</Text>
@@ -155,4 +188,8 @@ const s = StyleSheet.create({
   emptySub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center' },
 
   listContent: { paddingBottom: 32 },
+  suggestedLabel: {
+    fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.inkSecondary,
+    paddingHorizontal: 20, paddingTop: 4, paddingBottom: 10,
+  },
 })

@@ -1,12 +1,12 @@
 import React from 'react'
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useLocalSearchParams } from 'expo-router'
 import { useGoBack } from '@/hooks/useGoBack'
 import { useEventDetail } from '@/hooks/useEventDetail'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, Ghost } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
-import { BrandedLoader } from '@/components/ui'
+import { BrandedLoader, BrandedRefreshControl } from '@/components/ui'
 import { ConfirmSheet, GuestListSheet, EventShareSheet, DotsSheet } from '@/components/ui'
 import { ReportEventSheet } from '@/components/events/ReportEventSheet'
 import { EventOptionsSheet } from '@/components/events/EventOptionsSheet'
@@ -81,7 +81,7 @@ export default function EventDetailScreen() {
           style={styles.scroll}
           contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={d.refreshing} onRefresh={d.handleRefresh} tintColor={Colors.brandOrange} colors={[Colors.brandOrange]} />}
+          refreshControl={<BrandedRefreshControl refreshing={d.refreshing} onRefresh={d.handleRefresh} />}
         >
           <EventInfoHeader event={event} onPressAddress={() => d.setAddressSheetOpen(true)} />
 

@@ -91,6 +91,17 @@ export default function NotificationsScreen() {
     setNotifs(prev => prev.map(n => n.id === item.id ? { ...n, read_at: new Date().toISOString() } : n))
   }
 
+  const handleDismiss = async (item: AppNotification) => {
+    // Optimistic — gone immediately, restored if the request fails.
+    setNotifs(prev => prev.filter(n => n.id !== item.id))
+    try {
+      await ApiService.dismissNotification(item.id)
+    } catch {
+      setNotifs(prev => [...prev, item].sort((a, b) => b.created_at.localeCompare(a.created_at)))
+      showPill("Couldn't dismiss, try again", 'error')
+    }
+  }
+
   const handleTap = async (item: AppNotification) => {
     await markRead(item)
     if (item.type === 'host_onboarding_complete') {
@@ -146,7 +157,7 @@ export default function NotificationsScreen() {
           sections={sections}
           keyExtractor={n => n.id}
           renderItem={({ item }) => (
-            <NotificationRow item={item} onPress={() => handleTap(item)} onAction={handleAction} />
+            <NotificationRow item={item} onPress={() => handleTap(item)} onAction={handleAction} onDismiss={() => handleDismiss(item)} />
           )}
           renderSectionHeader={({ section }) => (
             <View style={s.sectionHeader}>
