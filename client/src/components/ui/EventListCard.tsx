@@ -129,10 +129,10 @@ const s = StyleSheet.create({
   hostInitial: { fontFamily: FontFamily.headingBold, fontSize: 9, color: '#fff' },
   priceBadge: {
     position: 'absolute', bottom: 5, right: 5,
-    backgroundColor: 'rgba(17,17,17,0.85)',
+    backgroundColor: Colors.brandOrange,
     borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
   },
-  priceBadgeFree: { backgroundColor: 'rgba(0,196,140,0.85)' },
+  priceBadgeFree: { backgroundColor: Colors.accentGreen },
   priceText: { fontFamily: FontFamily.bodySemiBold, fontSize: 10, color: '#fff' },
 
   info: { flex: 1, minWidth: 0, gap: 5 },

@@ -1,14 +1,13 @@
-import { memo, type ReactNode } from 'react'
+import { Fragment, memo, useState, type ReactNode } from 'react'
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Image } from 'expo-image'
 import { MapPin, Flame } from 'lucide-react-native'
-import { useRouter } from 'expo-router'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { Colors, FontFamily, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constants'
 import { parseServerDate } from '@/lib/dates'
 import { hSelection } from '@/lib/haptics'
-import { useAuthStore } from '@/store/auth'
+import { EventQuickPeekSheet } from './EventQuickPeekSheet'
 import type { EventSummary } from '@/api/apiService'
 
 export function HostPill({
@@ -66,8 +65,15 @@ export function HostPill({
 const hp = StyleSheet.create({
   pill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: 'rgba(17,17,17,0.72)',
+    backgroundColor: 'rgba(10,10,10,0.92)',
     borderRadius: 20, paddingLeft: 4, paddingRight: 10, paddingVertical: 4,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.12)',
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
   pillCompact: {
     gap: 5, borderRadius: 16, paddingLeft: 3, paddingRight: 8, paddingVertical: 3,
@@ -111,14 +117,19 @@ interface Props {
 }
 
 export const EventCard = memo(function EventCard({ event, onPress, showHost, isPast, isCancelled, footer }: Props) {
-  const router = useRouter()
-  const myId = useAuthStore(state => state.userId)
+  const [peekOpen, setPeekOpen] = useState(false)
   const cover = event.cover_photos?.[0]?.url
   const spotsLow = event.spots_left > 0 && event.spots_left <= 10
   const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
 
   return (
-    <Pressable style={[s.card, isPast && s.cardPast]} onPress={onPress}>
+    <Fragment>
+    <Pressable
+      style={[s.card, isPast && s.cardPast]}
+      onPress={onPress}
+      onLongPress={() => { hSelection(); setPeekOpen(true) }}
+      delayLongPress={350}
+    >
       {/* 16:9 cover image */}
       <View style={s.imageWrap}>
         {cover ? (
@@ -154,9 +165,6 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
             name={event.host_name}
             avatar={event.host_avatar}
             style={s.hostPillPos}
-            onPress={event.host_id ? () => router.push(
-              event.host_id === myId ? '/(tabs)/profile' as any : `/(profile)/${event.host_id}` as any
-            ) : undefined}
           />
         ) : null}
 
@@ -227,6 +235,8 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
 
       {footer}
     </Pressable>
+    <EventQuickPeekSheet visible={peekOpen} event={event} onClose={() => setPeekOpen(false)} />
+    </Fragment>
   )
 })
 
