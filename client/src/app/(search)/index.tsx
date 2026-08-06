@@ -53,8 +53,17 @@ function useSearch() {
   return { query, users, loading, hasMore, handleQueryChange, loadMore }
 }
 
+function socialProofLabel(user: DiscoverUser): string | null {
+  if (user.has_connection) return "You've chatted"
+  if (user.is_mutual) return 'Follows you'
+  if (user.same_city) return 'Same city'
+  if ((user.shared_interests_count ?? 0) >= 2) return `${user.shared_interests_count} shared interests`
+  return null
+}
+
 const UserRow = memo(function UserRow({ user }: { user: DiscoverUser }) {
   const avatar = user.photos[0]?.url
+  const proof = socialProofLabel(user)
   return (
     <Pressable
       style={s.row}
@@ -82,6 +91,7 @@ const UserRow = memo(function UserRow({ user }: { user: DiscoverUser }) {
             {user.interests.slice(0, 3).join('  ·  ')}
           </Text>
         )}
+        {proof && <Text style={s.rowProof} numberOfLines={1}>{proof}</Text>}
       </View>
     </Pressable>
   )
@@ -196,4 +206,5 @@ const s = StyleSheet.create({
   rowUsername: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.brandOrange },
   rowSub: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary },
   rowInterests: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.brandOrange, marginTop: 1 },
+  rowProof: { fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: '#4CAF50', marginTop: 2 },
 })

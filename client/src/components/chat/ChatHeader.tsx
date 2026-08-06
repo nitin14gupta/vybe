@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { ChevronLeft, MoreVertical, Ghost, X } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
+import { formatLastSeen } from '@/lib/formatLastSeen'
 
 interface Props {
   partnerName: string | null
@@ -12,6 +13,7 @@ interface Props {
   partnerId: string | null
   partnerIsDeleted?: boolean
   isPartnerOnline: boolean
+  partnerLastSeenAt?: string | null
   isWsConnected: boolean
   reconnectFailed?: boolean
   onManualReconnect?: () => void
@@ -27,7 +29,7 @@ interface Props {
 
 export function ChatHeader({
   partnerName, partnerUsername, partnerAvatar, partnerId, partnerIsDeleted,
-  isPartnerOnline, isWsConnected, reconnectFailed, onManualReconnect, loading, onMenuPress,
+  isPartnerOnline, partnerLastSeenAt, isWsConnected, reconnectFailed, onManualReconnect, loading, onMenuPress,
   selectMode, selectedCount = 0, onExitSelect,
 }: Props) {
   const insets = useSafeAreaInsets()
@@ -87,7 +89,11 @@ export function ChatHeader({
                 ? 'This account no longer exists'
                 : partnerUsername
                 ? `@${partnerUsername}`
-                : (isPartnerOnline ? 'Active now' : 'Tap for profile')
+                : isPartnerOnline
+                ? 'Active now'
+                : partnerLastSeenAt
+                ? formatLastSeen(partnerLastSeenAt)
+                : 'Tap for profile'
               }
             </Text>
           </View>

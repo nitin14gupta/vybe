@@ -60,8 +60,8 @@ export default function TicketScreen() {
   const goBack = useGoBack()
   const showPill = usePillStore(s => s.show)
 
-  const [ticket, setTicket] = useState<TicketInfo | null>(() => id ? peekCached<TicketInfo>(`ticket:${id}`) : null)
-  const [loading, setLoading] = useState(() => !(id && peekCached<TicketInfo>(`ticket:${id}`)))
+  const [ticket, setTicket] = useState<TicketInfo | null>(() => id ? peekCached<TicketInfo>(`ticket:v2:${id}`) : null)
+  const [loading, setLoading] = useState(() => !(id && peekCached<TicketInfo>(`ticket:v2:${id}`)))
   const [loadError, setLoadError] = useState(false)
   const [coverUrl, setCoverUrl] = useState('')
   const cardRef = useRef<ViewShotRef>(null)
@@ -72,7 +72,7 @@ export default function TicketScreen() {
     if (!id) return
     setLoading(true)
     setLoadError(false)
-    getOrFetch(`ticket:${id}`, () => ApiService.getMyTicket(id), {
+    getOrFetch(`ticket:v2:${id}`, () => ApiService.getMyTicket(id), {
       ttlMs: t => {
         const d = parseTs(t.date_time)
         return d ? Math.max(d.getTime() - Date.now(), 0) : 60_000

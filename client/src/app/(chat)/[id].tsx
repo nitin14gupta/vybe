@@ -165,6 +165,7 @@ export default function ChatDetailScreen() {
         partnerId={screen.partnerId}
         partnerIsDeleted={screen.partnerIsDeleted}
         isPartnerOnline={screen.isPartnerOnline}
+        partnerLastSeenAt={screen.partnerLastSeenAt}
         isWsConnected={screen.isWsConnected}
         reconnectFailed={screen.reconnectFailed}
         onManualReconnect={screen.manualReconnect}

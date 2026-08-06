@@ -388,6 +388,10 @@ class ApiService {
     return this.patch<{ message: string }>(ENDPOINTS.UPDATE_LIVE_LOCATION, { lat, lng })
   }
 
+  static async heartbeat(): Promise<void> {
+    await this.post<{ message: string }>(ENDPOINTS.HEARTBEAT, {})
+  }
+
   static async getMe(): Promise<ProfileResponse> {
     return this.get<ProfileResponse>(ENDPOINTS.GET_ME)
   }

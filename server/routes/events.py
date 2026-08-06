@@ -117,11 +117,13 @@ class EventSummary(BaseModel):
     capacity: int
     distance_km: Optional[int] = None
     cover_photos: List[EventPhotoItem] = []
+    host_id: Optional[str] = None
     host_name: Optional[str] = None
     host_avatar: Optional[str] = None
     host_is_deleted: bool = False
     age_restriction: int
     attendee_count: int = 0
+    attendee_avatars: List[str] = []
     is_cancelled: bool = False
     # Relationship/relevance signals — only populated by the search-ranked
     # GET /events query (see list_events); default False elsewhere.
@@ -321,11 +323,18 @@ def list_events(
             e.platform_fee_inr, e.host_commission_inr, e.platform_profit_inr,
             e.spots_left, e.capacity, e.age_restriction,
             e.cover_photos,
+            e.host_id::text,
             {dist_sql} AS distance_km,
             u.name AS host_name,
             (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
             COALESCE(u.is_deleted, FALSE) AS host_is_deleted,
             (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id = e.id AND ea.status = 'going')::int AS attendee_count,
+            (SELECT COALESCE(json_agg(au.avatar_url), '[]'::json) FROM (
+                SELECT (SELECT p.url FROM user_photos p WHERE p.user_id = eav.user_id ORDER BY p.position LIMIT 1) AS avatar_url
+                FROM event_attendees eav
+                WHERE eav.event_id = e.id AND eav.status = 'going'
+                ORDER BY eav.joined_at ASC LIMIT 3
+            ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars,
             {relationship_select}
         FROM events e
         JOIN users u ON u.id = e.host_id
@@ -367,11 +376,18 @@ def get_hosted_events(current_user: dict = Depends(get_current_user)):
             e.platform_fee_inr, e.host_commission_inr, e.platform_profit_inr,
                 e.spots_left, e.capacity, e.age_restriction,
                 e.cover_photos, e.is_cancelled,
+                e.host_id::text,
                 NULL::int AS distance_km,
                 u.name AS host_name,
                 (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
                 COALESCE(u.is_deleted, FALSE) AS host_is_deleted,
-                (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id = e.id AND ea.status = 'going')::int AS attendee_count
+                (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id = e.id AND ea.status = 'going')::int AS attendee_count,
+                (SELECT COALESCE(json_agg(au.avatar_url), '[]'::json) FROM (
+                    SELECT (SELECT p.url FROM user_photos p WHERE p.user_id = eav.user_id ORDER BY p.position LIMIT 1) AS avatar_url
+                    FROM event_attendees eav
+                    WHERE eav.event_id = e.id AND eav.status = 'going'
+                    ORDER BY eav.joined_at ASC LIMIT 3
+                ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars
             FROM events e
             JOIN users u ON u.id = e.host_id
             WHERE e.host_id = %s::uuid
@@ -428,11 +444,18 @@ def get_hosted_events_paged(
             e.platform_fee_inr, e.host_commission_inr, e.platform_profit_inr,
                 e.spots_left, e.capacity, e.age_restriction,
                 e.cover_photos, e.is_cancelled,
+                e.host_id::text,
                 NULL::int AS distance_km,
                 u.name AS host_name,
                 (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
                 COALESCE(u.is_deleted, FALSE) AS host_is_deleted,
-                (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id = e.id AND ea.status = 'going')::int AS attendee_count
+                (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id = e.id AND ea.status = 'going')::int AS attendee_count,
+                (SELECT COALESCE(json_agg(au.avatar_url), '[]'::json) FROM (
+                    SELECT (SELECT p.url FROM user_photos p WHERE p.user_id = eav.user_id ORDER BY p.position LIMIT 1) AS avatar_url
+                    FROM event_attendees eav
+                    WHERE eav.event_id = e.id AND eav.status = 'going'
+                    ORDER BY eav.joined_at ASC LIMIT 3
+                ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars
             FROM events e
             JOIN users u ON u.id = e.host_id
             WHERE e.host_id = %s::uuid AND e.date_time {"<" if is_past else ">="} NOW()
@@ -475,11 +498,18 @@ def get_joined_events(current_user: dict = Depends(get_current_user)):
             e.platform_fee_inr, e.host_commission_inr, e.platform_profit_inr,
                 e.spots_left, e.capacity, e.age_restriction,
                 e.cover_photos, e.is_cancelled,
+                e.host_id::text,
                 NULL::int AS distance_km,
                 u.name AS host_name,
                 (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
                 COALESCE(u.is_deleted, FALSE) AS host_is_deleted,
-                (SELECT COUNT(*) FROM event_attendees ea2 WHERE ea2.event_id = e.id AND ea2.status = 'going')::int AS attendee_count
+                (SELECT COUNT(*) FROM event_attendees ea2 WHERE ea2.event_id = e.id AND ea2.status = 'going')::int AS attendee_count,
+                (SELECT COALESCE(json_agg(au.avatar_url), '[]'::json) FROM (
+                    SELECT (SELECT p.url FROM user_photos p WHERE p.user_id = eav.user_id ORDER BY p.position LIMIT 1) AS avatar_url
+                    FROM event_attendees eav
+                    WHERE eav.event_id = e.id AND eav.status = 'going'
+                    ORDER BY eav.joined_at ASC LIMIT 3
+                ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars
             FROM events e
             JOIN users u ON u.id = e.host_id
             JOIN event_attendees ea ON ea.event_id = e.id AND ea.user_id = %s::uuid AND ea.status = 'going'
@@ -535,11 +565,18 @@ def get_joined_events_paged(
             e.platform_fee_inr, e.host_commission_inr, e.platform_profit_inr,
                 e.spots_left, e.capacity, e.age_restriction,
                 e.cover_photos, e.is_cancelled,
+                e.host_id::text,
                 NULL::int AS distance_km,
                 u.name AS host_name,
                 (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
                 COALESCE(u.is_deleted, FALSE) AS host_is_deleted,
-                (SELECT COUNT(*) FROM event_attendees ea2 WHERE ea2.event_id = e.id AND ea2.status = 'going')::int AS attendee_count
+                (SELECT COUNT(*) FROM event_attendees ea2 WHERE ea2.event_id = e.id AND ea2.status = 'going')::int AS attendee_count,
+                (SELECT COALESCE(json_agg(au.avatar_url), '[]'::json) FROM (
+                    SELECT (SELECT p.url FROM user_photos p WHERE p.user_id = eav.user_id ORDER BY p.position LIMIT 1) AS avatar_url
+                    FROM event_attendees eav
+                    WHERE eav.event_id = e.id AND eav.status = 'going'
+                    ORDER BY eav.joined_at ASC LIMIT 3
+                ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars
             FROM events e
             JOIN users u ON u.id = e.host_id
             JOIN event_attendees ea ON ea.event_id = e.id AND ea.user_id = %s::uuid AND ea.status = 'going'
@@ -582,11 +619,18 @@ def get_waitlisted_events(current_user: dict = Depends(get_current_user)):
             e.platform_fee_inr, e.host_commission_inr, e.platform_profit_inr,
                 e.spots_left, e.capacity, e.age_restriction,
                 e.cover_photos, e.is_cancelled,
+                e.host_id::text,
                 NULL::int AS distance_km,
                 u.name AS host_name,
                 (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
                 COALESCE(u.is_deleted, FALSE) AS host_is_deleted,
-                (SELECT COUNT(*) FROM event_attendees ea2 WHERE ea2.event_id = e.id AND ea2.status = 'going')::int AS attendee_count
+                (SELECT COUNT(*) FROM event_attendees ea2 WHERE ea2.event_id = e.id AND ea2.status = 'going')::int AS attendee_count,
+                (SELECT COALESCE(json_agg(au.avatar_url), '[]'::json) FROM (
+                    SELECT (SELECT p.url FROM user_photos p WHERE p.user_id = eav.user_id ORDER BY p.position LIMIT 1) AS avatar_url
+                    FROM event_attendees eav
+                    WHERE eav.event_id = e.id AND eav.status = 'going'
+                    ORDER BY eav.joined_at ASC LIMIT 3
+                ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars
             FROM events e
             JOIN users u ON u.id = e.host_id
             JOIN event_attendees ea ON ea.event_id = e.id AND ea.user_id = %s::uuid AND ea.status = 'waitlist'
@@ -635,11 +679,18 @@ _EVENT_COLUMNS = """
     e.platform_fee_inr, e.host_commission_inr, e.platform_profit_inr,
     e.spots_left, e.capacity, e.age_restriction,
     e.cover_photos, e.is_cancelled,
+    e.host_id::text,
     NULL::int AS distance_km,
     u.name AS host_name,
     (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
     COALESCE(u.is_deleted, FALSE) AS host_is_deleted,
-    (SELECT COUNT(*) FROM event_attendees ea2 WHERE ea2.event_id = e.id AND ea2.status = 'going')::int AS attendee_count
+    (SELECT COUNT(*) FROM event_attendees ea2 WHERE ea2.event_id = e.id AND ea2.status = 'going')::int AS attendee_count,
+    (SELECT COALESCE(json_agg(au.avatar_url), '[]'::json) FROM (
+        SELECT (SELECT p.url FROM user_photos p WHERE p.user_id = eav.user_id ORDER BY p.position LIMIT 1) AS avatar_url
+        FROM event_attendees eav
+        WHERE eav.event_id = e.id AND eav.status = 'going'
+        ORDER BY eav.joined_at ASC LIMIT 3
+    ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars
 """
 
 
@@ -853,6 +904,12 @@ def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
                  WHERE he.host_id = u.id AND COALESCE(he.is_cancelled, FALSE) = FALSE
                 )::int AS host_hosted_events_count,
                 (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id = e.id AND ea.status = 'going')::int AS attendee_count,
+                (SELECT COALESCE(json_agg(au.avatar_url), '[]'::json) FROM (
+                    SELECT (SELECT p.url FROM user_photos p WHERE p.user_id = eav.user_id ORDER BY p.position LIMIT 1) AS avatar_url
+                    FROM event_attendees eav
+                    WHERE eav.event_id = e.id AND eav.status = 'going'
+                    ORDER BY eav.joined_at ASC LIMIT 3
+                ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars,
                 NULL::int AS distance_km,
                 going_ea.ticket_token AS my_ticket_token,
                 going_ea.checked_in_at::text AS my_checked_in_at,
@@ -1778,7 +1835,9 @@ def get_my_ticket(event_id: str, current_user: dict = Depends(get_current_user))
             """
             SELECT ea.ticket_token, e.title AS event_title, e.date_time::text,
                    e.end_time::text, e.location_name, e.event_type,
-                   u.name AS host_name
+                   u.name AS host_name,
+                   (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
+                   (SELECT COUNT(*) FROM event_attendees g WHERE g.event_id = e.id AND g.status = 'going')::int AS attendee_count
             FROM event_attendees ea
             JOIN events e ON e.id = ea.event_id
             JOIN users u ON u.id = e.host_id

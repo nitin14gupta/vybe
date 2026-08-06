@@ -78,6 +78,7 @@ export function EventPreviewOverlay({ visible, form, onClose }: Props) {
     host_avatar: hostAvatar,
     age_restriction: form.ageRestriction,
     attendee_count: 0,
+    attendee_avatars: [],
     waitlist_count: 0,
     is_waitlist_full: false,
   }

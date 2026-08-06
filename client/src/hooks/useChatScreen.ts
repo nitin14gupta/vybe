@@ -138,6 +138,7 @@ export function useChatScreen(convId: string) {
   const [partnerAvatar, setPartnerAvatar] = useState<string | null>(null)
   const [partnerId, setPartnerId] = useState<string | null>(null)
   const [partnerIsDeleted, setPartnerIsDeleted] = useState(false)
+  const [partnerLastSeenAt, setPartnerLastSeenAt] = useState<string | null>(null)
   const [blockStatus, setBlockStatus] = useState<'none' | 'i_blocked' | 'they_blocked'>('none')
 
   // UI state
@@ -188,6 +189,7 @@ export function useChatScreen(convId: string) {
         setPartnerAvatar(conv.partner_avatar)
         setPartnerId(conv.partner_id)
         setPartnerIsDeleted(!!conv.partner_is_deleted)
+        setPartnerLastSeenAt(conv.partner_last_seen_at ?? null)
         setBlockStatus((conv as any).block_status ?? 'none')
       }
     }).catch(() => {})
@@ -486,6 +488,7 @@ export function useChatScreen(convId: string) {
   return {
     // partner
     partnerName, partnerUsername, partnerAvatar, partnerId, partnerIsDeleted, blockStatus,
+    partnerLastSeenAt,
     // chat
     messages, listData, isPartnerTyping, isPartnerRecording, isPartnerOnline,
     isWsConnected, reconnectFailed, manualReconnect, loading,

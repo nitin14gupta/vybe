@@ -327,6 +327,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   locked_at timestamp with time zone,
   locked_by uuid,
   notification_prefs jsonb DEFAULT '{}'::jsonb NOT NULL,
+  last_seen_at timestamp with time zone,
   CONSTRAINT users_pkey PRIMARY KEY (id),
   CONSTRAINT users_phone_key UNIQUE (phone),
   CONSTRAINT users_username_key UNIQUE (username)

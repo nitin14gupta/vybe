@@ -226,6 +226,7 @@ def list_conversations(
                 CASE WHEN c.user1_id = %s::uuid THEN u2.username ELSE u1.username END AS partner_username,
                 CASE WHEN c.user1_id = %s::uuid THEN p2.url ELSE p1.url END AS partner_avatar,
                 CASE WHEN c.user1_id = %s::uuid THEN COALESCE(u2.is_deleted, FALSE) ELSE COALESCE(u1.is_deleted, FALSE) END AS partner_is_deleted,
+                CASE WHEN c.user1_id = %s::uuid THEN u2.last_seen_at ELSE u1.last_seen_at END AS partner_last_seen_at,
                 -- Last message
                 m.content AS last_message,
                 m.content_type AS last_message_type,
@@ -276,7 +277,7 @@ def list_conversations(
             WHERE (c.user1_id = %s::uuid OR c.user2_id = %s::uuid)""" + hidden_filter_sql + """
             ORDER BY COALESCE(c.last_message_at, c.created_at) DESC
             """,
-            (uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid) + (() if include_hidden else (uid,)),
+            (uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid, uid) + (() if include_hidden else (uid,)),
         )
         rows = cur.fetchall()
 
@@ -748,8 +749,36 @@ async def chat_websocket(
         except Exception as e:
             _warn_redis("set online presence", e)
 
-    # Mark user online
+    async def _touch_last_seen():
+        # Real DB write, throttled to once/60s per user so a chat screen's
+        # 25s keepalive pings don't hammer the users table.
+        if not r:
+            with get_db() as (cur, conn):
+                cur.execute("UPDATE users SET last_seen_at = NOW() WHERE id = %s::uuid", (uid,))
+                conn.commit()
+            return
+        try:
+            if await r.set(f"lastseen_throttle:{uid}", "1", ex=60, nx=True):
+                with get_db() as (cur, conn):
+                    cur.execute("UPDATE users SET last_seen_at = NOW() WHERE id = %s::uuid", (uid,))
+                    conn.commit()
+        except Exception as e:
+            _warn_redis("throttle last_seen write", e)
+
+    # Mark user online, tell the partner we just came online, and tell
+    # ourselves whether the partner is currently online.
     await _mark_online()
+    await _touch_last_seen()
+    partner_online = False
+    if r and partner_id:
+        try:
+            partner_online = bool(await r.get(f"online:{partner_id}"))
+        except Exception as e:
+            _warn_redis("read partner online", e)
+    await websocket.send_text(json.dumps({"type": "online", "user_id": partner_id, "is_online": partner_online}))
+    online_payload = {"type": "online", "user_id": uid, "is_online": True}
+    await _broadcast_local(conv_id, online_payload, exclude=websocket)
+    await _publish(f"conv:{conv_id}", online_payload)
 
     try:
         while True:
@@ -759,6 +788,7 @@ async def chat_websocket(
                 # Keepalive ping
                 await websocket.send_text(json.dumps({"type": "pong"}))
                 await _mark_online()
+                await _touch_last_seen()
                 continue
 
             data = json.loads(raw)
@@ -767,6 +797,7 @@ async def chat_websocket(
             if msg_type == "ping":
                 await websocket.send_text(json.dumps({"type": "pong"}))
                 await _mark_online()
+                await _touch_last_seen()
 
             elif msg_type == "typing":
                 if not _typing_limiter.allow(f"typing:{uid}"):
@@ -925,6 +956,15 @@ async def chat_websocket(
         _message_limiter.discard(f"msg:{uid}")
         _typing_limiter.discard(f"typing:{uid}")
         _reaction_limiter.discard(f"reaction:{uid}")
+        try:
+            with get_db() as (cur, conn):
+                cur.execute("UPDATE users SET last_seen_at = NOW() WHERE id = %s::uuid", (uid,))
+                conn.commit()
+        except Exception as e:
+            print(f"[WS] failed to write last_seen_at on disconnect: {e}", flush=True)
+        offline_payload = {"type": "online", "user_id": uid, "is_online": False}
+        await _broadcast_local(conv_id, offline_payload)
+        await _publish(f"conv:{conv_id}", offline_payload)
         if r:
             try:
                 await r.delete(f"online:{uid}")

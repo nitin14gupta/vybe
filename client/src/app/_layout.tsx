@@ -19,6 +19,7 @@ import { PillOverlay, PermissionSheetOverlay, AccountLockedOverlay, MaintenanceO
 import { useNotificationSetup } from '@/hooks/useNotificationSetup'
 import { useDeepLinkRouter } from '@/hooks/useDeepLinkRouter'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
+import { usePresenceHeartbeat } from '@/hooks/usePresenceHeartbeat'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -56,6 +57,7 @@ export default function RootLayout() {
   useNotificationSetup()
   useDeepLinkRouter()
   useNetworkStatus()
+  usePresenceHeartbeat()
 
   useEffect(() => {
     async function bootstrap() {

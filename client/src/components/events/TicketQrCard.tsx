@@ -1,5 +1,6 @@
 import React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
+import { Image } from 'expo-image'
 import { Calendar, MapPin } from 'lucide-react-native'
 import { Colors, FontFamily, Radius, LogoBlack } from '@/constants'
 import type { TicketInfo } from '@/api/apiService'
@@ -54,6 +55,23 @@ export function TicketQrCard({ ticket }: { ticket: TicketInfo }) {
               <Text style={s.metaMain} numberOfLines={1}>{ticket.location_name}</Text>
             </View>
           )}
+
+             {(ticket.host_name || ticket.attendee_count > 0) && (
+          <View style={s.hostRow}>
+            {ticket.host_avatar ? (
+              <Image source={{ uri: ticket.host_avatar }} style={s.hostAvatar} cachePolicy="memory-disk" priority="low" transition={150} />
+            ) : ticket.host_name ? (
+              <View style={[s.hostAvatar, s.hostAvatarFallback]}>
+                <Text style={s.hostAvatarInitial}>{ticket.host_name[0]}</Text>
+              </View>
+            ) : null}
+            <Text style={s.hostRowText} numberOfLines={1}>
+              {ticket.host_name ? `Hosted by ${ticket.host_name}` : ''}
+              {ticket.host_name && ticket.attendee_count > 0 ? '  ·  ' : ''}
+              {ticket.attendee_count > 0 ? `${ticket.attendee_count} going` : ''}
+            </Text>
+          </View>
+        )}
         </View>
       </View>
 
@@ -118,6 +136,21 @@ const s = StyleSheet.create({
     fontFamily: FontFamily.bodyRegular,
     fontSize: 12,
     color: Colors.inkSecondary,
+  },
+
+  hostRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  hostAvatar: { width: 22, height: 22, borderRadius: 11 },
+  hostAvatarFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
+  hostAvatarInitial: { fontFamily: FontFamily.headingBold, fontSize: 11, color: Colors.inkPrimary },
+  hostRowText: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 12,
+    color: Colors.inkSecondary,
+    flex: 1,
   },
 
   tearRow: {

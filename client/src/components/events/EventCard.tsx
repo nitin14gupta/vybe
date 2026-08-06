@@ -3,9 +3,12 @@ import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } fro
 import { LinearGradient } from 'expo-linear-gradient'
 import { Image } from 'expo-image'
 import { MapPin, Flame } from 'lucide-react-native'
+import { useRouter } from 'expo-router'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { Colors, FontFamily, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constants'
 import { parseServerDate } from '@/lib/dates'
+import { hSelection } from '@/lib/haptics'
+import { useAuthStore } from '@/store/auth'
 import type { EventSummary } from '@/api/apiService'
 
 export function HostPill({
@@ -13,14 +16,16 @@ export function HostPill({
   avatar,
   compact,
   style,
+  onPress,
 }: {
   name: string
   avatar: string | null
   compact?: boolean
   style?: StyleProp<ViewStyle>
+  onPress?: () => void
 }) {
-  return (
-    <View style={[hp.pill, compact && hp.pillCompact, style]}>
+  const content = (
+    <>
       {avatar ? (
         <Image
           source={{ uri: avatar }}
@@ -36,6 +41,24 @@ export function HostPill({
         </View>
       )}
       <Text style={[hp.text, compact && hp.textCompact]} numberOfLines={1}>{name}</Text>
+    </>
+  )
+
+  if (onPress) {
+    return (
+      <Pressable
+        onPress={() => { hSelection(); onPress() }}
+        hitSlop={6}
+        style={({ pressed }) => [hp.pill, compact && hp.pillCompact, style, pressed && hp.pillPressed]}
+      >
+        {content}
+      </Pressable>
+    )
+  }
+
+  return (
+    <View style={[hp.pill, compact && hp.pillCompact, style]}>
+      {content}
     </View>
   )
 }
@@ -49,6 +72,7 @@ const hp = StyleSheet.create({
   pillCompact: {
     gap: 5, borderRadius: 16, paddingLeft: 3, paddingRight: 8, paddingVertical: 3,
   },
+  pillPressed: { opacity: 0.7 },
   avatar: { width: 20, height: 20, borderRadius: 10 },
   avatarCompact: { width: 16, height: 16, borderRadius: 8 },
   avatarFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
@@ -87,6 +111,8 @@ interface Props {
 }
 
 export const EventCard = memo(function EventCard({ event, onPress, showHost, isPast, isCancelled, footer }: Props) {
+  const router = useRouter()
+  const myId = useAuthStore(state => state.userId)
   const cover = event.cover_photos?.[0]?.url
   const spotsLow = event.spots_left > 0 && event.spots_left <= 10
   const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
@@ -124,7 +150,14 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
 
         {/* Host pill — avatar + name, Partiful-style organizer credit */}
         {event.host_name && !event.host_is_deleted ? (
-          <HostPill name={event.host_name} avatar={event.host_avatar} style={s.hostPillPos} />
+          <HostPill
+            name={event.host_name}
+            avatar={event.host_avatar}
+            style={s.hostPillPos}
+            onPress={event.host_id ? () => router.push(
+              event.host_id === myId ? '/(tabs)/profile' as any : `/(profile)/${event.host_id}` as any
+            ) : undefined}
+          />
         ) : null}
 
         {/* Status badges */}
@@ -168,7 +201,20 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
           {event.distance_km != null && (
             <Text style={s.dist}>{event.distance_km} km</Text>
           )}
-          <Text style={s.attendees}>{event.attendee_count} going</Text>
+          <View style={s.attendeesRow}>
+            {event.attendee_avatars?.slice(0, 3).map((url, i) => (
+              <Image
+                key={url + i}
+                source={{ uri: url }}
+                style={[s.stackAvatar, i > 0 && { marginLeft: -8 }, { zIndex: 3 - i }]}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                priority="low"
+                transition={150}
+              />
+            ))}
+            <Text style={s.attendees}>{event.attendee_count} going</Text>
+          </View>
         </View>
       </View>
 
@@ -260,7 +306,13 @@ const s = StyleSheet.create({
   eventType: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.inkSecondary, textTransform: 'capitalize' },
   location: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary },
   dist: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.inkDisabled },
-  attendees: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled },
+  attendees: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, marginLeft: 4 },
+  attendeesRow: { flexDirection: 'row', alignItems: 'center' },
+  stackAvatar: {
+    width: 18, height: 18, borderRadius: 9,
+    borderWidth: 1.5, borderColor: Colors.surface,
+    backgroundColor: '#2a2a2a',
+  },
 
   spotsBar: {
     flexDirection: 'row', alignItems: 'center', gap: 6,

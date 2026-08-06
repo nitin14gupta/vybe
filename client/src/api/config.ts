@@ -22,6 +22,7 @@ export const ENDPOINTS = {
   SET_PAYOUT_DETAILS: '/users/payout-details',
   UPDATE_LIVE_LOCATION: '/users/location/live',
   GET_ME: '/users/me',
+  HEARTBEAT: '/users/heartbeat',
 
   // Upload
   UPLOAD_PHOTO: '/upload/photo',

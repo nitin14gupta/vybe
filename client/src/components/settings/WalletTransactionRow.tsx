@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native'
+import { Image } from 'expo-image'
 import { ArrowDownLeft, ArrowUpRight } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 import type { WalletTransaction } from '@/api/apiService'
@@ -21,15 +22,19 @@ export function WalletTransactionRow({ item }: { item: WalletTransaction }) {
 
   return (
     <View style={s.txRow}>
-      <View style={[s.txIconWrap, isCredit ? s.txIconCredit : s.txIconDebit]}>
-        {isCredit
-          ? <ArrowDownLeft size={16} color={Colors.accentGreen} strokeWidth={2} />
-          : <ArrowUpRight size={16} color={Colors.inkSecondary} strokeWidth={2} />
-        }
-      </View>
+      {item.event_cover ? (
+        <Image source={{ uri: item.event_cover }} style={s.txCover} cachePolicy="memory-disk" priority="low" transition={150} />
+      ) : (
+        <View style={[s.txIconWrap, isCredit ? s.txIconCredit : s.txIconDebit]}>
+          {isCredit
+            ? <ArrowDownLeft size={16} color={Colors.accentGreen} strokeWidth={2} />
+            : <ArrowUpRight size={16} color={Colors.inkSecondary} strokeWidth={2} />
+          }
+        </View>
+      )}
       <View style={s.txMid}>
         <Text style={s.txDesc} numberOfLines={1}>
-          {item.description ?? (isCredit ? 'Wallet credit' : 'Wallet debit')}
+          {item.event_title ?? item.description ?? (isCredit ? 'Wallet credit' : 'Wallet debit')}
         </Text>
         <Text style={s.txDate}>{fmtDate(item.created_at)}</Text>
         {isCredit && item.expires_at && (
@@ -46,6 +51,7 @@ export function WalletTransactionRow({ item }: { item: WalletTransaction }) {
 const s = StyleSheet.create({
   txRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 14, backgroundColor: Colors.surface },
   txIconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  txCover: { width: 36, height: 36, borderRadius: 10 },
   txIconCredit: { backgroundColor: 'rgba(0,196,140,0.12)' },
   txIconDebit: { backgroundColor: 'rgba(255,255,255,0.06)' },
   txMid: { flex: 1 },

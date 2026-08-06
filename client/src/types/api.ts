@@ -30,6 +30,7 @@ export interface UserResponse {
   is_host_onboarding_finished: boolean
   photos: PhotoResponse[]
   name_changed_at: string | null
+  last_seen_at: string | null
 }
 
 export interface PayoutDetailsResponse {
@@ -125,11 +126,13 @@ export interface EventSummary {
   capacity: number
   distance_km: number | null
   cover_photos: EventPhoto[]
+  host_id?: string | null
   host_name: string | null
   host_avatar: string | null
   host_is_deleted?: boolean
   age_restriction: number
   attendee_count: number
+  attendee_avatars: string[]
   is_cancelled?: boolean
   waitlist_count: number
   is_waitlist_full: boolean
@@ -197,6 +200,8 @@ export interface TicketInfo {
   location_name: string | null
   event_type: string
   host_name: string | null
+  host_avatar: string | null
+  attendee_count: number
 }
 
 export interface ReviewItem {
@@ -251,6 +256,11 @@ export interface DiscoverUser {
   distance_km: number | null
   match_pct: number
   photos: PhotoResponse[]
+  is_following?: boolean
+  is_mutual?: boolean
+  has_connection?: boolean
+  same_city?: boolean
+  shared_interests_count?: number
 }
 
 export interface VybeRequest {
@@ -273,6 +283,7 @@ export interface Conversation {
   partner_username: string | null
   partner_avatar: string | null
   partner_is_deleted: boolean
+  partner_last_seen_at: string | null
   last_message: string | null
   last_message_type: string | null
   last_sender_id: string | null
@@ -332,6 +343,8 @@ export interface WalletTransaction {
   description: string | null
   expires_at: string | null
   created_at: string
+  event_title: string | null
+  event_cover: string | null
 }
 
 export interface PaymentOrderResponse {

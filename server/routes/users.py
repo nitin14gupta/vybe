@@ -36,6 +36,7 @@ _USER_SELECT = """
         u.lat,
         u.lng,
         u.name_changed_at::text,
+        u.last_seen_at::text,
         COALESCE(u.is_deleted, FALSE) AS is_deleted,
         (SELECT COUNT(*) FROM follows f
          JOIN users fu ON fu.id = f.follower_id AND COALESCE(fu.is_deleted, FALSE) = FALSE
@@ -425,6 +426,17 @@ def update_live_location(body: LivePingUpdate, current_user: dict = Depends(get_
             "UPDATE users SET lat = %s, lng = %s WHERE id = %s",
             (body.lat, body.lng, current_user["id"]),
         )
+    return {"message": "ok"}
+
+
+@router.post("/heartbeat")
+def heartbeat(current_user: dict = Depends(get_current_user)):
+    """Called periodically by the client while the app is foregrounded and
+    the user is logged in, so `last_seen_at` reflects real activity even
+    when no chat WebSocket is open (browsing home, events, profile, etc)."""
+    with get_db() as (cur, conn):
+        cur.execute("UPDATE users SET last_seen_at = NOW() WHERE id = %s::uuid", (current_user["id"],))
+        conn.commit()
     return {"message": "ok"}
 
 

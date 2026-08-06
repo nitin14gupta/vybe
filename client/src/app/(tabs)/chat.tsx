@@ -16,6 +16,7 @@ import { useConversations } from '@/hooks/useConversations'
 import { useAuthStore } from '@/store/auth'
 import ApiService from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
+import { isRecentlyActive } from '@/lib/formatLastSeen'
 import type { Conversation } from '@/api/apiService'
 
 function formatTime(iso: string | null): string {
@@ -82,6 +83,7 @@ const ConvRow = memo(function ConvRow({ conv, onPress, onLongPress, onAvatarPres
             <Text style={s.convAvatarInitial}>{(conv.partner_name ?? '?').charAt(0)}</Text>
           </View>
         )}
+        {!isDeleted && isRecentlyActive(conv.partner_last_seen_at) && <View style={s.convOnlineDot} />}
       </Pressable>
 
       <View style={s.convBody}>
@@ -471,6 +473,17 @@ const s = StyleSheet.create({
   convRowLocked: { opacity: 0.75 },
   convAvatarWrap: { position: 'relative', marginRight: 14 },
   convAvatar: { width: 56, height: 56, borderRadius: 28 },
+  convOnlineDot: {
+    position: 'absolute',
+    bottom: 1,
+    right: 1,
+    width: 13,
+    height: 13,
+    borderRadius: 6.5,
+    backgroundColor: '#4CAF50',
+    borderWidth: 2,
+    borderColor: Colors.background,
+  },
   convAvatarFallback: {
     backgroundColor: '#2a2a2a',
     alignItems: 'center',
