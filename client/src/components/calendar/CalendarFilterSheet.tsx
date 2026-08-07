@@ -1,8 +1,7 @@
 import { useRef, useEffect, useState, useMemo, useCallback, memo } from 'react'
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import {
-  BottomSheetModal, BottomSheetView, BottomSheetScrollView,
-  BottomSheetFlatList, BottomSheetTextInput, BottomSheetBackdrop,
+  BottomSheetModal, BottomSheetFlatList, BottomSheetTextInput, BottomSheetBackdrop,
 } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -12,7 +11,7 @@ import { Colors, FontFamily, Radius, Spacing } from '@/constants'
 import { useCities, type CityResponse } from '@/hooks/useCities'
 import { DEFAULT_CALENDAR_FILTERS, type CalendarFilters } from '@/hooks/useCalendarEvents'
 
-const SNAP_POINTS = ['68%']
+const SNAP_POINTS = ['62%']
 
 interface Props {
   visible: boolean
@@ -25,21 +24,19 @@ function renderBackdrop(props: BottomSheetBackdropProps) {
   return <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close" opacity={0.55} />
 }
 
-function CheckboxRow({ Icon, label, checked, onPress }: {
+// Pill toggle instead of a checkbox row — matches AttendeeFilterPills'
+// language elsewhere in the app. Neutral (white-on-dark) when active, not
+// brand-colored — orange stays reserved for the single Apply CTA below.
+function TogglePill({ Icon, label, active, onPress }: {
   Icon: any
   label: string
-  checked: boolean
+  active: boolean
   onPress: () => void
 }) {
   return (
-    <Pressable style={s.row} onPress={onPress} android_ripple={{ color: 'rgba(255,255,255,0.06)' }}>
-      <View style={s.rowLeft}>
-        <Icon size={18} color={Colors.inkSecondary} strokeWidth={2} />
-        <Text style={s.rowLabel}>{label}</Text>
-      </View>
-      <View style={[s.checkbox, checked && s.checkboxChecked]}>
-        {checked && <Check size={14} color="#111" strokeWidth={3} />}
-      </View>
+    <Pressable style={[s.pill, active && s.pillActive]} onPress={onPress} android_ripple={{ color: 'rgba(255,255,255,0.06)' }}>
+      <Icon size={16} color={active ? '#111' : Colors.inkSecondary} strokeWidth={2.2} />
+      <Text style={[s.pillLabel, active && s.pillLabelActive]}>{label}</Text>
     </Pressable>
   )
 }
@@ -56,7 +53,7 @@ const CityRow = memo(function CityRow({ city, selected, onPress }: {
         <Text style={[s.cityName, selected && s.cityNameSelected]}>{city.name}</Text>
         <Text style={s.cityState}>{city.state}</Text>
       </View>
-      {selected && <Check size={18} color={Colors.brandOrange} strokeWidth={2.5} />}
+      {selected && <Check size={18} color={Colors.inkPrimary} strokeWidth={2.5} />}
     </Pressable>
   )
 })
@@ -66,6 +63,7 @@ function CalendarFilterSheetCore({ filters, onApply, onClose }: Omit<Props, 'vis
   const [draft, setDraft] = useState<CalendarFilters>(filters)
   const [view, setView] = useState<'filters' | 'city'>('filters')
   const [query, setQuery] = useState('')
+  const [citySearchFocused, setCitySearchFocused] = useState(false)
   const { cities } = useCities()
 
   useEffect(() => { sheetRef.current?.present() }, [])
@@ -111,40 +109,42 @@ function CalendarFilterSheetCore({ filters, onApply, onClose }: Omit<Props, 'vis
             <Pressable onPress={reset}><Text style={s.resetText}>Reset</Text></Pressable>
           </View>
 
-          <BottomSheetScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.body}>
+          <View style={s.body}>
             <View style={s.section}>
               <Text style={s.sectionLabel}>SHOW</Text>
-              <CheckboxRow
-                Icon={PartyPopper}
-                label="Hosting"
-                checked={draft.showHosted}
-                onPress={() => { hSelection(); setDraft(d => ({ ...d, showHosted: !d.showHosted })) }}
-              />
-              <CheckboxRow
-                Icon={Users}
-                label="Going"
-                checked={draft.showGoing}
-                onPress={() => { hSelection(); setDraft(d => ({ ...d, showGoing: !d.showGoing })) }}
-              />
-              <CheckboxRow
-                Icon={Clock3}
-                label="Waitlisted"
-                checked={draft.showWaitlisted}
-                onPress={() => { hSelection(); setDraft(d => ({ ...d, showWaitlisted: !d.showWaitlisted })) }}
-              />
+              <View style={s.pillRow}>
+                <TogglePill
+                  Icon={PartyPopper}
+                  label="Hosting"
+                  active={draft.showHosted}
+                  onPress={() => { hSelection(); setDraft(d => ({ ...d, showHosted: !d.showHosted })) }}
+                />
+                <TogglePill
+                  Icon={Users}
+                  label="Going"
+                  active={draft.showGoing}
+                  onPress={() => { hSelection(); setDraft(d => ({ ...d, showGoing: !d.showGoing })) }}
+                />
+                <TogglePill
+                  Icon={Clock3}
+                  label="Waitlisted"
+                  active={draft.showWaitlisted}
+                  onPress={() => { hSelection(); setDraft(d => ({ ...d, showWaitlisted: !d.showWaitlisted })) }}
+                />
+              </View>
             </View>
 
             <View style={s.section}>
               <Text style={s.sectionLabel}>LOCATION</Text>
-              <Pressable style={s.row} onPress={() => { hTap(); setView('city') }} android_ripple={{ color: 'rgba(255,255,255,0.06)' }}>
+              <Pressable style={s.locationCard} onPress={() => { hTap(); setView('city') }} android_ripple={{ color: 'rgba(255,255,255,0.06)' }}>
                 <View style={s.rowLeft}>
                   <MapPin size={18} color={Colors.inkSecondary} strokeWidth={2} />
-                  <Text style={s.rowLabel}>{draft.city ? draft.city.name : 'All'}</Text>
+                  <Text style={s.rowLabel}>{draft.city ? draft.city.name : 'All cities'}</Text>
                 </View>
                 <ChevronRight size={18} color={Colors.inkDisabled} strokeWidth={2} />
               </Pressable>
             </View>
-          </BottomSheetScrollView>
+          </View>
 
           <Pressable onPress={apply} style={s.applyWrap}>
             <LinearGradient colors={[Colors.brandOrange, Colors.brandCoral]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.applyBtn}>
@@ -162,13 +162,15 @@ function CalendarFilterSheetCore({ filters, onApply, onClose }: Omit<Props, 'vis
             <View style={{ width: 20 }} />
           </View>
 
-          <View style={s.searchWrap}>
+          <View style={[s.searchWrap, citySearchFocused && s.searchWrapFocused]}>
             <Search size={16} color={Colors.inkSecondary} strokeWidth={2} />
             <BottomSheetTextInput
               placeholder="Search cities…"
               placeholderTextColor={Colors.inkDisabled}
               value={query}
               onChangeText={setQuery}
+              onFocus={() => setCitySearchFocused(true)}
+              onBlur={() => setCitySearchFocused(false)}
               style={s.searchInput}
             />
           </View>
@@ -181,8 +183,8 @@ function CalendarFilterSheetCore({ filters, onApply, onClose }: Omit<Props, 'vis
             contentContainerStyle={s.cityList}
             ListHeaderComponent={
               <Pressable style={s.cityRow} onPress={() => pickCity(null)} android_ripple={{ color: 'rgba(255,255,255,0.06)' }}>
-                <Text style={[s.cityName, !draft.city && s.cityNameSelected]}>All</Text>
-                {!draft.city && <Check size={18} color={Colors.brandOrange} strokeWidth={2.5} />}
+                <Text style={[s.cityName, !draft.city && s.cityNameSelected]}>All cities</Text>
+                {!draft.city && <Check size={18} color={Colors.inkPrimary} strokeWidth={2.5} />}
               </Pressable>
             }
             renderItem={({ item }) => (
@@ -209,29 +211,39 @@ const s = StyleSheet.create({
     paddingHorizontal: Spacing.screenPadding, paddingVertical: 12,
   },
   title: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary },
-  resetText: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.brandOrange },
+  resetText: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.inkSecondary },
   backBtn: { width: 20 },
 
-  body: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 16, gap: 24 },
-  section: { gap: 2 },
+  body: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 16, gap: 26 },
+  section: { gap: 10 },
   sectionLabel: {
     fontFamily: FontFamily.bodyMedium, fontSize: 12, letterSpacing: 0.8,
-    color: Colors.inkSecondary, marginBottom: 6,
+    color: Colors.inkSecondary,
   },
 
-  row: {
+  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  pill: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 16, paddingVertical: 10,
+    borderRadius: Radius.pill,
+    borderWidth: 1, borderColor: Colors.divider,
+    backgroundColor: 'transparent',
+  },
+  pillActive: {
+    backgroundColor: Colors.inkPrimary,
+    borderColor: Colors.inkPrimary,
+  },
+  pillLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.inkSecondary },
+  pillLabelActive: { color: '#111', fontFamily: FontFamily.bodySemiBold },
+
+  locationCard: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 12,
+    backgroundColor: Colors.elevated,
+    borderRadius: Radius.input,
+    paddingHorizontal: 14, paddingVertical: 14,
   },
   rowLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   rowLabel: { fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkPrimary },
-
-  checkbox: {
-    width: 22, height: 22, borderRadius: 6,
-    borderWidth: 1.5, borderColor: Colors.divider,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  checkboxChecked: { backgroundColor: Colors.brandOrange, borderColor: Colors.brandOrange },
 
   applyWrap: { paddingHorizontal: Spacing.screenPadding, paddingTop: 8, paddingBottom: 24 },
   applyBtn: { borderRadius: Radius.pill, paddingVertical: 15, alignItems: 'center' },
@@ -240,9 +252,11 @@ const s = StyleSheet.create({
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     marginHorizontal: Spacing.screenPadding, marginBottom: 10,
-    height: 44, borderRadius: Radius.input, backgroundColor: Colors.elevated,
+    height: 46, borderRadius: Radius.input, backgroundColor: Colors.elevated,
+    borderWidth: 1.5, borderColor: 'transparent',
     paddingHorizontal: 14,
   },
+  searchWrapFocused: { borderColor: Colors.inkSecondary },
   searchInput: { flex: 1, fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkPrimary, padding: 0 },
 
   cityList: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 24 },
@@ -252,6 +266,6 @@ const s = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.divider,
   },
   cityName: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.inkPrimary, marginBottom: 2 },
-  cityNameSelected: { color: Colors.brandOrange },
+  cityNameSelected: { color: Colors.inkPrimary },
   cityState: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary },
 })

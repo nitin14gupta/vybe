@@ -1,6 +1,7 @@
 import React from 'react'
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import { Pressable, ScrollView, Text, View } from 'react-native'
 import { Colors, DESCRIPTION_TEMPLATES, RULES_TEMPLATES } from '@/constants'
+import { GlassInput } from '@/components/ui'
 import type { CreateEventForm } from '@/hooks/useCreateEvent'
 import { ef, EVENT_TYPES } from './styles'
 
@@ -30,19 +31,14 @@ function Inner({ form, set, errors, setErrors, disabled }: Omit<Props, 'scrollab
   return (
     <>
       <Text style={ef.fieldLabel}>Event Title *</Text>
-      <View style={[ef.inputWrap, errors.title && ef.inputWrapError]}>
-        <TextInput
-          style={ef.textInput}
-          value={form.title}
-          onChangeText={v => { set('title', v.slice(0, 60)); setErrors(e => ({ ...e, title: '' })) }}
-          placeholder="What's the vibe called?"
-          placeholderTextColor={Colors.glassTextDisabled}
-          maxLength={60}
-          editable={!disabled}
-        />
-        <Text style={ef.charCount}>{form.title.length}/60</Text>
-      </View>
-      {errors.title ? <Text style={ef.errorText}>{errors.title}</Text> : null}
+      <GlassInput
+        value={form.title}
+        onChangeText={v => { set('title', v.slice(0, 60)); setErrors(e => ({ ...e, title: '' })) }}
+        placeholder="What's the vibe called?"
+        maxLength={60}
+        disabled={disabled}
+        error={errors.title}
+      />
 
       <Text style={[ef.fieldLabel, { marginTop: 20 }]}>Event Type *</Text>
       {errors.eventType ? <Text style={ef.errorText}>{errors.eventType}</Text> : null}
@@ -70,19 +66,14 @@ function Inner({ form, set, errors, setErrors, disabled }: Omit<Props, 'scrollab
           </Pressable>
         )}
       </View>
-      <View style={ef.inputWrap}>
-        <TextInput
-          style={[ef.textInput, ef.textArea]}
-          value={form.description}
-          onChangeText={v => set('description', v.slice(0, 500))}
-          placeholder="Tell people about the vibe..."
-          placeholderTextColor={Colors.glassTextDisabled}
-          multiline
-          maxLength={500}
-          editable={!disabled}
-        />
-        <Text style={ef.charCount}>{form.description.length}/500</Text>
-      </View>
+      <GlassInput
+        value={form.description}
+        onChangeText={v => set('description', v.slice(0, 500))}
+        placeholder="Tell people about the vibe..."
+        multiline
+        maxLength={500}
+        disabled={disabled}
+      />
 
       <View style={[ef.fieldLabelRow, { marginTop: 20 }]}>
         <Text style={ef.fieldLabel}>House Rules (optional)</Text>
@@ -95,19 +86,14 @@ function Inner({ form, set, errors, setErrors, disabled }: Omit<Props, 'scrollab
           </Pressable>
         )}
       </View>
-      <View style={ef.inputWrap}>
-        <TextInput
-          style={[ef.textInput, ef.textArea]}
-          value={form.rules}
-          onChangeText={v => set('rules', v.slice(0, 200))}
-          placeholder="No shoes inside, BYO food..."
-          placeholderTextColor={Colors.glassTextDisabled}
-          multiline
-          maxLength={200}
-          editable={!disabled}
-        />
-        <Text style={ef.charCount}>{form.rules.length}/200</Text>
-      </View>
+      <GlassInput
+        value={form.rules}
+        onChangeText={v => set('rules', v.slice(0, 200))}
+        placeholder="No shoes inside, BYO food..."
+        multiline
+        maxLength={200}
+        disabled={disabled}
+      />
     </>
   )
 }

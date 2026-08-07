@@ -1,9 +1,9 @@
 import React from 'react'
-import { StyleSheet, Text, TextInput, View, Modal, FlatList, Pressable } from 'react-native'
+import { StyleSheet, Text, View, Modal, FlatList, Pressable } from 'react-native'
 import { MapPin, X, Search } from 'lucide-react-native'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { Colors, FontFamily } from '@/constants'
-import { Screen } from '@/components/ui'
+import { Screen, GlassInput } from '@/components/ui'
 
 interface LocationSearchModalProps {
   visible: boolean
@@ -35,17 +35,14 @@ export function LocationSearchModal({
           <View style={{ width: 38 }} />
         </View>
 
-        <View style={s.searchWrap}>
-          <Search size={18} color={Colors.glassTextDisabled} />
-          <TextInput
-            style={s.searchInput}
-            placeholder="Place name, address, or link"
-            placeholderTextColor={Colors.glassTextDisabled}
-            value={query}
-            onChangeText={setQuery}
-            autoFocus
-          />
-        </View>
+        <GlassInput
+          style={s.searchWrap}
+          leftIcon={<Search size={18} color={Colors.glassTextDisabled} />}
+          placeholder="Place name, address, or link"
+          value={query}
+          onChangeText={setQuery}
+          autoFocus
+        />
 
         {loading ? (
           <AutoSkeletonView isLoading animationType="gradient" defaultRadius={7} gradientColors={['#4a4a4a', '#6a6a6a']}>
@@ -114,16 +111,7 @@ const s = StyleSheet.create({
     fontSize: 17, color: '#fff',
   },
   searchWrap: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.glassSurface,
     marginHorizontal: 16, marginTop: 12, marginBottom: 20,
-    borderRadius: 24, paddingHorizontal: 16, height: 48,
-    borderWidth: 1, borderColor: Colors.glassBorder,
-  },
-  searchInput: {
-    flex: 1, color: '#fff',
-    fontFamily: FontFamily.bodyRegular, fontSize: 15,
-    marginLeft: 10, paddingVertical: 10,
   },
   listContent: {
     paddingHorizontal: 16, paddingBottom: 40,

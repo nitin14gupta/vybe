@@ -40,7 +40,6 @@ function RootNavigator() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="(events)" />
         <Stack.Screen name="(chat)" />
-        <Stack.Screen name="(search)" />
         <Stack.Screen name="(settings)" />
         <Stack.Screen name="(profile)" />
       </Stack.Protected>

@@ -33,7 +33,7 @@ export function SearchBar({
       style={[
         s.wrap,
         isGlass ? s.wrapGlass : s.wrapSolid,
-        !isGlass && focused && s.wrapSolidFocused,
+        focused && (isGlass ? s.wrapGlassFocused : s.wrapSolidFocused),
         style,
       ]}
     >
@@ -76,8 +76,9 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.divider,
   },
+  // Neutral focus rings, not brand-colored — matches GlassInput/Input.
   wrapSolidFocused: {
-    borderColor: Colors.brandOrange + '55',
+    borderColor: Colors.inkSecondary,
   },
   wrapGlass: {
     backgroundColor: Colors.glassSurface,
@@ -85,6 +86,10 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.glassBorder,
     paddingHorizontal: 16,
+  },
+  wrapGlassFocused: {
+    borderColor: Colors.glassBorderThick,
+    backgroundColor: Colors.glassSurfaceActive,
   },
   input: {
     flex: 1,

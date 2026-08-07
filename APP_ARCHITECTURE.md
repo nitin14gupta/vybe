@@ -26,7 +26,7 @@ Mounted once at boot. Provider nesting: `GestureHandlerRootView` → `KeyboardPr
 **Routing gate (`RootNavigator`)** uses Expo Router's `Stack.Protected`, keyed on two flags from `useAuthStore`:
 - `guard={!isAuthenticated}` → `(auth)` group
 - `guard={isAuthenticated && !profileComplete}` → `(onboarding)` group
-- `guard={isAuthenticated && profileComplete}` → `(tabs)`, `(events)`, `(chat)`, `(search)`, `(settings)`, `(profile)` groups
+- `guard={isAuthenticated && profileComplete}` → `(tabs)`, `(events)`, `(chat)`, `(settings)`, `(profile)` groups
 
 There is **no separate `isOnboarded` flag** — `profileComplete` (mirrors server's `profile_complete`) is the sole gate between onboarding and the main app. Host status is a *third*, independent flag (`is_host_onboarding_finished`) checked only when entering event creation (§4.2).
 

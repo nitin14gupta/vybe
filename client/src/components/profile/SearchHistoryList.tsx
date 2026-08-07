@@ -69,7 +69,7 @@ const s = StyleSheet.create({
   clearAll: {
     fontFamily: FontFamily.bodyMedium,
     fontSize: 13,
-    color: Colors.brandOrange,
+    color: Colors.inkSecondary,
   },
   row: {
     flexDirection: 'row',
