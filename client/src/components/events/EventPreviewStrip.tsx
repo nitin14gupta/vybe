@@ -1,10 +1,13 @@
-import React from "react";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useRef } from "react";
+import { FlatList, Pressable, StyleSheet, Text, View, type LayoutRectangle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "expo-image";
+import { useRouter } from "expo-router";
 import { Colors, FontFamily, EVENT_ICONS, EVENT_ICON_FALLBACK } from "@/constants";
+import { hSelection } from "@/lib/haptics";
+import { useAuthStore } from "@/store/auth";
 import type { EventSummary } from "@/api/apiService";
-import { formatEventDate } from "@/components/events/EventCard";
+import { formatEventDate, HostPill } from "@/components/events/EventCard";
 
 const CARD_W = 268;
 const CARD_MARGIN = 10;
@@ -27,10 +30,28 @@ function PreviewCardBase({
 }) {
   const cover = event.cover_photos?.[0]?.url;
   const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK;
+  const router = useRouter();
+  const myId = useAuthStore(state => state.userId);
+  const hostPillLayout = useRef<LayoutRectangle | null>(null);
+  const canOpenHost = !!event.host_id && event.host_name && !event.host_is_deleted;
+
+  const handlePress = (e: any) => {
+    const r = hostPillLayout.current;
+    if (canOpenHost && r) {
+      const { locationX, locationY } = e.nativeEvent;
+      if (locationX >= r.x && locationX <= r.x + r.width && locationY >= r.y && locationY <= r.y + r.height) {
+        hSelection();
+        router.push((event.host_id === myId ? '/(tabs)/profile' : `/(profile)/${event.host_id}`) as any);
+        return;
+      }
+    }
+    onPress();
+  };
+
   return (
     <Pressable
       style={[styles.previewCard, active && styles.previewCardActive]}
-      onPress={onPress}
+      onPress={handlePress}
     >
       <View style={styles.previewImageWrap}>
         {cover ? (
@@ -53,22 +74,13 @@ function PreviewCardBase({
           </Text>
         </View>
         {event.host_name && !event.host_is_deleted ? (
-          <View style={styles.previewHostPill}>
-            {event.host_avatar ? (
-              <Image
-                source={{ uri: event.host_avatar }}
-                style={styles.previewHostAvatar}
-                cachePolicy="memory-disk"
-                priority="low"
-                transition={150}
-              />
-            ) : (
-              <View style={[styles.previewHostAvatar, styles.previewHostAvatarFallback]}>
-                <Text style={styles.previewHostInitial}>{event.host_name.charAt(0).toUpperCase()}</Text>
-              </View>
-            )}
-            <Text style={styles.previewHostText} numberOfLines={1}>{event.host_name}</Text>
-          </View>
+          <HostPill
+            name={event.host_name}
+            avatar={event.host_avatar}
+            compact
+            style={styles.previewHostPillPos}
+            onLayout={canOpenHost ? (e) => { hostPillLayout.current = e.nativeEvent.layout; } : undefined}
+          />
         ) : null}
       </View>
       <View style={styles.previewBody}>
@@ -182,24 +194,15 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 12,
   },
-  previewHostPill: {
+  // HostPill (from EventCard.tsx) handles its own pill chrome/compact sizing —
+  // this only positions it, so there's exactly one place that owns the
+  // pill's actual look instead of two hand-rolled copies drifting apart.
+  previewHostPillPos: {
     position: "absolute",
     top: 8,
     left: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: "rgba(17,17,17,0.72)",
-    borderRadius: 16,
-    paddingLeft: 3,
-    paddingRight: 8,
-    paddingVertical: 3,
     maxWidth: "70%",
   },
-  previewHostAvatar: { width: 16, height: 16, borderRadius: 8 },
-  previewHostAvatarFallback: { backgroundColor: "#2a2a2a", alignItems: "center", justifyContent: "center" },
-  previewHostInitial: { fontFamily: FontFamily.headingBold, fontSize: 9, color: "#fff" },
-  previewHostText: { fontFamily: FontFamily.bodySemiBold, fontSize: 10, color: "#fff" },
   previewBody: { padding: 10 },
   previewTitle: {
     fontFamily: FontFamily.headingBold,

@@ -1,42 +1,78 @@
 import { Platform } from 'react-native'
 import * as Haptics from 'expo-haptics'
 
-// Prefer performAndroidHapticsAsync on Android (no VIBRATE permission needed, better engine)
-// Fall back to impactAsync/notificationAsync on iOS/Web
+async function run(fn: () => Promise<void>, label: string): Promise<void> {
+  try {
+    await fn()
+  } catch (e) {
+    console.warn(`[haptics] ${label} failed:`, e)
+  }
+}
+
+// Confirmed on-device (Haptics Test panel, Home): of every AndroidHaptics
+// effect, only Long_Press actually produces a felt vibration — Virtual_Key,
+// Context_Click, Confirm, Reject, Segment_Tick, Toggle_On/Off all silently
+// no-op. This is a known Android/OEM fragmentation issue: those map to
+// VibrationEffect predefined constants (EFFECT_CLICK/EFFECT_TICK/etc.) that
+// many devices' vibrator HAL doesn't implement, so they're dropped with no
+// error. Long_Press apparently falls back to a real one-shot vibration.
+// Standardizing every Android call on it — real (if less nuanced) feedback
+// beats "semantically correct" effects nobody can feel.
+const ANDROID_HAPTIC = Haptics.AndroidHaptics.Long_Press
 
 export const hTap = () =>
-  Platform.OS === 'android'
-    ? Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Virtual_Key)
-    : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+  run(
+    () => Platform.OS === 'android'
+      ? Haptics.performAndroidHapticsAsync(ANDROID_HAPTIC)
+      : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
+    'hTap',
+  )
 
 export const hMedium = () =>
-  Platform.OS === 'android'
-    ? Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Context_Click)
-    : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+  run(
+    () => Platform.OS === 'android'
+      ? Haptics.performAndroidHapticsAsync(ANDROID_HAPTIC)
+      : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium),
+    'hMedium',
+  )
 
 export const hHeavy = () =>
-  Platform.OS === 'android'
-    ? Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Long_Press)
-    : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
+  run(
+    () => Platform.OS === 'android'
+      ? Haptics.performAndroidHapticsAsync(ANDROID_HAPTIC)
+      : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy),
+    'hHeavy',
+  )
 
 export const hSuccess = () =>
-  Platform.OS === 'android'
-    ? Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Confirm)
-    : Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+  run(
+    () => Platform.OS === 'android'
+      ? Haptics.performAndroidHapticsAsync(ANDROID_HAPTIC)
+      : Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
+    'hSuccess',
+  )
 
 export const hError = () =>
-  Platform.OS === 'android'
-    ? Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Reject)
-    : Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+  run(
+    () => Platform.OS === 'android'
+      ? Haptics.performAndroidHapticsAsync(ANDROID_HAPTIC)
+      : Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
+    'hError',
+  )
 
 export const hSelection = () =>
-  Platform.OS === 'android'
-    ? Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Segment_Tick)
-    : Haptics.selectionAsync()
+  run(
+    () => Platform.OS === 'android'
+      ? Haptics.performAndroidHapticsAsync(ANDROID_HAPTIC)
+      : Haptics.selectionAsync(),
+    'hSelection',
+  )
 
-export const hToggle = (on: boolean) =>
-  Platform.OS === 'android'
-    ? Haptics.performAndroidHapticsAsync(
-        on ? Haptics.AndroidHaptics.Toggle_On : Haptics.AndroidHaptics.Toggle_Off,
-      )
-    : Haptics.selectionAsync()
+export const hToggle = (_on: boolean) =>
+  run(
+    () => Platform.OS === 'android'
+      ? Haptics.performAndroidHapticsAsync(ANDROID_HAPTIC)
+      : Haptics.selectionAsync(),
+    'hToggle',
+  )
+

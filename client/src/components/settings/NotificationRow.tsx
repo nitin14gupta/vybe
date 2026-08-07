@@ -48,25 +48,30 @@ export const NotificationRow = React.memo(function NotificationRow({ item, onPre
   const fallback = TYPE_FALLBACK[item.type]
   const swipeableRef = useRef<Swipeable>(null)
 
+  // Direct swipe, no reveal-then-tap step — swiping past the threshold
+  // dismisses immediately (onSwipeableOpen), same gesture as the action.
   const renderRightActions = (
     _progress: Animated.AnimatedInterpolation<number>,
     dragX: Animated.AnimatedInterpolation<number>,
   ) => {
     const scale = dragX.interpolate({ inputRange: [-80, 0], outputRange: [1, 0.5], extrapolate: 'clamp' })
     return (
-      <Pressable
-        style={s.dismissAction}
-        onPress={() => { hMedium(); swipeableRef.current?.close(); onDismiss() }}
-      >
+      <View style={s.dismissAction}>
         <Animated.View style={{ transform: [{ scale }] }}>
-          <Trash2 size={20} color="#fff" strokeWidth={2} />
+          <Trash2 size={20} color={Colors.inkSecondary} strokeWidth={2} />
         </Animated.View>
-      </Pressable>
+      </View>
     )
   }
 
   return (
-    <Swipeable ref={swipeableRef} renderRightActions={renderRightActions} overshootRight={false} rightThreshold={40}>
+    <Swipeable
+      ref={swipeableRef}
+      renderRightActions={renderRightActions}
+      overshootRight={false}
+      rightThreshold={40}
+      onSwipeableOpen={() => { hMedium(); onDismiss() }}
+    >
     <View style={s.row}>
       <Pressable style={s.rowMain} onPress={() => { hTap(); onPress() }}>
         <View style={s.avatarWrap}>
@@ -132,7 +137,7 @@ export const NotificationRow = React.memo(function NotificationRow({ item, onPre
 const s = StyleSheet.create({
   dismissAction: {
     width: 80,
-    backgroundColor: Colors.brandCoral,
+    backgroundColor: Colors.elevated,
     alignItems: 'center',
     justifyContent: 'center',
   },

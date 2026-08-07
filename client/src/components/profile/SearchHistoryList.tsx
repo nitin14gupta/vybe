@@ -1,9 +1,12 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native'
 import { Image } from 'expo-image'
 import { X } from 'lucide-react-native'
+import { hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import type { SearchHistoryUser } from '@/store/searchHistoryStore'
+
+const COLLAPSED_COUNT = 10
 
 interface Props {
   history: SearchHistoryUser[]
@@ -13,18 +16,28 @@ interface Props {
 }
 
 export function SearchHistoryList({ history, onTap, onRemove, onClear }: Props) {
+  const [expanded, setExpanded] = useState(false)
+  const visible = expanded ? history : history.slice(0, COLLAPSED_COUNT)
+  const canExpand = !expanded && history.length > COLLAPSED_COUNT
+
   return (
     <FlatList
-      data={history}
+      data={visible}
       keyExtractor={item => item.id}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
       ListHeaderComponent={
         <View style={s.historyHeader}>
           <Text style={s.historyTitle}>Recent</Text>
-          <Pressable onPress={onClear} hitSlop={8}>
-            <Text style={s.clearAll}>Clear all</Text>
-          </Pressable>
+          {canExpand ? (
+            <Pressable onPress={() => { hTap(); setExpanded(true) }} hitSlop={8}>
+              <Text style={s.clearAll}>See all</Text>
+            </Pressable>
+          ) : (
+            <Pressable onPress={onClear} hitSlop={8}>
+              <Text style={s.clearAll}>Clear all</Text>
+            </Pressable>
+          )}
         </View>
       }
       renderItem={({ item }) => (

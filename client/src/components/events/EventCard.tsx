@@ -1,30 +1,38 @@
-import { Fragment, memo, useState, type ReactNode } from 'react'
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native'
+import { Fragment, memo, useRef, useState, type ReactNode } from 'react'
+import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle, type LayoutRectangle, type LayoutChangeEvent } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Image } from 'expo-image'
 import { MapPin, Flame } from 'lucide-react-native'
+import { useRouter } from 'expo-router'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { Colors, FontFamily, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constants'
 import { parseServerDate } from '@/lib/dates'
 import { hSelection } from '@/lib/haptics'
+import { useAuthStore } from '@/store/auth'
 import { EventQuickPeekSheet } from './EventQuickPeekSheet'
 import type { EventSummary } from '@/api/apiService'
 
+// Deliberately a plain View, never a nested Pressable — a Pressable nested
+// inside the card's own Pressable (below) turned out to break both the tap
+// AND the pill's own background rendering on Android (a real, confirmed
+// nested-touchable/ripple-compositing issue, not just a UX nit). The card
+// handles the tap itself via coordinate hit-testing against `onLayout`
+// instead — see EventCard's onPress below.
 export function HostPill({
   name,
   avatar,
   compact,
   style,
-  onPress,
+  onLayout,
 }: {
   name: string
   avatar: string | null
   compact?: boolean
   style?: StyleProp<ViewStyle>
-  onPress?: () => void
+  onLayout?: (e: LayoutChangeEvent) => void
 }) {
-  const content = (
-    <>
+  return (
+    <View style={[hp.pill, compact && hp.pillCompact, style]} onLayout={onLayout}>
       {avatar ? (
         <Image
           source={{ uri: avatar }}
@@ -40,24 +48,6 @@ export function HostPill({
         </View>
       )}
       <Text style={[hp.text, compact && hp.textCompact]} numberOfLines={1}>{name}</Text>
-    </>
-  )
-
-  if (onPress) {
-    return (
-      <Pressable
-        onPress={() => { hSelection(); onPress() }}
-        hitSlop={6}
-        style={({ pressed }) => [hp.pill, compact && hp.pillCompact, style, pressed && hp.pillPressed]}
-      >
-        {content}
-      </Pressable>
-    )
-  }
-
-  return (
-    <View style={[hp.pill, compact && hp.pillCompact, style]}>
-      {content}
     </View>
   )
 }
@@ -78,7 +68,6 @@ const hp = StyleSheet.create({
   pillCompact: {
     gap: 5, borderRadius: 16, paddingLeft: 3, paddingRight: 8, paddingVertical: 3,
   },
-  pillPressed: { opacity: 0.7 },
   avatar: { width: 20, height: 20, borderRadius: 10 },
   avatarCompact: { width: 16, height: 16, borderRadius: 8 },
   avatarFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
@@ -117,16 +106,33 @@ interface Props {
 }
 
 export const EventCard = memo(function EventCard({ event, onPress, showHost, isPast, isCancelled, footer }: Props) {
+  const router = useRouter()
+  const myId = useAuthStore(state => state.userId)
   const [peekOpen, setPeekOpen] = useState(false)
   const cover = event.cover_photos?.[0]?.url
   const spotsLow = event.spots_left > 0 && event.spots_left <= 10
   const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
+  const hostPillLayout = useRef<LayoutRectangle | null>(null)
+
+  const canOpenHost = !!event.host_id && event.host_name && !event.host_is_deleted
+  const handleCardPress = (e: any) => {
+    const r = hostPillLayout.current
+    if (canOpenHost && r) {
+      const { locationX, locationY } = e.nativeEvent
+      if (locationX >= r.x && locationX <= r.x + r.width && locationY >= r.y && locationY <= r.y + r.height) {
+        hSelection()
+        router.push((event.host_id === myId ? '/(tabs)/profile' : `/(profile)/${event.host_id}`) as any)
+        return
+      }
+    }
+    onPress()
+  }
 
   return (
     <Fragment>
     <Pressable
       style={[s.card, isPast && s.cardPast]}
-      onPress={onPress}
+      onPress={handleCardPress}
       onLongPress={() => { hSelection(); setPeekOpen(true) }}
       delayLongPress={350}
     >
@@ -159,12 +165,15 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
           <Text style={s.priceText}>{formatPrice(event.price_inr, event.is_free)}</Text>
         </View>
 
-        {/* Host pill — avatar + name, Partiful-style organizer credit */}
+        {/* Host pill — avatar + name, Partiful-style organizer credit.
+            Plain View (see HostPill comment) — the card's own onPress does
+            hit-testing against this measured rect to route the tap. */}
         {event.host_name && !event.host_is_deleted ? (
           <HostPill
             name={event.host_name}
             avatar={event.host_avatar}
             style={s.hostPillPos}
+            onLayout={canOpenHost ? (e) => { hostPillLayout.current = e.nativeEvent.layout } : undefined}
           />
         ) : null}
 
