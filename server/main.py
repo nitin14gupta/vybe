@@ -30,12 +30,55 @@ from routes.admin_dashboard import router as admin_dashboard_router
 from routes.admin_revenue import router as admin_revenue_router
 from routes.admin_audit_log import router as admin_audit_log_router
 from utils.account_purge import purge_expired_deleted_accounts
+from utils.scheduled_notifications import check_event_reminders, run_daily_sweep
 
 # Comma-separated list of extra origins allowed to call this API — the admin
 # web panel's dev/prod origin(s), e.g. "http://localhost:3000,https://admin.gorave.com"
 ADMIN_ORIGINS = [o.strip() for o in os.getenv("ADMIN_ORIGINS", "").split(",") if o.strip()]
 
 PURGE_INTERVAL_SECONDS = 24 * 60 * 60
+EVENT_REMINDER_INTERVAL_SECONDS = 15 * 60
+DAILY_SWEEP_INTERVAL_SECONDS = 24 * 60 * 60
+
+# ── Cross-instance scheduler locking ────────────────────────────────────────
+# Every loop below runs inside THIS process, started fresh by every replica
+# of the API (same pattern the pre-existing purge loop already used). With
+# one instance that's harmless; the moment this runs as 2+ processes/replicas
+# (standard for any real deployment), each one fires its own copy of every
+# job on the same schedule — every user gets every notification once per
+# replica. A Redis SET-NX-EX lock (same primitive already used for rate
+# limiting/chat presence elsewhere in this codebase) makes only one replica
+# actually do the work per interval; the rest just no-op. Degrades to
+# "everyone runs it" only if Redis itself is unreachable — safe for local/
+# single-instance dev, since there's nothing to race against.
+_scheduler_redis = None
+
+
+async def _get_scheduler_redis():
+    global _scheduler_redis
+    if _scheduler_redis is None:
+        try:
+            import redis.asyncio as aioredis
+            client = aioredis.from_url("redis://localhost:6379", decode_responses=True)
+            await client.ping()
+            _scheduler_redis = client
+        except Exception as e:
+            print(f"[SCHEDULER] Redis unavailable, locking disabled (fine for a single instance): {e!r}", flush=True)
+            _scheduler_redis = False
+    return _scheduler_redis or None
+
+
+async def _try_acquire_lock(key: str, ttl_seconds: int) -> bool:
+    """True if this replica should run the job this tick. TTL is shorter
+    than the loop's own interval so a crashed/slow holder can't wedge the
+    lock past the next legitimate run."""
+    r = await _get_scheduler_redis()
+    if r is None:
+        return True
+    try:
+        return bool(await r.set(key, "1", nx=True, ex=ttl_seconds))
+    except Exception:
+        return True
 
 
 async def _account_purge_loop():
@@ -43,19 +86,54 @@ async def _account_purge_loop():
     30-day soft-delete recovery window has elapsed. See utils/account_purge.py."""
     while True:
         try:
-            count = await asyncio.to_thread(purge_expired_deleted_accounts)
-            if count:
-                print(f"[PURGE] Purged {count} expired deleted account(s)", flush=True)
+            if await _try_acquire_lock("sched_lock:account_purge", PURGE_INTERVAL_SECONDS - 60):
+                count = await asyncio.to_thread(purge_expired_deleted_accounts)
+                if count:
+                    print(f"[PURGE] Purged {count} expired deleted account(s)", flush=True)
         except Exception as e:
             print(f"[PURGE] Account purge run failed: {e}", flush=True)
         await asyncio.sleep(PURGE_INTERVAL_SECONDS)
 
 
+async def _event_reminder_loop():
+    """Runs every 15 min — event-starting-soon notifications (24h/7h/1h out).
+    Frequent because these are time-sensitive; each stage is idempotent via
+    a per-attendee reminded_*_at flag, so overlapping/frequent runs are safe."""
+    while True:
+        try:
+            if await _try_acquire_lock("sched_lock:event_reminders", EVENT_REMINDER_INTERVAL_SECONDS - 30):
+                sent = await asyncio.to_thread(check_event_reminders)
+                if sent:
+                    print(f"[NOTIF] Sent {sent} event-starting-soon reminder(s)", flush=True)
+        except Exception as e:
+            print(f"[NOTIF] Event reminder sweep failed: {e}", flush=True)
+        await asyncio.sleep(EVENT_REMINDER_INTERVAL_SECONDS)
+
+
+async def _daily_notification_sweep_loop():
+    """Runs once at startup, then every 24h — payout notices, wallet-expiry
+    reminders, birthday prompts, re-engagement pings. See
+    utils/scheduled_notifications.py for each check's own de-dupe logic."""
+    while True:
+        try:
+            if await _try_acquire_lock("sched_lock:daily_notifications", DAILY_SWEEP_INTERVAL_SECONDS - 300):
+                results = await asyncio.to_thread(run_daily_sweep)
+                print(f"[NOTIF] Daily sweep: {results}", flush=True)
+        except Exception as e:
+            print(f"[NOTIF] Daily sweep failed: {e}", flush=True)
+        await asyncio.sleep(DAILY_SWEEP_INTERVAL_SECONDS)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    task = asyncio.create_task(_account_purge_loop())
+    tasks = [
+        asyncio.create_task(_account_purge_loop()),
+        asyncio.create_task(_event_reminder_loop()),
+        asyncio.create_task(_daily_notification_sweep_loop()),
+    ]
     yield
-    task.cancel()
+    for task in tasks:
+        task.cancel()
 
 
 app = FastAPI(title="Gorave API", version="1.0.0", lifespan=lifespan)

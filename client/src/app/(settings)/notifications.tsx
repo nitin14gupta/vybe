@@ -108,6 +108,30 @@ export default function NotificationsScreen() {
       router.push('/(events)/create' as any)
       return
     }
+    if (item.type === 'birthday_soon') {
+      router.push({ pathname: '/(events)/create', params: { prefillTitle: 'Birthday House Party \U0001f388' } } as any)
+      return
+    }
+    if (item.type === 'wallet_expiring') {
+      router.push('/(settings)/wallet' as any)
+      return
+    }
+    if (item.type === 'reengagement') {
+      router.push('/(tabs)' as any)
+      return
+    }
+    // Host got a "raise your capacity" nudge — take them straight to the
+    // edit screen where they can actually do that, not just the read-only view.
+    if (item.type === 'host_low_capacity' && item.entity_id) {
+      router.push(`/(events)/${item.entity_id}/edit` as any)
+      return
+    }
+    // Ticket-related notifications point at the ticket screen, not just the
+    // event detail page — that's the whole point of tapping them.
+    if ((item.type === 'payment_confirmed' || item.type === 'rsvp_confirmed') && item.entity_id) {
+      router.push(`/(events)/${item.entity_id}/ticket` as any)
+      return
+    }
     const target = notifEntityToTarget(item.entity_type, item.entity_id)
     if (target) router.push(targetToHref(target, useAuthStore.getState().userId) as any)
   }

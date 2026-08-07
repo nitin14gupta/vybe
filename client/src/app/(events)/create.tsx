@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { hTap, hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 import {
@@ -30,7 +30,15 @@ const STEPS = [
 export default function CreateScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
+  const { prefillTitle } = useLocalSearchParams<{ prefillTitle?: string }>()
   const { form, set, reset, submit, submitting, submitError } = useCreateEvent()
+
+  // Deep-linked in from a notification (e.g. the birthday nudge) with a
+  // suggested title already picked — one less field for the user to fill.
+  useEffect(() => {
+    if (prefillTitle && !form.title) set('title', prefillTitle)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillTitle])
   const { openDate, openStartTime, openEndDate, openEndTime, picker } = useEventDateTimePickers(form, set)
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1)
   const [errors, setErrors] = useState<Record<string, string>>({})

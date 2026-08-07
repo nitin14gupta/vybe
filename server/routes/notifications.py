@@ -175,6 +175,19 @@ def notify_payment_confirmed(cur, user_id: str, event_id: str, event_title: str)
     )
 
 
+def notify_rsvp_confirmed(cur, user_id: str, event_id: str, event_title: str):
+    """Free-RSVP counterpart to notify_payment_confirmed above — paid tickets
+    already got a self-confirmation, free ones never did. Same tap target
+    (the ticket screen), just no money changed hands."""
+    _insert_notification(
+        cur, user_id, "rsvp_confirmed",
+        title="You're going! \U0001f389",
+        body=f"Your ticket for {event_title} is ready — tap to view it.",
+        entity_id=event_id,
+        entity_type="event",
+    )
+
+
 def notify_report_submitted(cur, reporter_id: str, entity_type: str, entity_id: Optional[str] = None):
     _insert_notification(
         cur, reporter_id, "report_submitted",
@@ -230,7 +243,7 @@ def notify_waitlist_promoted(cur, user_id: str, event_id: str, event_title: str)
     _insert_notification(
         cur, user_id, "waitlist_promoted",
         title="A spot opened up!",
-        body=f"You have 1 hours to confirm your spot at {event_title}.",
+        body=f"You have 1 hour to confirm your spot at {event_title}.",
         entity_id=event_id,
         entity_type="event",
     )
@@ -268,6 +281,129 @@ def notify_waitlist_event_cancelled(cur, user_id: str, event_id: str, event_titl
         body=f"{event_title} was cancelled. You've been removed from the waitlist.",
         entity_id=event_id,
         entity_type="event",
+    )
+
+
+# ── New engagement notifications ────────────────────────────────────────────────
+
+EVENT_REMINDER_COPY = {
+    "24h": ("Tomorrow's the day! \U0001f389", "{event_title} is happening in 24 hours."),
+    "7h": ("Get ready \U0001f440", "{event_title} starts in 7 hours — start planning your outfit."),
+    "1h": ("It's almost time! \U0001f3c3", "{event_title} starts in 1 hour — get dressed, you're on your way."),
+}
+
+
+def notify_event_starting_soon(cur, user_id: str, event_id: str, event_title: str, stage: str):
+    title, body_tpl = EVENT_REMINDER_COPY[stage]
+    _insert_notification(
+        cur, user_id, "event_starting_soon",
+        title=title,
+        body=body_tpl.format(event_title=event_title),
+        entity_id=event_id,
+        entity_type="event",
+    )
+
+
+def notify_checked_in(cur, user_id: str, event_id: str, event_title: str):
+    _insert_notification(
+        cur, user_id, "checked_in",
+        title="You're checked in! \U0001f389",
+        body=f"Enjoy {event_title}.",
+        entity_id=event_id,
+        entity_type="event",
+    )
+
+
+def notify_payout_coming_soon(cur, host_id: str, event_id: str, event_title: str):
+    _insert_notification(
+        cur, host_id, "payout_coming_soon",
+        title="Your payout is on its way",
+        body=f"{event_title} just wrapped — your payout will be sent soon.",
+        entity_id=event_id,
+        entity_type="event",
+    )
+
+
+def notify_follow_rsvp(cur, follower_id: str, actor_id: str, actor_name: str, event_id: str, event_title: str):
+    _insert_notification(
+        cur, follower_id, "follow_rsvp",
+        title=f"{actor_name} is going to {event_title}",
+        body="Someone you follow just RSVPed — check it out.",
+        actor_id=actor_id,
+        entity_id=event_id,
+        entity_type="event",
+    )
+
+
+def notify_host_low_capacity(cur, host_id: str, event_id: str, event_title: str, reason: str):
+    """reason: 'almost_sold_out' | 'waitlist_forming' — same notification
+    shape, different nudge copy for whichever threshold tripped first."""
+    if reason == "waitlist_forming":
+        title = "People are waitlisting for your event"
+        body = f"{event_title} has a growing waitlist — consider raising capacity."
+    else:
+        title = "Your event is almost sold out!"
+        body = f"{event_title} is almost full — raise capacity to let more people in."
+    _insert_notification(
+        cur, host_id, "host_low_capacity",
+        title=title,
+        body=body,
+        entity_id=event_id,
+        entity_type="event",
+    )
+
+
+def notify_reengagement(cur, user_id: str):
+    # No entity — the client special-cases type "reengagement" to open Home.
+    _insert_notification(
+        cur, user_id, "reengagement",
+        title="It's been a while \U0001f440",
+        body="Here's what's happening near you this weekend — come see.",
+    )
+
+
+WALLET_EXPIRY_COPY = {
+    30: "in 30 days",
+    14: "in 2 weeks",
+    7: "in 1 week",
+}
+
+
+def notify_wallet_expiring(cur, user_id: str, amount_inr: int, days_label: str):
+    # No entity_id — the client special-cases type "wallet_expiring" to open the wallet screen.
+    _insert_notification(
+        cur, user_id, "wallet_expiring",
+        title="Wallet credit expiring soon",
+        body=f"₹{amount_inr} in your Gorave Wallet expires {days_label} — use it before it's gone.",
+    )
+
+
+def notify_first_event_hosted(cur, host_id: str, event_id: str, event_title: str):
+    _insert_notification(
+        cur, host_id, "first_event_hosted",
+        title="You're officially a host! \U0001f973",
+        body=f"{event_title} is your first event — nice work.",
+        actor_id=host_id,
+        entity_id=event_id,
+        entity_type="event",
+    )
+
+
+BIRTHDAY_COPY = {
+    15: ("Your birthday's coming up... \U0001f440\U0001f382", "15 days left. Just saying — a birthday house party would be pretty iconic."),
+    10: ("Okay but hear us out \U0001f60f", "10 days to your birthday. Everyone loves an excuse to get dressed up for you."),
+    7: ("One week, birthday star \U00002728", "7 days left. Stop thinking about it and throw the party already."),
+}
+
+
+def notify_birthday_soon(cur, user_id: str, days: int):
+    # No entity_id — the client special-cases type "birthday_soon" to open
+    # Create Event with the title pre-filled.
+    title, body = BIRTHDAY_COPY[days]
+    _insert_notification(
+        cur, user_id, "birthday_soon",
+        title=title,
+        body=body,
     )
 
 

@@ -90,6 +90,9 @@ CREATE TABLE IF NOT EXISTS public.event_attendees (
   offer_expires_at timestamp with time zone,
   blocked_from_rejoin boolean DEFAULT false NOT NULL,
   check_in_method text DEFAULT 'qr_scan'::text,
+  reminded_24h_at timestamp with time zone,
+  reminded_7h_at timestamp with time zone,
+  reminded_1h_at timestamp with time zone,
   CONSTRAINT event_attendees_pkey PRIMARY KEY (id),
   CONSTRAINT event_attendees_ticket_token_key UNIQUE (ticket_token),
   CONSTRAINT event_attendees_unique UNIQUE (event_id, user_id)
@@ -142,6 +145,8 @@ CREATE TABLE IF NOT EXISTS public.events (
   platform_fee_inr integer DEFAULT 0 NOT NULL,
   host_commission_inr integer DEFAULT 0 NOT NULL,
   platform_profit_inr integer DEFAULT 0 NOT NULL,
+  payout_notice_sent_at timestamp with time zone,
+  low_capacity_notice_sent_at timestamp with time zone,
   CONSTRAINT events_pkey PRIMARY KEY (id)
 );
 
@@ -329,6 +334,9 @@ CREATE TABLE IF NOT EXISTS public.users (
   locked_by uuid,
   notification_prefs jsonb DEFAULT '{}'::jsonb NOT NULL,
   last_seen_at timestamp with time zone,
+  last_reengagement_sent_at timestamp with time zone,
+  birthday_reminder_stage integer DEFAULT 0 NOT NULL,
+  birthday_reminder_year integer,
   CONSTRAINT users_pkey PRIMARY KEY (id),
   CONSTRAINT users_phone_key UNIQUE (phone),
   CONSTRAINT users_username_key UNIQUE (username)
@@ -360,6 +368,7 @@ CREATE TABLE IF NOT EXISTS public.wallet_transactions (
   description text,
   expires_at timestamp with time zone,
   created_at timestamp with time zone DEFAULT now(),
+  expiry_reminder_stage integer DEFAULT 0 NOT NULL,
   CONSTRAINT wallet_transactions_source_check CHECK (source = ANY (ARRAY['event_refund'::text, 'ticket_purchase'::text, 'bank_refund_request'::text])),
   CONSTRAINT wallet_transactions_type_check CHECK (type = ANY (ARRAY['credit'::text, 'debit'::text, 'refund_requested'::text])),
   CONSTRAINT wallet_transactions_pkey PRIMARY KEY (id)
@@ -420,6 +429,11 @@ CREATE INDEX idx_users_phone ON public.users USING btree (phone);
 CREATE INDEX idx_users_username ON public.users USING btree (username);
 CREATE INDEX idx_users_username_text ON public.users USING btree (username text_pattern_ops);
 CREATE INDEX idx_users_username_trgm ON public.users USING gin (username gin_trgm_ops);
+CREATE INDEX idx_event_attendees_going_reminders ON public.event_attendees USING btree (event_id) WHERE (status = 'going'::text);
+CREATE INDEX idx_events_date_time_active ON public.events USING btree (date_time) WHERE (is_cancelled = FALSE);
+CREATE INDEX idx_wallet_tx_expiring ON public.wallet_transactions USING btree (expires_at) WHERE (type = 'credit'::text AND expires_at IS NOT NULL);
+CREATE INDEX idx_users_dob ON public.users USING btree (dob) WHERE (dob IS NOT NULL AND COALESCE(is_deleted, FALSE) = FALSE);
+CREATE INDEX idx_users_last_seen ON public.users USING btree (last_seen_at) WHERE (COALESCE(is_deleted, FALSE) = FALSE);
 
 -- ── Triggers ────────────────────────────────────────────────────────────────
 -- TRIGGER users_updated_at BEFORE UPDATE ON public.users: EXECUTE FUNCTION update_updated_at()

@@ -1072,6 +1072,10 @@ def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, curre
         if new_badge:
             notify_host_badge_earned(cur, current_user["id"], new_badge)
 
+        if hosted_count_before == 0:
+            from routes.notifications import notify_first_event_hosted
+            notify_first_event_hosted(cur, current_user["id"], new_id, body.title)
+
         # Collect follower IDs for push delivery after commit
         cur.execute(
             "SELECT follower_id::text FROM follows WHERE following_id = %s::uuid",
@@ -1103,6 +1107,13 @@ def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, curre
             send_push, current_user["id"], badge_title,
             badge_body or "",
             {"type": "profile", "user_id": current_user["id"]}, avatar_url, category="hosting",
+        )
+
+    if hosted_count_before == 0:
+        background_tasks.add_task(
+            send_push, current_user["id"], "You're officially a host! \U0001f973",
+            f"{body.title} is your first event — nice work.",
+            {"type": "event", "event_id": new_id}, cover_url, category="hosting",
         )
 
     return get_event(new_id, current_user)
@@ -1420,6 +1431,16 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
                             {"type": "event", "event_id": event_id}, cover_url, category="hosting",
                         )
 
+                    # Self-confirmation to the attendee — paid tickets already
+                    # get this via notify_payment_confirmed, free RSVPs didn't.
+                    from routes.notifications import notify_rsvp_confirmed
+                    notify_rsvp_confirmed(cur, uid, event_id, ev_row["title"])
+                    background_tasks.add_task(
+                        send_push, uid, "You're going! \U0001f389",
+                        f"Your ticket for {ev_row['title']} is ready — tap to view it.",
+                        {"type": "ticket_ready", "event_id": event_id}, cover_url, category="attending",
+                    )
+
                     if just_sold_out:
                         from routes.notifications import notify_event_sold_out
                         notify_event_sold_out(cur, host_id, event_id, ev_row["title"])
@@ -1427,6 +1448,58 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
                             send_push, host_id, "Your event sold out!",
                             f"{ev_row['title']} has no spots left.",
                             {"type": "event", "event_id": event_id}, cover_url, category="hosting",
+                        )
+                    elif ev["capacity"] > 0 and (ev["spots_left"] - 1) <= ev["capacity"] * 0.1:
+                        # Almost sold out (<=10% of capacity left, but not the
+                        # very last spot — that's just_sold_out's moment).
+                        # Fire once per event — otherwise every subsequent
+                        # RSVP while under the threshold re-triggers it.
+                        cur.execute(
+                            "UPDATE events SET low_capacity_notice_sent_at = NOW() "
+                            "WHERE id = %s AND low_capacity_notice_sent_at IS NULL",
+                            (event_id,),
+                        )
+                        if cur.rowcount:
+                            from routes.notifications import notify_host_low_capacity
+                            notify_host_low_capacity(cur, host_id, event_id, ev_row["title"], "almost_sold_out")
+                            background_tasks.add_task(
+                                send_push, host_id, "Your event is almost sold out!",
+                                f"{ev_row['title']} is almost full — raise capacity to let more people in.",
+                                {"type": "event", "event_id": event_id}, cover_url, category="hosting",
+                            )
+
+                    # Social proof to the RSVPing user's followers — same
+                    # "notify everyone who might care" precedent as
+                    # notify_followers_event_created on event creation.
+                    from routes.notifications import notify_follow_rsvp
+                    cur.execute("SELECT follower_id::text FROM follows WHERE following_id = %s::uuid", (uid,))
+                    for f in cur.fetchall():
+                        notify_follow_rsvp(cur, f["follower_id"], uid, attendee_name, event_id, ev_row["title"])
+                        background_tasks.add_task(
+                            send_push, f["follower_id"], f"{attendee_name} is going to {ev_row['title']}",
+                            "Someone you follow just RSVPed — check it out.",
+                            {"type": "event", "event_id": event_id}, cover_url, category="social",
+                        )
+
+            elif status == "waitlist":
+                cur.execute("SELECT host_id::text, title, capacity FROM events WHERE id = %s", (event_id,))
+                ev_row = cur.fetchone()
+                # Waitlist just crossed 50% of its own cap (which is itself
+                # 50% of event capacity) — a real signal demand outstrips supply.
+                if ev_row and wl_count + 1 >= (ev_row["capacity"] * 0.5) * 0.5:
+                    cur.execute(
+                        "UPDATE events SET low_capacity_notice_sent_at = NOW() "
+                        "WHERE id = %s AND low_capacity_notice_sent_at IS NULL",
+                        (event_id,),
+                    )
+                    if cur.rowcount:
+                        from routes.notifications import notify_host_low_capacity
+                        notify_host_low_capacity(cur, ev_row["host_id"], event_id, ev_row["title"], "waitlist_forming")
+                        from utils.push import get_event_image_url
+                        background_tasks.add_task(
+                            send_push, ev_row["host_id"], "People are waitlisting for your event",
+                            f"{ev_row['title']} has a growing waitlist — consider raising capacity.",
+                            {"type": "event", "event_id": event_id}, get_event_image_url(event_id), category="hosting",
                         )
 
             conn.commit()
@@ -1854,9 +1927,9 @@ def get_my_ticket(event_id: str, current_user: dict = Depends(get_current_user))
 # ── POST /events/{id}/checkin ─────────────────────────────────────────────────
 
 @router.post("/{event_id}/checkin")
-def checkin_attendee(event_id: str, body: CheckinBody, current_user: dict = Depends(get_current_user)):
+def checkin_attendee(event_id: str, body: CheckinBody, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
     with get_db() as (cur, conn):
-        cur.execute("SELECT host_id::text, date_time, end_time FROM events WHERE id = %s", (event_id,))
+        cur.execute("SELECT host_id::text, title, date_time, end_time FROM events WHERE id = %s", (event_id,))
         ev = cur.fetchone()
         if not ev:
             raise HTTPException(status_code=404, detail="Event not found")
@@ -1873,7 +1946,7 @@ def checkin_attendee(event_id: str, body: CheckinBody, current_user: dict = Depe
 
         cur.execute(
             """
-            SELECT ea.id, ea.checked_in_at, u.name, u.username
+            SELECT ea.id, ea.checked_in_at, ea.user_id::text, u.name, u.username
             FROM event_attendees ea
             JOIN users u ON u.id = ea.user_id
             WHERE ea.event_id = %s AND ea.ticket_token = %s AND ea.status = 'going'
@@ -1892,7 +1965,17 @@ def checkin_attendee(event_id: str, body: CheckinBody, current_user: dict = Depe
             "UPDATE event_attendees SET checked_in_at = NOW(), check_in_method = %s WHERE id = %s",
             (method, row["id"]),
         )
+
+        from routes.notifications import notify_checked_in
+        from utils.push import get_event_image_url
+        notify_checked_in(cur, row["user_id"], event_id, ev["title"])
+        cover_url = get_event_image_url(event_id)
         conn.commit()
+
+    background_tasks.add_task(
+        send_push, row["user_id"], "You're checked in! \U0001f389", f"Enjoy {ev['title']}.",
+        {"type": "event", "event_id": event_id}, cover_url, category="attending",
+    )
     return {"ok": True, "already_checked_in": False, "name": row["name"], "username": row["username"], "method": method}
 
 

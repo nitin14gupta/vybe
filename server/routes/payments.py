@@ -29,6 +29,44 @@ PLATFORM_FEE_INR = 50
 # Attendees never see this — they only see PLATFORM_FEE_INR.
 HOST_COMMISSION_RATE = 0.10
 
+def _notify_paid_rsvp_extras(cur, uid: str, buyer_name: str, event_id: str, ev_title: str,
+                              ev_host_id: Optional[str], just_sold_out: bool, cover_url: Optional[str]):
+    """Shared by all 3 ticket-purchase finalize paths (wallet-pay, Razorpay
+    checkout, Razorpay QR) — the same follow-RSVP social proof and
+    almost-sold-out host nudge that the free RSVP path fires, extracted once
+    instead of tripled across near-identical functions."""
+    from routes.notifications import notify_follow_rsvp, notify_host_low_capacity
+    from utils.push import send_push as _send_push
+
+    cur.execute("SELECT follower_id::text FROM follows WHERE following_id = %s::uuid", (uid,))
+    for f in cur.fetchall():
+        notify_follow_rsvp(cur, f["follower_id"], uid, buyer_name, event_id, ev_title)
+        try:
+            _send_push(f["follower_id"], f"{buyer_name} is going to {ev_title}",
+                       "Someone you follow just RSVPed — check it out.",
+                       {"type": "event", "event_id": event_id}, image_url=cover_url, category="social")
+        except Exception:
+            pass
+
+    if ev_host_id and not just_sold_out:
+        cur.execute("SELECT capacity, spots_left FROM events WHERE id = %s::uuid", (event_id,))
+        ev = cur.fetchone()
+        if ev and ev["capacity"] > 0 and ev["spots_left"] <= ev["capacity"] * 0.1:
+            cur.execute(
+                "UPDATE events SET low_capacity_notice_sent_at = NOW() "
+                "WHERE id = %s::uuid AND low_capacity_notice_sent_at IS NULL",
+                (event_id,),
+            )
+            if cur.rowcount:
+                notify_host_low_capacity(cur, ev_host_id, event_id, ev_title, "almost_sold_out")
+                try:
+                    _send_push(ev_host_id, "Your event is almost sold out!",
+                               f"{ev_title} is almost full — raise capacity to let more people in.",
+                               {"type": "event", "event_id": event_id}, image_url=cover_url, category="hosting")
+                except Exception:
+                    pass
+
+
 _rz_client: Optional[razorpay.Client] = None
 
 
@@ -260,6 +298,14 @@ def wallet_pay(body: WalletPayBody, current_user: dict = Depends(get_current_use
         if just_sold_out and ev_host_id:
             notify_event_sold_out(cur, ev_host_id, body.event_id, ev_title)
 
+        cover_url_pre = None
+        try:
+            from utils.push import get_event_image_url as _cover
+            cover_url_pre = _cover(body.event_id)
+        except Exception:
+            pass
+        _notify_paid_rsvp_extras(cur, uid, buyer_name, body.event_id, ev_title, ev_host_id, just_sold_out, cover_url_pre)
+
         conn.commit()
 
     from utils.push import send_push, get_event_image_url
@@ -393,6 +439,14 @@ def _finalise_rsvp(*, order_id: str, event_id: str, uid: str, payment_id: str, w
             notify_ticket_sold(cur, ev_host_id, event_id, ev_title, uid, buyer_name)
         if just_sold_out and ev_host_id:
             notify_event_sold_out(cur, ev_host_id, event_id, ev_title)
+
+        cover_url_pre = None
+        try:
+            from utils.push import get_event_image_url as _cover
+            cover_url_pre = _cover(event_id)
+        except Exception:
+            pass
+        _notify_paid_rsvp_extras(cur, uid, buyer_name, event_id, ev_title, ev_host_id, just_sold_out, cover_url_pre)
 
         conn.commit()
 
@@ -676,6 +730,14 @@ def _finalise_qr_rsvp(*, order_db_id: str, qr_code_id: str, event_id: str,
             notify_ticket_sold(cur, ev_host_id, event_id, ev_title, uid, buyer_name)
         if just_sold_out and ev_host_id:
             notify_event_sold_out(cur, ev_host_id, event_id, ev_title)
+
+        cover_url_pre = None
+        try:
+            from utils.push import get_event_image_url as _cover
+            cover_url_pre = _cover(event_id)
+        except Exception:
+            pass
+        _notify_paid_rsvp_extras(cur, uid, buyer_name, event_id, ev_title, ev_host_id, just_sold_out, cover_url_pre)
 
         conn.commit()
 

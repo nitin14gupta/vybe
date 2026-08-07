@@ -44,10 +44,12 @@ export function pushDataToTarget(data: any): DeepLinkTarget | null {
     case 'vybe':
       return { screen: 'chatList' }
     case 'payment_success':
+    case 'ticket_ready':
       return data.event_id ? { screen: 'ticket', id: data.event_id } : null
     case 'wallet':
       return { screen: 'wallet' }
     case 'host_onboarding_complete':
+    case 'createEvent':
       return { screen: 'createEvent' }
     default:
       return null
@@ -60,6 +62,7 @@ export function notifEntityToTarget(entityType: string | null, entityId: string 
   if (!entityId) return null
   if (entityType === 'event') return { screen: 'event', id: entityId }
   if (entityType === 'user') return { screen: 'profile', id: entityId }
+  if (entityType === 'conversation') return { screen: 'chat', id: entityId }
   return null
 }
 

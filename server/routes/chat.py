@@ -448,14 +448,15 @@ def report_message(
     with get_db() as (cur, conn):
         cur.execute(
             """
-            SELECT m.id::text
+            SELECT m.id::text, m.conversation_id::text
             FROM messages m
             JOIN conversations c ON c.id = m.conversation_id
             WHERE m.id = %s::uuid AND (c.user1_id = %s::uuid OR c.user2_id = %s::uuid)
             """,
             (msg_id, uid, uid),
         )
-        if not cur.fetchone():
+        msg_row = cur.fetchone()
+        if not msg_row:
             raise HTTPException(status_code=404, detail="Message not found")
         try:
             cur.execute(
@@ -466,7 +467,10 @@ def report_message(
                 (msg_id, uid, body.reason, body.description),
             )
             from routes.notifications import notify_report_submitted
-            notify_report_submitted(cur, uid, "message", msg_id)
+            # entity_type="conversation" (not "message") — there's no screen
+            # that can deep-link to one specific message, but the client can
+            # already route straight to the conversation itself.
+            notify_report_submitted(cur, uid, "conversation", msg_row["conversation_id"])
             conn.commit()
         except Exception:
             # Already reported by this user (unique constraint) — treat as success
