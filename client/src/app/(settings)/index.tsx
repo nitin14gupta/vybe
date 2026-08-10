@@ -83,7 +83,7 @@ export default function SettingsScreen() {
 
         <View style={styles.footer}>
           <Image source={CraftedByBanner} style={styles.footerBanner} resizeMode="contain" />
-          <Text style={styles.footerVersion}>v{appVersion}</Text>
+          {/* <Text style={styles.footerVersion}>v{appVersion}</Text> */}
         </View>
       </ScrollView>
 
@@ -130,11 +130,11 @@ const styles = StyleSheet.create({
   },
   footerBanner: {
     width: 220,
-    aspectRatio: 1568 / 672,
+    height: Math.round((220 * 672) / 1568),
   },
-  footerVersion: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 12,
-    color: Colors.inkDisabled,
-  },
+  // footerVersion: {
+  //   fontFamily: FontFamily.bodyRegular,
+  //   fontSize: 12,
+  //   color: Colors.inkDisabled,
+  // },
 })
