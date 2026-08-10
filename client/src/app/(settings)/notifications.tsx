@@ -108,18 +108,6 @@ export default function NotificationsScreen() {
       router.push('/(events)/create' as any)
       return
     }
-    if (item.type === 'birthday_soon') {
-      router.push({ pathname: '/(events)/create', params: { prefillTitle: 'Birthday House Party \U0001f388' } } as any)
-      return
-    }
-    if (item.type === 'wallet_expiring') {
-      router.push('/(settings)/wallet' as any)
-      return
-    }
-    if (item.type === 'reengagement') {
-      router.push('/(tabs)' as any)
-      return
-    }
     // Host got a "raise your capacity" nudge — take them straight to the
     // edit screen where they can actually do that, not just the read-only view.
     if (item.type === 'host_low_capacity' && item.entity_id) {

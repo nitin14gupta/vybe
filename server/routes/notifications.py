@@ -284,41 +284,16 @@ def notify_waitlist_event_cancelled(cur, user_id: str, event_id: str, event_titl
     )
 
 
-# ── New engagement notifications ────────────────────────────────────────────────
-
-EVENT_REMINDER_COPY = {
-    "24h": ("Tomorrow's the day! \U0001f389", "{event_title} is happening in 24 hours."),
-    "7h": ("Get ready \U0001f440", "{event_title} starts in 7 hours — start planning your outfit."),
-    "1h": ("It's almost time! \U0001f3c3", "{event_title} starts in 1 hour — get dressed, you're on your way."),
-}
-
-
-def notify_event_starting_soon(cur, user_id: str, event_id: str, event_title: str, stage: str):
-    title, body_tpl = EVENT_REMINDER_COPY[stage]
-    _insert_notification(
-        cur, user_id, "event_starting_soon",
-        title=title,
-        body=body_tpl.format(event_title=event_title),
-        entity_id=event_id,
-        entity_type="event",
-    )
-
+# ── New engagement notifications (reactive only — the scheduled ones
+# (event-starting-soon, payout-coming-soon, wallet-expiring, birthday,
+# re-engagement) were removed along with the scheduler loop in main.py;
+# revisit when a proper scheduler, e.g. Celery Beat, replaces it) ──────────────
 
 def notify_checked_in(cur, user_id: str, event_id: str, event_title: str):
     _insert_notification(
         cur, user_id, "checked_in",
         title="You're checked in! \U0001f389",
         body=f"Enjoy {event_title}.",
-        entity_id=event_id,
-        entity_type="event",
-    )
-
-
-def notify_payout_coming_soon(cur, host_id: str, event_id: str, event_title: str):
-    _insert_notification(
-        cur, host_id, "payout_coming_soon",
-        title="Your payout is on its way",
-        body=f"{event_title} just wrapped — your payout will be sent soon.",
         entity_id=event_id,
         entity_type="event",
     )
@@ -353,31 +328,6 @@ def notify_host_low_capacity(cur, host_id: str, event_id: str, event_title: str,
     )
 
 
-def notify_reengagement(cur, user_id: str):
-    # No entity — the client special-cases type "reengagement" to open Home.
-    _insert_notification(
-        cur, user_id, "reengagement",
-        title="It's been a while \U0001f440",
-        body="Here's what's happening near you this weekend — come see.",
-    )
-
-
-WALLET_EXPIRY_COPY = {
-    30: "in 30 days",
-    14: "in 2 weeks",
-    7: "in 1 week",
-}
-
-
-def notify_wallet_expiring(cur, user_id: str, amount_inr: int, days_label: str):
-    # No entity_id — the client special-cases type "wallet_expiring" to open the wallet screen.
-    _insert_notification(
-        cur, user_id, "wallet_expiring",
-        title="Wallet credit expiring soon",
-        body=f"₹{amount_inr} in your Gorave Wallet expires {days_label} — use it before it's gone.",
-    )
-
-
 def notify_first_event_hosted(cur, host_id: str, event_id: str, event_title: str):
     _insert_notification(
         cur, host_id, "first_event_hosted",
@@ -386,24 +336,6 @@ def notify_first_event_hosted(cur, host_id: str, event_id: str, event_title: str
         actor_id=host_id,
         entity_id=event_id,
         entity_type="event",
-    )
-
-
-BIRTHDAY_COPY = {
-    15: ("Your birthday's coming up... \U0001f440\U0001f382", "15 days left. Just saying — a birthday house party would be pretty iconic."),
-    10: ("Okay but hear us out \U0001f60f", "10 days to your birthday. Everyone loves an excuse to get dressed up for you."),
-    7: ("One week, birthday star \U00002728", "7 days left. Stop thinking about it and throw the party already."),
-}
-
-
-def notify_birthday_soon(cur, user_id: str, days: int):
-    # No entity_id — the client special-cases type "birthday_soon" to open
-    # Create Event with the title pre-filled.
-    title, body = BIRTHDAY_COPY[days]
-    _insert_notification(
-        cur, user_id, "birthday_soon",
-        title=title,
-        body=body,
     )
 
 

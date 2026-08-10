@@ -3,4 +3,4 @@
 // (or later, pointing it at a CDN URL) only means editing this one line.
 export const Logo = require('../../assets/splash-icon.png')
 export const LogoBlack = require('../../assets/black-icon.png')
-
+export const CraftedByBanner = require('../../assets/settingbottom.png')

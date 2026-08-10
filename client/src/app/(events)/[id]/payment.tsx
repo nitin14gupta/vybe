@@ -242,7 +242,7 @@ export default function PaymentScreen() {
     <View style={[s.root, { paddingTop: insets.top }]}>
       <View style={s.header}>
         <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-          <ArrowLeft size={22} color={Colors.brandOrange} strokeWidth={2} />
+          <ArrowLeft size={22} color={Colors.inkPrimary} strokeWidth={2} />
         </Pressable>
         <Text style={s.headerTitle}>Payment</Text>
         <View style={{ width: 40 }} />

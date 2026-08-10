@@ -1,12 +1,11 @@
-import Constants from 'expo-constants'
 import { useAuth } from '@/hooks/useAuth'
+import { APP_VERSION } from '@/constants'
 
 export function useSettings() {
   const { handleLogout } = useAuth()
-  const appVersion = Constants.expoConfig?.version ?? '1.0.0'
 
   return {
-    appVersion,
+    appVersion: APP_VERSION,
     handleLogout,
   }
 }

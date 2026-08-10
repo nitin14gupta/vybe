@@ -33,11 +33,5 @@ export const IOS_UPI_APPS: IosUpiAppDef[] = [
     package_name: "net.one97.paytm",
     scheme: "paytmmp",
     icon: require("../../assets/images/payments/upi-apps/paytm.png"),
-  },
-  {
-    app_name: "BHIM",
-    package_name: "in.org.npci.upiapp",
-    scheme: "bhim",
-    icon: require("../../assets/images/payments/upi-apps/bhim.png"),
-  },
+  }
 ];

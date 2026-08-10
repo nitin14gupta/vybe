@@ -1,18 +1,17 @@
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native'
 import { router } from 'expo-router'
-import Constants from 'expo-constants'
 import { ArrowLeft, ChevronRight, Heart } from 'lucide-react-native'
 import { Screen, AppHeader, HeaderIconBtn, LogoMark } from '@/components/ui'
-import { Colors, FontFamily, Spacing, Radius, SUPPORT_EMAIL } from '@/constants'
+import { Colors, FontFamily, Spacing, Radius, SUPPORT_EMAIL, APP_VERSION, APP_BUILD_NUMBER } from '@/constants'
 
 export default function AboutScreen() {
-  const version = Constants.expoConfig?.version ?? '1.0.0'
-  const buildNumber = Constants.expoConfig?.android?.versionCode ?? '1'
+  const version = APP_VERSION
+  const buildNumber = APP_BUILD_NUMBER
 
   return (
     <Screen top={false}>
       <AppHeader
-        title="About Vybe"
+        title="About Gorave"
         leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
       />
 

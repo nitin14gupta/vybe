@@ -1,4 +1,5 @@
 import os
+import threading
 import psycopg2
 import psycopg2.pool
 import psycopg2.extras
@@ -9,14 +10,17 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 _pool = None
+_pool_lock = threading.Lock()
 
 
 def _get_pool() -> psycopg2.pool.ThreadedConnectionPool:
     global _pool
     if _pool is None:
-        if not DATABASE_URL:
-            raise RuntimeError("DATABASE_URL is not configured in .env")
-        _pool = psycopg2.pool.ThreadedConnectionPool(1, 10, DATABASE_URL)
+        with _pool_lock:
+            if _pool is None:
+                if not DATABASE_URL:
+                    raise RuntimeError("DATABASE_URL is not configured in .env")
+                _pool = psycopg2.pool.ThreadedConnectionPool(1, 10, DATABASE_URL)
     return _pool
 
 

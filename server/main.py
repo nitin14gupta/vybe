@@ -30,15 +30,12 @@ from routes.admin_dashboard import router as admin_dashboard_router
 from routes.admin_revenue import router as admin_revenue_router
 from routes.admin_audit_log import router as admin_audit_log_router
 from utils.account_purge import purge_expired_deleted_accounts
-from utils.scheduled_notifications import check_event_reminders, run_daily_sweep
 
 # Comma-separated list of extra origins allowed to call this API — the admin
 # web panel's dev/prod origin(s), e.g. "http://localhost:3000,https://admin.gorave.com"
 ADMIN_ORIGINS = [o.strip() for o in os.getenv("ADMIN_ORIGINS", "").split(",") if o.strip()]
 
 PURGE_INTERVAL_SECONDS = 24 * 60 * 60
-EVENT_REMINDER_INTERVAL_SECONDS = 15 * 60
-DAILY_SWEEP_INTERVAL_SECONDS = 24 * 60 * 60
 
 # ── Cross-instance scheduler locking ────────────────────────────────────────
 # Every loop below runs inside THIS process, started fresh by every replica
@@ -95,41 +92,10 @@ async def _account_purge_loop():
         await asyncio.sleep(PURGE_INTERVAL_SECONDS)
 
 
-async def _event_reminder_loop():
-    """Runs every 15 min — event-starting-soon notifications (24h/7h/1h out).
-    Frequent because these are time-sensitive; each stage is idempotent via
-    a per-attendee reminded_*_at flag, so overlapping/frequent runs are safe."""
-    while True:
-        try:
-            if await _try_acquire_lock("sched_lock:event_reminders", EVENT_REMINDER_INTERVAL_SECONDS - 30):
-                sent = await asyncio.to_thread(check_event_reminders)
-                if sent:
-                    print(f"[NOTIF] Sent {sent} event-starting-soon reminder(s)", flush=True)
-        except Exception as e:
-            print(f"[NOTIF] Event reminder sweep failed: {e}", flush=True)
-        await asyncio.sleep(EVENT_REMINDER_INTERVAL_SECONDS)
-
-
-async def _daily_notification_sweep_loop():
-    """Runs once at startup, then every 24h — payout notices, wallet-expiry
-    reminders, birthday prompts, re-engagement pings. See
-    utils/scheduled_notifications.py for each check's own de-dupe logic."""
-    while True:
-        try:
-            if await _try_acquire_lock("sched_lock:daily_notifications", DAILY_SWEEP_INTERVAL_SECONDS - 300):
-                results = await asyncio.to_thread(run_daily_sweep)
-                print(f"[NOTIF] Daily sweep: {results}", flush=True)
-        except Exception as e:
-            print(f"[NOTIF] Daily sweep failed: {e}", flush=True)
-        await asyncio.sleep(DAILY_SWEEP_INTERVAL_SECONDS)
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     tasks = [
         asyncio.create_task(_account_purge_loop()),
-        asyncio.create_task(_event_reminder_loop()),
-        asyncio.create_task(_daily_notification_sweep_loop()),
     ]
     yield
     for task in tasks:
