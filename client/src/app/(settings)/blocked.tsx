@@ -5,10 +5,12 @@ import {
 } from 'react-native'
 import { Image } from 'expo-image'
 import { router } from 'expo-router'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { hError } from '@/lib/haptics'
 import { useFocusEffect } from 'expo-router'
 import { ArrowLeft, ShieldOff } from 'lucide-react-native'
-import { AppHeader, HeaderIconBtn } from '@/components/ui'
+import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn } from '@/components/ui'
+import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 import ApiService, { BlockedUser } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
 import { ConfirmSheet } from '@/components/ui'
@@ -47,6 +49,9 @@ const BlockedUserRow = memo(function BlockedUserRow({ user, onUnblock }: {
 })
 
 export default function BlockedUsersScreen() {
+  const { hideProgress, onScroll } = useHeaderScroll()
+  const insets = useSafeAreaInsets()
+  const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
   const showPill = usePillStore(s => s.show)
   const [blocked, setBlocked] = useState<BlockedUser[]>([])
   const [loading, setLoading] = useState(true)
@@ -76,15 +81,16 @@ export default function BlockedUsersScreen() {
     <View style={s.root}>
       <AppHeader
         title="Blocked Users"
+        hideProgress={hideProgress}
         leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
       />
 
       {loading ? (
-        <View style={s.center}>
+        <View style={[s.center, { paddingTop: headerHeight }]}>
           <ActivityIndicator color={Colors.brandOrange} />
         </View>
       ) : blocked.length === 0 ? (
-        <View style={s.center}>
+        <View style={[s.center, { paddingTop: headerHeight }]}>
           <ShieldOff size={48} color={Colors.inkDisabled} strokeWidth={1.2} />
           <Text style={s.emptyTitle}>No blocked users</Text>
           <Text style={s.emptySub}>Users you block won't appear in your feed or be able to contact you.</Text>
@@ -93,7 +99,9 @@ export default function BlockedUsersScreen() {
         <FlatList
           data={blocked}
           keyExtractor={u => u.id}
-          contentContainerStyle={s.list}
+          contentContainerStyle={[s.list, { paddingTop: headerHeight + 8 }]}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
           renderItem={({ item }) => (
             <BlockedUserRow user={item} onUnblock={setConfirmUser} />
           )}

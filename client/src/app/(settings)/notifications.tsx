@@ -11,7 +11,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import ApiService, { AppNotification } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
 import { notifEntityToTarget, targetToHref } from '@/lib/deepLink'
-import { AppHeader, HeaderIconBtn } from '@/components/ui'
+import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn } from '@/components/ui'
+import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 import { useAuthStore } from '@/store/auth'
 import { usePillStore } from '@/store/pillStore'
 import { NotificationRow } from '@/components/settings/NotificationRow'
@@ -45,6 +46,8 @@ function groupByDate(notifs: AppNotification[]): { title: string; data: AppNotif
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets()
+  const { hideProgress, onScroll } = useHeaderScroll()
+  const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
   const [notifs, setNotifs] = useState<AppNotification[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
@@ -153,11 +156,12 @@ export default function NotificationsScreen() {
     <View style={s.root}>
       <AppHeader
         title="Notifications"
+        hideProgress={hideProgress}
         leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
       />
 
       {loading ? (
-        <View style={s.center}>
+        <View style={[s.center, { paddingTop: headerHeight }]}>
           <ActivityIndicator color={Colors.brandOrange} />
         </View>
       ) : loadError ? (
@@ -176,7 +180,9 @@ export default function NotificationsScreen() {
               <Text style={s.sectionHeaderText}>{section.title}</Text>
             </View>
           )}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+          contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: insets.bottom + 20 }}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
           stickySectionHeadersEnabled={false}
           ListFooterComponent={
             hasMore ? (

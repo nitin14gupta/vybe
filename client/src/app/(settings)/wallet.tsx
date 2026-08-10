@@ -1,20 +1,26 @@
 import { View, Text, StyleSheet, FlatList } from 'react-native'
 import { router } from 'expo-router'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft } from 'lucide-react-native'
-import { AppHeader, HeaderIconBtn, BrandedRefreshControl } from '@/components/ui'
+import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, BrandedRefreshControl } from '@/components/ui'
 import { Colors, FontFamily } from '@/constants'
 import { useWallet } from '@/hooks/useWallet'
+import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 import { WalletBalanceCard } from '@/components/settings/WalletBalanceCard'
 import { WalletEmptyState } from '@/components/settings/WalletEmptyState'
 import { WalletTransactionRow, WalletTxDivider } from '@/components/settings/WalletTransactionRow'
 
 export default function WalletScreen() {
   const { balance, transactions, loading, refreshing, reload } = useWallet()
+  const { hideProgress, onScroll } = useHeaderScroll()
+  const insets = useSafeAreaInsets()
+  const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
 
   return (
     <View style={s.root}>
       <AppHeader
         title="Gorave Wallet"
+        hideProgress={hideProgress}
         leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
       />
 
@@ -35,8 +41,10 @@ export default function WalletScreen() {
           </>
         }
         ListEmptyComponent={!loading ? <WalletEmptyState /> : null}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         ItemSeparatorComponent={WalletTxDivider}
       />
     </View>

@@ -1,11 +1,16 @@
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from 'react-native'
 import { router } from 'expo-router'
-import { AppHeader, BackButton, Screen, PhotoSlot, PrimaryButton } from '@/components/ui'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { AppHeader, APP_HEADER_BAR_HEIGHT, BackButton, Screen, PhotoSlot, PrimaryButton } from '@/components/ui'
 import { MediaPreviewModal } from '@/components/chat/MediaPreviewModal'
 import { useEditPhotos } from '@/hooks/useEditPhotos'
+import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 import { Colors, FontFamily, Spacing } from '@/constants'
 
 export default function EditPhotosScreen() {
+  const { hideProgress, onScroll } = useHeaderScroll()
+  const insets = useSafeAreaInsets()
+  const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
   const {
     loading,
     saving,
@@ -32,9 +37,14 @@ export default function EditPhotosScreen() {
 
   return (
     <Screen top={false}>
-      <AppHeader title="Edit Photos" leftAction={<BackButton onPress={() => router.back()} />} />
+      <AppHeader title="Edit Photos" hideProgress={hideProgress} leftAction={<BackButton onPress={() => router.back()} />} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingTop: headerHeight + 12 }]}
+        showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+      >
         <Text style={styles.hintText}>
           Your first photo is your main profile picture. You can add up to 6 photos. Tap a photo to remove it.
         </Text>

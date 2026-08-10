@@ -4,13 +4,16 @@ import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, Send } from 'lucide-react-native'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
-import { AppHeader, HeaderIconBtn, PrimaryButton } from '@/components/ui'
+import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, PrimaryButton } from '@/components/ui'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { hSuccess, hTap } from '@/lib/haptics'
+import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 
 export default function FeedbackScreen() {
   const insets   = useSafeAreaInsets()
+  const { hideProgress, onScroll } = useHeaderScroll()
+  const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
   const showPill = usePillStore(s => s.show)
   const [text, setText]         = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -36,14 +39,17 @@ export default function FeedbackScreen() {
     <View style={[s.root]}>
       <AppHeader
         title="Send Feedback"
+        hideProgress={hideProgress}
         leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
       />
 
       <ScrollView
         style={s.scroll}
-        contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 40 }]}
+        contentContainerStyle={[s.content, { paddingTop: headerHeight, paddingBottom: insets.bottom + 40 }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
       >
         <Text style={s.hint}>
           Tell us what you love, what's broken, or what you'd like to see next. Every message is read by the team.

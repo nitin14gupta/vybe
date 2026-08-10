@@ -1,8 +1,10 @@
 import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native'
 import { useCallback } from 'react'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router, useFocusEffect } from 'expo-router'
 import { hSuccess } from '@/lib/haptics'
-import { BackButton, PrimaryButton, Screen, BioInput, BrandedLoader } from '@/components/ui'
+import { AppHeader, APP_HEADER_BAR_HEIGHT, BackButton, PrimaryButton, Screen, BioInput, BrandedLoader } from '@/components/ui'
+import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 import { ProfileEditPhotoStrip } from '@/components/profile/ProfileEditPhotoStrip'
 import { ProfileNameField } from '@/components/profile/ProfileNameField'
 import { ProfileUsernameField } from '@/components/profile/ProfileUsernameField'
@@ -29,6 +31,9 @@ export default function EditProfileScreen() {
   const voice = useVoiceEdit(profile?.voice_url)
   const city = useOnboardingStore(s => s.city)
   const showPill = usePillStore(s => s.show)
+  const { hideProgress, onScroll } = useHeaderScroll()
+  const insets = useSafeAreaInsets()
+  const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
 
   useFocusEffect(
     useCallback(() => {
@@ -59,20 +64,28 @@ export default function EditProfileScreen() {
   }
 
   return (
-    <Screen>
-      {/* Header */}
-      <View style={styles.header}>
-        <BackButton onPress={() => router.back()} />
-        <Text style={styles.title}>Edit Profile</Text>
-        <Pressable onPress={() => { hSuccess(); onPressSave() }} disabled={!canSave} hitSlop={8} style={styles.saveArea}>
-          {saving
-            ? <ActivityIndicator size="small" color={Colors.brandOrange} />
-            : <Text style={[styles.saveBtn, !canSave && styles.saveBtnDisabled]}>Save</Text>
-          }
-        </Pressable>
-      </View>
+    <Screen top={false}>
+      <AppHeader
+        title="Edit Profile"
+        hideProgress={hideProgress}
+        leftAction={<BackButton onPress={() => router.back()} />}
+        rightAction={
+          <Pressable onPress={() => { hSuccess(); onPressSave() }} disabled={!canSave} hitSlop={8} style={styles.saveArea}>
+            {saving
+              ? <ActivityIndicator size="small" color={Colors.brandOrange} />
+              : <Text style={[styles.saveBtn, !canSave && styles.saveBtnDisabled]}>Save</Text>
+            }
+          </Pressable>
+        }
+      />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}
+        keyboardShouldPersistTaps="handled"
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+      >
 
         {/* Photos */}
         <View style={styles.section}>
@@ -144,19 +157,6 @@ export default function EditProfileScreen() {
 
 const styles = StyleSheet.create({
   loader: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingRight: Spacing.screenPadding,
-    paddingBottom: 8,
-  },
-  title: {
-    flex: 1,
-    fontFamily: FontFamily.headingBold,
-    fontSize: 18,
-    color: Colors.inkPrimary,
-    textAlign: 'center',
-  },
   saveArea: { width: 48, alignItems: 'flex-end' },
   saveBtn: {
     fontFamily: FontFamily.bodySemiBold,

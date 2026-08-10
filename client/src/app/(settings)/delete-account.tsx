@@ -5,7 +5,8 @@ import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft } from 'lucide-react-native'
 import { Colors, Spacing, SUPPORT_EMAIL } from '@/constants'
-import { AppHeader, HeaderIconBtn } from '@/components/ui'
+import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn } from '@/components/ui'
+import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 import { DeleteStepDots } from '@/components/settings/DeleteStepDots'
 import { DeleteBlockedEvents } from '@/components/settings/DeleteBlockedEvents'
 import { DeleteWarningStep } from '@/components/settings/DeleteWarningStep'
@@ -23,6 +24,8 @@ const TOTAL_STEPS = 4
 
 export default function DeleteAccountScreen() {
   const insets   = useSafeAreaInsets()
+  const { hideProgress, onScroll } = useHeaderScroll()
+  const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
   const showPill = usePillStore(s => s.show)
   const clearAuth = useAuthStore(s => s.clearAuth)
 
@@ -139,12 +142,14 @@ export default function DeleteAccountScreen() {
 
   return (
     <View style={s.root}>
-      <AppHeader title="Delete Account" leftAction={backAction} />
+      <AppHeader title="Delete Account" hideProgress={hideProgress} leftAction={backAction} />
 
       <ScrollView
-        contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 40 }]}
+        contentContainerStyle={[s.content, { paddingTop: headerHeight + 20, paddingBottom: insets.bottom + 40 }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
       >
         <DeleteStepDots current={step} total={TOTAL_STEPS} />
 

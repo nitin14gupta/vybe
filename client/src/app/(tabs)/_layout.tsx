@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.8,
     alignItems: "center",
     justifyContent: "center",
-    borderColor: Colors.inkSecondary,
+    borderColor: Colors.inkPrimary,
   },
   avatarWrap: {
     width: 28,

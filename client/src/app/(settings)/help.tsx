@@ -1,7 +1,9 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import { router } from 'expo-router'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft } from 'lucide-react-native'
-import { Screen, AppHeader, HeaderIconBtn } from '@/components/ui'
+import { Screen, AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn } from '@/components/ui'
+import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 import { Colors, FontFamily, Spacing, Radius, SUPPORT_EMAIL } from '@/constants'
 
 const FAQS: { q: string; a: string }[] = [
@@ -36,14 +38,24 @@ const FAQS: { q: string; a: string }[] = [
 ]
 
 export default function HelpScreen() {
+  const { hideProgress, onScroll } = useHeaderScroll()
+  const insets = useSafeAreaInsets()
+  const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
+
   return (
     <Screen top={false}>
       <AppHeader
         title="Help & FAQ"
+        hideProgress={hideProgress}
         leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
       />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+      >
         {FAQS.map((faq, i) => (
           <View key={i} style={styles.card}>
             <Text style={styles.question}>{faq.q}</Text>

@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   FlatList,
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -11,7 +10,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, Star } from 'lucide-react-native'
 import { Colors, FontFamily, Spacing } from '@/constants'
-import { BrandedLoader, SortSheet, BrandedRefreshControl } from '@/components/ui'
+import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, BrandedLoader, SortSheet, BrandedRefreshControl } from '@/components/ui'
+import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 import { ReviewCard } from '@/components/reviews/ReviewParts'
 import { HostReviewsSummary } from '@/components/reviews/HostReviewsSummary'
 import { useAuthStore } from '@/store/auth'
@@ -23,6 +23,8 @@ const PAGE_SIZE = 10
 export default function HostReviewsScreen() {
   const { id, name } = useLocalSearchParams<{ id: string; name?: string }>()
   const insets = useSafeAreaInsets()
+  const { hideProgress, onScroll } = useHeaderScroll()
+  const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
   const router = useRouter()
   const isOwnProfile = useAuthStore(s => s.userId) === id
   const showPill = usePillStore(s => s.show)
@@ -72,21 +74,19 @@ export default function HostReviewsScreen() {
   }, [id, activeEventId, activeRating, loadingMore, hasMore, reviews.length])
 
   return (
-    <View style={[s.root, { paddingTop: insets.top }]}>
-      <View style={s.header}>
-        <Pressable style={s.iconBtn} onPress={() => router.back()} hitSlop={8}>
-          <ArrowLeft size={20} color={Colors.inkPrimary} strokeWidth={1.8} />
-        </Pressable>
-        <Text style={s.title} numberOfLines={1}>{name ? `${name}'s Reviews` : 'Host Reviews'}</Text>
-        <View style={s.iconBtn} />
-      </View>
+    <View style={s.root}>
+      <AppHeader
+        title={name ? `${name}'s Reviews` : 'Host Reviews'}
+        hideProgress={hideProgress}
+        leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={1.8} /></HeaderIconBtn>}
+      />
 
       {loading && reviews.length === 0 ? (
-        <View style={s.center}>
+        <View style={[s.center, { paddingTop: headerHeight }]}>
           <BrandedLoader />
         </View>
       ) : count === 0 && !activeEventId && !activeRating ? (
-        <View style={s.center}>
+        <View style={[s.center, { paddingTop: headerHeight }]}>
           <Star size={48} color={Colors.inkDisabled} strokeWidth={1.2} />
           <Text style={s.emptyTitle}>No reviews yet</Text>
           <Text style={s.emptySub}>Reviews appear here once attendees rate their events.</Text>
@@ -96,7 +96,9 @@ export default function HostReviewsScreen() {
           data={reviews}
           keyExtractor={r => r.id}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+          contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: insets.bottom + 24 }}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
           onEndReachedThreshold={0.4}
           onEndReached={loadMore}
           refreshControl={
@@ -150,18 +152,6 @@ export default function HostReviewsScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.divider,
-  },
-  iconBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  title: { flex: 1, textAlign: 'center', fontFamily: FontFamily.headingBold, fontSize: 17, color: Colors.inkPrimary },
 
   footerLoader: {
     paddingVertical: 20,

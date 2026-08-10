@@ -6,11 +6,12 @@ import {
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, Mail, ChevronRight } from 'lucide-react-native'
-import { AppHeader, HeaderIconBtn, PrimaryButton } from '@/components/ui'
+import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, PrimaryButton } from '@/components/ui'
 import { Colors, FontFamily, SUPPORT_EMAIL } from '@/constants'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { hTap, hSuccess } from '@/lib/haptics'
+import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 
 const TOPICS = [
   { id: 'refund',    label: 'Wallet refund to bank',     subject: 'Wallet Refund Request' },
@@ -22,6 +23,8 @@ const TOPICS = [
 
 export default function SupportScreen() {
   const insets   = useSafeAreaInsets()
+  const { hideProgress, onScroll } = useHeaderScroll()
+  const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
   const showPill = usePillStore(s => s.show)
 
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
@@ -58,14 +61,17 @@ export default function SupportScreen() {
     <View style={s.root}>
       <AppHeader
         title="Contact Support"
+        hideProgress={hideProgress}
         leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
       />
 
       <ScrollView
         style={s.scroll}
-        contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 40 }]}
+        contentContainerStyle={[s.content, { paddingTop: headerHeight, paddingBottom: insets.bottom + 40 }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
       >
         {/* Hero */}
         <View style={s.heroRow}>

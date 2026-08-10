@@ -1,8 +1,10 @@
-import { View, Text, StyleSheet, Pressable } from 'react-native'
+import { View, Text, StyleSheet, Pressable, Animated } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ReactNode } from 'react'
 import { Colors, FontFamily } from '@/constants'
 import { LogoMark } from './LogoMark'
+
+export const APP_HEADER_BAR_HEIGHT = 52
 
 interface Props {
   showLogo?: boolean
@@ -10,13 +12,36 @@ interface Props {
   leftAction?: ReactNode
   rightAction?: ReactNode
   transparent?: boolean
+  // Pass the `hideProgress` from useHeaderScroll() to make the header float
+  // over content and fade/slide away on scroll-down, back on scroll-up.
+  // Omit for the default static, in-flow header (no behavior change).
+  hideProgress?: Animated.Value
 }
 
-export function AppHeader({ showLogo = false, title, leftAction, rightAction, transparent = false }: Props) {
+export function AppHeader({ showLogo = false, title, leftAction, rightAction, transparent = false, hideProgress }: Props) {
   const insets = useSafeAreaInsets()
+  const totalHeight = APP_HEADER_BAR_HEIGHT + insets.top
+
+  const floatingStyle = hideProgress && {
+    opacity: hideProgress.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+    transform: [
+      {
+        translateY: hideProgress.interpolate({ inputRange: [0, 1], outputRange: [0, -totalHeight] }),
+      },
+    ],
+  }
 
   return (
-    <View style={[styles.root, transparent && styles.rootTransparent, { paddingTop: insets.top }]}>
+    <Animated.View
+      style={[
+        styles.root,
+        transparent && styles.rootTransparent,
+        { paddingTop: insets.top },
+        hideProgress && styles.rootFloating,
+        floatingStyle,
+      ]}
+      pointerEvents={hideProgress ? 'box-none' : 'auto'}
+    >
       <View style={styles.bar}>
         <View style={styles.side}>
           {showLogo ? <LogoMark size={22} style={styles.sideLogo} /> : (leftAction ?? <View />)}
@@ -32,7 +57,7 @@ export function AppHeader({ showLogo = false, title, leftAction, rightAction, tr
 
         <View style={[styles.side, styles.sideRight]}>{rightAction ?? <View />}</View>
       </View>
-    </View>
+    </Animated.View>
   )
 }
 
@@ -61,6 +86,12 @@ const styles = StyleSheet.create({
   },
   rootTransparent: {
     backgroundColor: 'transparent',
+  },
+  rootFloating: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
   },
   bar: {
     height: 52,

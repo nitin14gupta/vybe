@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Pressable, Dimensions, ScrollView } from 'react-native'
 import { router } from 'expo-router'
-import { OutlineButton, StepDots, PrimaryButton, Screen, PhotoSlot } from '@/components/ui'
+import { OutlineButton, StepDots, PrimaryButton, Screen, PhotoSlot, LogoMark } from '@/components/ui'
 import { MediaPreviewModal } from '@/components/chat/MediaPreviewModal'
 import { usePhotos } from '@/hooks/usePhotos'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
@@ -26,7 +26,7 @@ export default function PhotosScreen() {
 
   return (
     <Screen>
-      <StepDots step={2} />
+      <LogoMark size={40} style={styles.logo} />
 
       <View style={styles.header}>
         <Text style={styles.title}>Add your photos</Text>
@@ -48,6 +48,8 @@ export default function PhotosScreen() {
           />
         ))}
       </ScrollView>
+
+      <StepDots step={2} />
 
       <View style={styles.footer}>
         <OutlineButton label="Back" onPress={() => router.back()} style={styles.backBtn} />
@@ -75,6 +77,7 @@ export default function PhotosScreen() {
 }
 
 const styles = StyleSheet.create({
+  logo: { alignSelf: 'center', marginBottom: 12 },
   header: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 12 },
   title: {
     fontFamily: FontFamily.headingBold,

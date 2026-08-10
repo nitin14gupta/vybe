@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, Pressable, FlatList, KeyboardAvoidingView, Plat
 import { router } from 'expo-router'
 import { hTap, hSelection } from '@/lib/haptics'
 import { Search, MapPin, Check } from 'lucide-react-native'
-import { OutlineButton, StepDots, Input, PrimaryButton, Screen } from '@/components/ui'
+import { OutlineButton, StepDots, Input, PrimaryButton, Screen, LogoMark } from '@/components/ui'
 import { useLocation } from '@/hooks/useLocation'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 
@@ -24,7 +24,7 @@ export default function LocationScreen() {
 
   return (
     <Screen>
-      <StepDots step={5} />
+      <LogoMark size={40} style={styles.logo} />
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -100,6 +100,8 @@ export default function LocationScreen() {
           }
         />
 
+        <StepDots step={5} />
+
         <View style={styles.footer}>
           <OutlineButton label="Back" onPress={() => router.back()} style={styles.backBtn} />
           <View style={styles.nextBtn}>
@@ -119,6 +121,7 @@ export default function LocationScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  logo: { alignSelf: 'center', marginBottom: 8 },
   header: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 12 },
   title: {
     fontFamily: FontFamily.headingBold,

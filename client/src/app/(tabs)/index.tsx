@@ -3,8 +3,9 @@ import {
   BackHandler, View, Text, StyleSheet, ScrollView, Platform,
 } from 'react-native'
 import { useFocusEffect, router } from 'expo-router'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Heart, PartyPopper, Search } from 'lucide-react-native'
-import { AppHeader, HeaderIconBtn, CreateEventSheet, EmptyState, PrimaryButton } from '@/components/ui'
+import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, CreateEventSheet, EmptyState, PrimaryButton } from '@/components/ui'
 import { HomeGradientBackdrop } from '@/components/home/HomeGradientBackdrop'
 import { TemplateFan } from '@/components/home/TemplateFan'
 import { MyEventsSection } from '@/components/home/MyEventsSection'
@@ -13,6 +14,7 @@ import { TrendingSection } from '@/components/home/TrendingSection'
 import { useEvents } from '@/hooks/useEvents'
 import { useProfile } from '@/hooks/useProfile'
 import { useTabBarScroll } from '@/hooks/useTabBarScroll'
+import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 import ApiService from '@/api/apiService'
 import { useNotifStore } from '@/store/notifStore'
 import { usePillStore } from '@/store/pillStore'
@@ -26,6 +28,9 @@ export default function HomeScreen() {
   const lastBackRef = useRef(0)
   const showPill = usePillStore(s => s.show)
   const tabBarScroll = useTabBarScroll()
+  const { hideProgress, onScroll: onHeaderScroll } = useHeaderScroll()
+  const insets = useSafeAreaInsets()
+  const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
 
   const [myEventsEmpty, setMyEventsEmpty] = useState<boolean | null>(null)
   const [recentEmpty, setRecentEmpty] = useState<boolean | null>(null)
@@ -64,6 +69,7 @@ export default function HomeScreen() {
       <AppHeader
         showLogo
         transparent
+        hideProgress={hideProgress}
         rightAction={
           <View style={{ flexDirection: 'row', gap: 4 }}>
             <HeaderIconBtn onPress={() => { hTap(); router.push('/(profile)/search' as any) }}>
@@ -79,7 +85,12 @@ export default function HomeScreen() {
         }
       />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} {...tabBarScroll}>
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}
+        showsVerticalScrollIndicator={false}
+        {...tabBarScroll}
+        onScroll={(e) => { tabBarScroll.onScroll(e); onHeaderScroll(e) }}
+      >
         <TemplateFan />
         <PrimaryButton
           label="Create event"

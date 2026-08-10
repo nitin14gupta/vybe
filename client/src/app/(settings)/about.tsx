@@ -1,21 +1,32 @@
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native'
 import { router } from 'expo-router'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, ChevronRight, Heart } from 'lucide-react-native'
-import { Screen, AppHeader, HeaderIconBtn, LogoMark } from '@/components/ui'
+import { Screen, AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, LogoMark } from '@/components/ui'
 import { Colors, FontFamily, Spacing, Radius, SUPPORT_EMAIL, APP_VERSION, APP_BUILD_NUMBER } from '@/constants'
+import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 
 export default function AboutScreen() {
   const version = APP_VERSION
   const buildNumber = APP_BUILD_NUMBER
+  const { hideProgress, onScroll } = useHeaderScroll()
+  const insets = useSafeAreaInsets()
+  const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
 
   return (
     <Screen top={false}>
       <AppHeader
         title="About Gorave"
+        hideProgress={hideProgress}
         leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
       />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+      >
         {/* Logo block */}
         <View style={styles.logoBlock}>
           <LogoMark size={48} style={{ marginBottom: 4 }} />
