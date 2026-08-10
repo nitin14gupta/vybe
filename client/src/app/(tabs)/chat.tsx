@@ -1,7 +1,7 @@
 import { memo, useState, useEffect } from 'react'
 import {
   View, Text, StyleSheet, FlatList, Pressable,
-  ActivityIndicator,
+  ActivityIndicator, Platform,
 } from 'react-native'
 import { Image } from 'expo-image'
 import { router } from 'expo-router'
@@ -13,9 +13,10 @@ import { VybeInboxSheet, VybeIcebreakerModal, LogoMark, ProfileMenuSheet, Primar
 import { ChatSearchModal } from '@/components/chat/ChatSearchModal'
 import { usePillStore } from '@/store/pillStore'
 import { useConversations } from '@/hooks/useConversations'
+import { useTabBarScroll } from '@/hooks/useTabBarScroll'
 import { useAuthStore } from '@/store/auth'
 import ApiService from '@/api/apiService'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, ComponentSize, FontFamily } from '@/constants'
 import { isRecentlyActive } from '@/lib/formatLastSeen'
 import type { Conversation } from '@/api/apiService'
 
@@ -144,6 +145,7 @@ export default function ChatScreen() {
   const [pendingAccept, setPendingAccept] = useState<{ vibeId: string; name: string | null } | null>(null)
   const [menuTarget, setMenuTarget] = useState<Conversation | null>(null)
   const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set())
+  const tabBarScroll = useTabBarScroll()
 
   const showPill = usePillStore(s => s.show)
   const currentUserId = useAuthStore(s => s.userId)
@@ -273,6 +275,7 @@ export default function ChatScreen() {
           data={allConvs}
           keyExtractor={c => c.id}
           showsVerticalScrollIndicator={false}
+          {...tabBarScroll}
           onRefresh={handleRefresh}
           refreshing={refreshing}
           contentContainerStyle={s.listContent}
@@ -419,7 +422,7 @@ const s = StyleSheet.create({
   },
   retryBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandOrange },
   exploreBtn: { marginTop: 12 },
-  listContent: { paddingBottom: 32 },
+  listContent: { paddingBottom: (Platform.OS === 'android' ? ComponentSize.navBar : 0) + 32 },
 
   // Pending strip
   pendingSection: { paddingBottom: 8, paddingTop: 12 },

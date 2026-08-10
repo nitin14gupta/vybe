@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import {
-  BackHandler, View, Text, StyleSheet, ScrollView,
+  BackHandler, View, Text, StyleSheet, ScrollView, Platform,
 } from 'react-native'
 import { useFocusEffect, router } from 'expo-router'
 import { Heart, PartyPopper, Search } from 'lucide-react-native'
@@ -12,11 +12,12 @@ import { RecentlyViewedSection } from '@/components/home/RecentlyViewedSection'
 import { TrendingSection } from '@/components/home/TrendingSection'
 import { useEvents } from '@/hooks/useEvents'
 import { useProfile } from '@/hooks/useProfile'
+import { useTabBarScroll } from '@/hooks/useTabBarScroll'
 import ApiService from '@/api/apiService'
 import { useNotifStore } from '@/store/notifStore'
 import { usePillStore } from '@/store/pillStore'
 import { hTap } from '@/lib/haptics'
-import { Colors, FontFamily, Radius } from '@/constants'
+import { Colors, ComponentSize, FontFamily, Radius } from '@/constants'
 
 export default function HomeScreen() {
   const { profile } = useProfile()
@@ -24,6 +25,7 @@ export default function HomeScreen() {
   const [createOpen, setCreateOpen] = useState(false)
   const lastBackRef = useRef(0)
   const showPill = usePillStore(s => s.show)
+  const tabBarScroll = useTabBarScroll()
 
   const [myEventsEmpty, setMyEventsEmpty] = useState<boolean | null>(null)
   const [recentEmpty, setRecentEmpty] = useState<boolean | null>(null)
@@ -77,7 +79,7 @@ export default function HomeScreen() {
         }
       />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} {...tabBarScroll}>
         <TemplateFan />
         <PrimaryButton
           label="Create event"
@@ -112,7 +114,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
-  content: { paddingHorizontal: 16, paddingBottom: 24, gap: 14 },
+  content: { paddingHorizontal: 16, paddingBottom: (Platform.OS === 'android' ? ComponentSize.navBar : 0) + 24, gap: 14 },
 
   createBtn: {
     alignSelf: 'center',

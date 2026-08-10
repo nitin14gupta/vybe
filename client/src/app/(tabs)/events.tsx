@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   BackHandler,
   FlatList,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -13,7 +14,7 @@ import { HomeGradientBackdrop } from "@/components/home/HomeGradientBackdrop";
 import { EventsMapView } from "@/components/maps";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Colors, FontFamily } from "@/constants";
+import { Colors, ComponentSize, FontFamily } from "@/constants";
 import { useEvents } from "@/hooks/useEvents";
 import type { EventSummary } from "@/api/apiService";
 import { EventCard, EventCardSkeleton } from "@/components/events/EventCard";
@@ -24,6 +25,7 @@ import { MapErrorOverlay, MapEmptyOverlay, ListErrorState, ListEmptyState } from
 import { LocationWarning, CreateEventSheet, EventListCard, EventListCardSkeleton, ViewModeToggle, BrandedRefreshControl } from "@/components/ui";
 import { usePermissionSheetStore } from "@/store/permissionSheetStore";
 import { useEventViewModeStore } from "@/store/eventViewModeStore";
+import { useTabBarScroll } from "@/hooks/useTabBarScroll";
 
 const PREVIEW_MAX = 8;
 const LIST_PAGE = 8;
@@ -33,6 +35,7 @@ export default function EventsScreen() {
   const router = useRouter();
   const { events, loading, error, filters, setFilter, reload, loadInBounds, userLat, userLng, userHeading, locationStatus } = useEvents();
   const [viewMode, setViewModeState] = useState<"map" | "list">("map");
+  const tabBarScroll = useTabBarScroll();
 
   useEffect(() => {
     AsyncStorage.getItem("events_view_mode")
@@ -215,7 +218,7 @@ export default function EventsScreen() {
             previewListRef={previewListRef}
             previewEvents={previewEvents}
             extraCount={extraCount}
-            paddingBottom={Math.max(insets.bottom, 8) + 6}
+            paddingBottom={Math.max(insets.bottom, 8) + 6 + (Platform.OS === "android" ? ComponentSize.navBar - 26 : 0)}
             renderPreviewCard={renderPreviewCard}
             onMorePress={() => setViewMode("list")}
           />
@@ -275,6 +278,7 @@ export default function EventsScreen() {
           style={{ flex: 1 }}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          {...tabBarScroll}
           refreshControl={
             <BrandedRefreshControl refreshing={loading} onRefresh={reload} />
           }
@@ -313,7 +317,7 @@ const styles = StyleSheet.create({
   leftGlow: { position: "absolute", top: 0, bottom: 0, left: 0, width: 90, opacity: 0.28 },
   rightGlow: { position: "absolute", top: 0, bottom: 0, right: 0, width: 90, opacity: 0.28 },
 
-  listContent: { padding: 16, gap: 16 },
+  listContent: { padding: 16, paddingBottom: (Platform.OS === "android" ? ComponentSize.navBar : 0) + 16, gap: 16 },
 
   loadMoreBtn: {
     marginTop: 8,

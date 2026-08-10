@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, Pressable, Platform } from 'react-native'
 import { router } from 'expo-router'
 import { hTap } from '@/lib/haptics'
 import { Pencil, Settings, Share } from 'lucide-react-native'
@@ -12,9 +12,10 @@ import { ProfileDetailsChips } from '@/components/profile/ProfileDetailsChips'
 import { ProfilePhotoGrid } from '@/components/profile/ProfilePhotoGrid'
 import { useProfile } from '@/hooks/useProfile'
 import { useAuthStore } from '@/store/auth'
-import { Colors, FontFamily, Spacing, HOST_BADGE_IMAGES } from '@/constants'
+import { Colors, ComponentSize, FontFamily, Spacing, HOST_BADGE_IMAGES } from '@/constants'
 import { useImageViewer } from '@/hooks/useImageViewer'
 import { MediaViewerModal } from '@/components/chat/MediaViewerModal'
+import { useTabBarScroll } from '@/hooks/useTabBarScroll'
 
 const GENDER_DISPLAY: Record<string, string> = {
   Man: 'Male',
@@ -27,6 +28,7 @@ export default function ProfileScreen() {
   const { profile, loading, error, refresh } = useProfile()
   const { viewingMedia, openMedia, closeMedia } = useImageViewer()
   const [refreshing, setRefreshing] = useState(false)
+  const tabBarScroll = useTabBarScroll()
 
   const player = useAudioPlayer(null)
   const status = useAudioPlayerStatus(player)
@@ -106,7 +108,7 @@ export default function ProfileScreen() {
         }
       />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={handleRefresh} />} {...tabBarScroll}>
 
         <ProfileAvatarHeader
           name={name}
@@ -186,7 +188,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
   loader: { flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center' },
-  scroll: { paddingBottom: 32 },
+  scroll: { paddingBottom: (Platform.OS === 'android' ? ComponentSize.navBar : 0) + 32 },
 
   actionsRow: {
     flexDirection: 'row',
