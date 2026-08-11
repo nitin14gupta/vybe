@@ -1,8 +1,6 @@
-import { Animated, Platform } from 'react-native'
+import { Animated } from 'react-native'
 
-// Slide the bottom tab bar away on scroll-down, back on scroll-up. Android
-// only for now — the tab bar's own translateY sits at 0 forever on iOS since
-// handleTabBarScroll no-ops there.
+// Slide the bottom tab bar away on scroll-down, back on scroll-up.
 export const tabBarTranslateY = new Animated.Value(0)
 
 const HIDE_DISTANCE = 140 // clears the tab bar (72) + the tallest safe-area inset with room to spare
@@ -20,8 +18,6 @@ function animateTo(toValue: number) {
 }
 
 export function handleTabBarScroll(offsetY: number) {
-  if (Platform.OS !== 'android') return
-
   const delta = offsetY - lastOffset
   lastOffset = offsetY
 

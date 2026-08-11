@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { View, Text, StyleSheet, ScrollView, Pressable, Platform } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { hTap } from '@/lib/haptics'
@@ -212,7 +212,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
   loader: { flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center' },
-  scroll: { paddingBottom: (Platform.OS === 'android' ? ComponentSize.navBar : 0) + 32 },
+  scroll: { paddingBottom: ComponentSize.navBar + 32 },
 
   actionsRow: {
     flexDirection: 'row',

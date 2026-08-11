@@ -3,7 +3,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   BackHandler,
   FlatList,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -218,7 +217,7 @@ export default function EventsScreen() {
             previewListRef={previewListRef}
             previewEvents={previewEvents}
             extraCount={extraCount}
-            paddingBottom={Math.max(insets.bottom, 8) + 6 + (Platform.OS === "android" ? ComponentSize.navBar - 26 : 0)}
+            paddingBottom={Math.max(insets.bottom, 8) + 6 + (ComponentSize.navBar - 26)}
             renderPreviewCard={renderPreviewCard}
             onMorePress={() => setViewMode("list")}
           />
@@ -317,7 +316,7 @@ const styles = StyleSheet.create({
   leftGlow: { position: "absolute", top: 0, bottom: 0, left: 0, width: 90, opacity: 0.28 },
   rightGlow: { position: "absolute", top: 0, bottom: 0, right: 0, width: 90, opacity: 0.28 },
 
-  listContent: { padding: 16, paddingBottom: (Platform.OS === "android" ? ComponentSize.navBar : 0) + 16, gap: 16 },
+  listContent: { padding: 16, paddingBottom: ComponentSize.navBar + 16, gap: 16 },
 
   loadMoreBtn: {
     marginTop: 8,

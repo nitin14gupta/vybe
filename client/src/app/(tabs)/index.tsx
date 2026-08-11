@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import {
-  BackHandler, View, Text, StyleSheet, ScrollView, Platform,
+  BackHandler, View, Text, StyleSheet, ScrollView,
 } from 'react-native'
 import { useFocusEffect, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -125,7 +125,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
-  content: { paddingHorizontal: 16, paddingBottom: (Platform.OS === 'android' ? ComponentSize.navBar : 0) + 24, gap: 14 },
+  content: { paddingHorizontal: 16, paddingBottom: ComponentSize.navBar + 24, gap: 14 },
 
   createBtn: {
     alignSelf: 'center',

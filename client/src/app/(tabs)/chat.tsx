@@ -1,7 +1,7 @@
 import { memo, useState, useEffect } from 'react'
 import {
   View, Text, StyleSheet, FlatList, Pressable,
-  ActivityIndicator, Platform,
+  ActivityIndicator,
 } from 'react-native'
 import { Image } from 'expo-image'
 import { router } from 'expo-router'
@@ -422,7 +422,7 @@ const s = StyleSheet.create({
   },
   retryBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandOrange },
   exploreBtn: { marginTop: 12 },
-  listContent: { paddingBottom: (Platform.OS === 'android' ? ComponentSize.navBar : 0) + 32 },
+  listContent: { paddingBottom: ComponentSize.navBar + 32 },
 
   // Pending strip
   pendingSection: { paddingBottom: 8, paddingTop: 12 },

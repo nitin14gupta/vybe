@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Tabs, router } from "expo-router";
-import { StyleSheet, Pressable, View, Platform } from "react-native";
+import { StyleSheet, Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -12,11 +12,9 @@ import { CreateEventSheet, TabTooltip } from "@/components/ui";
 import { tabBarTranslateY } from "@/lib/tabBarVisibility";
 
 const TOOLTIP_MS = 1200;
-const IS_ANDROID = Platform.OS === "android";
 
-// Android only: the tab bar floats over content on a soft black gradient and
-// slides away on scroll (see src/lib/tabBarVisibility.ts). iOS keeps the
-// plain static/opaque bar.
+// The tab bar floats over content on a soft black gradient and slides away
+// on scroll (see src/lib/tabBarVisibility.ts).
 function TabBarShadow() {
   return (
     <LinearGradient
@@ -78,10 +76,10 @@ export default function TabsLayout() {
               height: ComponentSize.navBar,
               paddingBottom: insets.bottom,
             },
-            IS_ANDROID && styles.tabBarFloating,
-            IS_ANDROID && { transform: [{ translateY: tabBarTranslateY }] },
+            styles.tabBarFloating,
+            { transform: [{ translateY: tabBarTranslateY }] },
           ],
-          tabBarBackground: IS_ANDROID ? () => <TabBarShadow /> : undefined,
+          tabBarBackground: () => <TabBarShadow />,
           tabBarActiveTintColor: Colors.inkPrimary,
           tabBarInactiveTintColor: Colors.inkPrimary,
           tabBarShowLabel: false,
