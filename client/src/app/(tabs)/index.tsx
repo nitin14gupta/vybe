@@ -10,6 +10,7 @@ import { HomeGradientBackdrop } from '@/components/home/HomeGradientBackdrop'
 import { TemplateFan } from '@/components/home/TemplateFan'
 import { MyEventsSection } from '@/components/home/MyEventsSection'
 import { RecentlyViewedSection } from '@/components/home/RecentlyViewedSection'
+import { PromoCarousel } from '@/components/home/PromoCarousel'
 import { TrendingSection } from '@/components/home/TrendingSection'
 import { useEvents } from '@/hooks/useEvents'
 import { useProfile } from '@/hooks/useProfile'
@@ -101,6 +102,7 @@ export default function HomeScreen() {
 
         <MyEventsSection onEmptyChange={setMyEventsEmpty} />
         <RecentlyViewedSection onEmptyChange={setRecentEmpty} />
+        <PromoCarousel />
         <TrendingSection onEmptyChange={setTrendingEmpty} />
 
         {allEmpty && (

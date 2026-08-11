@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, ChevronRight, Heart } from 'lucide-react-native'
-import { Screen, AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, LogoMark } from '@/components/ui'
+import { Screen, AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, LogoMark, BrandingFooter } from '@/components/ui'
 import { Colors, FontFamily, Spacing, Radius, SUPPORT_EMAIL, APP_VERSION, APP_BUILD_NUMBER } from '@/constants'
 import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 
@@ -51,9 +51,7 @@ export default function AboutScreen() {
           <InfoRow label="Terms of Use" value="" onPress={() => router.push('/(settings)/terms')} />
         </View>
 
-        <Text style={styles.madeWith}>
-          Made with ❤️ in India
-        </Text>
+        <BrandingFooter style={styles.footer} />
       </ScrollView>
     </Screen>
   )
@@ -134,9 +132,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.divider,
     marginLeft: 16,
   },
-  madeWith: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 13,
-    color: Colors.inkDisabled,
+  footer: {
+    marginTop: 4,
   },
 })

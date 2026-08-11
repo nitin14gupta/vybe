@@ -1,16 +1,16 @@
-import { View, Text, StyleSheet, ScrollView, Linking, Image } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, Linking } from 'react-native'
 import { router } from 'expo-router'
 import {
   User, Bell, BellRing, HelpCircle, MessageSquare,
   Info, LogOut, Calendar, Ticket, Wallet, HeadphonesIcon,
   Trash2, CalendarHeart, Landmark, Sparkles, Star,
 } from 'lucide-react-native'
-import { Screen, BackButton, ConfirmSheet } from '@/components/ui'
+import { Screen, BackButton, ConfirmSheet, BrandingFooter } from '@/components/ui'
 import { SettingsMenuSection } from '@/components/settings/SettingsMenuSection'
 import { useSettings } from '@/hooks/useSettings'
 import { useGoBack } from '@/hooks/useGoBack'
 import { useLogoutConfirm } from '@/hooks/useLogoutConfirm'
-import { Colors, FontFamily, Spacing, RATE_APP_URL, CraftedByBanner } from '@/constants'
+import { Colors, FontFamily, Spacing, RATE_APP_URL } from '@/constants'
 
 const iconColor = Colors.inkSecondary
 
@@ -81,10 +81,7 @@ export default function SettingsScreen() {
           ]}
         />
 
-        <View style={styles.footer}>
-          <Image source={CraftedByBanner} style={styles.footerBanner} resizeMode="contain" />
-          {/* <Text style={styles.footerVersion}>v{appVersion}</Text> */}
-        </View>
+        <BrandingFooter style={styles.footer} />
       </ScrollView>
 
       <ConfirmSheet
@@ -124,17 +121,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   footer: {
-    alignItems: 'center',
     marginTop: 20,
-    gap: 8,
   },
-  footerBanner: {
-    width: 220,
-    height: Math.round((220 * 672) / 1568),
-  },
-  // footerVersion: {
-  //   fontFamily: FontFamily.bodyRegular,
-  //   fontSize: 12,
-  //   color: Colors.inkDisabled,
-  // },
 })
