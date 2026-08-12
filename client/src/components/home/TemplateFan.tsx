@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { Image } from 'expo-image'
 import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming, Easing,
+  useSharedValue, useAnimatedStyle, withTiming, runOnJS, Easing,
   type SharedValue,
 } from 'react-native-reanimated'
 import { TEMPLATE_IMAGE_URIS } from '@/lib/templateImages'
@@ -29,11 +29,12 @@ function centeredMod(x: number, m: number) {
   return r
 }
 
-function FanCard({ p, source, center, settledCenter }: {
+function FanCard({ p, source, center, settledCenter, onTapActive }: {
   p: number
   source: any
   center: SharedValue<number>
   settledCenter: SharedValue<number>
+  onTapActive?: () => void
 }) {
   const style = useAnimatedStyle(() => {
     const offset = centeredMod(p - center.value, PHYSICAL_COUNT)
@@ -50,21 +51,44 @@ function FanCard({ p, source, center, settledCenter }: {
       ],
     }
   })
+
+  // Tap the already-centered card → open Create Event. Tap any other card →
+  // spin the wheel to bring it to center, no swipe required. A nested
+  // GestureDetector here is fine (unlike core RN's Pressable-in-Pressable,
+  // which is the thing that breaks on Android — gesture-handler is a
+  // separate system built for exactly this kind of composition).
+  const tap = Gesture.Tap().onEnd(() => {
+    'worklet'
+    const settledDist = Math.abs(centeredMod(p - settledCenter.value, PHYSICAL_COUNT))
+    if (settledDist === 0) {
+      if (onTapActive) runOnJS(onTapActive)()
+      return
+    }
+    const target = center.value + centeredMod(p - center.value, PHYSICAL_COUNT)
+    center.value = withTiming(target, { duration: SPIN_MS, easing: Easing.out(Easing.cubic) }, finished => {
+      if (finished) settledCenter.value = target
+    })
+  })
+
   return (
-    <AnimatedTemplateImage
-      source={source}
-      contentFit="cover"
-      cachePolicy="memory-disk"
-      priority="high"
-      transition={150}
-      style={[s.card, style]}
-    />
+    <GestureDetector gesture={tap}>
+      <AnimatedTemplateImage
+        source={source}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        priority="high"
+        transition={150}
+        style={[s.card, style]}
+      />
+    </GestureDetector>
   )
 }
 
 interface Props {
   /** Which template image starts at the center slot. */
   startIndex?: number
+  /** Tapping the already-centered card fires this (e.g. open Create Event). */
+  onCreatePress?: () => void
 }
 
 // Fixed fan of cards, spinnable like a real card spinner. `center` is the
@@ -72,7 +96,7 @@ interface Props {
 // state. There is nothing for the JS and UI threads to disagree about
 // anymore, which is what the earlier prop-swapping version couldn't
 // guarantee.
-export function TemplateFan({ startIndex = 0 }: Props) {
+export function TemplateFan({ startIndex = 0, onCreatePress }: Props) {
   const center = useSharedValue(startIndex)
   const settledCenter = useSharedValue(startIndex)
 
@@ -101,7 +125,7 @@ export function TemplateFan({ startIndex = 0 }: Props) {
     <GestureDetector gesture={pan}>
       <Animated.View style={s.root}>
         {cards.map(p => (
-          <FanCard key={p} p={p} center={center} settledCenter={settledCenter} source={TEMPLATE_IMAGES[p % N]} />
+          <FanCard key={p} p={p} center={center} settledCenter={settledCenter} source={TEMPLATE_IMAGES[p % N]} onTapActive={onCreatePress} />
         ))}
       </Animated.View>
     </GestureDetector>

@@ -2,9 +2,10 @@ import React, { useState } from 'react'
 import { Dimensions, FlatList, Pressable, StyleSheet, View } from 'react-native'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
-import { ArrowLeft, Flag, MoreVertical, Share2 } from 'lucide-react-native'
+import { ArrowLeft, Bookmark, Flag, MoreVertical, Share2 } from 'lucide-react-native'
 import { Colors, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constants'
 import { hTap } from '@/lib/haptics'
+import { useHotlistToggle } from '@/hooks/useHotlistToggle'
 import type { EventDetail } from '@/api/apiService'
 
 const { width: W } = Dimensions.get('window')
@@ -23,6 +24,7 @@ interface Props {
 export function EventPhotoHero({ event, isHost, topInset, onBack, onShare, onOptions, onReport }: Props) {
   const [photoIdx, setPhotoIdx] = useState(0)
   const coverPhotos = event.cover_photos ?? []
+  const { hotlisted, toggle: toggleHotlist } = useHotlistToggle(event.id, event.is_hotlisted)
 
   return (
     <View style={styles.hero}>
@@ -81,6 +83,14 @@ export function EventPhotoHero({ event, isHost, topInset, onBack, onShare, onOpt
           <ArrowLeft size={22} color="#fff" strokeWidth={2} />
         </Pressable>
         <View style={{ flexDirection: 'row', gap: 4 }}>
+          <Pressable style={styles.heroIconBtn} onPress={toggleHotlist} hitSlop={10}>
+            <Bookmark
+              size={20}
+              color={hotlisted ? Colors.brandCoral : '#fff'}
+              fill={hotlisted ? Colors.brandCoral : 'transparent'}
+              strokeWidth={2}
+            />
+          </Pressable>
           <Pressable style={styles.heroIconBtn} onPress={() => { hTap(); onShare() }} hitSlop={10}>
             <Share2 size={20} color="#fff" strokeWidth={2} />
           </Pressable>

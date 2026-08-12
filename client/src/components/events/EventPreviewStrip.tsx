@@ -1,5 +1,5 @@
-import React, { useRef } from "react";
-import { FlatList, Pressable, StyleSheet, Text, View, type LayoutRectangle } from "react-native";
+import React from "react";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -8,6 +8,7 @@ import { hSelection } from "@/lib/haptics";
 import { useAuthStore } from "@/store/auth";
 import type { EventSummary } from "@/api/apiService";
 import { formatEventDate, HostPill } from "@/components/events/EventCard";
+import { HotlistButton } from "@/components/events/HotlistButton";
 
 const CARD_W = 268;
 const CARD_MARGIN = 10;
@@ -32,26 +33,13 @@ function PreviewCardBase({
   const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK;
   const router = useRouter();
   const myId = useAuthStore(state => state.userId);
-  const hostPillLayout = useRef<LayoutRectangle | null>(null);
   const canOpenHost = !!event.host_id && event.host_name && !event.host_is_deleted;
 
-  const handlePress = (e: any) => {
-    const r = hostPillLayout.current;
-    if (canOpenHost && r) {
-      const { locationX, locationY } = e.nativeEvent;
-      if (locationX >= r.x && locationX <= r.x + r.width && locationY >= r.y && locationY <= r.y + r.height) {
-        hSelection();
-        router.push((event.host_id === myId ? '/(tabs)/profile' : `/(profile)/${event.host_id}`) as any);
-        return;
-      }
-    }
-    onPress();
-  };
-
   return (
+    <View style={styles.previewCardWrap}>
     <Pressable
       style={[styles.previewCard, active && styles.previewCardActive]}
-      onPress={handlePress}
+      onPress={onPress}
     >
       <View style={styles.previewImageWrap}>
         {cover ? (
@@ -73,13 +61,12 @@ function PreviewCardBase({
             {formatPrice(event.price_inr, event.is_free)}
           </Text>
         </View>
-        {event.host_name && !event.host_is_deleted ? (
+        {!canOpenHost && event.host_name && !event.host_is_deleted ? (
           <HostPill
             name={event.host_name}
             avatar={event.host_avatar}
             compact
             style={styles.previewHostPillPos}
-            onLayout={canOpenHost ? (e) => { hostPillLayout.current = e.nativeEvent.layout; } : undefined}
           />
         ) : null}
       </View>
@@ -91,6 +78,23 @@ function PreviewCardBase({
         )}
       </View>
     </Pressable>
+
+    {/* Siblings of the card's own Pressable above, not nested inside it. */}
+    <HotlistButton eventId={event.id} initial={event.is_hotlisted} style={styles.previewHotlistBtn} size={13} />
+    {canOpenHost && (
+      <Pressable
+        style={styles.previewHostPillPos}
+        onPress={() => {
+          hSelection();
+          router.push((event.host_id === myId ? '/(tabs)/profile' : `/(profile)/${event.host_id}`) as any);
+        }}
+      >
+        <View pointerEvents="none">
+          <HostPill name={event.host_name!} avatar={event.host_avatar} compact />
+        </View>
+      </Pressable>
+    )}
+    </View>
   );
 }
 
@@ -157,8 +161,8 @@ const styles = StyleSheet.create({
     right: 0,
     paddingTop: 32,
   },
+  previewCardWrap: { width: CARD_W, position: "relative" },
   previewCard: {
-    width: CARD_W,
     backgroundColor: Colors.surface,
     borderRadius: 14,
     overflow: "hidden",
@@ -180,10 +184,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  previewPriceBadge: {
+  previewHotlistBtn: {
     position: "absolute",
     top: 8,
     right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  previewPriceBadge: {
+    position: "absolute",
+    top: 8,
+    right: 38,
     backgroundColor: "rgba(17,17,17,0.85)",
     borderRadius: 7,
     paddingHorizontal: 7,

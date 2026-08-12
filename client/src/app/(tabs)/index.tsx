@@ -92,7 +92,7 @@ export default function HomeScreen() {
         {...tabBarScroll}
         onScroll={(e) => { tabBarScroll.onScroll(e); onHeaderScroll(e) }}
       >
-        <TemplateFan />
+        <TemplateFan onCreatePress={() => { hTap(); setCreateOpen(true) }} />
         <PrimaryButton
           label="Create event"
           size="small"

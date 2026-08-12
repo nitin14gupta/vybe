@@ -130,6 +130,7 @@ class EventSummary(BaseModel):
     is_following_host: bool = False
     attended_host_before: bool = False
     paid_attended_host_before: bool = False
+    is_hotlisted: bool = False
 
 
 class MyEventsPage(BaseModel):
@@ -150,6 +151,7 @@ class EventDetail(EventSummary):
     my_ticket_token: Optional[str] = None
     my_checked_in_at: Optional[str] = None
     avg_rating: Optional[float] = None
+    review_count: int = 0
     my_rsvp_status: Optional[str] = None        # 'going' | 'waitlist' | 'cancelled' | None
     my_waitlist_position: Optional[int] = None  # position in queue (1-indexed), None if not on waitlist
     my_offer_expires_at: Optional[str] = None   # ISO string when promoted, else None
@@ -294,9 +296,13 @@ def list_events(
             SELECT 1 FROM event_attendees ea
             WHERE ea.user_id = %s::uuid AND ea.status = 'going' AND ea.payment_id IS NOT NULL
               AND ea.event_id IN (SELECT id FROM events WHERE host_id = e.host_id)
-        ) AS paid_attended_host_before
+        ) AS paid_attended_host_before,
+        EXISTS(
+            SELECT 1 FROM event_hotlist h
+            WHERE h.user_id = %s::uuid AND h.event_id = e.id
+        ) AS is_hotlisted
     """
-    relationship_params = [viewer_id, viewer_id, viewer_id]
+    relationship_params = [viewer_id, viewer_id, viewer_id, viewer_id]
 
     default_order = dist_sql + " ASC NULLS LAST" if lat and lng else "e.date_time ASC"
     # Relationship ranking (paid-attended > attended > following) applies to
@@ -648,6 +654,84 @@ def get_waitlisted_events(current_user: dict = Depends(get_current_user)):
     return result
 
 
+# ── Hotlist — events a user has saved/bookmarked, not necessarily going to ───
+# (see event_hotlist table). Zomato-style "save for later", separate from
+# RSVP/waitlist which are about attendance.
+
+@router.get("/hotlist", response_model=List[EventSummary])
+def get_hotlist_events(current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    with get_db() as (cur, _):
+        cur.execute(
+            """
+            SELECT
+                e.id::text,
+                e.title, e.event_type,
+                e.date_time::text, e.end_time::text,
+                e.location_name, e.location_lat, e.location_lng,
+                e.price_inr, (e.price_inr = 0) AS is_free,
+            e.platform_fee_inr, e.host_commission_inr, e.platform_profit_inr,
+                e.spots_left, e.capacity, e.age_restriction,
+                e.cover_photos, e.is_cancelled,
+                e.host_id::text,
+                NULL::int AS distance_km,
+                u.name AS host_name,
+                (SELECT p.url FROM user_photos p WHERE p.user_id = u.id ORDER BY p.position LIMIT 1) AS host_avatar,
+                COALESCE(u.is_deleted, FALSE) AS host_is_deleted,
+                (SELECT COUNT(*) FROM event_attendees ea2 WHERE ea2.event_id = e.id AND ea2.status = 'going')::int AS attendee_count,
+                (SELECT COALESCE(json_agg(au.avatar_url), '[]'::json) FROM (
+                    SELECT (SELECT p.url FROM user_photos p WHERE p.user_id = eav.user_id ORDER BY p.position LIMIT 1) AS avatar_url
+                    FROM event_attendees eav
+                    WHERE eav.event_id = e.id AND eav.status = 'going'
+                    ORDER BY eav.joined_at ASC LIMIT 3
+                ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars,
+                TRUE AS is_hotlisted
+            FROM events e
+            JOIN users u ON u.id = e.host_id
+            JOIN event_hotlist h ON h.event_id = e.id AND h.user_id = %s::uuid
+            ORDER BY h.created_at DESC
+            """,
+            (uid,),
+        )
+        rows = cur.fetchall()
+    result = []
+    for row in rows:
+        d = dict(row)
+        photos_raw = d.get("cover_photos") or []
+        d["cover_photos"] = [{"url": p, "position": i} for i, p in enumerate(photos_raw)] if isinstance(photos_raw, list) and photos_raw and isinstance(photos_raw[0], str) else photos_raw
+        result.append(d)
+    return result
+
+
+@router.post("/{event_id}/hotlist", status_code=201)
+def add_to_hotlist(event_id: str, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    with get_db() as (cur, _):
+        cur.execute("SELECT id FROM events WHERE id = %s::uuid", (event_id,))
+        if not cur.fetchone():
+            raise HTTPException(status_code=404, detail="Event not found")
+        cur.execute(
+            """
+            INSERT INTO event_hotlist (event_id, user_id)
+            VALUES (%s::uuid, %s::uuid)
+            ON CONFLICT (event_id, user_id) DO NOTHING
+            """,
+            (event_id, uid),
+        )
+    return {"ok": True}
+
+
+@router.delete("/{event_id}/hotlist")
+def remove_from_hotlist(event_id: str, current_user: dict = Depends(get_current_user)):
+    uid = current_user["id"]
+    with get_db() as (cur, _):
+        cur.execute(
+            "DELETE FROM event_hotlist WHERE event_id = %s::uuid AND user_id = %s::uuid",
+            (event_id, uid),
+        )
+    return {"ok": True}
+
+
 # ── Calendar screen ──────────────────────────────────────────────────────────
 # The old approach had the calendar pull the full unpaginated /hosted,
 # /joined and /waitlisted lists (a user's entire history, no date bound) just
@@ -914,6 +998,7 @@ def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
                 going_ea.ticket_token AS my_ticket_token,
                 going_ea.checked_in_at::text AS my_checked_in_at,
                 (SELECT ROUND(AVG(rating)::numeric, 1) FROM event_reviews WHERE event_id = e.id) AS avg_rating,
+                (SELECT COUNT(*) FROM event_reviews WHERE event_id = e.id)::int AS review_count,
                 (SELECT rating FROM event_reviews WHERE event_id = e.id AND reviewer_id = %s::uuid LIMIT 1) AS my_review_rating,
                 -- Waitlist fields
                 (SELECT COUNT(*) FROM event_attendees wl
@@ -937,13 +1022,17 @@ def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
                 (SELECT ea3.offer_expires_at::text FROM event_attendees ea3
                  WHERE ea3.event_id = e.id AND ea3.user_id = %s::uuid
                    AND ea3.status = 'waitlist' AND ea3.offer_expires_at IS NOT NULL
-                 LIMIT 1) AS my_offer_expires_at
+                 LIMIT 1) AS my_offer_expires_at,
+                EXISTS(
+                    SELECT 1 FROM event_hotlist h
+                    WHERE h.user_id = %s::uuid AND h.event_id = e.id
+                ) AS is_hotlisted
             FROM events e
             JOIN users u ON u.id = e.host_id
             LEFT JOIN event_attendees going_ea ON going_ea.event_id = e.id AND going_ea.user_id = %s::uuid AND going_ea.status = 'going'
             WHERE e.id = %s
             """,
-            (uid, uid, uid, uid, uid, event_id),
+            (uid, uid, uid, uid, uid, uid, event_id),
         )
         row = cur.fetchone()
 

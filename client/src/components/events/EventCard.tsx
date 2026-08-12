@@ -1,5 +1,5 @@
-import { Fragment, memo, useRef, useState, type ReactNode } from 'react'
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle, type LayoutRectangle, type LayoutChangeEvent } from 'react-native'
+import { Fragment, memo, useState, type ReactNode } from 'react'
+import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Image } from 'expo-image'
 import { MapPin, Flame } from 'lucide-react-native'
@@ -9,30 +9,23 @@ import { Colors, FontFamily, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constant
 import { parseServerDate } from '@/lib/dates'
 import { hSelection } from '@/lib/haptics'
 import { useAuthStore } from '@/store/auth'
+import { HotlistButton } from './HotlistButton'
 import { EventQuickPeekSheet } from './EventQuickPeekSheet'
 import type { EventSummary } from '@/api/apiService'
 
-// Deliberately a plain View, never a nested Pressable — a Pressable nested
-// inside the card's own Pressable (below) turned out to break both the tap
-// AND the pill's own background rendering on Android (a real, confirmed
-// nested-touchable/ripple-compositing issue, not just a UX nit). The card
-// handles the tap itself via coordinate hit-testing against `onLayout`
-// instead — see EventCard's onPress below.
 export function HostPill({
   name,
   avatar,
   compact,
   style,
-  onLayout,
 }: {
   name: string
   avatar: string | null
   compact?: boolean
   style?: StyleProp<ViewStyle>
-  onLayout?: (e: LayoutChangeEvent) => void
 }) {
   return (
-    <View style={[hp.pill, compact && hp.pillCompact, style]} onLayout={onLayout}>
+    <View style={[hp.pill, compact && hp.pillCompact, style]}>
       {avatar ? (
         <Image
           source={{ uri: avatar }}
@@ -112,27 +105,20 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
   const cover = event.cover_photos?.[0]?.url
   const spotsLow = event.spots_left > 0 && event.spots_left <= 10
   const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
-  const hostPillLayout = useRef<LayoutRectangle | null>(null)
 
   const canOpenHost = !!event.host_id && event.host_name && !event.host_is_deleted
-  const handleCardPress = (e: any) => {
-    const r = hostPillLayout.current
-    if (canOpenHost && r) {
-      const { locationX, locationY } = e.nativeEvent
-      if (locationX >= r.x && locationX <= r.x + r.width && locationY >= r.y && locationY <= r.y + r.height) {
-        hSelection()
-        router.push((event.host_id === myId ? '/(tabs)/profile' : `/(profile)/${event.host_id}`) as any)
-        return
-      }
-    }
-    onPress()
-  }
 
   return (
     <Fragment>
+    {/* Non-touchable wrapper — the card's own Pressable and the two overlay
+        buttons below are true SIBLINGS here, not nested inside one another.
+        Overlapping sibling Pressables hit-test correctly with no coordinate
+        math; a Pressable nested inside another Pressable's subtree is the
+        thing that breaks tap handling + background rendering on Android. */}
+    <View style={isPast && s.cardPast}>
     <Pressable
-      style={[s.card, isPast && s.cardPast]}
-      onPress={handleCardPress}
+      style={s.card}
+      onPress={onPress}
       onLongPress={() => { hSelection(); setPeekOpen(true) }}
       delayLongPress={350}
     >
@@ -160,20 +146,19 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
           pointerEvents="none"
         />
 
-        {/* Price badge */}
         <View style={[s.priceBadge, event.is_free && s.priceBadgeFree]}>
           <Text style={s.priceText}>{formatPrice(event.price_inr, event.is_free)}</Text>
         </View>
 
-        {/* Host pill — avatar + name, Partiful-style organizer credit.
-            Plain View (see HostPill comment) — the card's own onPress does
-            hit-testing against this measured rect to route the tap. */}
-        {event.host_name && !event.host_is_deleted ? (
+        {/* Host pill (display only when not tappable) — avatar + name,
+            Partiful-style organizer credit. The tappable version is the
+            sibling Pressable rendered after the card below; only one of the
+            two ever renders. */}
+        {!canOpenHost && event.host_name && !event.host_is_deleted ? (
           <HostPill
             name={event.host_name}
             avatar={event.host_avatar}
             style={s.hostPillPos}
-            onLayout={canOpenHost ? (e) => { hostPillLayout.current = e.nativeEvent.layout } : undefined}
           />
         ) : null}
 
@@ -230,6 +215,11 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
                 transition={150}
               />
             ))}
+            {event.attendee_count > 3 && (
+              <View style={[s.stackAvatar, s.stackAvatarMore, { marginLeft: -8, zIndex: 0 }]}>
+                <Text style={s.stackAvatarMoreText}>+{event.attendee_count - 3}</Text>
+              </View>
+            )}
             <Text style={s.attendees}>{event.attendee_count} going</Text>
           </View>
         </View>
@@ -244,6 +234,24 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
 
       {footer}
     </Pressable>
+
+    {/* True siblings of the card's Pressable above, not descendants — see
+        the comment on the wrapper View. */}
+    <HotlistButton eventId={event.id} initial={event.is_hotlisted} style={s.hotlistBtn} />
+    {canOpenHost && (
+      <Pressable
+        style={s.hostPillPos}
+        onPress={() => {
+          hSelection()
+          router.push((event.host_id === myId ? '/(tabs)/profile' : `/(profile)/${event.host_id}`) as any)
+        }}
+      >
+        <View pointerEvents="none">
+          <HostPill name={event.host_name!} avatar={event.host_avatar} />
+        </View>
+      </Pressable>
+    )}
+    </View>
     <EventQuickPeekSheet visible={peekOpen} event={event} onClose={() => setPeekOpen(false)} />
     </Fragment>
   )
@@ -286,8 +294,14 @@ const s = StyleSheet.create({
   placeholder: { alignItems: 'center', justifyContent: 'center' },
   gradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 130 },
 
-  priceBadge: {
+  hotlistBtn: {
     position: 'absolute', top: 12, right: 12,
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: 'rgba(10,10,10,0.55)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  priceBadge: {
+    position: 'absolute', top: 12, right: 50,
     backgroundColor: Colors.brandOrange,
     borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4,
   },
@@ -331,6 +345,15 @@ const s = StyleSheet.create({
     width: 18, height: 18, borderRadius: 9,
     borderWidth: 1.5, borderColor: Colors.surface,
     backgroundColor: '#2a2a2a',
+  },
+  stackAvatarMore: {
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.elevated,
+  },
+  stackAvatarMoreText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 8,
+    color: Colors.inkSecondary,
   },
 
   spotsBar: {

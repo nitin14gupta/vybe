@@ -821,6 +821,19 @@ class ApiService {
     return this.get<EventSummary[]>('/events/waitlisted')
   }
 
+  // Hotlist — saved/bookmarked events, separate from RSVP/waitlist.
+  static async getMyHotlistEvents(): Promise<EventSummary[]> {
+    return this.get<EventSummary[]>('/events/hotlist')
+  }
+
+  static async addToHotlist(eventId: string): Promise<void> {
+    await this.post<{ ok: boolean }>(`/events/${eventId}/hotlist`, {})
+  }
+
+  static async removeFromHotlist(eventId: string): Promise<void> {
+    await this.delete<{ ok: boolean }>(`/events/${eventId}/hotlist`)
+  }
+
   // Calendar screen — month-scoped summary (dates + booleans, no event
   // payload) drives the grid dots; full details for one day are fetched
   // lazily via getCalendarDay, only when that day is actually selected.

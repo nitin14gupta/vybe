@@ -6,6 +6,7 @@ import { MapPin, ChevronRight, Calendar } from 'lucide-react-native'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { Colors, FontFamily, Radius, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constants'
 import { formatEventDate } from '@/components/events/EventCard'
+import { HotlistButton } from '@/components/events/HotlistButton'
 import type { EventSummary } from '@/api/apiService'
 
 function formatPrice(price: number, isFree: boolean) {
@@ -27,6 +28,7 @@ function EventListCardBase({
   const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
 
   return (
+    <View style={s.rowWrap}>
     <Pressable style={s.row} onPress={onPress ?? (() => router.push(`/(events)/${event.id}` as any))}>
       <View style={s.thumb}>
         {cover ? (
@@ -81,6 +83,10 @@ function EventListCardBase({
         <ChevronRight size={16} color={Colors.inkSecondary} strokeWidth={2.2} />
       </View>
     </Pressable>
+
+    {/* Sibling of the row's own Pressable above, not nested inside it. */}
+    <HotlistButton eventId={event.id} initial={event.is_hotlisted} style={s.hotlistBtn} size={13} />
+    </View>
   )
 }
 
@@ -104,6 +110,11 @@ export function EventListCardSkeleton() {
 }
 
 const s = StyleSheet.create({
+  rowWrap: { position: 'relative' },
+  hotlistBtn: {
+    position: 'absolute', top: 17, left: 105,
+    width: 22, height: 22, borderRadius: 11,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

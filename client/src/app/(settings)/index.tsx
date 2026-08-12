@@ -3,7 +3,7 @@ import { router } from 'expo-router'
 import {
   User, Bell, BellRing, HelpCircle, MessageSquare,
   Info, LogOut, Calendar, Ticket, Wallet, HeadphonesIcon,
-  Trash2, CalendarHeart, Landmark, Sparkles, Star,
+  Trash2, CalendarHeart, Landmark, Sparkles, Star, Bookmark,
 } from 'lucide-react-native'
 import { Screen, BackButton, ConfirmSheet, BrandingFooter } from '@/components/ui'
 import { SettingsMenuSection } from '@/components/settings/SettingsMenuSection'
@@ -43,6 +43,7 @@ export default function SettingsScreen() {
           items={[
             { icon: <Calendar size={18} color={iconColor} strokeWidth={1.5} />, label: 'My Events', onPress: () => router.push('/(settings)/my-events' as any) },
             { icon: <Ticket size={18} color={iconColor} strokeWidth={1.5} />, label: 'Joined Events', onPress: () => router.push('/(settings)/joined-events' as any) },
+            { icon: <Bookmark size={18} color={iconColor} strokeWidth={1.5} />, label: 'Hotlist', onPress: () => router.push('/(settings)/hotlist' as any) },
             { icon: <CalendarHeart size={18} color={iconColor} strokeWidth={1.5} />, label: 'Calendar', onPress: () => router.push('/(settings)/calendar' as any) },
             { icon: <Wallet size={18} color={iconColor} strokeWidth={1.5} />, label: 'Gorave Wallet', onPress: () => router.push('/(settings)/wallet' as any) },
             { icon: <Landmark size={18} color={iconColor} strokeWidth={1.5} />, label: 'Payout Details', onPress: () => router.push('/(settings)/payout-details' as any) },

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Image } from 'expo-image'
-import { Ghost } from 'lucide-react-native'
+import { Ghost, Star, ChevronRight } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 import { Colors, FontFamily, HOST_BADGE_IMAGES } from '@/constants'
 import type { EventDetail } from '@/api/apiService'
@@ -20,40 +20,63 @@ export function EventHostCard({ event, isHost }: Props) {
   const hostBadgeImage = hostBadgeName ? HOST_BADGE_IMAGES[hostBadgeName] : null
 
   return (
-    <Pressable
-      style={styles.hostCard}
-      onPress={() => router.push(isHost ? '/(tabs)/profile' : `/(profile)/${event.host_id}` as any)}
-    >
-      <View style={styles.hostAvatarWrap}>
-        <View style={[styles.hostAvatar, event.host_is_deleted && styles.hostAvatarDeleted]}>
-          {event.host_is_deleted ? (
-            <Ghost size={20} color={Colors.inkDisabled} strokeWidth={1.5} />
-          ) : event.host_avatar ? (
-            <Image
-              source={{ uri: event.host_avatar }}
-              style={styles.hostAvatarImg}
-              contentFit="cover"
-              cachePolicy="memory-disk"
-              priority="normal"
-              transition={150}
-            />
-          ) : (
-            <Text style={styles.hostAvatarFallback}>{event.host_name[0]}</Text>
-          )}
-        </View>
-        {!event.host_is_deleted && hostBadgeImage ? (
-          <View style={styles.hostBadgeChip}>
-            <Image source={hostBadgeImage} style={styles.hostBadgeImg} contentFit="contain" />
+    // Plain shell — the "profile" zone and the "rating" zone below are true
+    // sibling Pressables, not one nested inside the other (a Pressable
+    // nested inside another Pressable's subtree breaks tap handling and
+    // background rendering on Android — see HotlistButton for the same note).
+    <View style={styles.hostCard}>
+      <Pressable
+        style={styles.hostMain}
+        onPress={() => router.push(isHost ? '/(tabs)/profile' : `/(profile)/${event.host_id}` as any)}
+      >
+        <View style={styles.hostAvatarWrap}>
+          <View style={[styles.hostAvatar, event.host_is_deleted && styles.hostAvatarDeleted]}>
+            {event.host_is_deleted ? (
+              <Ghost size={20} color={Colors.inkDisabled} strokeWidth={1.5} />
+            ) : event.host_avatar ? (
+              <Image
+                source={{ uri: event.host_avatar }}
+                style={styles.hostAvatarImg}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                priority="normal"
+                transition={150}
+              />
+            ) : (
+              <Text style={styles.hostAvatarFallback}>{event.host_name[0]}</Text>
+            )}
           </View>
-        ) : null}
-      </View>
-      <View style={styles.hostInfo}>
-        <Text style={styles.hostLabel}>Hosted by</Text>
-        <Text style={[styles.hostName, event.host_is_deleted && styles.hostNameDeleted]}>
-          {event.host_is_deleted ? '[deleted]' : isHost ? 'You' : event.host_name}
-        </Text>
-      </View>
-    </Pressable>
+          {!event.host_is_deleted && hostBadgeImage ? (
+            <View style={styles.hostBadgeChip}>
+              <Image source={hostBadgeImage} style={styles.hostBadgeImg} contentFit="contain" />
+            </View>
+          ) : null}
+        </View>
+        <View style={styles.hostInfo}>
+          <Text style={styles.hostLabel}>Hosted by</Text>
+          <Text style={[styles.hostName, event.host_is_deleted && styles.hostNameDeleted]}>
+            {event.host_is_deleted ? '[deleted]' : isHost ? 'You' : event.host_name}
+          </Text>
+        </View>
+        {event.host_is_deleted && <ChevronRight size={16} color={Colors.inkDisabled} strokeWidth={2} />}
+      </Pressable>
+
+      {!event.host_is_deleted && (
+        <Pressable
+          style={styles.ratingWrap}
+          onPress={() => router.push(`/(profile)/host-reviews?id=${event.host_id}&name=${encodeURIComponent(event.host_name ?? '')}` as any)}
+        >
+          <View>
+            <View style={styles.ratingRow}>
+              <Star size={13} color={Colors.accentGold} fill={Colors.accentGold} strokeWidth={0} />
+              <Text style={styles.ratingValue}>{event.avg_rating != null ? event.avg_rating.toFixed(1) : '—'}</Text>
+            </View>
+            <Text style={styles.ratingSub}>{event.review_count} rating{event.review_count === 1 ? '' : 's'}</Text>
+          </View>
+          <ChevronRight size={14} color={Colors.inkDisabled} strokeWidth={2} style={styles.ratingChevron} />
+        </Pressable>
+      )}
+    </View>
   )
 }
 
@@ -61,7 +84,6 @@ const styles = StyleSheet.create({
   hostCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
     backgroundColor: Colors.surface,
     borderRadius: 16,
     borderWidth: 1,
@@ -69,6 +91,22 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 16,
   },
+  hostMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  ratingWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingLeft: 12,
+  },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  ratingValue: { fontFamily: FontFamily.headingBold, fontSize: 15, color: Colors.inkPrimary },
+  ratingSub: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled },
+  ratingChevron: { marginLeft: 2 },
   hostAvatarWrap: { position: 'relative' },
   hostAvatar: {
     width: 48,

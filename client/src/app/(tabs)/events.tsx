@@ -338,5 +338,5 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
 
-  cardViewToggle: { position: "absolute", right: 16, bottom: 16 },
+  cardViewToggle: { position: "absolute", right: 16, bottom: 16 + ComponentSize.navBar },
 });

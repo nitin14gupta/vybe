@@ -141,6 +141,7 @@ export interface EventSummary {
   is_following_host?: boolean
   attended_host_before?: boolean
   paid_attended_host_before?: boolean
+  is_hotlisted?: boolean
 }
 
 export interface MyEventsPage {
@@ -176,6 +177,7 @@ export interface EventDetail extends EventSummary {
   my_ticket_token: string | null
   my_checked_in_at: string | null
   avg_rating: number | null
+  review_count: number
   my_rsvp_status: 'going' | 'waitlist' | 'cancelled' | null
   my_waitlist_position: number | null
   my_offer_expires_at: string | null

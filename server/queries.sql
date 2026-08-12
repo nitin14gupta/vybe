@@ -374,6 +374,16 @@ CREATE TABLE IF NOT EXISTS public.wallet_transactions (
   CONSTRAINT wallet_transactions_pkey PRIMARY KEY (id)
 );
 
+CREATE TABLE IF NOT EXISTS public.event_hotlist (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  event_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT event_hotlist_pkey PRIMARY KEY (id),
+  CONSTRAINT event_hotlist_unique UNIQUE (event_id, user_id)
+);
+
+
 -- ── Foreign Keys ────────────────────────────────────────────────────────────
 ALTER TABLE public.admin_audit_log ADD CONSTRAINT admin_audit_log_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES admin_users(id) ON DELETE CASCADE;
 ALTER TABLE public.admin_refresh_tokens ADD CONSTRAINT admin_refresh_tokens_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES admin_users(id) ON DELETE CASCADE;
@@ -411,6 +421,8 @@ ALTER TABLE public.users ADD CONSTRAINT users_locked_by_fkey FOREIGN KEY (locked
 ALTER TABLE public.vibe_requests ADD CONSTRAINT vibe_requests_receiver_id_fkey FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.vibe_requests ADD CONSTRAINT vibe_requests_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.wallet_transactions ADD CONSTRAINT wallet_transactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE public.event_hotlist ADD CONSTRAINT event_hotlist_event_id_fkey FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE;
+ALTER TABLE public.event_hotlist ADD CONSTRAINT event_hotlist_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 -- ── Indexes ─────────────────────────────────────────────────────────────────
 CREATE UNIQUE INDEX IF NOT EXISTS host_payout_account_fingerprint_uidx ON public.host_payout_details (account_fingerprint) WHERE (account_fingerprint IS NOT NULL);
@@ -434,6 +446,9 @@ CREATE INDEX idx_events_date_time_active ON public.events USING btree (date_time
 CREATE INDEX idx_wallet_tx_expiring ON public.wallet_transactions USING btree (expires_at) WHERE (type = 'credit'::text AND expires_at IS NOT NULL);
 CREATE INDEX idx_users_dob ON public.users USING btree (dob) WHERE (dob IS NOT NULL AND COALESCE(is_deleted, FALSE) = FALSE);
 CREATE INDEX idx_users_last_seen ON public.users USING btree (last_seen_at) WHERE (COALESCE(is_deleted, FALSE) = FALSE);
+CREATE INDEX idx_event_hotlist_user ON public.event_hotlist USING btree (user_id, created_at DESC);
+CREATE INDEX idx_event_hotlist_event ON public.event_hotlist USING btree (event_id);
+
 
 -- ── Triggers ────────────────────────────────────────────────────────────────
 -- TRIGGER users_updated_at BEFORE UPDATE ON public.users: EXECUTE FUNCTION update_updated_at()
