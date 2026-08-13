@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native'
-import { ChevronLeft, ChevronRight, CalendarHeart, Ticket as TicketIcon, TriangleAlert } from 'lucide-react-native'
+import { ChevronLeft, ChevronRight, CalendarHeart, TriangleAlert } from 'lucide-react-native'
 import { PrimaryButton, OutlineButton, EventListCard, EventListCardSkeleton } from '@/components/ui'
 import type { DayEvents } from '@/hooks/useCalendarEvents'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
@@ -26,7 +26,6 @@ interface CalendarDayPanelProps {
   dayLoading: boolean
   dayError: boolean
   dayEvents: DayEvents
-  isPast: boolean
   onShiftDay: (delta: number) => void
   onRetry: () => void
   onCreateEvent: () => void
@@ -34,7 +33,7 @@ interface CalendarDayPanelProps {
 }
 
 export function CalendarDayPanel({
-  selectedDate, dayLoading, dayError, dayEvents, isPast,
+  selectedDate, dayLoading, dayError, dayEvents,
   onShiftDay, onRetry, onCreateEvent, onBrowseEvents,
 }: CalendarDayPanelProps) {
   const { joined: dayJoined, hosted: dayHosted, waitlisted: dayWaitlisted, other: dayOther } = dayEvents
@@ -103,11 +102,6 @@ export function CalendarDayPanel({
             </View>
           )}
         </ScrollView>
-      ) : isPast ? (
-        <View style={s.emptyWrap}>
-          <TicketIcon size={30} color={Colors.inkDisabled} strokeWidth={1.4} />
-          <Text style={s.emptyPastText}>Nothing on this day</Text>
-        </View>
       ) : (
         <View style={s.emptyWrap}>
           <View style={s.emptyIconWrap}>
@@ -164,5 +158,4 @@ const s = StyleSheet.create({
   emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary },
   emptySub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center', marginBottom: 18 },
   emptyActions: { flexDirection: 'row', gap: 10, width: '100%' },
-  emptyPastText: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkDisabled, marginTop: 4 },
 })

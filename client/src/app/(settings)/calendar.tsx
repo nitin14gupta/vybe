@@ -80,8 +80,6 @@ export default function CalendarScreen() {
     }
   }
 
-  const isPast = selectedDate.getTime() < today.getTime()
-
   const activeFilterCount =
     (filters.showHosted ? 0 : 1) + (filters.showGoing ? 0 : 1) + (filters.showWaitlisted ? 0 : 1) + (filters.city ? 1 : 0)
 
@@ -129,7 +127,6 @@ export default function CalendarScreen() {
         dayLoading={dayLoading}
         dayError={dayError}
         dayEvents={dayEvents}
-        isPast={isPast}
         onShiftDay={shiftDay}
         onRetry={reloadDay}
         onCreateEvent={() => { setCreateOpen(true) }}

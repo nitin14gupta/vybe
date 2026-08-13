@@ -53,9 +53,9 @@ export function CalendarMonthGrid({
             {week.map((d, di) => {
               if (!d) return <View key={di} style={s.dayCell} />
               const k = dateKey(d)
-              const hasDot = hasEventsOnDate(k)
               const isSelected = k === selectedKey
               const isToday = k === todayKey
+              const hasDot = k >= todayKey && hasEventsOnDate(k)
               return (
                 <Pressable key={di} style={s.dayCell} onPress={() => onSelectDate(d)}>
                   <View style={[s.dayCircle, isSelected && s.dayCircleSelected]}>

@@ -1,30 +1,30 @@
-import { useEffect, useState } from 'react'
 import ApiService from '@/api/apiService'
 import { hTap } from '@/lib/haptics'
 import { usePillStore } from '@/store/pillStore'
+import { useHotlistStore } from '@/store/hotlistStore'
 
 // Optimistic add/remove from the hotlist (saved/bookmarked events — see
 // server routes/events.py's event_hotlist table). Shared by EventCard and
-// the event detail screen so both stay in sync with the same behavior.
+// the event detail screen. State lives in useHotlistStore (keyed by
+// eventId) instead of local component state, so every card for the same
+// event — calendar, recently viewed, event detail, the hotlist screen
+// itself — flips together the moment any one of them is toggled.
 export function useHotlistToggle(eventId: string, initial: boolean | undefined) {
-  const [hotlisted, setHotlisted] = useState(!!initial)
   const showPill = usePillStore(s => s.show)
-
-  // Resync when the underlying event identity changes (e.g. a different
-  // list item reusing this component) — not on every re-render, so it
-  // doesn't fight the optimistic local state right after a toggle.
-  useEffect(() => { setHotlisted(!!initial) }, [eventId])
+  const override = useHotlistStore(s => s.overrides[eventId])
+  const setHotlisted = useHotlistStore(s => s.setHotlisted)
+  const hotlisted = override !== undefined ? override : !!initial
 
   const toggle = async () => {
     hTap()
     const next = !hotlisted
-    setHotlisted(next)
+    setHotlisted(eventId, next)
     try {
       if (next) await ApiService.addToHotlist(eventId)
       else await ApiService.removeFromHotlist(eventId)
       showPill(next ? 'Added to hotlist' : 'Removed from hotlist')
     } catch {
-      setHotlisted(!next)
+      setHotlisted(eventId, !next)
       showPill("Couldn't update hotlist, try again", 'error')
     }
   }

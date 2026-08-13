@@ -393,13 +393,14 @@ def get_hosted_events(current_user: dict = Depends(get_current_user)):
                     FROM event_attendees eav
                     WHERE eav.event_id = e.id AND eav.status = 'going'
                     ORDER BY eav.joined_at ASC LIMIT 3
-                ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars
+                ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars,
+                EXISTS(SELECT 1 FROM event_hotlist h WHERE h.user_id = %s::uuid AND h.event_id = e.id) AS is_hotlisted
             FROM events e
             JOIN users u ON u.id = e.host_id
             WHERE e.host_id = %s::uuid
             ORDER BY e.date_time DESC
             """,
-            (uid,),
+            (uid, uid),
         )
         rows = cur.fetchall()
     result = []
@@ -461,14 +462,15 @@ def get_hosted_events_paged(
                     FROM event_attendees eav
                     WHERE eav.event_id = e.id AND eav.status = 'going'
                     ORDER BY eav.joined_at ASC LIMIT 3
-                ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars
+                ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars,
+                EXISTS(SELECT 1 FROM event_hotlist h WHERE h.user_id = %s::uuid AND h.event_id = e.id) AS is_hotlisted
             FROM events e
             JOIN users u ON u.id = e.host_id
             WHERE e.host_id = %s::uuid AND e.date_time {"<" if is_past else ">="} NOW()
             ORDER BY e.date_time {"DESC" if is_past else "ASC"}
             LIMIT %s OFFSET %s
             """,
-            (uid, limit, offset),
+            (uid, uid, limit, offset),
         )
         rows = cur.fetchall()
     result = []
@@ -515,13 +517,14 @@ def get_joined_events(current_user: dict = Depends(get_current_user)):
                     FROM event_attendees eav
                     WHERE eav.event_id = e.id AND eav.status = 'going'
                     ORDER BY eav.joined_at ASC LIMIT 3
-                ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars
+                ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars,
+                EXISTS(SELECT 1 FROM event_hotlist h WHERE h.user_id = %s::uuid AND h.event_id = e.id) AS is_hotlisted
             FROM events e
             JOIN users u ON u.id = e.host_id
             JOIN event_attendees ea ON ea.event_id = e.id AND ea.user_id = %s::uuid AND ea.status = 'going'
             ORDER BY e.date_time DESC
             """,
-            (uid,),
+            (uid, uid),
         )
         rows = cur.fetchall()
     result = []
@@ -582,7 +585,8 @@ def get_joined_events_paged(
                     FROM event_attendees eav
                     WHERE eav.event_id = e.id AND eav.status = 'going'
                     ORDER BY eav.joined_at ASC LIMIT 3
-                ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars
+                ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars,
+                EXISTS(SELECT 1 FROM event_hotlist h WHERE h.user_id = %s::uuid AND h.event_id = e.id) AS is_hotlisted
             FROM events e
             JOIN users u ON u.id = e.host_id
             JOIN event_attendees ea ON ea.event_id = e.id AND ea.user_id = %s::uuid AND ea.status = 'going'
@@ -590,7 +594,7 @@ def get_joined_events_paged(
             ORDER BY e.date_time {"DESC" if is_past else "ASC"}
             LIMIT %s OFFSET %s
             """,
-            (uid, limit, offset),
+            (uid, uid, limit, offset),
         )
         rows = cur.fetchall()
     result = []
@@ -636,13 +640,14 @@ def get_waitlisted_events(current_user: dict = Depends(get_current_user)):
                     FROM event_attendees eav
                     WHERE eav.event_id = e.id AND eav.status = 'going'
                     ORDER BY eav.joined_at ASC LIMIT 3
-                ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars
+                ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars,
+                EXISTS(SELECT 1 FROM event_hotlist h WHERE h.user_id = %s::uuid AND h.event_id = e.id) AS is_hotlisted
             FROM events e
             JOIN users u ON u.id = e.host_id
             JOIN event_attendees ea ON ea.event_id = e.id AND ea.user_id = %s::uuid AND ea.status = 'waitlist'
             ORDER BY e.date_time ASC
             """,
-            (uid,),
+            (uid, uid),
         )
         rows = cur.fetchall()
     result = []
@@ -792,7 +797,8 @@ _EVENT_COLUMNS = """
         FROM event_attendees eav
         WHERE eav.event_id = e.id AND eav.status = 'going'
         ORDER BY eav.joined_at ASC LIMIT 3
-    ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars
+    ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars,
+    EXISTS(SELECT 1 FROM event_hotlist h WHERE h.user_id = %s::uuid AND h.event_id = e.id) AS is_hotlisted
 """
 
 
@@ -910,7 +916,7 @@ def get_calendar_day(
             JOIN event_attendees ea ON ea.event_id = e.id AND ea.user_id = %s::uuid AND ea.status = 'going'
             WHERE e.date_time::date = %s
             """,
-            (uid, date_),
+            (uid, uid, date_),
         )
         joined = _shape_event_rows(cur.fetchall())
 
@@ -921,7 +927,7 @@ def get_calendar_day(
             JOIN users u ON u.id = e.host_id
             WHERE e.host_id = %s::uuid AND e.date_time::date = %s
             """,
-            (uid, date_),
+            (uid, uid, date_),
         )
         hosted = _shape_event_rows(cur.fetchall())
 
@@ -933,7 +939,7 @@ def get_calendar_day(
             JOIN event_attendees ea ON ea.event_id = e.id AND ea.user_id = %s::uuid AND ea.status = 'waitlist'
             WHERE e.date_time::date = %s
             """,
-            (uid, date_),
+            (uid, uid, date_),
         )
         waitlisted = _shape_event_rows(cur.fetchall())
 
@@ -946,7 +952,7 @@ def get_calendar_day(
             WHERE {other_where}
             ORDER BY e.date_time ASC
             """,
-            other_params,
+            [uid] + other_params,
         )
         other = _shape_event_rows(cur.fetchall())
 

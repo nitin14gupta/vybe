@@ -58,6 +58,8 @@ export function useCalendarEvents(visibleMonth: Date, selectedDate: Date, filter
 
   const [monthStart, monthEnd] = monthBounds(visibleMonth)
   const selKey = dateKey(selectedDate)
+  const todayKey = dateKey(new Date())
+  const selectedIsPast = selKey < todayKey
   // Only the city matters for refetching — the Hosted/Going/Waitlisted
   // toggles are applied client-side below, so flipping them is instant and
   // never re-hits the network.
@@ -81,6 +83,12 @@ export function useCalendarEvents(visibleMonth: Date, selectedDate: Date, filter
   useFocusEffect(useCallback(() => { loadMonth() }, [loadMonth]))
 
   const loadDay = useCallback(async () => {
+    if (selectedIsPast) {
+      setDayRaw(EMPTY_DAY)
+      setDayError(false)
+      setDayLoading(false)
+      return
+    }
     setDayLoading(true)
     try {
       const data = await ApiService.getCalendarDay(selKey, cityLat, cityLng)
@@ -93,7 +101,7 @@ export function useCalendarEvents(visibleMonth: Date, selectedDate: Date, filter
     } finally {
       setDayLoading(false)
     }
-  }, [selKey, cityLat, cityLng, showPill])
+  }, [selKey, selectedIsPast, cityLat, cityLng, showPill])
 
   useEffect(() => { loadDay() }, [loadDay])
 
