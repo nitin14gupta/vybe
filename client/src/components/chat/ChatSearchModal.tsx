@@ -124,6 +124,7 @@ export function ChatSearchModal({ visible, onClose, conversations, onSelectConve
             <ArrowLeft size={20} color={Colors.inkPrimary} strokeWidth={2} />
           </Pressable>
           <SearchBar
+            variant="glass"
             value={query}
             onChangeText={setQuery}
             placeholder="Search conversations..."
@@ -232,7 +233,7 @@ const s = StyleSheet.create({
     width: 36, height: 36, borderRadius: 18,
     alignItems: 'center', justifyContent: 'center',
   },
-  searchBar: { flex: 1, height: 44, borderRadius: 12 },
+  searchBar: { flex: 1, height: 44 },
   listContent: { paddingBottom: 32 },
   section: { marginBottom: 4 },
   sectionHeader: {

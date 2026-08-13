@@ -16,6 +16,7 @@ import { TrendingSection } from '@/components/home/TrendingSection'
 import { useEvents } from '@/hooks/useEvents'
 import { useProfile } from '@/hooks/useProfile'
 import { useHeaderAndTabBarScroll } from '@/hooks/useHeaderAndTabBarScroll'
+import { useExpandTabBarOnFocus } from '@/hooks/useExpandTabBarOnFocus'
 import ApiService from '@/api/apiService'
 import { useNotifStore } from '@/store/notifStore'
 import { usePillStore } from '@/store/pillStore'
@@ -29,6 +30,7 @@ export default function HomeScreen() {
   const lastBackRef = useRef(0)
   const showPill = usePillStore(s => s.show)
   const { hideProgress, scrollHandler } = useHeaderAndTabBarScroll()
+  useExpandTabBarOnFocus()
   const insets = useSafeAreaInsets()
   const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
 

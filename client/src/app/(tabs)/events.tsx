@@ -9,7 +9,6 @@ import {
   View,
 } from "react-native";
 import Animated from "react-native-reanimated";
-import { useMinimizeOnScroll } from "expo-glass-tabs";
 import { LinearGradient } from "expo-linear-gradient";
 import { HomeGradientBackdrop } from "@/components/home/HomeGradientBackdrop";
 import { EventsMapView } from "@/components/maps";
@@ -21,11 +20,13 @@ import type { EventSummary } from "@/api/apiService";
 import { EventCard, EventCardSkeleton } from "@/components/events/EventCard";
 import { EventSearchModal } from "@/components/events/EventSearchModal";
 import { EventPreviewStrip, PreviewCard } from "@/components/events/EventPreviewStrip";
-import { MapFloatingHeader, ListModeHeader, ViewModeTogglePill, FilterChipsRow } from "@/components/events/EventsScreenHeader";
+import { MapFloatingHeader, ListModeHeader, ViewModeTogglePill, FilterChipsRow, LIST_HEADER_CONTENT_HEIGHT } from "@/components/events/EventsScreenHeader";
 import { MapErrorOverlay, MapEmptyOverlay, ListErrorState, ListEmptyState } from "@/components/events/EventsStateViews";
 import { LocationWarning, CreateEventSheet, EventListCard, EventListCardSkeleton, ViewModeToggle, BrandedRefreshControl } from "@/components/ui";
 import { usePermissionSheetStore } from "@/store/permissionSheetStore";
 import { useEventViewModeStore } from "@/store/eventViewModeStore";
+import { useExpandTabBarOnFocus } from "@/hooks/useExpandTabBarOnFocus";
+import { useHeaderAndTabBarScroll } from "@/hooks/useHeaderAndTabBarScroll";
 
 const PREVIEW_MAX = 8;
 const LIST_PAGE = 8;
@@ -35,7 +36,8 @@ export default function EventsScreen() {
   const router = useRouter();
   const { events, loading, error, filters, setFilter, reload, loadInBounds, userLat, userLng, userHeading, locationStatus } = useEvents();
   const [viewMode, setViewModeState] = useState<"map" | "list">("map");
-  const minimizeScroll = useMinimizeOnScroll();
+  const { hideProgress, scrollHandler } = useHeaderAndTabBarScroll();
+  useExpandTabBarOnFocus();
 
   useEffect(() => {
     AsyncStorage.getItem("events_view_mode")
@@ -239,6 +241,7 @@ export default function EventsScreen() {
         togglePill={togglePill}
         onSearch={() => setSearchModalOpen(true)}
         onCreate={() => setCreateOpen(true)}
+        hideProgress={hideProgress}
       />
 
       <EventSearchModal
@@ -258,54 +261,76 @@ export default function EventsScreen() {
 
       <LocationWarning />
 
-      <FilterChipsRow activeChip={activeChip} onSelect={handleChip} />
+      {/* No static top padding here — the header-clearance space lives on
+          the FlatList's own contentContainerStyle below, so it's part of the
+          SCROLLABLE content and slides away with everything else instead of
+          leaving a permanently-reserved (and visibly opaque) gap once the
+          header has hidden. */}
+      <View style={{ flex: 1 }}>
+        {/* List */}
+        {loading && events.length === 0 ? (
+          <View style={{ paddingTop: insets.top + LIST_HEADER_CONTENT_HEIGHT }}>
+            <FilterChipsRow activeChip={activeChip} onSelect={handleChip} />
+            <View style={styles.listContent}>
+              {Array.from({ length: 4 }).map((_, i) => (
+                cardViewMode === "list" ? <EventListCardSkeleton key={i} /> : <EventCardSkeleton key={i} />
+              ))}
+            </View>
+          </View>
+        ) : hasError ? (
+          <View style={{ paddingTop: insets.top + LIST_HEADER_CONTENT_HEIGHT }}>
+            <FilterChipsRow activeChip={activeChip} onSelect={handleChip} />
+            <ListErrorState onRetry={reload} />
+          </View>
+        ) : isEmpty ? (
+          <View style={{ paddingTop: insets.top + LIST_HEADER_CONTENT_HEIGHT }}>
+            <FilterChipsRow activeChip={activeChip} onSelect={handleChip} />
+            <ListEmptyState onCreate={goToCreate} />
+          </View>
+        ) : (
+          <Animated.FlatList
+            data={listEvents}
+            keyExtractor={(e) => e.id}
+            style={{ flex: 1 }}
+            contentContainerStyle={[styles.listContent, { paddingTop: insets.top + LIST_HEADER_CONTENT_HEIGHT + 16 }]}
+            showsVerticalScrollIndicator={false}
+            onScroll={scrollHandler}
+            scrollEventThrottle={16}
+            refreshControl={
+              <BrandedRefreshControl refreshing={loading} onRefresh={reload} />
+            }
+            ListHeaderComponent={
+              // listContent's contentContainerStyle already adds 16px left/right
+              // — cancel it here so the chips keep their own 16px inset (from
+              // chipsRow) instead of stacking to 32px.
+              <View style={{ marginHorizontal: -16 }}>
+                <FilterChipsRow activeChip={activeChip} onSelect={handleChip} />
+              </View>
+            }
+            ListFooterComponent={
+              hasMore ? (
+                <Pressable
+                  style={styles.loadMoreBtn}
+                  onPress={() => setListCount((c) => c + LIST_PAGE)}
+                >
+                  <Text style={styles.loadMoreText}>
+                    Load {Math.min(events.length - listCount, LIST_PAGE)} more events
+                  </Text>
+                </Pressable>
+              ) : events.length > LIST_PAGE ? (
+                <Text style={styles.listEndText}>All {events.length} events shown</Text>
+              ) : null
+            }
+            renderItem={renderListItem}
+          />
+        )}
 
-      {/* List */}
-      {loading && events.length === 0 ? (
-        <View style={styles.listContent}>
-          {Array.from({ length: 4 }).map((_, i) => (
-            cardViewMode === "list" ? <EventListCardSkeleton key={i} /> : <EventCardSkeleton key={i} />
-          ))}
-        </View>
-      ) : hasError ? (
-        <ListErrorState onRetry={reload} />
-      ) : isEmpty ? (
-        <ListEmptyState onCreate={goToCreate} />
-      ) : (
-        <Animated.FlatList
-          data={listEvents}
-          keyExtractor={(e) => e.id}
-          style={{ flex: 1 }}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          onScroll={minimizeScroll}
-          scrollEventThrottle={16}
-          refreshControl={
-            <BrandedRefreshControl refreshing={loading} onRefresh={reload} />
-          }
-          ListFooterComponent={
-            hasMore ? (
-              <Pressable
-                style={styles.loadMoreBtn}
-                onPress={() => setListCount((c) => c + LIST_PAGE)}
-              >
-                <Text style={styles.loadMoreText}>
-                  Load {Math.min(events.length - listCount, LIST_PAGE)} more events
-                </Text>
-              </Pressable>
-            ) : events.length > LIST_PAGE ? (
-              <Text style={styles.listEndText}>All {events.length} events shown</Text>
-            ) : null
-          }
-          renderItem={renderListItem}
-        />
-      )}
-
-      {!isEmpty && (
-        <View style={styles.cardViewToggle}>
-          <ViewModeToggle mode={cardViewMode} onChange={setCardViewMode} />
-        </View>
-      )}
+        {!isEmpty && (
+          <View style={styles.cardViewToggle}>
+            <ViewModeToggle mode={cardViewMode} onChange={setCardViewMode} />
+          </View>
+        )}
+      </View>
     </View>
   );
 }

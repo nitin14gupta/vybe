@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { List, Map, Plus, Search } from "lucide-react-native";
 import { Colors, FontFamily, FILTER_CHIPS } from "@/constants";
 import { hSelection, hTap } from "@/lib/haptics";
@@ -60,19 +60,49 @@ export function MapFloatingHeader({
   );
 }
 
+// Height of ListModeHeader's own content (title row + its padding),
+// excluding the safe-area top inset — used by the list screen to pad its
+// content below the floating header.
+export const LIST_HEADER_CONTENT_HEIGHT = 50;
+
 export function ListModeHeader({
   paddingTop,
   togglePill,
   onSearch,
   onCreate,
+  hideProgress,
 }: {
   paddingTop: number;
   togglePill: React.ReactNode;
   onSearch: () => void;
   onCreate: () => void;
+  // Pass useHeaderAndTabBarScroll()'s `hideProgress` to make this header
+  // float over the list and fade/slide away on scroll-down, same as
+  // AppHeader elsewhere. Omit for the default static, in-flow header.
+  hideProgress?: Animated.Value;
 }) {
+  const floatingStyle = hideProgress && {
+    opacity: hideProgress.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+    transform: [
+      {
+        translateY: hideProgress.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -(paddingTop + LIST_HEADER_CONTENT_HEIGHT)],
+        }),
+      },
+    ],
+  };
+
   return (
-    <View style={[styles.listHeader, { paddingTop }]}>
+    <Animated.View
+      style={[
+        styles.listHeader,
+        { paddingTop },
+        hideProgress && styles.listHeaderFloating,
+        floatingStyle,
+      ]}
+      pointerEvents={hideProgress ? "box-none" : "auto"}
+    >
       <Text style={styles.listHeaderTitle}>Events</Text>
       <View style={styles.floatActions}>
         {togglePill}
@@ -91,7 +121,7 @@ export function ListModeHeader({
           <Plus size={18} color="#fff" strokeWidth={2.5} />
         </Pressable>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -178,6 +208,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    zIndex: 10,
+  },
+  listHeaderFloating: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
   },
   listHeaderTitle: {
     fontFamily: FontFamily.headingBold,
@@ -185,8 +222,8 @@ const styles = StyleSheet.create({
     color: Colors.inkPrimary,
     letterSpacing: -0.3,
   },
-  chipsScroll: { flexGrow: 0, flexShrink: 0 },
-  chipsRow: { paddingHorizontal: 16, paddingVertical: 10, gap: 8, alignItems: 'center' },
+  chipsScroll: { flexGrow: 0, flexShrink: 0, backgroundColor: 'transparent' },
+  chipsRow: { paddingHorizontal: 16, paddingVertical: 10, gap: 8, alignItems: 'center', backgroundColor: 'transparent' },
   filterChip: {
     paddingHorizontal: 14,
     paddingVertical: 7,

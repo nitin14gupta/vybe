@@ -18,6 +18,7 @@ import { Colors, ComponentSize, FontFamily, Spacing, HOST_BADGE_IMAGES } from '@
 import { useImageViewer } from '@/hooks/useImageViewer'
 import { MediaViewerModal } from '@/components/chat/MediaViewerModal'
 import { useHeaderAndTabBarScroll } from '@/hooks/useHeaderAndTabBarScroll'
+import { useExpandTabBarOnFocus } from '@/hooks/useExpandTabBarOnFocus'
 
 const GENDER_DISPLAY: Record<string, string> = {
   Man: 'Male',
@@ -32,6 +33,7 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const { hideProgress, scrollHandler } = useHeaderAndTabBarScroll()
+  useExpandTabBarOnFocus()
   const insets = useSafeAreaInsets()
   const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
 

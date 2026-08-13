@@ -163,7 +163,7 @@ function ShareToChatSheetCore({
         </View>
       </View>
 
-      <SearchBar value={query} onChangeText={setQuery} placeholder="Search people..." style={st.searchBar} />
+      <SearchBar variant="glass" value={query} onChangeText={setQuery} placeholder="Search people..." style={st.searchBar} />
     </View>
   )
 
@@ -254,7 +254,7 @@ const st = StyleSheet.create({
   previewTitle: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkPrimary },
   previewSub: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary, marginTop: 1 },
 
-  searchBar: { height: 42, borderRadius: 12 },
+  searchBar: { height: 42 },
 
   listContent: { paddingHorizontal: 12, paddingBottom: 12 },
   skGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12 },

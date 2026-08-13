@@ -1,6 +1,11 @@
 import '../../global.css'
 import { useEffect, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
+import { enableScreens, enableFreeze } from 'react-native-screens'
+
+enableScreens(true)
+enableFreeze(true)
+
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated'
 
 configureReanimatedLogger({ level: ReanimatedLogLevel.warn, strict: false })

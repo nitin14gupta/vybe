@@ -3,7 +3,7 @@ import { View, TextInput, Pressable, StyleSheet } from 'react-native'
 import type { StyleProp, ViewStyle } from 'react-native'
 import { Search, X } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, Radius } from '@/constants'
 
 interface Props {
   value: string
@@ -72,7 +72,7 @@ const s = StyleSheet.create({
   },
   wrapSolid: {
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: Radius.pill,
     borderWidth: 1,
     borderColor: Colors.divider,
   },

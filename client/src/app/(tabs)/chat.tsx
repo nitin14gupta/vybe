@@ -15,9 +15,10 @@ import { VybeInboxSheet, VybeIcebreakerModal, LogoMark, ProfileMenuSheet, Primar
 import { ChatSearchModal } from '@/components/chat/ChatSearchModal'
 import { usePillStore } from '@/store/pillStore'
 import { useConversations } from '@/hooks/useConversations'
+import { useExpandTabBarOnFocus } from '@/hooks/useExpandTabBarOnFocus'
 import { useAuthStore } from '@/store/auth'
 import ApiService from '@/api/apiService'
-import { Colors, ComponentSize, FontFamily } from '@/constants'
+import { Colors, ComponentSize, FontFamily, Radius } from '@/constants'
 import { isRecentlyActive } from '@/lib/formatLastSeen'
 import type { Conversation } from '@/api/apiService'
 
@@ -147,6 +148,7 @@ export default function ChatScreen() {
   const [menuTarget, setMenuTarget] = useState<Conversation | null>(null)
   const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set())
   const minimizeScroll = useMinimizeOnScroll()
+  useExpandTabBarOnFocus()
 
   const showPill = usePillStore(s => s.show)
   const currentUserId = useAuthStore(s => s.userId)
@@ -248,7 +250,7 @@ export default function ChatScreen() {
           </Pressable>
         </View>
         <Pressable style={s.searchBar} onPress={() => { hTap(); setSearchOpen(true) }}>
-          <Search size={16} color={Colors.inkDisabled} strokeWidth={1.8} />
+          <Search size={16} color={Colors.glassTextDisabled} strokeWidth={1.8} />
           <Text style={s.searchBarText}>Search conversations...</Text>
         </Pressable>
       </View>
@@ -402,16 +404,16 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     height: 44,
-    borderRadius: 12,
+    borderRadius: Radius.pill,
     paddingHorizontal: 14,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.glassSurface,
     borderWidth: 1,
-    borderColor: Colors.divider,
+    borderColor: Colors.glassBorder,
   },
   searchBarText: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 14,
-    color: Colors.inkDisabled,
+    color: Colors.glassTextDisabled,
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 32 },
   footerLoading: { paddingVertical: 20, alignItems: 'center' },

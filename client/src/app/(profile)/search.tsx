@@ -129,6 +129,7 @@ export default function SearchScreen() {
 
       <View style={s.searchWrap}>
         <SearchBar
+          variant="glass"
           value={query}
           onChangeText={setQuery}
           onFocus={() => setFocused(true)}
