@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native'
+import { memo, useCallback, useState } from 'react'
+import { View, Text, StyleSheet, Pressable, FlatList, type ListRenderItemInfo } from 'react-native'
 import { router } from 'expo-router'
 import { QrCode, ChevronRight } from 'lucide-react-native'
 import type { EventSummary } from '@/api/apiService'
@@ -7,6 +8,9 @@ import { parseServerDate } from '@/lib/dates'
 import { Colors, FontFamily } from '@/constants'
 
 const CARD_WIDTH = 240
+const CARD_GAP = 12
+const INITIAL_COUNT = 6
+const PAGE_SIZE = 6
 
 export function relativeDayLabel(date: Date): string {
   const now = new Date()
@@ -19,38 +23,73 @@ export function relativeDayLabel(date: Date): string {
   return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 }
 
+const UpNextCard = memo(function UpNextCard({ event, onPress, onTicketPress }: {
+  event: EventSummary
+  onPress: (id: string) => void
+  onTicketPress: (id: string) => void
+}) {
+  const d = parseServerDate(event.date_time)
+  return (
+    <View style={s.card}>
+      <EventCard
+        event={event}
+        showHost
+        onPress={() => onPress(event.id)}
+        footer={
+          <Pressable style={s.ticketFooter} onPress={() => onTicketPress(event.id)}>
+            <QrCode size={15} color={Colors.brandOrange} strokeWidth={2} />
+            <Text style={s.ticketFooterText}>
+              {d ? relativeDayLabel(d) : ''} · View Ticket
+            </Text>
+            <ChevronRight size={15} color={Colors.inkSecondary} strokeWidth={2} />
+          </Pressable>
+        }
+      />
+    </View>
+  )
+})
+
+// You're almost always going to fewer than a screenful of events here, but
+// the same "reveal a page at a time on scroll" pattern as TrendingSection
+// costs nothing and keeps behavior consistent if that ever isn't true.
 export function UpNextSection({ events }: { events: EventSummary[] }) {
+  const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT)
+
+  const handlePress = useCallback((id: string) => router.push(`/(events)/${id}` as any), [])
+  const handleTicketPress = useCallback((id: string) => router.push(`/(events)/${id}/ticket` as any), [])
+
+  const renderItem = useCallback(({ item }: ListRenderItemInfo<EventSummary>) => (
+    <UpNextCard event={item} onPress={handlePress} onTicketPress={handleTicketPress} />
+  ), [handlePress, handleTicketPress])
+
+  const getItemLayout = useCallback((_: unknown, index: number) => ({
+    length: CARD_WIDTH,
+    offset: (CARD_WIDTH + CARD_GAP) * index,
+    index,
+  }), [])
+
   if (events.length === 0) return null
+
+  const visible = events.slice(0, visibleCount)
 
   return (
     <View style={s.wrap}>
       <Text style={s.title}>You're Going</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.list}>
-        {events.map(e => {
-          const d = parseServerDate(e.date_time)
-          return (
-            <View key={e.id} style={s.card}>
-              <EventCard
-                event={e}
-                showHost
-                onPress={() => router.push(`/(events)/${e.id}` as any)}
-                footer={
-                  <Pressable
-                    style={s.ticketFooter}
-                    onPress={() => router.push(`/(events)/${e.id}/ticket` as any)}
-                  >
-                    <QrCode size={15} color={Colors.brandOrange} strokeWidth={2} />
-                    <Text style={s.ticketFooterText}>
-                      {d ? relativeDayLabel(d) : ''} · View Ticket
-                    </Text>
-                    <ChevronRight size={15} color={Colors.inkSecondary} strokeWidth={2} />
-                  </Pressable>
-                }
-              />
-            </View>
-          )
-        })}
-      </ScrollView>
+      <FlatList
+        data={visible}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={e => e.id}
+        contentContainerStyle={s.list}
+        onEndReachedThreshold={0.5}
+        onEndReached={() => setVisibleCount(c => Math.min(c + PAGE_SIZE, events.length))}
+        renderItem={renderItem}
+        getItemLayout={getItemLayout}
+        initialNumToRender={INITIAL_COUNT}
+        maxToRenderPerBatch={PAGE_SIZE}
+        windowSize={5}
+        removeClippedSubviews
+      />
     </View>
   )
 }

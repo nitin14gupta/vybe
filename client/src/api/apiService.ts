@@ -564,8 +564,11 @@ class ApiService {
   }
 
   static async getUnreadNotificationCount(): Promise<number> {
+    // The badge display caps at "9+" anyway (see NotificationPopBadge), so
+    // there's no reason to fetch further than that just to find out the
+    // exact count is >9 — limit=10 tells us everything the UI can show.
     const items = await this.get<AppNotification[]>(
-      `${ENDPOINTS.NOTIFICATIONS}?unread_only=true&limit=1`
+      `${ENDPOINTS.NOTIFICATIONS}?unread_only=true&limit=10`
     )
     return items.length
   }

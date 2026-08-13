@@ -1,8 +1,9 @@
-import React, { useState, useCallback, useRef } from 'react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import {
-  View, Text, StyleSheet, SectionList, Pressable,
+  View, Text, StyleSheet, SectionList,
   ActivityIndicator,
 } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { router } from 'expo-router'
 import { useFocusEffect } from 'expo-router'
 import { hTap } from '@/lib/haptics'
@@ -15,8 +16,21 @@ import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn } from '@/components/ui
 import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 import { useAuthStore } from '@/store/auth'
 import { usePillStore } from '@/store/pillStore'
-import { NotificationRow } from '@/components/settings/NotificationRow'
+import { NotificationRow, NotificationRowSkeleton } from '@/components/settings/NotificationRow'
 import { NotificationsEmptyState, NotificationsErrorState } from '@/components/settings/NotificationsStatusViews'
+
+const CACHE_KEY = 'notifications_cache_v1'
+const CACHE_SIZE = 10
+
+function loadCached(): Promise<AppNotification[] | null> {
+  return AsyncStorage.getItem(CACHE_KEY)
+    .then(raw => (raw ? (JSON.parse(raw) as AppNotification[]) : null))
+    .catch(() => null)
+}
+
+function saveCache(notifs: AppNotification[]) {
+  AsyncStorage.setItem(CACHE_KEY, JSON.stringify(notifs.slice(0, CACHE_SIZE))).catch(() => {})
+}
 
 function groupByDate(notifs: AppNotification[]): { title: string; data: AppNotification[] }[] {
   const now = new Date()
@@ -54,25 +68,44 @@ export default function NotificationsScreen() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(false)
   const cursorRef = useRef<string | undefined>(undefined)
+  const notifsRef = useRef<AppNotification[]>([])
   const showPill = usePillStore(s => s.show)
 
+  useEffect(() => { notifsRef.current = notifs }, [notifs])
+
+  // Paint the last-known page instantly from disk while the real fetch is
+  // still in flight — the fetch below always wins once it resolves, this
+  // just avoids a skeleton flash for something we already know.
+  useEffect(() => {
+    loadCached().then(cached => {
+      if (cached && cached.length > 0 && notifsRef.current.length === 0) {
+        setNotifs(cached)
+        setLoading(false)
+      }
+    })
+  }, [])
+
   const loadInitial = useCallback(async () => {
-    setLoading(true)
+    // Only show the skeleton if we've got nothing on screen yet (no cache
+    // hit) — a cached/already-loaded list just gets silently replaced.
+    if (notifsRef.current.length === 0) setLoading(true)
     setLoadError(false)
     cursorRef.current = undefined
     try {
       const data = await ApiService.getNotifications()
       setNotifs(data)
+      saveCache(data)
       setHasMore(data.length === 10)
       if (data.length > 0) cursorRef.current = data[data.length - 1].created_at
     } catch {
-      setLoadError(true)
+      if (notifsRef.current.length === 0) setLoadError(true)
     } finally {
       setLoading(false)
     }
   }, [])
 
   const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return
     setLoadingMore(true)
     try {
       const data = await ApiService.getNotifications(cursorRef.current)
@@ -84,7 +117,7 @@ export default function NotificationsScreen() {
     } finally {
       setLoadingMore(false)
     }
-  }, [showPill])
+  }, [showPill, loadingMore, hasMore])
 
   useFocusEffect(useCallback(() => { loadInitial() }, [loadInitial]))
 
@@ -161,8 +194,8 @@ export default function NotificationsScreen() {
       />
 
       {loading ? (
-        <View style={[s.center, { paddingTop: headerHeight }]}>
-          <ActivityIndicator color={Colors.brandOrange} />
+        <View style={{ paddingTop: headerHeight }}>
+          <NotificationRowSkeleton />
         </View>
       ) : loadError ? (
         <NotificationsErrorState onRetry={loadInitial} />
@@ -184,13 +217,13 @@ export default function NotificationsScreen() {
           onScroll={onScroll}
           scrollEventThrottle={16}
           stickySectionHeadersEnabled={false}
+          onEndReachedThreshold={0.4}
+          onEndReached={loadMore}
           ListFooterComponent={
-            hasMore ? (
-              <Pressable style={s.loadMoreBtn} onPress={() => { if (!loadingMore) loadMore() }}>
-                {loadingMore
-                  ? <ActivityIndicator color={Colors.brandOrange} size="small" />
-                  : <Text style={s.loadMoreText}>Load more</Text>}
-              </Pressable>
+            loadingMore ? (
+              <View style={s.footerLoader}>
+                <ActivityIndicator color={Colors.brandOrange} size="small" />
+              </View>
             ) : null
           }
         />
@@ -201,7 +234,6 @@ export default function NotificationsScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32 },
   sectionHeader: {
     paddingHorizontal: 20,
     paddingTop: 20,
@@ -214,6 +246,5 @@ const s = StyleSheet.create({
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
-  loadMoreBtn: { alignItems: 'center', paddingVertical: 16 },
-  loadMoreText: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.brandOrange },
+  footerLoader: { alignItems: 'center', paddingVertical: 16 },
 })

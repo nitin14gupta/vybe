@@ -10,6 +10,9 @@ badge, conversation list, and event-hosting flows without hand-creating data:
   - 10-12 of the demo buddies RSVP 'going' to each event (mix of free/paid
     joins — paid joins get a fake payment_id so paid-attendee logic sees
     them as paid).
+  - 5 unread in-app notifications (new_follower, vybe_accepted, ticket_sold,
+    event_review, event_rsvp) — tests the Home header's notification badge
+    and its pop-on-new-arrival animation.
 
 Does NOT touch the target user's own row besides flipping
 is_host_onboarding_finished on if it's off (needed to host events).
@@ -125,7 +128,7 @@ def wipe_existing(cur):
     ids = [r["id"] for r in cur.fetchall()]
     if not ids:
         return
-    cur.execute("DELETE FROM users WHERE id = ANY(%s)", (ids,))
+    cur.execute("DELETE FROM users WHERE id = ANY(%s::uuid[])", ([str(i) for i in ids],))
     print(f"Wiped {len(ids)} previously-seeded buddy users (cascades cover their vybes/messages/etc.)")
 
 
@@ -275,6 +278,50 @@ def main():
             print(f"  Event '{title}' ({'free' if is_free else f'Rs {price}'}) - {len(attendees)} going")
 
         print(f"Created {len(event_ids)} events hosted by target in Mumbai")
+
+        # ── 5 unread in-app notifications, same shapes routes/notifications.py
+        #    actually produces — tests the header's notification pop badge ────
+        notif_actors = random.sample(buddy_ids, k=min(5, len(buddy_ids)))
+        notif_rows = [
+            (
+                "new_follower", notif_actors[0], notif_actors[0], "user",
+                f"{buddy_names[notif_actors[0]]} started following you", None,
+            ),
+            (
+                "vybe_accepted", notif_actors[1], notif_actors[1], "user",
+                f"{buddy_names[notif_actors[1]]} accepted your Vybe!", None,
+            ),
+            (
+                "ticket_sold", notif_actors[2], event_ids[1], "event",
+                f"{buddy_names[notif_actors[2]]} bought a ticket!", "Someone's going to your event.",
+            ),
+            (
+                "event_review", notif_actors[3], event_ids[0], "event",
+                f"{buddy_names[notif_actors[3]]} left a 5-star review", EVENT_TITLES[EVENT_TYPES[0]],
+            ),
+            (
+                "event_rsvp", notif_actors[4], event_ids[2], "event",
+                f"{buddy_names[notif_actors[4]]} is going to {EVENT_TITLES[EVENT_TYPES[2]]}", None,
+            ),
+        ]
+        # Re-runnable: clear only this script's own notification types for the
+        # target before reinserting (actor_id would otherwise dangle to NULL
+        # once wipe_existing() above removes the buddies that generated them
+        # on a prior run — actor_id is ON DELETE SET NULL, not CASCADE).
+        cur.execute(
+            "DELETE FROM notifications WHERE user_id = %s::uuid AND type = ANY(%s)",
+            (TARGET_USER_ID, [r[0] for r in notif_rows]),
+        )
+        for i, (ntype, actor_id, entity_id, entity_type, title, body) in enumerate(notif_rows):
+            cur.execute(
+                """
+                INSERT INTO notifications (user_id, type, actor_id, entity_id, entity_type, title, body, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (TARGET_USER_ID, ntype, actor_id, entity_id, entity_type, title, body,
+                 now - timedelta(minutes=random.randint(5, 240) + i)),
+            )
+        print(f"Created {len(notif_rows)} unread in-app notifications for target")
 
         conn.commit()
     print("Done — seed committed.")

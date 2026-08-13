@@ -114,11 +114,6 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
 
   return (
     <Fragment>
-    {/* Non-touchable wrapper — the card's own Pressable and the two overlay
-        buttons below are true SIBLINGS here, not nested inside one another.
-        Overlapping sibling Pressables hit-test correctly with no coordinate
-        math; a Pressable nested inside another Pressable's subtree is the
-        thing that breaks tap handling + background rendering on Android. */}
     <View style={isPast && s.cardPast}>
     <Pressable
       style={s.card}
@@ -263,11 +258,16 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
   )
 })
 
-// Same shape as the real card, shimmering — shown while events are still loading.
+// Same shape as the real card, shimmering — shown while events are still
+// loading. Own transparent wrapper (not the real card's s.card, which
+// carries a solid backgroundColor) — AutoSkeletonView treats any child with
+// a background as a bone to shimmer, so a filled container gets swallowed
+// into one shimmering blob instead of showing the image block + text lines
+// as distinct shapes.
 export function EventCardSkeleton() {
   return (
     <AutoSkeletonView isLoading animationType="gradient" defaultRadius={20} gradientColors={['#1e1e1e', '#2e2e2e']}>
-      <View style={s.card}>
+      <View style={s.skCard}>
         <View style={[s.imageWrap, s.skBlock]} />
         <View style={s.meta}>
           <View style={s.metaLeft}>
@@ -371,6 +371,7 @@ const s = StyleSheet.create({
   },
   spotsText: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.brandOrange },
 
+  skCard: { borderRadius: 20, overflow: 'hidden' },
   skBlock: { backgroundColor: '#2a2a2a' },
   skLine: { borderRadius: 5, backgroundColor: '#2a2a2a' },
 })

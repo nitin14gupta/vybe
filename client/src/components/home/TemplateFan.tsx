@@ -15,8 +15,8 @@ const N = TEMPLATE_IMAGES.length
 const LOOPS = 3
 const PHYSICAL_COUNT = N * LOOPS
 
-const CARD_SIZE = 100
-const STEP = 50
+const CARD_SIZE = 124
+const STEP = 40
 const SWIPE_THRESHOLD = STEP * 0.6
 const SPIN_MS = 340
 const VISIBLE_HALF = 4
@@ -46,7 +46,7 @@ function FanCard({ p, source, center, settledCenter, onTapActive }: {
       transform: [
         { translateX: offset * STEP },
         { translateY: dist * dist * 3.2 },
-        { rotate: `${offset * 10.5}deg` },
+        { rotate: `${offset * 1}deg` },
         { scale: Math.max(0.3, 1 - dist * 0.07) },
       ],
     }
@@ -142,6 +142,5 @@ const s = StyleSheet.create({
     position: 'absolute',
     width: CARD_SIZE,
     height: CARD_SIZE,
-    borderRadius: 16,
   },
 })

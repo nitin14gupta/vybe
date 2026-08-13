@@ -2,6 +2,7 @@ import React, { useRef } from 'react'
 import { View, Text, StyleSheet, Pressable, Animated } from 'react-native'
 import { Swipeable } from 'react-native-gesture-handler'
 import { Image } from 'expo-image'
+import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { hTap, hMedium } from '@/lib/haptics'
 import { Bell, UserPlus, Flame, MessageCircle, PartyPopper, ShieldCheck, Trophy, Trash2 } from 'lucide-react-native'
 import type { AppNotification } from '@/api/apiService'
@@ -134,6 +135,24 @@ export const NotificationRow = React.memo(function NotificationRow({ item, onPre
   )
 })
 
+export function NotificationRowSkeleton() {
+  return (
+    <AutoSkeletonView isLoading animationType="gradient" defaultRadius={7} gradientColors={['#1e1e1e', '#2e2e2e']}>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <View key={i} style={s.skRow}>
+          <View style={s.skAvatar} />
+          <View style={s.skTextBlock}>
+            <View style={s.skLineTitle} />
+            <View style={s.skLineBody} />
+            <View style={s.skLineTime} />
+          </View>
+          {i % 2 === 0 && <View style={s.skActionBtn} />}
+        </View>
+      ))}
+    </AutoSkeletonView>
+  )
+}
+
 const s = StyleSheet.create({
   dismissAction: {
     width: 80,
@@ -176,4 +195,14 @@ const s = StyleSheet.create({
   actionBtnWrap: {
     marginLeft: 'auto',
   },
+  skRow: {
+    flexDirection: 'row', alignItems: 'flex-start',
+    paddingHorizontal: 20, paddingVertical: 14, gap: 14,
+  },
+  skTextBlock: { flex: 1, minWidth: 0, paddingTop: 2 },
+  skAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#2a2a2a' },
+  skLineTitle: { height: 14, width: '70%', borderRadius: 7, backgroundColor: '#2a2a2a' },
+  skLineBody: { height: 12, width: '85%', borderRadius: 6, backgroundColor: '#2a2a2a', marginTop: 6 },
+  skLineTime: { height: 10, width: '25%', borderRadius: 5, backgroundColor: '#2a2a2a', marginTop: 6 },
+  skActionBtn: { width: 76, height: 30, borderRadius: 15, backgroundColor: '#2a2a2a', marginLeft: 'auto' },
 })

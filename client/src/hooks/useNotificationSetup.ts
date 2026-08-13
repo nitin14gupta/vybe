@@ -3,6 +3,7 @@ import * as Notifications from 'expo-notifications'
 import { Platform } from 'react-native'
 import { useAuthStore } from '@/store/auth'
 import { useNotificationStore } from '@/store/notificationStore'
+import { useNotifStore } from '@/store/notifStore'
 import ApiService from '@/api/apiService'
 import { EAS_PROJECT_ID } from '@/api/config'
 import { pushDataToTarget } from '@/lib/deepLink'
@@ -84,6 +85,20 @@ export function useNotificationSetup() {
       if (target) navigateToTarget(target)
     })
 
-    return () => listenerRef.current?.remove()
+    // Foreground arrival (app already open, no tap involved) — resync the
+    // unread count right away instead of waiting for the Home tab to next
+    // gain focus, so the header's attention-pop fires live like Instagram's.
+    const receivedSub = Notifications.addNotificationReceivedListener(() => {
+      useNotifStore.getState().hydrate().then(() => {
+        ApiService.getUnreadNotificationCount()
+          .then(fresh => useNotifStore.getState().syncUnreadCount(fresh))
+          .catch(() => {})
+      })
+    })
+
+    return () => {
+      listenerRef.current?.remove()
+      receivedSub.remove()
+    }
   }, [isAuthenticated, permission])
 }

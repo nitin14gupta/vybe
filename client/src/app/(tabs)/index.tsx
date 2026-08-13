@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Heart, PartyPopper, Search } from 'lucide-react-native'
 import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, CreateEventSheet, EmptyState, PrimaryButton } from '@/components/ui'
 import { HomeGradientBackdrop } from '@/components/home/HomeGradientBackdrop'
+import { NotificationPopBadge } from '@/components/home/NotificationPopBadge'
 import { TemplateFan } from '@/components/home/TemplateFan'
 import { MyEventsSection } from '@/components/home/MyEventsSection'
 import { RecentlyViewedSection } from '@/components/home/RecentlyViewedSection'
@@ -25,7 +26,7 @@ import { Colors, ComponentSize, FontFamily, Radius } from '@/constants'
 
 export default function HomeScreen() {
   const { profile } = useProfile()
-  const { unreadCount, setUnreadCount } = useNotifStore()
+  const { syncUnreadCount, hydrate: hydrateNotifStore } = useNotifStore()
   const [createOpen, setCreateOpen] = useState(false)
   const lastBackRef = useRef(0)
   const showPill = usePillStore(s => s.show)
@@ -41,10 +42,12 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      ApiService.getUnreadNotificationCount()
-        .then(setUnreadCount)
-        .catch(() => { })
-    }, [setUnreadCount]),
+      hydrateNotifStore().then(() => {
+        ApiService.getUnreadNotificationCount()
+          .then(syncUnreadCount)
+          .catch(() => { })
+      })
+    }, [hydrateNotifStore, syncUnreadCount]),
   )
 
   useFocusEffect(
@@ -80,7 +83,7 @@ export default function HomeScreen() {
             <HeaderIconBtn onPress={() => router.push('/(settings)/notifications' as any)}>
               <View>
                 <Heart size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
-                {unreadCount > 0 && <View style={styles.bellDot} />}
+                <NotificationPopBadge />
               </View>
             </HeaderIconBtn>
           </View>
@@ -193,16 +196,4 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill, borderWidth: 1, borderColor: Colors.brandOrange,
   },
   retryText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.brandOrange },
-
-  bellDot: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#FF3040',
-    borderWidth: 1.5,
-    borderColor: Colors.background,
-  },
 })

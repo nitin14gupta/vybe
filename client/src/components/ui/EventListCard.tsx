@@ -100,10 +100,13 @@ export const EventListCard = memo(EventListCardBase)
 
 // Same shape as the real row, shimmering — shown while events are still
 // loading.
+// Own transparent wrapper (not the real row's s.row, which carries a solid
+// backgroundColor) — AutoSkeletonView treats any child with a background as
+// a bone, so a filled container swallows the thumb/lines into one blob.
 export function EventListCardSkeleton() {
   return (
     <AutoSkeletonView isLoading animationType="gradient" defaultRadius={16} gradientColors={['#1e1e1e', '#2e2e2e']}>
-      <View style={s.row}>
+      <View style={s.skRow}>
         <View style={[s.thumb, s.skBlock]} />
         <View style={s.info}>
           <View style={[s.skLine, { width: '70%', height: 15 }]} />
@@ -117,6 +120,13 @@ export function EventListCardSkeleton() {
 
 const s = StyleSheet.create({
   rowWrap: { position: 'relative' },
+  skRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    borderRadius: Radius.card + 8,
+    padding: 12,
+  },
   hotlistBtn: {
     position: 'absolute', top: 17, left: 105,
     width: 22, height: 22, borderRadius: 11,
