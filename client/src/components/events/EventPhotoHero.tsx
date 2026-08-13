@@ -6,6 +6,7 @@ import { ArrowLeft, Bookmark, Flag, MoreVertical, Share2 } from 'lucide-react-na
 import { Colors, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constants'
 import { hTap } from '@/lib/haptics'
 import { useHotlistToggle } from '@/hooks/useHotlistToggle'
+import { isEventPast } from '@/lib/dates'
 import type { EventDetail } from '@/api/apiService'
 
 const { width: W } = Dimensions.get('window')
@@ -25,6 +26,7 @@ export function EventPhotoHero({ event, isHost, topInset, onBack, onShare, onOpt
   const [photoIdx, setPhotoIdx] = useState(0)
   const coverPhotos = event.cover_photos ?? []
   const { hotlisted, toggle: toggleHotlist } = useHotlistToggle(event.id, event.is_hotlisted)
+  const eventIsPast = isEventPast(event)
 
   return (
     <View style={styles.hero}>
@@ -83,14 +85,16 @@ export function EventPhotoHero({ event, isHost, topInset, onBack, onShare, onOpt
           <ArrowLeft size={22} color="#fff" strokeWidth={2} />
         </Pressable>
         <View style={{ flexDirection: 'row', gap: 4 }}>
-          <Pressable style={styles.heroIconBtn} onPress={toggleHotlist} hitSlop={10}>
-            <Bookmark
-              size={20}
-              color={hotlisted ? Colors.brandCoral : '#fff'}
-              fill={hotlisted ? Colors.brandCoral : 'transparent'}
-              strokeWidth={2}
-            />
-          </Pressable>
+          {!eventIsPast && (
+            <Pressable style={styles.heroIconBtn} onPress={toggleHotlist} hitSlop={10}>
+              <Bookmark
+                size={20}
+                color={hotlisted ? Colors.brandCoral : '#fff'}
+                fill={hotlisted ? Colors.brandCoral : 'transparent'}
+                strokeWidth={2}
+              />
+            </Pressable>
+          )}
           <Pressable style={styles.heroIconBtn} onPress={() => { hTap(); onShare() }} hitSlop={10}>
             <Share2 size={20} color="#fff" strokeWidth={2} />
           </Pressable>

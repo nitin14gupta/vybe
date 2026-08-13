@@ -172,6 +172,7 @@ export default function EditEventScreen() {
         price_inr: form.isFree ? 0 : form.priceInr,
         cover_photos: uploadedUrls,
       })
+      showPill('Event updated', 'default')
       router.back()
     } catch (e: any) {
       if (e?.status === 403) {

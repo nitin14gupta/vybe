@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, Pressable, TextInput,
   ScrollView, Linking,
 } from 'react-native'
+import * as Clipboard from 'expo-clipboard'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, Mail, ChevronRight } from 'lucide-react-native'
@@ -147,9 +148,18 @@ export default function SupportScreen() {
 
         <Text style={s.directEmail}>
           Or write directly to{' '}
-          <Text style={s.emailLink} onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}`)}>
+          <Text
+            style={s.emailLink}
+            onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}`)}
+            onLongPress={async () => {
+              hTap()
+              await Clipboard.setStringAsync(SUPPORT_EMAIL)
+              showPill('Email copied', 'default')
+            }}
+          >
             {SUPPORT_EMAIL}
           </Text>
+          {' '}(long-press to copy)
         </Text>
       </ScrollView>
     </View>

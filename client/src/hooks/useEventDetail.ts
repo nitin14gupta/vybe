@@ -163,6 +163,7 @@ export function useEventDetail(id: string | undefined) {
       if (res.status === 'waitlist') {
         setRsvpStatus('waitlist')
         setEvent(prev => prev ? { ...prev, spots_left: 0 } : prev)
+        showPill("You're on the waitlist", 'default')
         router.push({
           pathname: '/(events)/[id]/waitlist-joined' as any,
           params: {
@@ -174,6 +175,7 @@ export function useEventDetail(id: string | undefined) {
         })
       } else if (res.status === 'going') {
         setRsvpStatus('going')
+        showPill("You're going! 🎉", 'default')
       }
     } catch (e: any) {
       setRsvpStatus('idle')

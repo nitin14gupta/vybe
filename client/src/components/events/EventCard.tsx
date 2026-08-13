@@ -6,7 +6,7 @@ import { MapPin, Flame } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { Colors, FontFamily, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constants'
-import { parseServerDate } from '@/lib/dates'
+import { parseServerDate, isEventPast } from '@/lib/dates'
 import { hSelection } from '@/lib/haptics'
 import { useAuthStore } from '@/store/auth'
 import { HotlistButton } from './HotlistButton'
@@ -107,6 +107,10 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
   const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
 
   const canOpenHost = !!event.host_id && event.host_name && !event.host_is_deleted
+  // Don't offer hotlisting an event that's already ended — respects both the
+  // explicit `isPast` prop (e.g. Joined Events' Past tab) and the event's
+  // own dates, so it's safe even where callers don't pass `isPast`.
+  const eventIsPast = isPast || isEventPast(event)
 
   return (
     <Fragment>
@@ -237,7 +241,9 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
 
     {/* True siblings of the card's Pressable above, not descendants — see
         the comment on the wrapper View. */}
-    <HotlistButton eventId={event.id} initial={event.is_hotlisted} style={s.hotlistBtn} />
+    {!eventIsPast && (
+      <HotlistButton eventId={event.id} initial={event.is_hotlisted} style={s.hotlistBtn} />
+    )}
     {canOpenHost && (
       <Pressable
         style={s.hostPillPos}

@@ -1,7 +1,6 @@
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native'
 import { ChevronLeft, ChevronRight, CalendarHeart, Ticket as TicketIcon, TriangleAlert } from 'lucide-react-native'
-import { PrimaryButton, OutlineButton } from '@/components/ui'
-import { DayEventRow, DayEventRowSkeleton } from '@/components/calendar/DayEventRow'
+import { PrimaryButton, OutlineButton, EventListCard, EventListCardSkeleton } from '@/components/ui'
 import type { DayEvents } from '@/hooks/useCalendarEvents'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 import { hTap } from '@/lib/haptics'
@@ -59,7 +58,7 @@ export function CalendarDayPanel({
       {dayLoading ? (
         <View style={s.eventsScroll}>
           <View style={s.cardsCol}>
-            {Array.from({ length: 3 }).map((_, i) => <DayEventRowSkeleton key={i} />)}
+            {Array.from({ length: 3 }).map((_, i) => <EventListCardSkeleton key={i} />)}
           </View>
         </View>
       ) : dayError ? (
@@ -75,7 +74,7 @@ export function CalendarDayPanel({
             <View style={s.section}>
               <Text style={s.sectionLabel}>GOING</Text>
               <View style={s.cardsCol}>
-                {dayJoined.map(e => <DayEventRow key={e.id} event={e} />)}
+                {dayJoined.map(e => <EventListCard key={e.id} event={e} />)}
               </View>
             </View>
           )}
@@ -83,7 +82,7 @@ export function CalendarDayPanel({
             <View style={s.section}>
               <Text style={s.sectionLabel}>HOSTING</Text>
               <View style={s.cardsCol}>
-                {dayHosted.map(e => <DayEventRow key={e.id} event={e} />)}
+                {dayHosted.map(e => <EventListCard key={e.id} event={e} />)}
               </View>
             </View>
           )}
@@ -91,7 +90,7 @@ export function CalendarDayPanel({
             <View style={s.section}>
               <Text style={s.sectionLabel}>WAITLISTED</Text>
               <View style={s.cardsCol}>
-                {dayWaitlisted.map(e => <DayEventRow key={e.id} event={e} />)}
+                {dayWaitlisted.map(e => <EventListCard key={e.id} event={e} />)}
               </View>
             </View>
           )}
@@ -99,7 +98,7 @@ export function CalendarDayPanel({
             <View style={s.section}>
               <Text style={s.sectionLabel}>HAPPENING NEARBY</Text>
               <View style={s.cardsCol}>
-                {dayOther.map(e => <DayEventRow key={e.id} event={e} />)}
+                {dayOther.map(e => <EventListCard key={e.id} event={e} />)}
               </View>
             </View>
           )}

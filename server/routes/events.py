@@ -662,6 +662,18 @@ def get_waitlisted_events(current_user: dict = Depends(get_current_user)):
 def get_hotlist_events(current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]
     with get_db() as (cur, _):
+        # Auto-remove events that have already ended — nobody wants a hotlist
+        # full of stuff that's over. Mirrors the end_time-aware "is past"
+        # rule the client uses (see client/src/lib/dates.ts:isEventPast).
+        cur.execute(
+            """
+            DELETE FROM event_hotlist h
+            USING events e
+            WHERE h.event_id = e.id AND h.user_id = %s::uuid
+              AND COALESCE(e.end_time, e.date_time) < NOW()
+            """,
+            (uid,),
+        )
         cur.execute(
             """
             SELECT
@@ -707,9 +719,15 @@ def get_hotlist_events(current_user: dict = Depends(get_current_user)):
 def add_to_hotlist(event_id: str, current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]
     with get_db() as (cur, _):
-        cur.execute("SELECT id FROM events WHERE id = %s::uuid", (event_id,))
-        if not cur.fetchone():
+        cur.execute(
+            "SELECT (COALESCE(end_time, date_time) < NOW()) AS is_past FROM events WHERE id = %s::uuid",
+            (event_id,),
+        )
+        row = cur.fetchone()
+        if not row:
             raise HTTPException(status_code=404, detail="Event not found")
+        if row["is_past"]:
+            raise HTTPException(status_code=400, detail="This event has already ended")
         cur.execute(
             """
             INSERT INTO event_hotlist (event_id, user_id)

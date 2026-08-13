@@ -1,10 +1,13 @@
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native'
+import * as Clipboard from 'expo-clipboard'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { ArrowLeft, ChevronRight, Heart } from 'lucide-react-native'
+import { ArrowLeft, ChevronRight, Copy, Heart } from 'lucide-react-native'
 import { Screen, AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, LogoMark, BrandingFooter } from '@/components/ui'
 import { Colors, FontFamily, Spacing, Radius, SUPPORT_EMAIL, APP_VERSION, APP_BUILD_NUMBER } from '@/constants'
 import { useHeaderScroll } from '@/hooks/useHeaderScroll'
+import { usePillStore } from '@/store/pillStore'
+import { hTap } from '@/lib/haptics'
 
 export default function AboutScreen() {
   const version = APP_VERSION
@@ -12,6 +15,7 @@ export default function AboutScreen() {
   const { hideProgress, onScroll } = useHeaderScroll()
   const insets = useSafeAreaInsets()
   const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
+  const showPill = usePillStore(s => s.show)
 
   return (
     <Screen top={false}>
@@ -41,7 +45,16 @@ export default function AboutScreen() {
           <View style={styles.divider} />
           <InfoRow label="Made with" value="Expo + React Native" />
           <View style={styles.divider} />
-          <InfoRow label="Contact" value={SUPPORT_EMAIL} />
+          <InfoRow
+            label="Contact"
+            value={SUPPORT_EMAIL}
+            icon="copy"
+            onPress={async () => {
+              hTap()
+              await Clipboard.setStringAsync(SUPPORT_EMAIL)
+              showPill('Email copied', 'default')
+            }}
+          />
         </View>
 
         {/* Legal */}
@@ -57,12 +70,22 @@ export default function AboutScreen() {
   )
 }
 
-function InfoRow({ label, value, onPress }: { label: string; value: string; onPress?: () => void }) {
+function InfoRow({ label, value, onPress, icon = 'chevron' }: {
+  label: string
+  value: string
+  onPress?: () => void
+  icon?: 'chevron' | 'copy'
+}) {
   if (onPress) {
     return (
       <Pressable style={styles.infoRow} onPress={onPress}>
         <Text style={styles.infoLabel}>{label}</Text>
-        <ChevronRight size={16} color={Colors.inkDisabled} strokeWidth={2} />
+        <View style={styles.infoRowRight}>
+          {!!value && <Text style={styles.infoValue}>{value}</Text>}
+          {icon === 'copy'
+            ? <Copy size={15} color={Colors.inkDisabled} strokeWidth={2} />
+            : <ChevronRight size={16} color={Colors.inkDisabled} strokeWidth={2} />}
+        </View>
       </Pressable>
     )
   }
@@ -116,6 +139,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     height: 48,
+  },
+  infoRowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   infoLabel: {
     fontFamily: FontFamily.bodyRegular,

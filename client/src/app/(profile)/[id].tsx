@@ -82,6 +82,7 @@ export default function UserProfileScreen() {
     try {
       if (next) await ApiService.followUser(profile.id);
       else await ApiService.unfollowUser(profile.id);
+      showPill(next ? `Following ${profile.name ?? 'them'}` : `Unfollowed ${profile.name ?? 'them'}`, "default");
     } catch (e: any) {
       setFollowing(!next);
       showPill(e?.message || "Couldn't update follow status, try again", "error");
@@ -125,6 +126,7 @@ export default function UserProfileScreen() {
     try {
       await ApiService.blockUser(profile.id);
       setBlockedByMe(true);
+      showPill(`Blocked ${profile.name ?? 'them'}`, "default");
     } catch (e: any) {
       showPill(e?.message || "Couldn't block this person", "error");
     }
@@ -135,6 +137,7 @@ export default function UserProfileScreen() {
     try {
       await ApiService.unblockUser(profile.id);
       setBlockedByMe(false);
+      showPill(`Unblocked ${profile.name ?? 'them'}`, "default");
     } catch (e: any) {
       showPill(e?.message || "Couldn't unblock, try again", "error");
     }

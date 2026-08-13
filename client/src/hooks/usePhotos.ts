@@ -170,7 +170,8 @@ export function usePhotos() {
     try {
       const url = await uploadPhoto(item.uri, index)
       updateItem(id, { state: url ? 'done' : 'error', serverUrl: url ?? null })
-      if (!url) showPill('Upload failed, try again', 'error')
+      if (url) showPill('Photo uploaded', 'default')
+      else showPill('Upload failed, try again', 'error')
     } catch (e: any) {
       updateItem(id, { state: 'error' })
       showPill(e?.message || 'Upload failed, try again', 'error')

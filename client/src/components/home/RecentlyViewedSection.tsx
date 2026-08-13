@@ -23,7 +23,7 @@ export function RecentlyViewedSection({ onEmptyChange }: Props) {
     <View style={s.wrap}>
       <Text style={s.title}>Recently Viewed</Text>
       <View style={s.list}>
-        {events.map(e => <EventListCard key={e.id} event={e} />)}
+        {events.map(e => <EventListCard key={e.id} event={e} showHotlist={false} />)}
       </View>
     </View>
   )

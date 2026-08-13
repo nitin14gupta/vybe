@@ -9,6 +9,7 @@ import { useAuthStore } from "@/store/auth";
 import type { EventSummary } from "@/api/apiService";
 import { formatEventDate, HostPill } from "@/components/events/EventCard";
 import { HotlistButton } from "@/components/events/HotlistButton";
+import { isEventPast } from "@/lib/dates";
 
 const CARD_W = 268;
 const CARD_MARGIN = 10;
@@ -80,7 +81,9 @@ function PreviewCardBase({
     </Pressable>
 
     {/* Siblings of the card's own Pressable above, not nested inside it. */}
-    <HotlistButton eventId={event.id} initial={event.is_hotlisted} style={styles.previewHotlistBtn} size={13} />
+    {!isEventPast(event) && (
+      <HotlistButton eventId={event.id} initial={event.is_hotlisted} style={styles.previewHotlistBtn} size={13} />
+    )}
     {canOpenHost && (
       <Pressable
         style={styles.previewHostPillPos}

@@ -7,6 +7,7 @@ import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { Colors, FontFamily, Radius, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constants'
 import { formatEventDate } from '@/components/events/EventCard'
 import { HotlistButton } from '@/components/events/HotlistButton'
+import { isEventPast } from '@/lib/dates'
 import type { EventSummary } from '@/api/apiService'
 
 function formatPrice(price: number, isFree: boolean) {
@@ -18,10 +19,13 @@ function formatPrice(price: number, isFree: boolean) {
 function EventListCardBase({
   event,
   onPress,
+  showHotlist = true,
   priority = 'normal',
 }: {
   event: EventSummary
   onPress?: () => void
+  /** Set false to hide the save/hotlist toggle — e.g. Recently Viewed. */
+  showHotlist?: boolean
   priority?: ImageProps['priority']
 }) {
   const cover = event.cover_photos?.[0]?.url
@@ -85,7 +89,9 @@ function EventListCardBase({
     </Pressable>
 
     {/* Sibling of the row's own Pressable above, not nested inside it. */}
-    <HotlistButton eventId={event.id} initial={event.is_hotlisted} style={s.hotlistBtn} size={13} />
+    {showHotlist && !isEventPast(event) && (
+      <HotlistButton eventId={event.id} initial={event.is_hotlisted} style={s.hotlistBtn} size={13} />
+    )}
     </View>
   )
 }
