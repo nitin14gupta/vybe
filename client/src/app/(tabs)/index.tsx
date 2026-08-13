@@ -1,7 +1,8 @@
 import { useCallback, useRef, useState } from 'react'
 import {
-  BackHandler, View, Text, StyleSheet, ScrollView,
+  BackHandler, View, Text, StyleSheet,
 } from 'react-native'
+import Animated from 'react-native-reanimated'
 import { useFocusEffect, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Heart, PartyPopper, Search } from 'lucide-react-native'
@@ -14,8 +15,7 @@ import { PromoCarousel } from '@/components/home/PromoCarousel'
 import { TrendingSection } from '@/components/home/TrendingSection'
 import { useEvents } from '@/hooks/useEvents'
 import { useProfile } from '@/hooks/useProfile'
-import { useTabBarScroll } from '@/hooks/useTabBarScroll'
-import { useHeaderScroll } from '@/hooks/useHeaderScroll'
+import { useHeaderAndTabBarScroll } from '@/hooks/useHeaderAndTabBarScroll'
 import ApiService from '@/api/apiService'
 import { useNotifStore } from '@/store/notifStore'
 import { usePillStore } from '@/store/pillStore'
@@ -28,8 +28,7 @@ export default function HomeScreen() {
   const [createOpen, setCreateOpen] = useState(false)
   const lastBackRef = useRef(0)
   const showPill = usePillStore(s => s.show)
-  const tabBarScroll = useTabBarScroll()
-  const { hideProgress, onScroll: onHeaderScroll } = useHeaderScroll()
+  const { hideProgress, scrollHandler } = useHeaderAndTabBarScroll()
   const insets = useSafeAreaInsets()
   const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
 
@@ -86,11 +85,11 @@ export default function HomeScreen() {
         }
       />
 
-      <ScrollView
+      <Animated.ScrollView
         contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}
         showsVerticalScrollIndicator={false}
-        {...tabBarScroll}
-        onScroll={(e) => { tabBarScroll.onScroll(e); onHeaderScroll(e) }}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
       >
         <TemplateFan onCreatePress={() => { hTap(); setCreateOpen(true) }} />
         <PrimaryButton
@@ -114,7 +113,7 @@ export default function HomeScreen() {
             onCtaPress={() => router.push('/(events)/create' as any)}
           />
         )}
-      </ScrollView>
+      </Animated.ScrollView>
 
       <CreateEventSheet
         visible={createOpen}

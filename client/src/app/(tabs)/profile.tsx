@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native'
+import { View, Text, StyleSheet, Pressable } from 'react-native'
+import Animated from 'react-native-reanimated'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { hTap } from '@/lib/haptics'
@@ -16,8 +17,7 @@ import { useAuthStore } from '@/store/auth'
 import { Colors, ComponentSize, FontFamily, Spacing, HOST_BADGE_IMAGES } from '@/constants'
 import { useImageViewer } from '@/hooks/useImageViewer'
 import { MediaViewerModal } from '@/components/chat/MediaViewerModal'
-import { useTabBarScroll } from '@/hooks/useTabBarScroll'
-import { useHeaderScroll } from '@/hooks/useHeaderScroll'
+import { useHeaderAndTabBarScroll } from '@/hooks/useHeaderAndTabBarScroll'
 
 const GENDER_DISPLAY: Record<string, string> = {
   Man: 'Male',
@@ -31,8 +31,7 @@ export default function ProfileScreen() {
   const { viewingMedia, openMedia, closeMedia } = useImageViewer()
   const [refreshing, setRefreshing] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
-  const tabBarScroll = useTabBarScroll()
-  const { hideProgress, onScroll: onHeaderScroll } = useHeaderScroll()
+  const { hideProgress, scrollHandler } = useHeaderAndTabBarScroll()
   const insets = useSafeAreaInsets()
   const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
 
@@ -126,12 +125,12 @@ export default function ProfileScreen() {
         onCreateEvent={() => router.push('/(events)/create' as any)}
       />
 
-      <ScrollView
+      <Animated.ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scroll, { paddingTop: headerHeight }]}
         refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-        {...tabBarScroll}
-        onScroll={(e) => { tabBarScroll.onScroll(e); onHeaderScroll(e) }}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
       >
 
         <ProfileAvatarHeader
@@ -195,7 +194,7 @@ export default function ProfileScreen() {
         />
 
         <View style={{ height: 36 }} />
-      </ScrollView>
+      </Animated.ScrollView>
 
       {viewingMedia && (
         <MediaViewerModal

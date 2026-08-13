@@ -8,6 +8,8 @@ import {
   Text,
   View,
 } from "react-native";
+import Animated from "react-native-reanimated";
+import { useMinimizeOnScroll } from "expo-glass-tabs";
 import { LinearGradient } from "expo-linear-gradient";
 import { HomeGradientBackdrop } from "@/components/home/HomeGradientBackdrop";
 import { EventsMapView } from "@/components/maps";
@@ -24,7 +26,6 @@ import { MapErrorOverlay, MapEmptyOverlay, ListErrorState, ListEmptyState } from
 import { LocationWarning, CreateEventSheet, EventListCard, EventListCardSkeleton, ViewModeToggle, BrandedRefreshControl } from "@/components/ui";
 import { usePermissionSheetStore } from "@/store/permissionSheetStore";
 import { useEventViewModeStore } from "@/store/eventViewModeStore";
-import { useTabBarScroll } from "@/hooks/useTabBarScroll";
 
 const PREVIEW_MAX = 8;
 const LIST_PAGE = 8;
@@ -34,7 +35,7 @@ export default function EventsScreen() {
   const router = useRouter();
   const { events, loading, error, filters, setFilter, reload, loadInBounds, userLat, userLng, userHeading, locationStatus } = useEvents();
   const [viewMode, setViewModeState] = useState<"map" | "list">("map");
-  const tabBarScroll = useTabBarScroll();
+  const minimizeScroll = useMinimizeOnScroll();
 
   useEffect(() => {
     AsyncStorage.getItem("events_view_mode")
@@ -271,13 +272,14 @@ export default function EventsScreen() {
       ) : isEmpty ? (
         <ListEmptyState onCreate={goToCreate} />
       ) : (
-        <FlatList
+        <Animated.FlatList
           data={listEvents}
           keyExtractor={(e) => e.id}
           style={{ flex: 1 }}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          {...tabBarScroll}
+          onScroll={minimizeScroll}
+          scrollEventThrottle={16}
           refreshControl={
             <BrandedRefreshControl refreshing={loading} onRefresh={reload} />
           }

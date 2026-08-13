@@ -3,11 +3,11 @@ import { Animated, NativeScrollEvent, NativeSyntheticEvent } from 'react-native'
 
 const SCROLL_THRESHOLD = 8 // ignore sub-pixel jitter from rubber-banding
 
-// Per-screen version of the tab-bar hide pattern (see src/lib/tabBarVisibility.ts),
-// but local (each header animates independently) and on both platforms.
+// Per-screen header fade-on-scroll, local to each screen (independent of
+// the glass tab bar's own minimize-on-scroll — see useHeaderAndTabBarScroll
+// for the combined version used on tab screens that float both).
 // Pass the returned `hideProgress` to <AppHeader hideProgress={...} />, and
-// spread {...onScroll} (merging with any other onScroll, e.g. useTabBarScroll)
-// onto the screen's scrollable.
+// spread {...onScroll} onto the screen's scrollable.
 export function useHeaderScroll() {
   const hideProgress = useRef(new Animated.Value(0)).current
   const lastOffset = useRef(0)

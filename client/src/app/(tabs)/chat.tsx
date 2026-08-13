@@ -1,8 +1,10 @@
 import { memo, useState, useEffect } from 'react'
 import {
-  View, Text, StyleSheet, FlatList, Pressable,
+  View, Text, StyleSheet, Pressable,
   ActivityIndicator,
 } from 'react-native'
+import Animated from 'react-native-reanimated'
+import { useMinimizeOnScroll } from 'expo-glass-tabs'
 import { Image } from 'expo-image'
 import { router } from 'expo-router'
 import { Flame, RefreshCw, Ghost, Search } from 'lucide-react-native'
@@ -13,7 +15,6 @@ import { VybeInboxSheet, VybeIcebreakerModal, LogoMark, ProfileMenuSheet, Primar
 import { ChatSearchModal } from '@/components/chat/ChatSearchModal'
 import { usePillStore } from '@/store/pillStore'
 import { useConversations } from '@/hooks/useConversations'
-import { useTabBarScroll } from '@/hooks/useTabBarScroll'
 import { useAuthStore } from '@/store/auth'
 import ApiService from '@/api/apiService'
 import { Colors, ComponentSize, FontFamily } from '@/constants'
@@ -145,7 +146,7 @@ export default function ChatScreen() {
   const [pendingAccept, setPendingAccept] = useState<{ vibeId: string; name: string | null } | null>(null)
   const [menuTarget, setMenuTarget] = useState<Conversation | null>(null)
   const [blockedIds, setBlockedIds] = useState<Set<string>>(new Set())
-  const tabBarScroll = useTabBarScroll()
+  const minimizeScroll = useMinimizeOnScroll()
 
   const showPill = usePillStore(s => s.show)
   const currentUserId = useAuthStore(s => s.userId)
@@ -271,11 +272,12 @@ export default function ChatScreen() {
           <PrimaryButton label="Explore" size="small" style={s.exploreBtn} onPress={() => router.navigate('/(tabs)/')} />
         </View>
       ) : (
-        <FlatList
+        <Animated.FlatList
           data={allConvs}
           keyExtractor={c => c.id}
           showsVerticalScrollIndicator={false}
-          {...tabBarScroll}
+          onScroll={minimizeScroll}
+          scrollEventThrottle={16}
           onRefresh={handleRefresh}
           refreshing={refreshing}
           contentContainerStyle={s.listContent}
