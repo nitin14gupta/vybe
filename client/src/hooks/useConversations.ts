@@ -1,7 +1,8 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useFocusEffect } from 'expo-router'
 import ApiService, { Conversation, VybeRequest } from '@/api/apiService'
-import { useAuthStore } from '@/store/auth'
+import { useChatUnreadStore } from '@/store/chatUnreadStore'
+import { useInboxSocket } from '@/hooks/useInboxSocket'
 import { peekCached, setCached } from '@/lib/queryCache'
 
 const PAGE_SIZE = 20
@@ -44,6 +45,8 @@ export function useConversations() {
       setHasMore(convData.has_more)
       setPendingVibes(pending)
       setCached(CACHE_KEY, { active, locked, pending }, 5 * 60_000, false)
+      const unreadConvos = [...active, ...locked].filter(c => (c.unread_count || 0) > 0).length
+      useChatUnreadStore.getState().setUnreadCount(unreadConvos)
     } catch {
       // Keep showing whatever's cached instead of blanking the list on a
       // transient failure — only flag the error if we truly have nothing.
@@ -82,40 +85,7 @@ export function useConversations() {
   // Live reorder — a lightweight ping from the server (see server/routes/chat.py
   // _notify_inbox) whenever any of the user's conversations gets a new message,
   // so the list bumps to the top in realtime like WhatsApp without polling.
-  useEffect(() => {
-    const { accessToken } = useAuthStore.getState()
-    if (!accessToken) return
-
-    let ws: WebSocket | null = null
-    let retryTimer: ReturnType<typeof setTimeout> | null = null
-    let retryCount = 0
-    let closedByUs = false
-
-    const connect = () => {
-      ws = new WebSocket(ApiService.getInboxWsUrl(accessToken))
-      ws.onopen = () => { retryCount = 0 }
-      ws.onmessage = (evt) => {
-        try {
-          const data = JSON.parse(evt.data as string)
-          if (data.type === 'conversation_updated') refresh()
-        } catch {}
-      }
-      ws.onclose = () => {
-        if (closedByUs || retryCount >= 10) return
-        const delay = Math.min(1000 * 2 ** retryCount, 30000)
-        retryCount++
-        retryTimer = setTimeout(connect, delay)
-      }
-      ws.onerror = () => {}
-    }
-    connect()
-
-    return () => {
-      closedByUs = true
-      if (retryTimer) clearTimeout(retryTimer)
-      ws?.close()
-    }
-  }, [refresh])
+  useInboxSocket(refresh)
 
   const acceptVybe = useCallback(async (vibeId: string, icebreaker: string): Promise<void> => {
     await ApiService.respondToVibe(vibeId, 'accept', icebreaker)

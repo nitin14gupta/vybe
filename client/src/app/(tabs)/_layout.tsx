@@ -1,7 +1,7 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "expo-router";
 import { Tabs, TabList, TabSlot, TabTrigger } from "expo-router/ui";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, Text } from "react-native";
 import { Image } from "expo-image";
 import { Home, Ticket, MessageCircle, User } from "lucide-react-native";
 import {
@@ -11,8 +11,10 @@ import {
   renderFadingTabScreen,
   type GlassTabItem,
 } from "expo-glass-tabs";
-import { Colors } from "@/constants";
+import { Colors, FontFamily } from "@/constants";
 import { useProfile } from "@/hooks/useProfile";
+import { useInboxSocket } from "@/hooks/useInboxSocket";
+import { useChatUnreadStore, syncChatUnreadCount } from "@/store/chatUnreadStore";
 
 type Item = GlassTabItem & { href: string };
 
@@ -20,10 +22,14 @@ export default function TabsLayout() {
   const router = useRouter();
   const { profile } = useProfile();
   const avatarUrl = profile?.photos?.[0]?.url;
+  const unreadCount = useChatUnreadStore((s) => s.unreadCount);
 
-  // Liquid-glass floating tab bar (native materials on iOS 26, solid
-  // fallback everywhere else — including Android) with minimize-on-scroll,
-  // a sliding highlight, and finger scrubbing. See expo-glass-tabs.
+  useEffect(() => {
+    syncChatUnreadCount();
+  }, []);
+
+  useInboxSocket(syncChatUnreadCount);
+
   const items = useMemo<Item[]>(
     () => [
       {
@@ -42,7 +48,16 @@ export default function TabsLayout() {
         name: "chat",
         href: "/(tabs)/chat",
         label: "Chat",
-        renderIcon: ({ tint, size }) => <MessageCircle size={size} color={tint} strokeWidth={2.2} />,
+        renderIcon: ({ tint, size }) => (
+          <View>
+            <MessageCircle size={size} color={tint} strokeWidth={2.2} />
+            {unreadCount > 0 && (
+              <View style={styles.chatBadge}>
+                <Text style={styles.chatBadgeText}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
+              </View>
+            )}
+          </View>
+        ),
       },
       {
         name: "profile",
@@ -65,7 +80,7 @@ export default function TabsLayout() {
           ),
       },
     ],
-    [avatarUrl]
+    [avatarUrl, unreadCount]
   );
 
   return (
@@ -98,5 +113,22 @@ const styles = StyleSheet.create({
   avatarImg: {
     width: "100%",
     height: "100%",
+  },
+  chatBadge: {
+    position: "absolute",
+    top: -4,
+    right: -8,
+    minWidth: 15,
+    height: 15,
+    borderRadius: 8,
+    paddingHorizontal: 3,
+    backgroundColor: "#FF3040",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  chatBadgeText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 9,
+    color: "#fff",
   },
 });

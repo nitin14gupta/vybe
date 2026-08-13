@@ -150,7 +150,7 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
           pointerEvents="none"
         />
 
-        <View style={[s.priceBadge, event.is_free && s.priceBadgeFree]}>
+        <View style={[s.priceBadge, eventIsPast && s.priceBadgeNoHotlist, event.is_free && s.priceBadgeFree]}>
           <Text style={s.priceText}>{formatPrice(event.price_inr, event.is_free)}</Text>
         </View>
 
@@ -311,6 +311,9 @@ const s = StyleSheet.create({
     backgroundColor: Colors.brandOrange,
     borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4,
   },
+  // Past events hide the hotlist button — slide the price over into that
+  // now-empty slot instead of leaving a gap.
+  priceBadgeNoHotlist: { right: 12 },
   priceBadgeFree: { backgroundColor: Colors.accentGreen },
   priceText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: '#fff' },
 

@@ -4,6 +4,7 @@ import ApiService, { Message } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
 import { peekCached, setCached } from '@/lib/queryCache'
 import { usePillStore } from '@/store/pillStore'
+import { useChatUnreadStore } from '@/store/chatUnreadStore'
 
 function messagesCacheKey(conversationId: string) {
   return `chat:messages:${conversationId}`
@@ -40,7 +41,17 @@ export function useChat(conversationId: string) {
       const msgs = await ApiService.getMessages(conversationId)
       setMessages(msgs)
       setLoading(false)
-      ApiService.markRead(conversationId).catch(() => {})
+      const hadUnread = msgs.some(m => m.sender_id !== myId && m.read_at == null)
+      ApiService.markRead(conversationId)
+        .then(() => {
+          // Optimistic — decrement the tab bar badge (a per-conversation
+          // count, not a message count) the instant this one is actually
+          // read, instead of waiting for the next inbox refresh.
+          if (hadUnread) {
+            useChatUnreadStore.setState(s => ({ unreadCount: Math.max(0, s.unreadCount - 1) }))
+          }
+        })
+        .catch(() => {})
       const firstRead = msgs.find(msg => msg.sender_id === myId && msg.read_at != null)
       if (firstRead) {
         setPartnerSeenAt(firstRead.read_at)
