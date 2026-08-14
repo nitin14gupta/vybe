@@ -70,7 +70,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.root}>
-
+      <HomeGradientBackdrop />
       <AppHeader
         showLogo
         transparent
@@ -78,11 +78,11 @@ export default function HomeScreen() {
         rightAction={
           <View style={{ flexDirection: 'row', gap: 4 }}>
             <HeaderIconBtn onPress={() => { hTap(); router.push('/(profile)/search' as any) }}>
-              <Search size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
+              <Search size={20} color={Colors.inkPrimary} strokeWidth={1.8} />
             </HeaderIconBtn>
             <HeaderIconBtn onPress={() => router.push('/(settings)/notifications' as any)}>
               <View>
-                <Heart size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
+                <Heart size={20} color={Colors.inkPrimary} strokeWidth={1.8} />
                 <NotificationPopBadge />
               </View>
             </HeaderIconBtn>
