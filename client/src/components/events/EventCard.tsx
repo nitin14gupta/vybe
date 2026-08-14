@@ -266,20 +266,37 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
 // as distinct shapes.
 export function EventCardSkeleton() {
   return (
-    <AutoSkeletonView isLoading animationType="gradient" defaultRadius={20} gradientColors={['#1e1e1e', '#2e2e2e']}>
-      <View style={s.skCard}>
-        <View style={[s.imageWrap, s.skBlock]} />
-        <View style={s.meta}>
-          <View style={s.metaLeft}>
-            <View style={[s.skLine, { width: '45%', height: 12 }]} />
-            <View style={[s.skLine, { width: '65%', height: 12, marginTop: 6 }]} />
+    <View style={[s.card, { elevation: 0, shadowOpacity: 0 }]}>
+      {/* Static backgrounds so the skeleton maintains the visual card shape */}
+      <View style={[s.imageWrap, { backgroundColor: '#111' }]} />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: 'transparent' }]}>
+        <AutoSkeletonView isLoading animationType="gradient" defaultRadius={20} gradientColors={['#2a2a2a', '#3a3a3a']}>
+          <View style={s.imageWrap}>
+            {/* Top Left: Host Pill */}
+            <View style={[s.skLine, s.hostPillPos, { width: 120, height: 28, borderRadius: 14 }]} />
+            
+            {/* Top Right: Hotlist & Price */}
+            <View style={[s.skLine, s.hotlistBtn]} />
+            <View style={[s.skLine, s.priceBadge, { width: 50, height: 24, borderRadius: 10 }]} />
+            
+            {/* Bottom: Title & Date */}
+            <View style={s.cardFooter}>
+              <View style={[s.skLine, { width: '75%', height: 18, marginBottom: 8 }]} />
+              <View style={[s.skLine, { width: '45%', height: 14 }]} />
+            </View>
           </View>
-          <View style={s.metaRight}>
-            <View style={[s.skLine, { width: 54, height: 11 }]} />
+          <View style={s.meta}>
+            <View style={s.metaLeft}>
+              <View style={[s.skLine, { width: '45%', height: 12 }]} />
+              <View style={[s.skLine, { width: '65%', height: 12, marginTop: 6 }]} />
+            </View>
+            <View style={s.metaRight}>
+              <View style={[s.skLine, { width: 54, height: 11 }]} />
+            </View>
           </View>
-        </View>
+        </AutoSkeletonView>
       </View>
-    </AutoSkeletonView>
+    </View>
   )
 }
 
