@@ -124,6 +124,7 @@
           }
         }
       ],
+      "./plugins/withUcropColors",
       "./plugins/withUpiQueries",
       "expo-web-browser",
       "@bacons/apple-targets",

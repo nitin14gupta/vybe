@@ -30,9 +30,10 @@ interface Props {
   actionLabel?: string
   titleLabel?: string
   cropAspectRatio?: number
+  freeStyleCrop?: boolean
 }
 
-export function MediaPreviewModal({ media, onSend, onCancel, onRemove, onUpdate, actionLabel = 'Send', titleLabel = 'Ready to send?', cropAspectRatio = 1 }: Props) {
+export function MediaPreviewModal({ media, onSend, onCancel, onRemove, onUpdate, actionLabel = 'Send', titleLabel = 'Ready to send?', cropAspectRatio = 1, freeStyleCrop = false }: Props) {
   const insets = useSafeAreaInsets()
   const [activeIndex, setActiveIndex] = useState(0)
   const mainListRef = useRef<FlatList>(null)
@@ -57,14 +58,32 @@ export function MediaPreviewModal({ media, onSend, onCancel, onRemove, onUpdate,
       const w = is16by9 ? 1600 : 800
       const h = is16by9 ? 900 : 800
 
-      const result = await ImagePicker.openCropper({
+      const options: any = {
         path: uri,
-        width: w,
-        height: h,
         cropping: true,
-        freeStyleCropEnabled: false,
         mediaType: 'photo',
-      })
+
+        // --- Custom UI Options (Black Palette) ---
+        cropperToolbarTitle: 'Adjust Photo',
+        cropperToolbarColor: '#000000', // Black header
+        cropperStatusBarLight: false, // For dark status bar (light icons)
+        cropperToolbarWidgetColor: '#FFFFFF', // White text/icons in header
+        cropperActiveWidgetColor: '#111111', // Neutral dark color for active buttons (scale/rotate)
+        cropperChooseColor: Colors.brandOrange, // iOS Choose button
+        cropperCancelColor: '#FFFFFF', // iOS Cancel button
+        hideBottomControls: false, // Ensure scale/rotate bottom bar is visible
+        enableRotationGesture: true, // Allow two-finger rotation
+      }
+
+      if (freeStyleCrop) {
+        options.freeStyleCropEnabled = true
+      } else {
+        options.freeStyleCropEnabled = false
+        options.width = w
+        options.height = h
+      }
+
+      const result = await ImagePicker.openCropper(options)
 
       if (onUpdate) {
         onUpdate(index, {
@@ -75,7 +94,7 @@ export function MediaPreviewModal({ media, onSend, onCancel, onRemove, onUpdate,
         })
       }
     } catch (e) {
-      console.log('Crop cancelled or failed', e)
+      console.log('Crop cancelled')
     }
   }
 

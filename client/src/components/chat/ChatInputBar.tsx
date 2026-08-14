@@ -73,7 +73,7 @@ function VoicePreviewPlayer({ uri, durationMs }: { uri: string; durationMs: numb
       <Pressable onPress={toggle} style={pv.btn}>
         {status.playing
           ? <Pause size={14} color="#111" strokeWidth={2.5} />
-          : <Play  size={14} color="#111" strokeWidth={2.5} />
+          : <Play size={14} color="#111" strokeWidth={2.5} />
         }
       </Pressable>
       <View style={pv.wave}>
@@ -105,7 +105,7 @@ export function ChatInputBar({
   const inputRef = useRef<TextInput>(null)
   const sheetRef = useRef<BottomSheetModal>(null)
 
-  const { handleCamera, handleLibrary, pendingMedia, confirmSend, cancelPreview, removeFromPreview } = useMediaPicker({ onMediaSend })
+  const { handleCamera, handleLibrary, pendingMedia, confirmSend, cancelPreview, removeFromPreview, updatePreview } = useMediaPicker({ onMediaSend })
 
   useEffect(() => {
     if (replyingTo) {
@@ -257,7 +257,7 @@ export function ChatInputBar({
       </View>
 
       <MediaPickerSheet ref={sheetRef} onCamera={handleCamera} onLibrary={handleLibrary} />
-      <MediaPreviewModal media={pendingMedia} onSend={confirmSend} onCancel={cancelPreview} onRemove={removeFromPreview} />
+      <MediaPreviewModal media={pendingMedia} onSend={confirmSend} onCancel={cancelPreview} onRemove={removeFromPreview} onUpdate={updatePreview} freeStyleCrop />
     </>
   )
 }

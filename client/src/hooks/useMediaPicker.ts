@@ -101,7 +101,15 @@ export function useMediaPicker({ onMediaSend }: Options) {
     setPendingMedia(prev => prev.filter((_, i) => i !== index))
   }, [])
 
+  const updatePreview = useCallback((index: number, updated: PendingMedia) => {
+    setPendingMedia(prev => {
+      const copy = [...prev]
+      copy[index] = updated
+      return copy
+    })
+  }, [])
+
   const cancelPreview = useCallback(() => setPendingMedia([]), [])
 
-  return { handleCamera, handleLibrary, pendingMedia, confirmSend, cancelPreview, removeFromPreview }
+  return { handleCamera, handleLibrary, pendingMedia, confirmSend, cancelPreview, removeFromPreview, updatePreview }
 }

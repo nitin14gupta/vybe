@@ -98,6 +98,15 @@ CREATE TABLE IF NOT EXISTS public.event_attendees (
   CONSTRAINT event_attendees_unique UNIQUE (event_id, user_id)
 );
 
+CREATE TABLE IF NOT EXISTS public.event_hotlist (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  event_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT event_hotlist_pkey PRIMARY KEY (id),
+  CONSTRAINT event_hotlist_unique UNIQUE (event_id, user_id)
+);
+
 CREATE TABLE IF NOT EXISTS public.event_reports (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
   event_id uuid NOT NULL,
@@ -215,8 +224,8 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   title text NOT NULL,
   body text,
   read_at timestamp with time zone,
-  dismissed_at timestamp with time zone,
   created_at timestamp with time zone DEFAULT now(),
+  dismissed_at timestamp with time zone,
   CONSTRAINT notifications_pkey PRIMARY KEY (id)
 );
 
@@ -374,16 +383,6 @@ CREATE TABLE IF NOT EXISTS public.wallet_transactions (
   CONSTRAINT wallet_transactions_pkey PRIMARY KEY (id)
 );
 
-CREATE TABLE IF NOT EXISTS public.event_hotlist (
-  id uuid DEFAULT gen_random_uuid() NOT NULL,
-  event_id uuid NOT NULL,
-  user_id uuid NOT NULL,
-  created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT event_hotlist_pkey PRIMARY KEY (id),
-  CONSTRAINT event_hotlist_unique UNIQUE (event_id, user_id)
-);
-
-
 -- ── Foreign Keys ────────────────────────────────────────────────────────────
 ALTER TABLE public.admin_audit_log ADD CONSTRAINT admin_audit_log_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES admin_users(id) ON DELETE CASCADE;
 ALTER TABLE public.admin_refresh_tokens ADD CONSTRAINT admin_refresh_tokens_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES admin_users(id) ON DELETE CASCADE;
@@ -393,6 +392,8 @@ ALTER TABLE public.conversations ADD CONSTRAINT conversations_user2_id_fkey FORE
 ALTER TABLE public.device_tokens ADD CONSTRAINT device_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.event_attendees ADD CONSTRAINT event_attendees_event_id_fkey FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE;
 ALTER TABLE public.event_attendees ADD CONSTRAINT event_attendees_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE public.event_hotlist ADD CONSTRAINT event_hotlist_event_id_fkey FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE;
+ALTER TABLE public.event_hotlist ADD CONSTRAINT event_hotlist_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.event_reports ADD CONSTRAINT event_reports_event_id_fkey FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE;
 ALTER TABLE public.event_reports ADD CONSTRAINT event_reports_reporter_id_fkey FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.event_reviews ADD CONSTRAINT event_reviews_event_id_fkey FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE;
@@ -421,34 +422,31 @@ ALTER TABLE public.users ADD CONSTRAINT users_locked_by_fkey FOREIGN KEY (locked
 ALTER TABLE public.vibe_requests ADD CONSTRAINT vibe_requests_receiver_id_fkey FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.vibe_requests ADD CONSTRAINT vibe_requests_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.wallet_transactions ADD CONSTRAINT wallet_transactions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
-ALTER TABLE public.event_hotlist ADD CONSTRAINT event_hotlist_event_id_fkey FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE;
-ALTER TABLE public.event_hotlist ADD CONSTRAINT event_hotlist_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 -- ── Indexes ─────────────────────────────────────────────────────────────────
-CREATE UNIQUE INDEX IF NOT EXISTS host_payout_account_fingerprint_uidx ON public.host_payout_details (account_fingerprint) WHERE (account_fingerprint IS NOT NULL);
-CREATE UNIQUE INDEX IF NOT EXISTS host_payout_upi_fingerprint_uidx ON public.host_payout_details (upi_fingerprint) WHERE (upi_fingerprint IS NOT NULL);
 CREATE INDEX idx_admin_audit_log_created_at ON public.admin_audit_log USING btree (created_at DESC);
 CREATE INDEX idx_admin_refresh_tokens_admin_id ON public.admin_refresh_tokens USING btree (admin_id);
 CREATE INDEX idx_device_tokens_user ON public.device_tokens USING btree (user_id);
+CREATE INDEX idx_event_attendees_going_reminders ON public.event_attendees USING btree (event_id) WHERE (status = 'going'::text);
+CREATE INDEX idx_event_hotlist_event ON public.event_hotlist USING btree (event_id);
+CREATE INDEX idx_event_hotlist_user ON public.event_hotlist USING btree (user_id, created_at DESC);
 CREATE INDEX events_location_idx ON public.events USING btree (location_lat, location_lng) WHERE (location_lat IS NOT NULL);
+CREATE INDEX idx_events_date_time_active ON public.events USING btree (date_time) WHERE (is_cancelled = false);
 CREATE INDEX idx_follows_follower ON public.follows USING btree (follower_id);
 CREATE INDEX idx_follows_following ON public.follows USING btree (following_id);
+CREATE UNIQUE INDEX host_payout_account_fingerprint_uidx ON public.host_payout_details USING btree (account_fingerprint) WHERE (account_fingerprint IS NOT NULL);
+CREATE UNIQUE INDEX host_payout_upi_fingerprint_uidx ON public.host_payout_details USING btree (upi_fingerprint) WHERE (upi_fingerprint IS NOT NULL);
 CREATE INDEX messages_conv_sent_idx ON public.messages USING btree (conversation_id, sent_at DESC);
 CREATE INDEX idx_notif_user_created ON public.notifications USING btree (user_id, created_at DESC);
 CREATE INDEX idx_refresh_tokens_user_id ON public.refresh_tokens USING btree (user_id);
+CREATE INDEX idx_users_dob ON public.users USING btree (dob) WHERE ((dob IS NOT NULL) AND (COALESCE(is_deleted, false) = false));
+CREATE INDEX idx_users_last_seen ON public.users USING btree (last_seen_at) WHERE (COALESCE(is_deleted, false) = false);
 CREATE INDEX idx_users_name_trgm ON public.users USING gin (name gin_trgm_ops);
 CREATE INDEX idx_users_phone ON public.users USING btree (phone);
 CREATE INDEX idx_users_username ON public.users USING btree (username);
 CREATE INDEX idx_users_username_text ON public.users USING btree (username text_pattern_ops);
 CREATE INDEX idx_users_username_trgm ON public.users USING gin (username gin_trgm_ops);
-CREATE INDEX idx_event_attendees_going_reminders ON public.event_attendees USING btree (event_id) WHERE (status = 'going'::text);
-CREATE INDEX idx_events_date_time_active ON public.events USING btree (date_time) WHERE (is_cancelled = FALSE);
-CREATE INDEX idx_wallet_tx_expiring ON public.wallet_transactions USING btree (expires_at) WHERE (type = 'credit'::text AND expires_at IS NOT NULL);
-CREATE INDEX idx_users_dob ON public.users USING btree (dob) WHERE (dob IS NOT NULL AND COALESCE(is_deleted, FALSE) = FALSE);
-CREATE INDEX idx_users_last_seen ON public.users USING btree (last_seen_at) WHERE (COALESCE(is_deleted, FALSE) = FALSE);
-CREATE INDEX idx_event_hotlist_user ON public.event_hotlist USING btree (user_id, created_at DESC);
-CREATE INDEX idx_event_hotlist_event ON public.event_hotlist USING btree (event_id);
-
+CREATE INDEX idx_wallet_tx_expiring ON public.wallet_transactions USING btree (expires_at) WHERE ((type = 'credit'::text) AND (expires_at IS NOT NULL));
 
 -- ── Triggers ────────────────────────────────────────────────────────────────
 -- TRIGGER users_updated_at BEFORE UPDATE ON public.users: EXECUTE FUNCTION update_updated_at()

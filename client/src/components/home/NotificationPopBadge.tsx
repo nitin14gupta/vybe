@@ -7,7 +7,7 @@ import { Heart } from 'lucide-react-native'
 import { useNotifStore } from '@/store/notifStore'
 import { Colors, FontFamily } from '@/constants'
 
-const HOLD_MS = 50000
+const HOLD_MS = 3000
 
 export function NotificationPopBadge() {
   const unreadCount = useNotifStore(s => s.unreadCount)
