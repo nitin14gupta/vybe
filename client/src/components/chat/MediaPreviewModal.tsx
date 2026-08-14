@@ -5,7 +5,7 @@ import { Image } from 'expo-image'
 import { VideoView, useVideoPlayer } from 'expo-video'
 import { X, Send, Play, Check, Crop } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
-import { ImageCropperModal } from '@/components/ui/ImageCropperModal'
+import ImagePicker from 'react-native-image-crop-picker'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import type { PendingMedia } from '@/hooks/useMediaPicker'
 
@@ -51,7 +51,33 @@ export function MediaPreviewModal({ media, onSend, onCancel, onRemove, onUpdate,
     mainListRef.current?.scrollToIndex({ index, animated: true })
   }, [])
 
-  const [cropTarget, setCropTarget] = useState<{ uri: string; index: number } | null>(null)
+  const handleCrop = async (uri: string, index: number) => {
+    try {
+      const is16by9 = Math.abs(cropAspectRatio - 16 / 9) < 0.01
+      const w = is16by9 ? 1600 : 800
+      const h = is16by9 ? 900 : 800
+
+      const result = await ImagePicker.openCropper({
+        path: uri,
+        width: w,
+        height: h,
+        cropping: true,
+        freeStyleCropEnabled: false,
+        mediaType: 'photo',
+      })
+
+      if (onUpdate) {
+        onUpdate(index, {
+          ...media[index],
+          uri: result.path,
+          width: result.width,
+          height: result.height,
+        })
+      }
+    } catch (e) {
+      console.log('Crop cancelled or failed', e)
+    }
+  }
 
   if (media.length === 0) return null
 
@@ -88,7 +114,7 @@ export function MediaPreviewModal({ media, onSend, onCancel, onRemove, onUpdate,
                   <>
                     <Image source={{ uri: item.uri }} style={mp.media} contentFit="contain" />
                     {onUpdate && index === activeIndex && (
-                      <Pressable style={mp.cropOverlayBtn} onPress={() => setCropTarget({ uri: item.uri, index })}>
+                      <Pressable style={mp.cropOverlayBtn} onPress={() => handleCrop(item.uri, index)}>
                         <Crop size={24} color="#fff" strokeWidth={2.5} />
                       </Pressable>
                     )}
@@ -153,26 +179,6 @@ export function MediaPreviewModal({ media, onSend, onCancel, onRemove, onUpdate,
         </View>
       </View>
 
-      <ImageCropperModal
-        visible={!!cropTarget}
-        uri={cropTarget?.uri ?? ''}
-        originalWidth={cropTarget ? media[cropTarget.index]?.width : undefined}
-        originalHeight={cropTarget ? media[cropTarget.index]?.height : undefined}
-        aspectRatio={cropAspectRatio}
-        onCancel={() => setCropTarget(null)}
-        onCrop={(newUri) => {
-          if (cropTarget && onUpdate) {
-            onUpdate(cropTarget.index, { 
-              ...media[cropTarget.index], 
-              uri: newUri,
-              // Strip width/height since it's now cropped to a square (size x size)
-              width: undefined,
-              height: undefined
-            })
-          }
-          setCropTarget(null)
-        }}
-      />
     </Modal>
   )
 }

@@ -1,1 +1,0 @@
-one thing is we ahve your are goni and also that in recnrlty view i click there recenrlty view doesnt nto updte same when i remvoe it doesnt rmeove tfro mthat as it si cahce if we wanna remvoe we can as it cache ro elsea ny suggestino i woudl to have

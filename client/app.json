@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "scheme": "gorave",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
     "icon": "./assets/icon.png",
     "ios": {
       "bundleIdentifier": "in.gorave.app",
@@ -34,9 +33,7 @@
         "backgroundColor": "#010100",
         "foregroundImage": "./assets/adaptive-icon.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "usesCleartextTraffic": true,
       "intentFilters": [
         {
           "action": "VIEW",
@@ -119,18 +116,26 @@
       "expo-video",
       "react-native-auto-skeleton",
       "expo-sharing",
-      "expo-build-properties",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
       "./plugins/withUpiQueries",
       "expo-web-browser",
       "@bacons/apple-targets",
-      "expo-localization"
+      "expo-localization",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
     "extra": {
-      "apiUrl": "http://192.168.0.103:8000",
+      "apiUrl": "http://192.168.0.102:8000",
       "router": {},
       "eas": {
         "build": {
