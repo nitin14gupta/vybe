@@ -4,9 +4,9 @@ try:
     _available = True
     _cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
     print("[face_detect] opencv loaded — face validation active", flush=True)
-except ImportError:
+except Exception as e:
     _available = False
-    print("[face_detect] opencv not installed — face validation skipped", flush=True)
+    print(f"[face_detect] opencv unavailable — face validation skipped: {e!r}", flush=True)
 
 
 def has_face(image_bytes: bytes) -> bool:
