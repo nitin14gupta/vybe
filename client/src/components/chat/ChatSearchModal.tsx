@@ -18,7 +18,7 @@ interface Props {
   visible: boolean
   onClose: () => void
   /** Mutually-connected people — the only pool this can search/suggest,
-   * since chatting requires a mutual vybe (an active conversation). */
+   * since chatting requires a mutual vibe (an active conversation). */
   conversations: Conversation[]
   onSelectConversation: (conv: Conversation) => void
 }
@@ -84,7 +84,7 @@ export function ChatSearchModal({ visible, onClose, conversations, onSelectConve
   const { history, add, remove, clear } = useChatSearchHistoryStore()
 
   // The passed-in `conversations` (from the visible inbox list) excludes any
-  // chat you've deleted/hidden — but you're still mutually vybe-connected
+  // chat you've deleted/hidden — but you're still mutually vibe-connected
   // with that person, so you should still be able to find them here and
   // start talking again. Fetch the full mutual pool (hidden included) once
   // the modal opens; show the fast prop-based list in the meantime.
@@ -209,7 +209,7 @@ export function ChatSearchModal({ visible, onClose, conversations, onSelectConve
               history.length === 0 ? (
                 <View style={s.emptyWrap}>
                   <Users size={40} color={Colors.inkDisabled} strokeWidth={1.2} />
-                  <Text style={s.emptyText}>Vybe with people to start chatting</Text>
+                  <Text style={s.emptyText}>Vibe with people to start chatting</Text>
                 </View>
               ) : null
             }

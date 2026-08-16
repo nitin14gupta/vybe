@@ -32,7 +32,7 @@ export function useNotificationSetup() {
     if (!isAuthenticated || permission !== 'undecided') return
     ;(async () => {
       if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync('vybe-default', {
+        await Notifications.setNotificationChannelAsync('gorave-default', {
           name: 'Gorave notifications',
           importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 250, 250, 250],

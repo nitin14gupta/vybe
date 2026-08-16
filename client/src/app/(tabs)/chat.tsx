@@ -11,7 +11,7 @@ import { Flame, RefreshCw, Ghost, Search } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
-import { VybeInboxSheet, VybeIcebreakerModal, LogoMark, ProfileMenuSheet, PrimaryButton } from '@/components/ui'
+import { VibeInboxSheet, VibeIcebreakerModal, LogoMark, ProfileMenuSheet, PrimaryButton } from '@/components/ui'
 import { ChatSearchModal } from '@/components/chat/ChatSearchModal'
 import { usePillStore } from '@/store/pillStore'
 import { useConversations } from '@/hooks/useConversations'
@@ -51,7 +51,7 @@ function formatLastMessage(conv: Conversation, currentUserId: string | null): st
   if (mediaPreview) return prefix + mediaPreview
 
   if (!conv.last_message) {
-    if (conv.status === 'pending') return 'Sent a vybe...'
+    if (conv.status === 'pending') return 'Sent a vibe...'
     return ''
   }
   return prefix + conv.last_message
@@ -103,7 +103,7 @@ const ConvRow = memo(function ConvRow({ conv, onPress, onLongPress, onAvatarPres
             style={[s.convPreview, conv.unread_count > 0 && s.convPreviewUnread, isLocked && s.convPreviewLocked]}
             numberOfLines={1}
           >
-            {isLocked ? 'Pending vybe' : formatLastMessage(conv, currentUserId)}
+            {isLocked ? 'Pending vibe' : formatLastMessage(conv, currentUserId)}
           </Text>
           {conv.unread_count > 0 && (
             <View style={s.unreadBadge}>
@@ -163,11 +163,11 @@ export default function ChatScreen() {
     error,
     refresh,
     loadMore,
-    acceptVybe,
-    passVybe,
+    acceptVibe,
+    passVibe,
   } = useConversations()
 
-  // Refresh received vybes every time the inbox sheet is opened
+  // Refresh received vibes every time the inbox sheet is opened
   useEffect(() => { if (inboxOpen) refresh() }, [inboxOpen])
 
   const handleRefresh = async () => {
@@ -237,7 +237,7 @@ export default function ChatScreen() {
       <View style={s.header}>
         <View style={s.headerTop}>
           <Text style={s.title}>Messages</Text>
-          {/* Vybe inbox badge button */}
+          {/* Vibe inbox badge button */}
           <Pressable style={s.inboxBtn} onPress={() => { hTap(); setInboxOpen(true) }}>
             <Flame size={22} color={Colors.brandOrange} fill={Colors.brandOrange} />
             {pendingVibes.length > 0 && (
@@ -270,7 +270,7 @@ export default function ChatScreen() {
         <View style={s.center}>
           <LogoMark size={72} opacity={0.1} style={{ marginBottom: 4 }} />
           <Text style={s.emptyTitle}>No chats yet</Text>
-          <Text style={s.emptySub}>Send a Vybe to spark a conversation</Text>
+          <Text style={s.emptySub}>Send a Vibe to spark a conversation</Text>
           <PrimaryButton label="Explore" size="small" style={s.exploreBtn} onPress={() => router.navigate('/(tabs)/')} />
         </View>
       ) : (
@@ -307,7 +307,7 @@ export default function ChatScreen() {
         />
       )}
 
-      <VybeInboxSheet
+      <VibeInboxSheet
         visible={inboxOpen}
         requests={pendingVibes}
         loading={loading && pendingVibes.length === 0}
@@ -317,7 +317,7 @@ export default function ChatScreen() {
         }}
         onPass={async (vibeId) => {
           try {
-            await passVybe(vibeId)
+            await passVibe(vibeId)
           } catch {
             showPill("Couldn't pass right now, try again", 'error')
           }
@@ -325,7 +325,7 @@ export default function ChatScreen() {
         onClose={() => setInboxOpen(false)}
       />
 
-      <VybeIcebreakerModal
+      <VibeIcebreakerModal
         visible={!!pendingAccept}
         partnerName={pendingAccept?.name ?? null}
         onSend={async (icebreaker) => {
@@ -333,9 +333,9 @@ export default function ChatScreen() {
           const { vibeId } = pendingAccept
           setPendingAccept(null)
           try {
-            await acceptVybe(vibeId, icebreaker)
+            await acceptVibe(vibeId, icebreaker)
           } catch {
-            showPill("Couldn't accept that vybe, try again", 'error')
+            showPill("Couldn't accept that vibe, try again", 'error')
           }
         }}
         onClose={() => setPendingAccept(null)}

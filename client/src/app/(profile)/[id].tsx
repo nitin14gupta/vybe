@@ -5,11 +5,11 @@ import { hMedium, hSuccess } from "@/lib/haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, Ghost } from "lucide-react-native";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
-import { VybeRequestModal, VybeIcebreakerModal, ProfileMenuSheet, BrandedLoader, BrandedRefreshControl } from "@/components/ui";
+import { VibeRequestModal, VibeIcebreakerModal, ProfileMenuSheet, BrandedLoader, BrandedRefreshControl } from "@/components/ui";
 import ApiService, { ExtendedProfile } from "@/api/apiService";
 import { Colors, FontFamily, HOST_BADGE_IMAGES } from "@/constants";
 import { usePillStore } from "@/store/pillStore";
-import { useVybeStore } from "@/store/vybeStore";
+import { useVibeStore } from "@/store/vibeStore";
 import { useImageViewer } from "@/hooks/useImageViewer";
 import { MediaViewerModal } from "@/components/chat/MediaViewerModal";
 import { ProfileHeaderBar } from "@/components/profile/ProfileHeaderBar";
@@ -27,14 +27,14 @@ export default function UserProfileScreen() {
   const [profile, setProfile] = useState<ExtendedProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [following, setFollowing] = useState(false);
-  const [vybeModalOpen, setVybeModalOpen] = useState(false);
-  const [vybeSent, setVybeSent] = useState(false);
+  const [vibeModalOpen, setVibeModalOpen] = useState(false);
+  const [vibeSent, setVibeSent] = useState(false);
   const [acceptModalOpen, setAcceptModalOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [blockedByMe, setBlockedByMe] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const showPill = usePillStore((s) => s.show);
-  const { markSent, markCleared, isSentTo } = useVybeStore();
+  const { markSent, markCleared, isSentTo } = useVibeStore();
 
   const voicePlayer = useAudioPlayer(null);
   const voiceStatus = useAudioPlayerStatus(voicePlayer);
@@ -46,8 +46,8 @@ export default function UserProfileScreen() {
       .then((p) => {
         setProfile(p);
         setFollowing(!!p.is_following);
-        setVybeSent(
-          (p.vybe_status === "pending" && !!p.vybe_sent_by_me) || isSentTo(p.id),
+        setVibeSent(
+          (p.vibe_status === "pending" && !!p.vibe_sent_by_me) || isSentTo(p.id),
         );
         setBlockedByMe(!!p.is_blocked_by_me);
         if (p.voice_url) voicePlayer.replace({ uri: p.voice_url });
@@ -63,8 +63,8 @@ export default function UserProfileScreen() {
       const p = await ApiService.getUserProfile(id);
       setProfile(p);
       setFollowing(!!p.is_following);
-      setVybeSent(
-        (p.vybe_status === "pending" && !!p.vybe_sent_by_me) || isSentTo(p.id),
+      setVibeSent(
+        (p.vibe_status === "pending" && !!p.vibe_sent_by_me) || isSentTo(p.id),
       );
       setBlockedByMe(!!p.is_blocked_by_me);
       if (p.voice_url) voicePlayer.replace({ uri: p.voice_url });
@@ -89,35 +89,35 @@ export default function UserProfileScreen() {
     }
   };
 
-  const handleSendVybe = async (message: string) => {
+  const handleSendVibe = async (message: string) => {
     if (!profile) return;
-    setVybeModalOpen(false);
-    setVybeSent(true);
+    setVibeModalOpen(false);
+    setVibeSent(true);
     markSent(profile.id);
     try {
       await ApiService.sendVibe(profile.id, message);
     } catch (err: any) {
-      setVybeSent(false);
+      setVibeSent(false);
       markCleared(profile.id);
       showPill(
         err?.status === 429
           ? "You're on cooldown with this person, try again later"
-          : err?.message || "Couldn't send that vybe, try again",
+          : err?.message || "Couldn't send that vibe, try again",
         "error",
       );
     }
   };
 
-  const handleAcceptVybe = async (icebreaker: string) => {
-    if (!profile?.vybe_id) return;
+  const handleAcceptVibe = async (icebreaker: string) => {
+    if (!profile?.vibe_id) return;
     setAcceptModalOpen(false);
     try {
-      const result = await ApiService.respondToVibe(profile.vybe_id, "accept", icebreaker);
+      const result = await ApiService.respondToVibe(profile.vibe_id, "accept", icebreaker);
       if (result.conversation_id) {
         router.replace(`/(chat)/${result.conversation_id}` as any);
       }
     } catch (e: any) {
-      showPill(e?.message || "Couldn't send that vybe, try again", "error");
+      showPill(e?.message || "Couldn't send that vibe, try again", "error");
     }
   };
 
@@ -209,15 +209,15 @@ export default function UserProfileScreen() {
   }
 
   const photos = profile.photos ?? [];
-  const isConnected = profile.vybe_status === "connected";
+  const isConnected = profile.vibe_status === "connected";
   const isPending =
-    vybeSent || (profile.vybe_status === "pending" && !!profile.vybe_sent_by_me);
-  const theySentVybe =
-    profile.vybe_status === "pending" && !profile.vybe_sent_by_me && !vybeSent;
+    vibeSent || (profile.vibe_status === "pending" && !!profile.vibe_sent_by_me);
+  const theySentVibe =
+    profile.vibe_status === "pending" && !profile.vibe_sent_by_me && !vibeSent;
   const isCooldown =
     !isPending &&
-    !theySentVybe &&
-    profile.vybe_status === "cooldown" &&
+    !theySentVibe &&
+    profile.vibe_status === "cooldown" &&
     !!profile.cooldown_until;
   const age = profile.dob
     ? Math.floor((Date.now() - new Date(profile.dob).getTime()) / 3.156e10)
@@ -291,7 +291,7 @@ export default function UserProfileScreen() {
         <UserProfileCtaBar
           insetsBottom={insets.bottom}
           isConnected={isConnected}
-          theySentVybe={theySentVybe}
+          theySentVibe={theySentVibe}
           isPending={isPending}
           isCooldown={isCooldown}
           cooldownUntil={profile.cooldown_until}
@@ -300,27 +300,27 @@ export default function UserProfileScreen() {
             if (profile.conversation_id) {
               router.push(`/(chat)/${profile.conversation_id}` as any);
             } else {
-              showPill("Send them a vybe first to start chatting", "error");
+              showPill("Send them a vibe first to start chatting", "error");
             }
           }}
           onAcceptPress={() => {
             hSuccess();
             setAcceptModalOpen(true);
           }}
-          onSendVybePress={() => {
+          onSendVibePress={() => {
             hMedium();
-            setVybeModalOpen(true);
+            setVibeModalOpen(true);
           }}
           onCooldownExpiredPress={() => {
             hMedium();
-            setVybeModalOpen(true);
+            setVibeModalOpen(true);
           }}
           onFollowTogglePress={handleFollowToggle}
         />
       )}
 
-      <VybeRequestModal
-        visible={vybeModalOpen}
+      <VibeRequestModal
+        visible={vibeModalOpen}
         user={{
           id: profile.id,
           name: profile.name,
@@ -335,14 +335,14 @@ export default function UserProfileScreen() {
           match_pct: 0,
           photos: profile.photos,
         }}
-        onSend={handleSendVybe}
-        onClose={() => setVybeModalOpen(false)}
+        onSend={handleSendVibe}
+        onClose={() => setVibeModalOpen(false)}
       />
 
-      <VybeIcebreakerModal
+      <VibeIcebreakerModal
         visible={acceptModalOpen}
         partnerName={profile.name}
-        onSend={handleAcceptVybe}
+        onSend={handleAcceptVibe}
         onClose={() => setAcceptModalOpen(false)}
       />
 

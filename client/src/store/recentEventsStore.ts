@@ -33,6 +33,6 @@ export const useRecentEventsStore = create<RecentEventsStore>()(
       pruneEnded: () =>
         set((s) => ({ events: s.events.filter((e) => !isEventPast(e) && !e.is_cancelled) })),
     }),
-    { name: 'vybe-recent-events', storage: createJSONStorage(() => AsyncStorage) },
+    { name: 'vibe-recent-events', storage: createJSONStorage(() => AsyncStorage) },
   ),
 )

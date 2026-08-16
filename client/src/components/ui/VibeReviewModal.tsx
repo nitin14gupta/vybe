@@ -6,20 +6,20 @@ import { Image } from 'expo-image'
 import { X, Heart } from 'lucide-react-native'
 import { hSuccess, hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
-import { VybeIcebreakerModal } from './VybeIcebreakerModal'
+import { VibeIcebreakerModal } from './VibeIcebreakerModal'
 import { PrimaryButton } from './PrimaryButton'
 import { OutlineButton } from './OutlineButton'
-import type { VybeRequest } from '@/api/apiService'
+import type { VibeRequest } from '@/api/apiService'
 
 interface Props {
   visible: boolean
-  request: VybeRequest | null
+  request: VibeRequest | null
   onAccept: (vibeId: string, icebreaker: string) => void
   onPass: (vibeId: string) => void
   onClose: () => void
 }
 
-export function VybeReviewModal({ visible, request, onAccept, onPass, onClose }: Props) {
+export function VibeReviewModal({ visible, request, onAccept, onPass, onClose }: Props) {
   const [showIcebreaker, setShowIcebreaker] = useState(false)
 
   if (!request) return null
@@ -75,9 +75,9 @@ export function VybeReviewModal({ visible, request, onAccept, onPass, onClose }:
                 </View>
               )}
 
-              {/* Their vybe message */}
+              {/* Their vibe message */}
               <View style={styles.messageBox}>
-                <Text style={styles.messageLabel}>Their vybe message</Text>
+                <Text style={styles.messageLabel}>Their vibe message</Text>
                 <Text style={styles.message}>"{request.message}"</Text>
               </View>
             </ScrollView>
@@ -103,7 +103,7 @@ export function VybeReviewModal({ visible, request, onAccept, onPass, onClose }:
         </View>
       </Modal>
 
-      <VybeIcebreakerModal
+      <VibeIcebreakerModal
         visible={showIcebreaker}
         partnerName={request.name}
         onSend={handleIcebreakerSend}

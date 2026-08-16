@@ -31,7 +31,7 @@ export function CooldownPill({ cooldownUntil, onExpiredPress }: Props) {
     return (
       <View style={{ flex: 1.6 }}>
         <PrimaryButton
-          label="Send Vybe"
+          label="Send Vibe"
           onPress={onExpiredPress}
           icon={<Flame size={18} color={Colors.background} fill={Colors.background} strokeWidth={2} />}
         />

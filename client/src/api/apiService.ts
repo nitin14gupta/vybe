@@ -26,7 +26,7 @@ import type {
   HostReviewEvent,
   CreateEventPayload,
   DiscoverUser,
-  VybeRequest,
+  VibeRequest,
   Conversation,
   EventAttendee,
   EventGuest,
@@ -66,7 +66,7 @@ export type {
   HostReviewEvent,
   CreateEventPayload,
   DiscoverUser,
-  VybeRequest,
+  VibeRequest,
   Conversation,
   EventAttendee,
   EventGuest,
@@ -466,8 +466,8 @@ class ApiService {
     )
   }
 
-  static async getReceivedVibes(): Promise<VybeRequest[]> {
-    return this.get<VybeRequest[]>(ENDPOINTS.VIBES_RECEIVED)
+  static async getReceivedVibes(): Promise<VibeRequest[]> {
+    return this.get<VibeRequest[]>(ENDPOINTS.VIBES_RECEIVED)
   }
 
   // ── Chat ───────────────────────────────────────────────────────────────────

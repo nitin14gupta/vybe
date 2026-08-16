@@ -20,7 +20,7 @@ export const useNotificationStore = create<NotificationStore>()(
       setRegisteredToken: (t) => set({ registeredToken: t }),
     }),
     {
-      name: 'vybe-notifications',
+      name: 'vibe-notifications',
       storage: createJSONStorage(() => AsyncStorage),
     },
   ),

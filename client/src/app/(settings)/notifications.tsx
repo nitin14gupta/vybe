@@ -176,7 +176,7 @@ export default function NotificationsScreen() {
           : n))
         showPill("Couldn't follow, try again", 'error')
       }
-    } else if (item.action === 'send_vybe') {
+    } else if (item.action === 'send_vibe') {
       router.push(targetToHref({ screen: 'profile', id: item.action_target_id }) as any)
     } else if (item.action === 'message') {
       router.push(targetToHref({ screen: 'chat', id: item.action_target_id }) as any)

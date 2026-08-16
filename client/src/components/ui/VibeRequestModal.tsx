@@ -31,7 +31,7 @@ function renderBackdrop(props: BottomSheetBackdropProps) {
   )
 }
 
-function VybeRequestModalCore({ user, onSend, onClose }: Omit<Props, 'visible'>) {
+function VibeRequestModalCore({ user, onSend, onClose }: Omit<Props, 'visible'>) {
   const sheetRef = useRef<BottomSheetModal>(null)
   const [message, setMessage] = useState('')
 
@@ -92,7 +92,7 @@ function VybeRequestModalCore({ user, onSend, onClose }: Omit<Props, 'visible'>)
           </View>
         </View>
 
-        <Text style={s.heading}>Send your vybe</Text>
+        <Text style={s.heading}>Send your vibe</Text>
         <Text style={s.sub}>Say something genuine — they can see this before deciding</Text>
 
         <View style={s.inputWrapper}>
@@ -112,7 +112,7 @@ function VybeRequestModalCore({ user, onSend, onClose }: Omit<Props, 'visible'>)
         </View>
 
         <PrimaryButton
-          label="Send Vybe"
+          label="Send Vibe"
           onPress={handleSend}
           disabled={!canSend}
           icon={<Flame size={16} color={Colors.background} fill={Colors.background} />}
@@ -127,9 +127,9 @@ function VybeRequestModalCore({ user, onSend, onClose }: Omit<Props, 'visible'>)
   )
 }
 
-export function VybeRequestModal({ visible, user, onSend, onClose }: Props) {
+export function VibeRequestModal({ visible, user, onSend, onClose }: Props) {
   if (!visible || !user) return null
-  return <VybeRequestModalCore user={user} onSend={onSend} onClose={onClose} />
+  return <VibeRequestModalCore user={user} onSend={onSend} onClose={onClose} />
 }
 
 const s = StyleSheet.create({

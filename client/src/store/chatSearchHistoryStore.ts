@@ -29,6 +29,6 @@ export const useChatSearchHistoryStore = create<ChatSearchHistoryStore>()(
         set((s) => ({ history: s.history.filter((h) => h.id !== id) })),
       clear: () => set({ history: [] }),
     }),
-    { name: 'vybe-chat-search-history', storage: createJSONStorage(() => AsyncStorage) }
+    { name: 'vibe-chat-search-history', storage: createJSONStorage(() => AsyncStorage) }
   )
 )

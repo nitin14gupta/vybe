@@ -1,13 +1,13 @@
 import { create } from 'zustand'
 
-interface VybeStore {
+interface VibeStore {
   pendingTargets: Record<string, true>
   markSent: (userId: string) => void
   markCleared: (userId: string) => void
   isSentTo: (userId: string) => boolean
 }
 
-export const useVybeStore = create<VybeStore>((set, get) => ({
+export const useVibeStore = create<VibeStore>((set, get) => ({
   pendingTargets: {},
   markSent: (userId) =>
     set(s => ({ pendingTargets: { ...s.pendingTargets, [userId]: true } })),

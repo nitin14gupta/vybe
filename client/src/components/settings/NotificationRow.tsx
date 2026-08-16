@@ -23,10 +23,10 @@ export function timeAgo(iso: string): string {
 }
 
 // Same icon language as the profile screen's CTA bar (client/src/app/(profile)/[id].tsx)
-// — UserPlus for Follow/Follow Back, Flame for Send Vybe, MessageCircle for Message.
+// — UserPlus for Follow/Follow Back, Flame for Send Vibe, MessageCircle for Message.
 const ACTION_ICON: Record<string, any> = {
   follow: UserPlus,
-  send_vybe: Flame,
+  send_vibe: Flame,
   message: MessageCircle,
 }
 
@@ -45,7 +45,7 @@ export const NotificationRow = React.memo(function NotificationRow({ item, onPre
 }) {
   const unread = !item.read_at
   const ActionIcon = item.action ? ACTION_ICON[item.action] : null
-  const isPrimary = item.action === 'send_vybe' || item.action === 'message'
+  const isPrimary = item.action === 'send_vibe' || item.action === 'message'
   const fallback = TYPE_FALLBACK[item.type]
   const swipeableRef = useRef<Swipeable>(null)
 

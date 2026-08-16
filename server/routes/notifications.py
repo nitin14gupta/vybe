@@ -38,20 +38,20 @@ def notify_followers_event_created(cur, host_id: str, event_id: str, event_title
         )
 
 
-def notify_vybe_accepted(cur, requester_id: str, accepter_id: str, accepter_name: str):
+def notify_vibe_accepted(cur, requester_id: str, accepter_id: str, accepter_name: str):
     _insert_notification(
-        cur, requester_id, "vybe_accepted",
-        title=f"{accepter_name} accepted your Vybe!",
+        cur, requester_id, "vibe_accepted",
+        title=f"{accepter_name} accepted your Vibe!",
         actor_id=accepter_id,
         entity_id=accepter_id,
         entity_type="user",
     )
 
 
-def notify_vybe_request(cur, receiver_id: str, sender_id: str, sender_name: str):
+def notify_vibe_request(cur, receiver_id: str, sender_id: str, sender_name: str):
     _insert_notification(
-        cur, receiver_id, "vybe_request",
-        title=f"{sender_name} sent you a Vybe!",
+        cur, receiver_id, "vibe_request",
+        title=f"{sender_name} sent you a Vibe!",
         actor_id=sender_id,
         entity_id=sender_id,
         entity_type="user",
@@ -341,7 +341,7 @@ def notify_first_event_hosted(cur, host_id: str, event_id: str, event_title: str
 
 # ── Action-button enrichment ───────────────────────────────────────────────────
 # Attaches an actionable next-step to certain notification types so the list
-# doesn't just inform — it lets you act (follow back, send a vybe, message).
+# doesn't just inform — it lets you act (follow back, send a vibe, message).
 
 def _get_active_conversation_id(cur, uid_a: str, uid_b: str) -> Optional[str]:
     u1, u2 = (uid_a, uid_b) if uid_a < uid_b else (uid_b, uid_a)
@@ -382,14 +382,14 @@ def _enrich_notification(cur, uid: str, row: dict) -> dict:
     ntype = d["type"]
     actor_id = d.get("actor_id")
 
-    if ntype == "vybe_request" and actor_id:
+    if ntype == "vibe_request" and actor_id:
         if not _is_following(cur, uid, actor_id):
             they_follow_me = _is_following(cur, actor_id, uid)
             d["action"] = "follow"
             d["action_label"] = "Follow Back" if they_follow_me else "Follow"
             d["action_target_id"] = actor_id
 
-    elif ntype == "vybe_accepted" and actor_id:
+    elif ntype == "vibe_accepted" and actor_id:
         conv_id = _get_active_conversation_id(cur, uid, actor_id)
         if conv_id:
             d["action"] = "message"
@@ -419,10 +419,10 @@ def _enrich_notification(cur, uid: str, row: dict) -> dict:
                     d["action_label"] = "Message"
                     d["action_target_id"] = conv_id
             elif not vr or vr["status"] not in ("pending",):
-                d["action"] = "send_vybe"
-                d["action_label"] = "Send Vybe"
+                d["action"] = "send_vibe"
+                d["action_label"] = "Send Vibe"
                 d["action_target_id"] = actor_id
-            # else: pending vybe between the two — ambiguous, no button
+            # else: pending vibe between the two — ambiguous, no button
 
     if d.get("entity_type") == "event" and d.get("entity_id"):
         cur.execute("SELECT cover_photos FROM events WHERE id = %s", (d["entity_id"],))

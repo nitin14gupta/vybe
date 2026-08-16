@@ -8,14 +8,14 @@ import { CooldownPill } from "./CooldownPill";
 interface Props {
   insetsBottom: number;
   isConnected: boolean;
-  theySentVybe: boolean;
+  theySentVibe: boolean;
   isPending: boolean;
   isCooldown: boolean;
   cooldownUntil?: string | null;
   following: boolean;
   onMessagePress: () => void;
   onAcceptPress: () => void;
-  onSendVybePress: () => void;
+  onSendVibePress: () => void;
   onCooldownExpiredPress: () => void;
   onFollowTogglePress: () => void;
 }
@@ -23,14 +23,14 @@ interface Props {
 export function UserProfileCtaBar({
   insetsBottom,
   isConnected,
-  theySentVybe,
+  theySentVibe,
   isPending,
   isCooldown,
   cooldownUntil,
   following,
   onMessagePress,
   onAcceptPress,
-  onSendVybePress,
+  onSendVibePress,
   onCooldownExpiredPress,
   onFollowTogglePress,
 }: Props) {
@@ -44,10 +44,10 @@ export function UserProfileCtaBar({
             onPress={onMessagePress}
           />
         </View>
-      ) : theySentVybe ? (
+      ) : theySentVibe ? (
         <View style={{ flex: 1.6 }}>
           <PrimaryButton
-            label="Accept Vybe"
+            label="Accept Vibe"
             icon={<Check size={18} color={Colors.background} strokeWidth={2.5} />}
             onPress={onAcceptPress}
           />
@@ -55,16 +55,16 @@ export function UserProfileCtaBar({
       ) : isPending ? (
         <Pressable style={[s.ctaBtn, s.ctaBtnPending]} disabled>
           <Flame size={18} color={Colors.brandOrange} fill="transparent" strokeWidth={1.8} />
-          <Text style={s.ctaBtnPendingText}>Vybe Sent</Text>
+          <Text style={s.ctaBtnPendingText}>Vibe Sent</Text>
         </Pressable>
       ) : isCooldown && cooldownUntil ? (
         <CooldownPill cooldownUntil={cooldownUntil} onExpiredPress={onCooldownExpiredPress} />
       ) : (
         <View style={{ flex: 1.6 }}>
           <PrimaryButton
-            label="Send Vybe"
+            label="Send Vibe"
             icon={<Flame size={18} color={Colors.background} fill={Colors.background} strokeWidth={2} />}
-            onPress={onSendVybePress}
+            onPress={onSendVibePress}
           />
         </View>
       )}

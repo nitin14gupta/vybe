@@ -8,7 +8,7 @@ import { router } from 'expo-router'
 import { X, Flame, Check } from 'lucide-react-native'
 import { hTap, hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
-import type { VybeRequest } from '@/api/apiService'
+import type { VibeRequest } from '@/api/apiService'
 
 // Flat shapes only, no background on the wrapper — AutoSkeletonView shimmers
 // each child by its own background color; a solid wrapper competes with
@@ -33,7 +33,7 @@ const sk = StyleSheet.create({
 
 interface Props {
   visible: boolean
-  requests: VybeRequest[]
+  requests: VibeRequest[]
   loading?: boolean
   onBeginAccept: (vibeId: string, senderName: string | null) => void
   onPass: (vibeId: string) => void
@@ -44,7 +44,7 @@ function renderBackdrop(props: BottomSheetBackdropProps) {
   return <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close" opacity={0.65} />
 }
 
-function RequestCard({ req, onBeginAccept, onPass }: { req: VybeRequest; onBeginAccept: (id: string, name: string | null) => void; onPass: (id: string) => void }) {
+function RequestCard({ req, onBeginAccept, onPass }: { req: VibeRequest; onBeginAccept: (id: string, name: string | null) => void; onPass: (id: string) => void }) {
   const [actioned, setActioned] = useState<'pending' | 'passed' | null>(null)
   const avatar = req.photos[0]?.url
 
@@ -82,7 +82,7 @@ function RequestCard({ req, onBeginAccept, onPass }: { req: VybeRequest; onBegin
   )
 }
 
-function VybeInboxSheetCore({ requests, loading, onBeginAccept, onPass, onClose }: Omit<Props, 'visible'>) {
+function VibeInboxSheetCore({ requests, loading, onBeginAccept, onPass, onClose }: Omit<Props, 'visible'>) {
   const sheetRef = useRef<BottomSheetModal>(null)
 
   useEffect(() => { sheetRef.current?.present() }, [])
@@ -91,7 +91,7 @@ function VybeInboxSheetCore({ requests, loading, onBeginAccept, onPass, onClose 
     <View style={s.headerRow}>
       <View style={s.headerLeft}>
         <Flame size={20} color={Colors.brandOrange} fill={Colors.brandOrange} />
-        <Text style={s.title}>Vybe Requests</Text>
+        <Text style={s.title}>Vibe Requests</Text>
         {requests.length > 0 && (
           <View style={s.countBadge}><Text style={s.countBadgeText}>{requests.length}</Text></View>
         )}
@@ -128,8 +128,8 @@ function VybeInboxSheetCore({ requests, loading, onBeginAccept, onPass, onClose 
           {Header}
           <View style={s.emptyBox}>
             <Flame size={40} color={Colors.inkDisabled} strokeWidth={1.2} />
-            <Text style={s.emptyTitle}>No vybe requests</Text>
-            <Text style={s.emptySub}>When someone sends you a vybe, it'll show up here.</Text>
+            <Text style={s.emptyTitle}>No vibe requests</Text>
+            <Text style={s.emptySub}>When someone sends you a vibe, it'll show up here.</Text>
           </View>
         </BottomSheetView>
       ) : (
@@ -147,9 +147,9 @@ function VybeInboxSheetCore({ requests, loading, onBeginAccept, onPass, onClose 
   )
 }
 
-export function VybeInboxSheet({ visible, ...rest }: Props) {
+export function VibeInboxSheet({ visible, ...rest }: Props) {
   if (!visible) return null
-  return <VybeInboxSheetCore {...rest} />
+  return <VibeInboxSheetCore {...rest} />
 }
 
 const s = StyleSheet.create({

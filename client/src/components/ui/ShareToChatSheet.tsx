@@ -207,7 +207,7 @@ function ShareToChatSheetCore({
           {Header}
           <View style={st.emptyWrap}>
             <Users size={32} color={Colors.inkDisabled} strokeWidth={1.2} />
-            <Text style={st.emptyText}>Vybe with people to share here</Text>
+            <Text style={st.emptyText}>Vibe with people to share here</Text>
           </View>
         </BottomSheetView>
       ) : (

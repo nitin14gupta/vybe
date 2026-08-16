@@ -17,7 +17,7 @@ export function useLocationSearch(lat?: number | null, lng?: number | null) {
 
         if (!cleanQuery && lat && lng) {
           const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`
-          const res = await fetch(url, { headers: { 'User-Agent': 'VybeApp/1.0' } })
+          const res = await fetch(url, { headers: { 'User-Agent': 'GoraveApp/1.0' } })
           const data = await res.json()
           if (data && data.place_id) {
             setResults([data])
@@ -29,7 +29,7 @@ export function useLocationSearch(lat?: number | null, lng?: number | null) {
           if (lat && lng) {
             url += `&lat=${lat}&lon=${lng}`
           }
-          const res = await fetch(url, { headers: { 'User-Agent': 'VybeApp/1.0' } })
+          const res = await fetch(url, { headers: { 'User-Agent': 'GoraveApp/1.0' } })
           const data = await res.json()
           setResults(data)
         } else {

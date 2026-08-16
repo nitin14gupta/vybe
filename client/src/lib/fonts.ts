@@ -9,6 +9,6 @@ const FONT_MAP = {
   'Satoshi-Bold': require('../../assets/fonts/Satoshi-Bold.otf'),
 } as const
 
-export function useVybeFonts() {
+export function useVibeFonts() {
   return useFonts(FONT_MAP)
 }

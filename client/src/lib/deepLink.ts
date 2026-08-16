@@ -3,7 +3,7 @@ import { APP_SCHEME } from '@/api/config'
 
 // Canonical "where a link/notification points" — the single source of truth
 // consumed by push-notification taps, in-app notification-row taps, and
-// externally-opened links (vybe:// now, https://link.uilora.com/... later).
+// externally-opened links (gorave:// now, https://link.uilora.com/... later).
 export type DeepLinkTarget =
   | { screen: 'event'; id: string }
   | { screen: 'ticket'; id: string }
@@ -41,7 +41,7 @@ export function pushDataToTarget(data: any): DeepLinkTarget | null {
       return data.conv_id ? { screen: 'chat', id: data.conv_id } : null
     case 'profile':
       return data.user_id ? { screen: 'profile', id: data.user_id } : null
-    case 'vybe':
+    case 'vibe':
       return { screen: 'chatList' }
     case 'payment_success':
     case 'ticket_ready':
@@ -80,7 +80,7 @@ export function buildEventShareUrl(eventId: string): string {
   return `${APP_SCHEME}://event/${eventId}`
 }
 
-// Parses an externally-opened URL (vybe://event/123, and later
+// Parses an externally-opened URL (gorave://event/123, and later
 // https://link.uilora.com/event/123 — same path shape, different scheme/host)
 // into a canonical target.
 export function parseIncomingUrl(url: string): DeepLinkTarget | null {

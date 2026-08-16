@@ -102,7 +102,7 @@ export function Step3Where({ form, set, errors, setErrors, disabled, inline = fa
   return (
     <View style={ef.step3Container}>
       <ScrollView style={ef.stepScroll} contentContainerStyle={ef.stepContent}>
-        <Text style={ef.stepTitle}>Where's the VYBE?</Text>
+        <Text style={ef.stepTitle}>Where's the VIBE?</Text>
         <Text style={ef.stepSub}>Set your event location</Text>
         {addressField}
         {mapBlock}

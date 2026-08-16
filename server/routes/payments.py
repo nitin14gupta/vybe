@@ -545,7 +545,7 @@ def create_qr(body: CreateQrBody, current_user: dict = Depends(get_current_user)
         rz = _get_rz()
         qr = rz.qrcode.create({
             "type": "upi_qr",
-            "name": "Vybe",
+            "name": "Gorave",
             "usage": "single_use",
             "fixed_amount": True,
             "payment_amount": charge * 100,

@@ -16,7 +16,7 @@ const CATEGORIES: { key: keyof NotificationPrefs; icon: any; label: string; desc
     key: 'social',
     icon: UserPlus,
     label: 'Social',
-    description: 'New followers, Vybe requests, and Vybe accepts',
+    description: 'New followers, Vibe requests, and Vibe accepts',
   },
   {
     key: 'hosting',

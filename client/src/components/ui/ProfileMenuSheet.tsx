@@ -88,7 +88,7 @@ function ProfileMenuSheetCore({
     hTap()
     const handle = username ? `@${username}` : targetName ?? 'this person'
     const url = username ? `${APP_SCHEME}://profile/${username}` : ''
-    await Share.share({ message: `Check out ${handle} on Vybe${url ? `: ${url}` : ''}` })
+    await Share.share({ message: `Check out ${handle} on Gorave${url ? `: ${url}` : ''}` })
     onClose()
   }
 

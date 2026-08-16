@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS public.conversations (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
   user1_id uuid NOT NULL,
   user2_id uuid NOT NULL,
-  vybe_request_id uuid,
+  vibe_request_id uuid,
   status text DEFAULT 'pending'::text,
   created_at timestamp with time zone DEFAULT now(),
   last_message_at timestamp with time zone,

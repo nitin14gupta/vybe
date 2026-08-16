@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import { useFocusEffect } from 'expo-router'
-import ApiService, { Conversation, VybeRequest } from '@/api/apiService'
+import ApiService, { Conversation, VibeRequest } from '@/api/apiService'
 import { useChatUnreadStore } from '@/store/chatUnreadStore'
 import { useInboxSocket } from '@/hooks/useInboxSocket'
 import { peekCached, setCached } from '@/lib/queryCache'
@@ -11,7 +11,7 @@ const CACHE_KEY = 'chat:conversations'
 interface CachedConversations {
   active: Conversation[]
   locked: Conversation[]
-  pending: VybeRequest[]
+  pending: VibeRequest[]
 }
 
 const byRecent = (a: Conversation, b: Conversation) =>
@@ -23,7 +23,7 @@ export function useConversations() {
   const [initialCache] = useState(() => peekCached<CachedConversations>(CACHE_KEY))
   const [activeConversations, setActiveConversations] = useState<Conversation[]>(initialCache?.active ?? [])
   const [lockedConversations, setLockedConversations] = useState<Conversation[]>(initialCache?.locked ?? [])
-  const [pendingVibes, setPendingVibes] = useState<VybeRequest[]>(initialCache?.pending ?? [])
+  const [pendingVibes, setPendingVibes] = useState<VibeRequest[]>(initialCache?.pending ?? [])
   const [loading, setLoading] = useState(!initialCache)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(false)
@@ -87,12 +87,12 @@ export function useConversations() {
   // so the list bumps to the top in realtime like WhatsApp without polling.
   useInboxSocket(refresh)
 
-  const acceptVybe = useCallback(async (vibeId: string, icebreaker: string): Promise<void> => {
+  const acceptVibe = useCallback(async (vibeId: string, icebreaker: string): Promise<void> => {
     await ApiService.respondToVibe(vibeId, 'accept', icebreaker)
     await refresh()
   }, [refresh])
 
-  const passVybe = useCallback(async (vibeId: string): Promise<void> => {
+  const passVibe = useCallback(async (vibeId: string): Promise<void> => {
     await ApiService.respondToVibe(vibeId, 'pass')
     setPendingVibes(prev => prev.filter(v => v.id !== vibeId))
   }, [])
@@ -107,7 +107,7 @@ export function useConversations() {
     error,
     refresh,
     loadMore,
-    acceptVybe,
-    passVybe,
+    acceptVibe,
+    passVibe,
   }
 }

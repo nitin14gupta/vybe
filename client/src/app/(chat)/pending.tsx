@@ -65,9 +65,9 @@ export default function PendingChatScreen() {
           <View style={s.iconRow}>
             <Clock size={32} color={Colors.brandOrange} strokeWidth={1.5} />
           </View>
-          <Text style={s.heading}>Vybe sent to {name}</Text>
+          <Text style={s.heading}>Vibe sent to {name}</Text>
           <Text style={s.sub}>
-            Your vybe is waiting for {name} to accept. Once they accept, you'll both
+            Your vibe is waiting for {name} to accept. Once they accept, you'll both
             be asked to write an icebreaker to start the conversation.
           </Text>
 

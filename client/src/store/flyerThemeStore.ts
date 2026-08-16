@@ -16,6 +16,6 @@ export const useFlyerThemeStore = create<FlyerThemeStore>()(
       themeKey: DEFAULT_FLYER_THEME_KEY,
       setThemeKey: (key) => set({ themeKey: key }),
     }),
-    { name: 'vybe-flyer-theme', storage: createJSONStorage(() => AsyncStorage) }
+    { name: 'vibe-flyer-theme', storage: createJSONStorage(() => AsyncStorage) }
   )
 )

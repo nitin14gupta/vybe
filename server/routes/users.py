@@ -172,7 +172,7 @@ def create_profile(body: ProfileCreate, current_user: dict = Depends(get_current
     if age < 18:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You must be 18 or older to use Vybe",
+            detail="You must be 18 or older to use Gorave",
         )
     with get_db() as (cur, _):
         cur.execute(
@@ -698,7 +698,7 @@ def get_user_profile(user_id: str, current_user: dict = Depends(get_current_user
         """, (viewer_id, viewer_id, viewer_id, viewer_id, user_id, user_id, user_id))
         mutual_count = cur.fetchone()["count"] or 0
 
-        # Vybe status between viewer and this user
+        # Vibe status between viewer and this user
         cur.execute("""
             SELECT id::text, sender_id::text, status FROM vibe_requests
             WHERE (sender_id = %s::uuid AND receiver_id = %s::uuid)
@@ -729,22 +729,22 @@ def get_user_profile(user_id: str, current_user: dict = Depends(get_current_user
 
         cooldown_until = None
         if conv:
-            vybe_status = "connected"
-            vybe_id = None
-            vybe_sent_by_me = False
+            vibe_status = "connected"
+            vibe_id = None
+            vibe_sent_by_me = False
         elif vr and vr["status"] == "pending":
-            vybe_status = "pending"
-            vybe_id = vr["id"]
-            vybe_sent_by_me = (vr["sender_id"] == viewer_id)
+            vibe_status = "pending"
+            vibe_id = vr["id"]
+            vibe_sent_by_me = (vr["sender_id"] == viewer_id)
         elif cooldown_row:
-            vybe_status = "cooldown"
-            vybe_id = None
-            vybe_sent_by_me = False
+            vibe_status = "cooldown"
+            vibe_id = None
+            vibe_sent_by_me = False
             cooldown_until = cooldown_row["cooldown_until"].isoformat()
         else:
-            vybe_status = "none"
-            vybe_id = None
-            vybe_sent_by_me = False
+            vibe_status = "none"
+            vibe_id = None
+            vibe_sent_by_me = False
 
         # Events this user is attending (upcoming), cover_photos lives on the events row
         cur.execute("""
@@ -806,9 +806,9 @@ def get_user_profile(user_id: str, current_user: dict = Depends(get_current_user
     return {
         **user,
         "mutual_count": mutual_count,
-        "vybe_status": vybe_status,
-        "vybe_id": vybe_id,
-        "vybe_sent_by_me": vybe_sent_by_me,
+        "vibe_status": vibe_status,
+        "vibe_id": vibe_id,
+        "vibe_sent_by_me": vibe_sent_by_me,
         "cooldown_until": cooldown_until,
         "conversation_id": conv["id"] if conv else None,
         "events_attending": events_attending,
@@ -1169,7 +1169,7 @@ def delete_account(current_user: dict = Depends(get_current_user)):
             (uid,),
         )
 
-        # ── 3b. Clear pending vybe requests in both directions — a pending
+        # ── 3b. Clear pending vibe requests in both directions — a pending
         # request from/to a deleted account is dead weight in someone's inbox.
         # Only 'pending' rows are removed: already-accepted requests aren't
         # what drives "connected" status (the conversations table is), and

@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from middleware.auth import get_current_user
 from db.config import get_db
-from routes.notifications import notify_vybe_accepted, notify_vybe_request
+from routes.notifications import notify_vibe_accepted, notify_vibe_request
 from utils.push import send_push
 
 router = APIRouter(prefix="/vibes", tags=["vibes"])
@@ -76,10 +76,10 @@ def send_vibe(body: SendVibeRequest, background_tasks: BackgroundTasks, current_
         u1, u2 = (sender_id, receiver_id) if sender_id < receiver_id else (receiver_id, sender_id)
         cur.execute(
             """
-            INSERT INTO conversations (user1_id, user2_id, vybe_request_id, status)
+            INSERT INTO conversations (user1_id, user2_id, vibe_request_id, status)
             VALUES (%s::uuid, %s::uuid, %s::uuid, 'pending')
             ON CONFLICT (user1_id, user2_id) DO UPDATE
-                SET status = 'pending', vybe_request_id = EXCLUDED.vybe_request_id
+                SET status = 'pending', vibe_request_id = EXCLUDED.vibe_request_id
             RETURNING id
             """,
             (u1, u2, vibe_id),
@@ -87,7 +87,7 @@ def send_vibe(body: SendVibeRequest, background_tasks: BackgroundTasks, current_
         conv_row = cur.fetchone()
         conv_id = conv_row["id"] if conv_row else None
 
-        # Insert first message (sender's vybe message)
+        # Insert first message (sender's vibe message)
         if conv_id:
             cur.execute(
                 """
@@ -111,14 +111,14 @@ def send_vibe(body: SendVibeRequest, background_tasks: BackgroundTasks, current_
         photo_row = cur.fetchone()
         sender_avatar = photo_row["url"] if photo_row else None
 
-        notify_vybe_request(cur, receiver_id, sender_id, sender_name)
+        notify_vibe_request(cur, receiver_id, sender_id, sender_name)
 
         conn.commit()
 
     background_tasks.add_task(
-        send_push, receiver_id, "New Vybe",
-        f"{sender_name} sent you a vybe",
-        {"type": "vybe"},
+        send_push, receiver_id, "New Vibe",
+        f"{sender_name} sent you a vibe",
+        {"type": "vibe"},
         sender_avatar, category="social",
     )
     return {"ok": True, "conversation_id": str(conv_id) if conv_id else None}
@@ -250,12 +250,12 @@ def respond_to_vibe(
                     (conv_id,),
                 )
 
-            # Notify the vybe sender that their request was accepted
+            # Notify the vibe sender that their request was accepted
             cur.execute("SELECT name FROM users WHERE id = %s::uuid", (receiver_id,))
             accepter = cur.fetchone()
             accepter_name = accepter["name"] if accepter else "Someone"
             if accepter:
-                notify_vybe_accepted(cur, sender_id, receiver_id, accepter_name)
+                notify_vibe_accepted(cur, sender_id, receiver_id, accepter_name)
             cur.execute(
                 "SELECT url FROM user_photos WHERE user_id = %s::uuid ORDER BY position LIMIT 1",
                 (receiver_id,),
@@ -266,8 +266,8 @@ def respond_to_vibe(
             conn.commit()
 
             background_tasks.add_task(
-                send_push, sender_id, "Vybe Accepted",
-                f"{accepter_name} accepted your vybe",
+                send_push, sender_id, "Vibe Accepted",
+                f"{accepter_name} accepted your vibe",
                 {"type": "conversation", "conv_id": str(conv_id) if conv_id else ""},
                 accepter_avatar, category="social",
             )

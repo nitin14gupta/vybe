@@ -1,9 +1,3 @@
-// ── API response/request shapes ──────────────────────────────────────────────
-// Moved out of api/apiService.ts so domain types have one home as the client
-// grows past a single-engineer codebase. Re-exported from apiService.ts for
-// backward compatibility — existing `import { X } from '@/api/apiService'`
-// call sites keep working unchanged.
-
 export interface TokenResponse {
   access_token: string
   refresh_token: string
@@ -77,9 +71,9 @@ export interface ProfileResponse extends UserResponse {
 
 export interface ExtendedProfile extends ProfileResponse {
   mutual_count: number
-  vybe_status: 'none' | 'pending' | 'connected' | 'cooldown'
-  vybe_id: string | null
-  vybe_sent_by_me: boolean
+  vibe_status: 'none' | 'pending' | 'connected' | 'cooldown'
+  vibe_id: string | null
+  vibe_sent_by_me: boolean
   cooldown_until: string | null
   conversation_id: string | null
   events_attending: EventSummary[]
@@ -265,7 +259,7 @@ export interface DiscoverUser {
   shared_interests_count?: number
 }
 
-export interface VybeRequest {
+export interface VibeRequest {
   id: string
   sender_id: string
   name: string | null
@@ -383,8 +377,8 @@ export interface AppNotification {
   body: string | null
   read_at: string | null
   created_at: string
-  // Server-computed contextual action (follow back, send vybe, message, …) — see server/routes/notifications.py
-  action?: 'follow' | 'send_vybe' | 'message' | null
+  // Server-computed contextual action (follow back, send vibe, message, …) — see server/routes/notifications.py
+  action?: 'follow' | 'send_vibe' | 'message' | null
   action_label?: string | null
   action_target_id?: string | null
   cover_photo?: string | null

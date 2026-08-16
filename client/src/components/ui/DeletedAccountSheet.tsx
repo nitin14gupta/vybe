@@ -36,7 +36,7 @@ function DeletedAccountSheetCore({ deletedOn, onClose }: Omit<Props, 'visible'>)
 
   const handleContact = () => {
     hTap()
-    const subject = encodeURIComponent('[Vybe] Account Recovery Request')
+    const subject = encodeURIComponent('[Gorave] Account Recovery Request')
     const body    = encodeURIComponent(
       `Hi,\n\nI requested account deletion on ${deletedOn} and would like to recover my account.\n\nRegistered phone: `,
     )

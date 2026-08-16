@@ -41,7 +41,7 @@ export const useOnboardingStore = create<OnboardingState>()(
       reset: () => set(initialState),
     }),
     {
-      name: 'vybe-onboarding',
+      name: 'vibe-onboarding',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         name: state.name,

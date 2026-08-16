@@ -44,7 +44,7 @@ export default function SupportScreen() {
       await ApiService.submitSupport(topic.id, message.trim())
       hSuccess()
       // Also open mail app so they have a copy
-      const subject = encodeURIComponent(`[Vybe] ${topic.subject}`)
+      const subject = encodeURIComponent(`[Gorave] ${topic.subject}`)
       const body    = encodeURIComponent(message.trim())
       const url     = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`
       const canOpen = await Linking.canOpenURL(url)

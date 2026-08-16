@@ -21,7 +21,7 @@ function renderBackdrop(props: BottomSheetBackdropProps) {
   return <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close" opacity={0.7} />
 }
 
-function VybeIcebreakerCore({ partnerName, onSend, onClose }: Omit<Props, 'visible'>) {
+function VibeIcebreakerCore({ partnerName, onSend, onClose }: Omit<Props, 'visible'>) {
   const sheetRef = useRef<BottomSheetModal>(null)
   const [message, setMessage] = useState('')
 
@@ -65,7 +65,7 @@ function VybeIcebreakerCore({ partnerName, onSend, onClose }: Omit<Props, 'visib
         </View>
         <Text style={s.heading}>Write back to unlock the chat</Text>
         <Text style={s.sub}>
-          {partnerName ? `${partnerName} accepted your vybe!` : 'Vybe accepted!'} Write an icebreaker to start the conversation.
+          {partnerName ? `${partnerName} accepted your vibe!` : 'Vibe accepted!'} Write an icebreaker to start the conversation.
         </Text>
         <View style={s.inputWrapper}>
           <TextInput
@@ -86,9 +86,9 @@ function VybeIcebreakerCore({ partnerName, onSend, onClose }: Omit<Props, 'visib
   )
 }
 
-export function VybeIcebreakerModal({ visible, ...rest }: Props) {
+export function VibeIcebreakerModal({ visible, ...rest }: Props) {
   if (!visible) return null
-  return <VybeIcebreakerCore {...rest} />
+  return <VibeIcebreakerCore {...rest} />
 }
 
 const s = StyleSheet.create({

@@ -16,7 +16,7 @@ import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
 import { SplashScreen as AppSplashScreen } from '@/components/ui/SplashScreen'
-import { useVybeFonts } from '@/lib/fonts'
+import { useVibeFonts } from '@/lib/fonts'
 import { useAuthStore } from '@/store/auth'
 import { tokenStorage } from '@/lib/tokenStorage'
 import ApiService from '@/api/apiService'
@@ -55,7 +55,7 @@ function RootNavigator() {
 // ── Root layout — bootstraps stored session before rendering ─────────────────
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useVybeFonts()
+  const [fontsLoaded, fontError] = useVibeFonts()
   const [authReady, setAuthReady] = useState(false)
   const { setAuth } = useAuthStore()
   useNotificationSetup()

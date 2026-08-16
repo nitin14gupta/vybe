@@ -13,6 +13,6 @@ export const useLastPaymentStore = create<LastPaymentStore>()(
       lastPackageName: null,
       setLastPackageName: (pkg) => set({ lastPackageName: pkg }),
     }),
-    { name: 'vybe-last-payment', storage: createJSONStorage(() => AsyncStorage) }
+    { name: 'vibe-last-payment', storage: createJSONStorage(() => AsyncStorage) }
   )
 )

@@ -30,6 +30,6 @@ export const useSearchHistoryStore = create<SearchHistoryStore>()(
         set((s) => ({ history: s.history.filter((h) => h.id !== id) })),
       clear: () => set({ history: [] }),
     }),
-    { name: 'vybe-search-history', storage: createJSONStorage(() => AsyncStorage) }
+    { name: 'vibe-search-history', storage: createJSONStorage(() => AsyncStorage) }
   )
 )

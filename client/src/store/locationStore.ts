@@ -19,9 +19,6 @@ interface LocationState {
   _start: () => void
 }
 
-// Module-level (not store state) — these track the single shared GPS/compass
-// subscription so every screen reads the same warm fix instead of each one
-// re-requesting permission and waiting on its own first watch callback.
 let posSub: Location.LocationSubscription | null = null
 let headingSub: Location.LocationSubscription | null = null
 let smoothedHeading: number | null = null

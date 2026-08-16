@@ -15,6 +15,6 @@ export const useEventViewModeStore = create<EventViewModeStore>()(
       mode: 'card',
       setMode: (mode) => set({ mode }),
     }),
-    { name: 'vybe-event-view-mode', storage: createJSONStorage(() => AsyncStorage) },
+    { name: 'vibe-event-view-mode', storage: createJSONStorage(() => AsyncStorage) },
   ),
 )
