@@ -12,8 +12,8 @@ services:
     container_name: gorave-server
     env_file:
       - ./server/.env
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     depends_on:
       - gorave-redis
     restart: unless-stopped
