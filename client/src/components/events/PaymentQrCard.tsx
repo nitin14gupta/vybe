@@ -1,7 +1,7 @@
 import { Ref } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native'
 import { Image } from 'expo-image'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { StyledQr } from '@/components/ui'
 
 export function PaymentQrCard({
@@ -77,21 +77,21 @@ const s = StyleSheet.create({
   toPayLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 12, letterSpacing: 1.5, color: Colors.inkSecondary },
   amount: { fontFamily: FontFamily.headingBold, fontSize: 36, color: Colors.inkPrimary },
 
-  qrWrap: { borderRadius: 16, overflow: 'hidden', backgroundColor: '#fff' },
+  qrWrap: { borderRadius: 16, overflow: 'hidden', backgroundColor: Colors.white },
   qrWrapExpired: { opacity: 0.35 },
 
   // Clean QR from react-native-qrcode-svg (paymentUrl available)
-  qrSvgWrap: { width: 240, height: 240, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', padding: 10 },
+  qrSvgWrap: { width: 240, height: 240, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.white, padding: 10 },
 
   // Crop fallback: show only the QR code portion of Razorpay's branded image.
   // Razorpay template is approx portrait ~3:4 ratio; the QR code lives in the
   // upper-center 40% of the image. We scale up and clip to zoom into that area.
-  qrCropContainer: { width: 240, height: 240, overflow: 'hidden', alignItems: 'center', backgroundColor: '#fff' },
+  qrCropContainer: { width: 240, height: 240, overflow: 'hidden', alignItems: 'center', backgroundColor: Colors.white },
   qrCropImage: { width: 350, height: 440, marginTop: -80 },
 
   qrPlaceholder: { width: 240, height: 240, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.elevated },
-  expiredOverlay: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.55)' },
-  expiredOverlayText: { fontFamily: FontFamily.headingBold, fontSize: 22, color: '#fff' },
+  expiredOverlay: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', backgroundColor: withOpacity(Colors.black, 0.55) },
+  expiredOverlayText: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.white },
 
   scanHint: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center' },
 })

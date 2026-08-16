@@ -13,7 +13,7 @@ import { CannonConfetti } from 'react-native-fast-confetti'
 import { PrimaryButton, Screen } from '@/components/ui'
 import { useOnboardingStore } from '@/store/onboarding'
 import { useAuthStore } from '@/store/auth'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 
 export default function CompleteScreen() {
   const store = useOnboardingStore()
@@ -54,7 +54,7 @@ export default function CompleteScreen() {
       <CannonConfetti
         autoplay
         gravity={3}
-        colors={['#FF6B35', '#FF3864', '#FFB830', '#00C48C', '#F5F0EB', '#FF6B35']}
+        colors={[Colors.brandOrange, Colors.brandCoral, Colors.accentGold, Colors.accentGreen, Colors.inkPrimary, Colors.brandOrange]}
       >
         <CannonConfetti.Origin position="bottom-left" count={160} initialSpeed={3.2}>
           <CannonConfetti.Flake size={11} radius={6} />
@@ -108,9 +108,9 @@ const styles = StyleSheet.create({
     width: 92,
     height: 92,
     borderRadius: 46,
-    backgroundColor: 'rgba(255,107,53,0.13)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.13),
     borderWidth: 2,
-    borderColor: 'rgba(255,107,53,0.3)',
+    borderColor: withOpacity(Colors.brandOrange, 0.3),
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 32,

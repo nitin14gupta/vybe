@@ -5,7 +5,7 @@ import { ArrowLeft, Clock, Flame } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
-import { PrimaryButton } from '@/components/ui'
+import { PrimaryButton, LogoMark } from '@/components/ui'
 
 export default function PendingChatScreen() {
   const insets = useSafeAreaInsets()
@@ -31,7 +31,9 @@ export default function PendingChatScreen() {
           <ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} />
         </Pressable>
         <Text style={s.headerName} numberOfLines={1}>{name}</Text>
-        <View style={{ width: 36 }} />
+        <View style={s.headerLogo}>
+          <LogoMark size={22} opacity={0.5} />
+        </View>
       </View>
 
       <ScrollView
@@ -55,7 +57,7 @@ export default function PendingChatScreen() {
               </View>
             )}
             <View style={s.flameBadge}>
-              <Flame size={16} color="#111" fill="#111" />
+              <Flame size={16} color={Colors.background} fill={Colors.background} />
             </View>
           </Pressable>
         </View>
@@ -63,7 +65,7 @@ export default function PendingChatScreen() {
         {/* Status card */}
         <View style={s.card}>
           <View style={s.iconRow}>
-            <Clock size={32} color={Colors.brandOrange} strokeWidth={1.5} />
+            <Clock size={32} color={Colors.inkPrimary} strokeWidth={1.5} />
           </View>
           <Text style={s.heading}>Vibe sent to {name}</Text>
           <Text style={s.sub}>
@@ -111,6 +113,7 @@ const s = StyleSheet.create({
     color: Colors.inkPrimary,
     textAlign: 'center',
   },
+  headerLogo: { width: 36, alignItems: 'flex-end' },
   scrollContent: { flexGrow: 1 },
   avatarSection: { alignItems: 'center', paddingVertical: 32 },
   avatarRing: {
@@ -118,13 +121,13 @@ const s = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     borderWidth: 3,
-    borderColor: Colors.brandOrange,
+    borderColor: Colors.inkPrimary,
     padding: 3,
     position: 'relative',
   },
   avatar: { width: '100%', height: '100%', borderRadius: 44 },
   avatarFallback: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: Colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -136,7 +139,7 @@ const s = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: Colors.brandOrange,
+    backgroundColor: Colors.inkPrimary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
@@ -154,7 +157,7 @@ const s = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: 'rgba(255,107,53,0.12)',
+    backgroundColor: Colors.glassSurface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -173,7 +176,7 @@ const s = StyleSheet.create({
   },
   msgBox: {
     width: '100%',
-    backgroundColor: '#1e1e1e',
+    backgroundColor: Colors.skeletonBase,
     borderRadius: 12,
     padding: 14,
     gap: 4,

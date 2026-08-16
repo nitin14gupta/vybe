@@ -63,7 +63,7 @@ function PersonRow({
 
 function PersonRowSkeleton() {
   return (
-    <AutoSkeletonView isLoading animationType="gradient" defaultRadius={7} gradientColors={['#1e1e1e', '#2e2e2e']}>
+    <AutoSkeletonView isLoading animationType="gradient" defaultRadius={7} gradientColors={[Colors.skeletonBase, Colors.skeletonHighlight]}>
       {Array.from({ length: 6 }).map((_, i) => (
         <View key={i} style={s.row}>
           <View style={s.skAvatar} />
@@ -266,13 +266,13 @@ const s = StyleSheet.create({
     gap: 14,
   },
   avatar: { width: 48, height: 48, borderRadius: 24 },
-  avatarFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
+  avatarFallback: { backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   avatarInitial: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
   info: { flex: 1, gap: 2 },
-  skAvatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#2a2a2a' },
+  skAvatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.surfaceMuted },
   skInfo: { flex: 1, gap: 8 },
-  skLineName: { height: 14, width: '50%', borderRadius: 7, backgroundColor: '#2a2a2a' },
-  skLineUser: { height: 12, width: '32%', borderRadius: 6, backgroundColor: '#2a2a2a' },
+  skLineName: { height: 14, width: '50%', borderRadius: 7, backgroundColor: Colors.surfaceMuted },
+  skLineUser: { height: 12, width: '32%', borderRadius: 6, backgroundColor: Colors.surfaceMuted },
   name: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.inkPrimary },
   username: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkDisabled },
   removeBtn: { padding: 4 },

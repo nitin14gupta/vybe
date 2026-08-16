@@ -8,6 +8,7 @@ import ApiService from '@/api/apiService'
 import { EAS_PROJECT_ID } from '@/api/config'
 import { pushDataToTarget } from '@/lib/deepLink'
 import { navigateToTarget } from '@/hooks/useDeepLinkRouter'
+import { Colors } from '@/constants'
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -36,7 +37,7 @@ export function useNotificationSetup() {
           name: 'Gorave notifications',
           importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#FF6B35',
+          lightColor: Colors.brandOrange,
         })
       }
       const { status: existing } = await Notifications.getPermissionsAsync()

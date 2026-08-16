@@ -8,7 +8,7 @@ import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { Check, Send, Users } from 'lucide-react-native'
 import { hSuccess, hSelection } from '@/lib/haptics'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { usePillStore } from '@/store/pillStore'
 import { useChatShareTargets } from '@/hooks/useChatShareTargets'
 import ApiService, { type Conversation } from '@/api/apiService'
@@ -47,7 +47,7 @@ function TargetTile({ conv, selected, onPress }: { conv: Conversation; selected:
         )}
         {selected && (
           <View style={t.checkBadge}>
-            <Check size={14} color="#111" strokeWidth={3} />
+            <Check size={14} color={Colors.background} strokeWidth={3} />
           </View>
         )}
       </View>
@@ -60,7 +60,7 @@ const t = StyleSheet.create({
   root: { width: '33.333%', alignItems: 'center', paddingVertical: 12, gap: 8 },
   avatarWrap: { width: 76, height: 76 },
   avatar: { width: 76, height: 76, borderRadius: 38 },
-  avatarFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
+  avatarFallback: { backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   avatarInitial: { fontFamily: FontFamily.headingBold, fontSize: 26, color: Colors.inkPrimary },
   checkBadge: {
     position: 'absolute', bottom: -2, right: -2,
@@ -76,7 +76,7 @@ const t = StyleSheet.create({
 
 function TargetsSkeleton() {
   return (
-    <AutoSkeletonView isLoading animationType="gradient" defaultRadius={38} gradientColors={['#1e1e1e', '#2e2e2e']}>
+    <AutoSkeletonView isLoading animationType="gradient" defaultRadius={38} gradientColors={[Colors.skeletonBase, Colors.skeletonHighlight]}>
       <View style={st.skGrid}>
         {Array.from({ length: 9 }).map((_, i) => (
           <View key={i} style={t.root}>
@@ -238,7 +238,7 @@ export function ShareToChatSheet(props: Props) {
 
 const st = StyleSheet.create({
   bg: { backgroundColor: Colors.elevated },
-  handle: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  handle: { backgroundColor: withOpacity(Colors.white, 0.18) },
 
   container: { flex: 1 },
   header: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12, gap: 14 },
@@ -246,11 +246,11 @@ const st = StyleSheet.create({
 
   preview: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: withOpacity(Colors.white, 0.05),
     borderRadius: 14, padding: 10,
   },
   previewImg: { width: 44, height: 44, borderRadius: 10 },
-  previewImgFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
+  previewImgFallback: { backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   previewTitle: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkPrimary },
   previewSub: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary, marginTop: 1 },
 
@@ -258,7 +258,7 @@ const st = StyleSheet.create({
 
   listContent: { paddingHorizontal: 12, paddingBottom: 12 },
   skGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12 },
-  skLine: { width: 48, height: 10, borderRadius: 5, backgroundColor: '#2a2a2a' },
+  skLine: { width: 48, height: 10, borderRadius: 5, backgroundColor: Colors.surfaceMuted },
 
   emptyWrap: { alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 48 },
   emptyText: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, textAlign: 'center' },

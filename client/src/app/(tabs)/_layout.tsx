@@ -122,13 +122,13 @@ const styles = StyleSheet.create({
     height: 15,
     borderRadius: 8,
     paddingHorizontal: 3,
-    backgroundColor: "#FF3040",
+    backgroundColor: Colors.notificationRed,
     alignItems: "center",
     justifyContent: "center",
   },
   chatBadgeText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 9,
-    color: "#fff",
+    color: Colors.white,
   },
 });

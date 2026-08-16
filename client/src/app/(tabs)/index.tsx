@@ -22,7 +22,7 @@ import ApiService from '@/api/apiService'
 import { useNotifStore } from '@/store/notifStore'
 import { usePillStore } from '@/store/pillStore'
 import { hTap } from '@/lib/haptics'
-import { Colors, ComponentSize, FontFamily, Radius } from '@/constants'
+import { Colors, ComponentSize, FontFamily, Radius, withOpacity } from '@/constants'
 
 export default function HomeScreen() {
   const { profile } = useProfile()
@@ -163,12 +163,12 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: withOpacity(Colors.white, 0.2),
     alignItems: 'center',
     justifyContent: 'center',
   },
-  hostCardTitle: { fontFamily: FontFamily.headingBold, fontSize: 16, color: '#fff' },
-  hostCardSubtitle: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 1 },
+  hostCardTitle: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.white },
+  hostCardSubtitle: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: withOpacity(Colors.white, 0.85), marginTop: 1 },
 
   sectionHeaderRow: {
     flexDirection: 'row',
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary, textAlign: 'center' },
   retryBtn: {
     marginTop: 4, paddingHorizontal: 20, paddingVertical: 10,
-    backgroundColor: 'rgba(255,107,53,0.12)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
     borderRadius: Radius.pill, borderWidth: 1, borderColor: Colors.brandOrange,
   },
   retryText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.brandOrange },

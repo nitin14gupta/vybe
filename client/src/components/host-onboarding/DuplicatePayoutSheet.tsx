@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { ShieldAlert } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { hTap } from '@/lib/haptics'
 import { PrimaryButton } from '@/components/ui'
 
@@ -60,7 +60,7 @@ const s = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: withOpacity(Colors.white, 0.06),
     borderWidth: 1,
     borderColor: Colors.divider,
     alignItems: 'center',

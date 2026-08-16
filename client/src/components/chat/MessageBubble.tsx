@@ -14,7 +14,7 @@ import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
 import * as FileSystem from 'expo-file-system/legacy'
 import { router } from 'expo-router'
 import { Play, Pause, Download, Film, Mic, Image as ImageIcon, Calendar, User, Check } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import type { Message } from '@/api/apiService'
 import type { MediaViewType } from '@/components/chat/MediaViewerModal'
 import { ReactionPills } from './ReactionPills'
@@ -62,7 +62,7 @@ function ReplyPreview({ metadata, isMine, onPress }: {
         ) : null}
         {mediaIcon ? (
           <View style={rp.iconRow}>
-            <mediaIcon.Icon size={11} color="rgba(255,255,255,0.4)" strokeWidth={2} />
+            <mediaIcon.Icon size={11} color={withOpacity(Colors.white, 0.4)} strokeWidth={2} />
             <Text style={rp.text} numberOfLines={1}>{mediaIcon.label}</Text>
           </View>
         ) : (
@@ -81,13 +81,13 @@ const rp = StyleSheet.create({
     overflow: 'hidden',
     alignSelf: 'stretch',
   },
-  wrapMine: { backgroundColor: 'rgba(255,107,53,0.15)' },
-  wrapTheirs: { backgroundColor: 'rgba(255,255,255,0.07)' },
+  wrapMine: { backgroundColor: withOpacity(Colors.brandOrange, 0.15) },
+  wrapTheirs: { backgroundColor: withOpacity(Colors.white, 0.07) },
   accent: { width: 3, backgroundColor: Colors.brandOrange },
   body: { flex: 1, paddingHorizontal: 7, paddingVertical: 4, gap: 1 },
   sender: { fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: Colors.brandOrange },
   iconRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  text: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: 'rgba(255,255,255,0.5)' },
+  text: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: withOpacity(Colors.white, 0.5) },
 })
 
 // ── Voice bubble ──────────────────────────────────────────────────────────────
@@ -127,8 +127,8 @@ const VoiceBubble = forwardRef<VoiceBubbleHandle, {
     <View style={[vb.bubble, isMine ? vb.bubbleMine : vb.bubbleTheirs]}>
       <View style={[vb.playBtn, isPending && { opacity: 0.4 }]}>
         {status.playing
-          ? <Pause size={16} color="#111" strokeWidth={2.5} />
-          : <Play  size={16} color="#111" strokeWidth={2.5} />
+          ? <Pause size={16} color={Colors.background} strokeWidth={2.5} />
+          : <Play  size={16} color={Colors.background} strokeWidth={2.5} />
         }
       </View>
       <View style={vb.waveWrap}>
@@ -146,8 +146,8 @@ const VoiceBubble = forwardRef<VoiceBubbleHandle, {
 
 const vb = StyleSheet.create({
   bubble: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 12, minWidth: 200 },
-  bubbleMine: { backgroundColor: 'rgba(255,107,53,0.18)', borderWidth: 1, borderColor: 'rgba(255,107,53,0.35)', borderBottomRightRadius: 4 },
-  bubbleTheirs: { backgroundColor: '#222', borderWidth: 1, borderColor: '#2a2a2a', borderBottomLeftRadius: 4 },
+  bubbleMine: { backgroundColor: withOpacity(Colors.brandOrange, 0.18), borderWidth: 1, borderColor: withOpacity(Colors.brandOrange, 0.35), borderBottomRightRadius: 4 },
+  bubbleTheirs: { backgroundColor: Colors.elevated, borderWidth: 1, borderColor: Colors.surfaceMuted, borderBottomLeftRadius: 4 },
   playBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.brandOrange, alignItems: 'center', justifyContent: 'center' },
   waveWrap: { flex: 1, overflow: 'hidden' },
   duration: { fontFamily: FontFamily.bodyRegular, fontSize: 11, minWidth: 30, textAlign: 'right' },
@@ -178,7 +178,7 @@ function ImageChatBubble({ url, isMine, width: srcW, height: srcH, isPending }: 
       />
       {isPending && (
         <View style={mc.pendingOverlay}>
-          <ActivityIndicator size="small" color="#fff" />
+          <ActivityIndicator size="small" color={Colors.white} />
         </View>
       )}
     </View>
@@ -235,15 +235,15 @@ function VideoChatBubble({ url, isMine, width: srcW, height: srcH, isPending, on
         nativeControls={false}
       />
       {isPending
-        ? <View style={mc.playOverlay}><ActivityIndicator size="small" color="#fff" /></View>
-        : <View style={mc.playOverlay}><Play size={28} color="#fff" fill="#fff" strokeWidth={0} /></View>
+        ? <View style={mc.playOverlay}><ActivityIndicator size="small" color={Colors.white} /></View>
+        : <View style={mc.playOverlay}><Play size={28} color={Colors.white} fill={Colors.white} strokeWidth={0} /></View>
       }
     </>
   ) : localUri ? (
-    <View style={mc.playOverlay}><Play size={28} color="#fff" fill="#fff" strokeWidth={0} /></View>
+    <View style={mc.playOverlay}><Play size={28} color={Colors.white} fill={Colors.white} strokeWidth={0} /></View>
   ) : (
     <View style={[mc.downloadPlaceholder, boxStyle]}>
-      <Film size={32} color="rgba(255,255,255,0.5)" strokeWidth={1.5} />
+      <Film size={32} color={withOpacity(Colors.white, 0.5)} strokeWidth={1.5} />
       {downloading
         ? <ActivityIndicator size="small" color={Colors.brandOrange} style={{ marginTop: 8 }} />
         : <>
@@ -271,21 +271,21 @@ const mc = StyleSheet.create({
   pendingOverlay: {
     position: 'absolute', bottom: 8, right: 8,
     width: 28, height: 28, borderRadius: 14,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: withOpacity(Colors.black, 0.45),
     alignItems: 'center', justifyContent: 'center',
   },
-  videoWrap: { borderRadius: 14, overflow: 'hidden', backgroundColor: '#111' },
+  videoWrap: { borderRadius: 14, overflow: 'hidden', backgroundColor: Colors.background },
   video: { width: '100%', height: '100%' },
   playOverlay: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: withOpacity(Colors.black, 0.3),
   },
   downloadPlaceholder: {
     borderRadius: 14,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: Colors.surface,
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: '#2a2a2a',
+    borderWidth: 1, borderColor: Colors.surfaceMuted,
   },
   downloadText: {
     fontFamily: FontFamily.bodyRegular, fontSize: 12,
@@ -659,7 +659,7 @@ export function MessageBubble({
         hitSlop={8}
       >
         <View style={[sel.checkbox, isSelected && sel.checkboxChecked]}>
-          {isSelected && <Check size={13} color="#111" strokeWidth={3} />}
+          {isSelected && <Check size={13} color={Colors.background} strokeWidth={3} />}
         </View>
       </Pressable>
       <View style={sel.content}>
@@ -680,7 +680,7 @@ const sel = StyleSheet.create({
   checkboxWrap: { width: 36, alignItems: 'center', justifyContent: 'center' },
   checkbox: {
     width: 20, height: 20, borderRadius: 5,
-    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.3)',
+    borderWidth: 1.5, borderColor: withOpacity(Colors.white, 0.3),
     alignItems: 'center', justifyContent: 'center',
   },
   checkboxChecked: { backgroundColor: Colors.brandOrange, borderColor: Colors.brandOrange },
@@ -700,9 +700,9 @@ const s = StyleSheet.create({
   },
   bubbleWithReply: { minWidth: 160 },
   bubbleLink: { padding: 0, overflow: 'hidden' },
-  bubbleTheirs: { backgroundColor: '#222', borderBottomLeftRadius: 4 },
+  bubbleTheirs: { backgroundColor: Colors.elevated, borderBottomLeftRadius: 4 },
   bubbleMine: {
-    backgroundColor: 'rgba(255,107,53,0.22)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.22),
     borderBottomRightRadius: 4,
   },
   bubblePending: { opacity: 0.6 },
@@ -720,7 +720,7 @@ const s = StyleSheet.create({
     right: 8,
     fontFamily: FontFamily.bodyRegular,
     fontSize: 10,
-    color: 'rgba(255,255,255,0.4)',
+    color: withOpacity(Colors.white, 0.4),
   },
 
   timeBelow: { fontFamily: FontFamily.bodyRegular, fontSize: 10, color: Colors.inkDisabled, marginTop: 3 },
@@ -735,21 +735,21 @@ const s = StyleSheet.create({
   },
 
   richCard: {
-    backgroundColor: '#1e1e1e', borderWidth: 1, borderColor: '#2a2a2a',
+    backgroundColor: Colors.skeletonBase, borderWidth: 1, borderColor: Colors.surfaceMuted,
     borderRadius: 16, overflow: 'hidden', width: 260,
   },
   richCardImg: { width: '100%', height: 140 },
-  richCardImgFallback: { backgroundColor: '#2a2a2a' },
+  richCardImgFallback: { backgroundColor: Colors.surfaceMuted },
   richCardBody: { padding: 12, gap: 4 },
   richCardTitle: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.inkPrimary },
   richCardSub: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary },
   richCardBtn: { marginTop: 8 },
   profileRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12 },
   profileAvatar: { width: 44, height: 44, borderRadius: 22 },
-  profileAvatarFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
+  profileAvatarFallback: { backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   profileAvatarInitial: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
   profileChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 12, paddingBottom: 4 },
   profileCardBtn: { marginHorizontal: 12, marginBottom: 12, marginTop: 4 },
-  profileChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.08)' },
+  profileChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: withOpacity(Colors.white, 0.08) },
   profileChipText: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkPrimary },
 })

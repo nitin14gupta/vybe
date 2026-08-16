@@ -13,6 +13,7 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Colors, withOpacity } from '@/constants'
 
 // ── DateTimePickerSheet (iOS sheet wrapper) ───────────────────────────────
 
@@ -102,7 +103,7 @@ export function DateTimePickerSheet({
           display="spinner"
           minimumDate={minimumDate}
           maximumDate={maximumDate}
-          textColor="#fff"
+          textColor={Colors.white}
           themeVariant="dark"
           onChange={(_: DateTimePickerEvent, date?: Date) => {
             if (date) setLocalDate(date)
@@ -111,7 +112,7 @@ export function DateTimePickerSheet({
         />
         <Pressable onPress={confirm} style={s.doneBtn}>
           <LinearGradient
-            colors={['#FF6B35', '#FF3864']}
+            colors={[Colors.brandOrange, Colors.brandCoral]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={s.doneGrad}
@@ -158,14 +159,14 @@ export function useDateTimePicker(initial?: Date) {
 const s = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: withOpacity(Colors.black, 0.55),
   },
   sheet: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: Colors.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     alignItems: 'center',
@@ -181,5 +182,5 @@ const s = StyleSheet.create({
   },
   doneBtn: { width: '100%', borderRadius: 14, overflow: 'hidden', marginTop: 12 },
   doneGrad: { paddingVertical: 15, alignItems: 'center' },
-  doneTxt: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  doneTxt: { color: Colors.white, fontSize: 16, fontWeight: '700' },
 })

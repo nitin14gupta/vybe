@@ -7,10 +7,10 @@ import { Colors, EVENT_ICONS } from '@/constants'
 import { MAP_PROVIDER, TILE_STYLE } from '@/constants/mapConfig'
 
 const DARK_MAP_STYLE = [
-  { elementType: 'geometry', stylers: [{ color: '#1a1a1a' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#111111' }] },
+  { elementType: 'geometry', stylers: [{ color: Colors.surface }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: Colors.background }] },
   { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2c2c2c' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0d0d0d' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: Colors.deepBackground }] },
   { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#1c1c1c' }] },
 ]
 

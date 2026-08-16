@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react'
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native'
 import { BlurView } from 'expo-blur'
 import { Link2, MessageCircle, Rocket, Share2 } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 
 function RocketIcon() {
   const floatAnim = useRef(new Animated.Value(0)).current
@@ -18,7 +18,7 @@ function RocketIcon() {
 
   return (
     <Animated.View style={[s.rocketWrap, { transform: [{ translateY: floatAnim }] }]}>
-      <Rocket size={64} color="#fff" strokeWidth={1.5} />
+      <Rocket size={64} color={Colors.white} strokeWidth={1.5} />
     </Animated.View>
   )
 }
@@ -60,17 +60,17 @@ export function PublishedHero({
         <Text style={s.shareCardLabel}>SHARE WITH FRIENDS</Text>
         <View style={s.shareRow}>
           <ShareBtn
-            icon={<View style={[s.shareBtnIconInner, { backgroundColor: 'rgba(255,255,255,0.1)' }]}><Share2 size={22} color="#fff" strokeWidth={1.8} /></View>}
+            icon={<View style={[s.shareBtnIconInner, { backgroundColor: withOpacity(Colors.white, 0.1) }]}><Share2 size={22} color={Colors.white} strokeWidth={1.8} /></View>}
             label="Share"
             onPress={onShare}
           />
           <ShareBtn
-            icon={<View style={[s.shareBtnIconInner, { backgroundColor: 'rgba(255,255,255,0.1)' }]}><MessageCircle size={22} color="#fff" strokeWidth={1.8} /></View>}
+            icon={<View style={[s.shareBtnIconInner, { backgroundColor: withOpacity(Colors.white, 0.1) }]}><MessageCircle size={22} color={Colors.white} strokeWidth={1.8} /></View>}
             label="Share in Chat"
             onPress={onShareInChat}
           />
           <ShareBtn
-            icon={<View style={[s.shareBtnIconInner, { backgroundColor: 'rgba(255,255,255,0.1)' }]}><Link2 size={22} color="#fff" strokeWidth={1.8} /></View>}
+            icon={<View style={[s.shareBtnIconInner, { backgroundColor: withOpacity(Colors.white, 0.1) }]}><Link2 size={22} color={Colors.white} strokeWidth={1.8} /></View>}
             label="Copy Link"
             onPress={onCopyLink}
           />
@@ -104,7 +104,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(20,20,20,0.4)',
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: withOpacity(Colors.white, 0.12),
     padding: 24,
     marginBottom: 32,
     overflow: 'hidden',
@@ -112,7 +112,7 @@ const s = StyleSheet.create({
   shareCardLabel: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 11,
-    color: 'rgba(255,255,255,0.4)',
+    color: withOpacity(Colors.white, 0.4),
     letterSpacing: 1.2,
     marginBottom: 16,
   },

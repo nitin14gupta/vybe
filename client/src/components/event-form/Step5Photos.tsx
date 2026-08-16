@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, Dimen
 import { Plus, X } from 'lucide-react-native'
 import { Image } from 'expo-image'
 import * as ImagePicker from 'expo-image-picker'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import type { CreateEventForm } from '@/hooks/useCreateEvent'
 import { useEventPhotos } from '@/hooks/useEventPhotos'
 import { ef } from './styles'
@@ -126,12 +126,12 @@ export function Step5Photos({ form, set, errors, setErrors, disabled, inline }: 
               />
               {isCoverUploading && (
                 <View style={s.uploadOverlay}>
-                  <ActivityIndicator size="large" color="#fff" />
+                  <ActivityIndicator size="large" color={Colors.white} />
                 </View>
               )}
               {!disabled && !isCoverUploading && (
                 <Pressable style={s.removeBtnTopRight} onPress={() => removePhoto(0)} hitSlop={12}>
-                  <X size={16} color="#fff" strokeWidth={3} />
+                  <X size={16} color={Colors.white} strokeWidth={3} />
                 </Pressable>
               )}
             </>
@@ -170,12 +170,12 @@ export function Step5Photos({ form, set, errors, setErrors, disabled, inline }: 
                     />
                     {uploading && (
                       <View style={s.uploadOverlay}>
-                        <ActivityIndicator size="small" color="#fff" />
+                        <ActivityIndicator size="small" color={Colors.white} />
                       </View>
                     )}
                     {!disabled && !uploading && (
                       <Pressable style={s.removeBtnSmall} onPress={() => removePhoto(i)} hitSlop={8}>
-                        <X size={12} color="#fff" strokeWidth={3} />
+                        <X size={12} color={Colors.white} strokeWidth={3} />
                       </Pressable>
                     )}
                   </>
@@ -215,13 +215,13 @@ const s = StyleSheet.create({
   scrollContent: { paddingBottom: 100 },
   header: { padding: 24, paddingBottom: 0 },
   coverSlot: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: withOpacity(Colors.white, 0.05),
     marginTop: 12,
     justifyContent: 'center',
     alignItems: 'center',
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: withOpacity(Colors.white, 0.1),
   },
   placeholderContainer: {
     alignItems: 'center',
@@ -241,16 +241,16 @@ const s = StyleSheet.create({
   },
   smallSlot: {
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: withOpacity(Colors.white, 0.05),
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: withOpacity(Colors.white, 0.1),
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
   },
   uploadOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: withOpacity(Colors.black, 0.5),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -261,7 +261,7 @@ const s = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: withOpacity(Colors.black, 0.6),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -272,7 +272,7 @@ const s = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: withOpacity(Colors.black, 0.6),
     alignItems: 'center',
     justifyContent: 'center',
   },

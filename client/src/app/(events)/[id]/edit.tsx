@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
 import { hSuccess } from '@/lib/haptics'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { DateTimePickerSheet, BrandedLoader } from '@/components/ui'
 import { Step1Basics, Step2When, Step3Where, Step4Pricing, Step5Photos, LockedBanner, DateShiftBanner } from '@/components/event-form'
 import { useCreateEvent, type CreateEventForm } from '@/hooks/useCreateEvent'
@@ -286,12 +286,12 @@ export default function EditEventScreen() {
             disabled={saving || !isDirty}
           >
             <LinearGradient
-              colors={canSave ? ['#FF6B35', '#FF3864'] : ['#333', '#333']}
+              colors={canSave ? [Colors.brandOrange, Colors.brandCoral] : [Colors.grayBorder, Colors.grayBorder]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
               style={s.saveGradient}
             >
               {saving ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={Colors.white} />
               ) : (
                 <Text style={s.saveText}>Save Changes</Text>
               )}
@@ -326,10 +326,10 @@ const s = StyleSheet.create({
   footer: {
     paddingHorizontal: 20, paddingTop: 12,
     // borderTopWidth: 1, borderTopColor: Colors.divider,
-    backgroundColor: 'rgba(17,17,17,0.95)',
+    backgroundColor: withOpacity(Colors.background, 0.95),
   },
   saveBtn: { borderRadius: 16, overflow: 'hidden' },
   saveBtnDisabled: { opacity: 0.5 },
   saveGradient: { height: 54, alignItems: 'center', justifyContent: 'center', borderRadius: 16 },
-  saveText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: '#fff', letterSpacing: 0.5 },
+  saveText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.white, letterSpacing: 0.5 },
 })

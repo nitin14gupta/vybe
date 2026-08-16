@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { hSelection } from '@/lib/haptics'
-import { Colors, FontFamily, Radius } from '@/constants'
+import { Colors, FontFamily, Radius, withOpacity } from '@/constants'
 
 interface Props {
   availableBadges: string[]
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   chipSelected: {
-    backgroundColor: 'rgba(255,184,48,0.12)',
+    backgroundColor: withOpacity(Colors.accentGold, 0.12),
     borderColor: Colors.accentGold,
   },
   chipText: {

@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
 import { ChevronRight, PartyPopper, QrCode, ScanLine, Star, Users } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { hSuccess, hTap } from '@/lib/haptics'
 import { PrimaryButton } from '@/components/ui'
 import { fmtCountdown, formatPrice, hoursUntil, type RsvpStatus } from './eventDetailUtils'
@@ -81,14 +81,14 @@ export function EventRsvpBar({
                 : onScanner}
             >
               <LinearGradient
-                colors={['#FF6B35', '#FF3864']}
+                colors={[Colors.brandOrange, Colors.brandCoral]}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={styles.hostBtnGradient}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   {isPast
-                    ? <Star size={16} color="#111" strokeWidth={2} />
-                    : <ScanLine size={16} color="#111" strokeWidth={2} />}
+                    ? <Star size={16} color={Colors.background} strokeWidth={2} />
+                    : <ScanLine size={16} color={Colors.background} strokeWidth={2} />}
                   <Text style={styles.hostBtnPrimaryText}>
                     {isPast ? 'Review' : 'Scanner'}
                   </Text>
@@ -156,7 +156,7 @@ export function EventRsvpBar({
               >
                 <View style={styles.offerTitleRow}>
                   <Text style={styles.offerTitle}>Spot Reserved!</Text>
-                  <PartyPopper size={13} color="#fff" strokeWidth={2} />
+                  <PartyPopper size={13} color={Colors.white} strokeWidth={2} />
                 </View>
                 <Text style={styles.offerTimer}>
                   Confirm by {offerSecondsLeft != null ? fmtCountdown(offerSecondsLeft) : '...'}
@@ -199,7 +199,7 @@ export function EventRsvpBar({
           ) : (
             <Pressable style={styles.bookBtn} onPress={() => { hSuccess(); onRsvp() }}>
               <LinearGradient
-                colors={['#FF6B35', '#FF3864']}
+                colors={[Colors.brandOrange, Colors.brandCoral]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.bookGradient}
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 12,
-    backgroundColor: 'rgba(17,17,17,0.95)',
+    backgroundColor: withOpacity(Colors.background, 0.95),
     gap: 16,
   },
   stickyLeft: { flex: 1 },
@@ -233,14 +233,14 @@ const styles = StyleSheet.create({
 
   bookBtn: { borderRadius: 14, overflow: 'hidden' },
   bookGradient: { paddingHorizontal: 28, paddingVertical: 14, borderRadius: 14, alignItems: 'center', minWidth: 120 },
-  bookBtnText: { color: '#fff', fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
+  bookBtnText: { color: Colors.white, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
 
   reviewedPill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 18, height: 48,
     borderRadius: 24, borderWidth: 1,
-    borderColor: 'rgba(255,107,53,0.3)',
-    backgroundColor: 'rgba(255,107,53,0.08)',
+    borderColor: withOpacity(Colors.brandOrange, 0.3),
+    backgroundColor: withOpacity(Colors.brandOrange, 0.08),
   },
   reviewedPillText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandOrange },
 
@@ -252,15 +252,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 120,
   },
-  goingBtnText: { color: '#fff', fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
+  goingBtnText: { color: Colors.white, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
 
   waitlistActiveBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(255,107,53,0.1)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.1),
     borderWidth: 1.5,
-    borderColor: 'rgba(255,107,53,0.35)',
+    borderColor: withOpacity(Colors.brandOrange, 0.35),
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 999,
@@ -304,12 +304,12 @@ const styles = StyleSheet.create({
   offerTitle: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
-    color: '#fff',
+    color: Colors.white,
   },
   offerTimer: {
     fontFamily: FontFamily.headingBold,
     fontSize: 16,
-    color: '#fff',
+    color: Colors.white,
     letterSpacing: 0.5,
   },
   eventFullBtn: {
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   },
 
   inProgressBtn: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: withOpacity(Colors.white, 0.06),
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 14,
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
   },
 
   cancelledBadge: {
-    backgroundColor: 'rgba(255,56,100,0.15)',
+    backgroundColor: withOpacity(Colors.brandCoral, 0.15),
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
   hostBtn: {
     flex: 1, height: 48, borderRadius: 24,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)',
+    borderWidth: 1, borderColor: withOpacity(Colors.white, 0.18),
   },
   hostBtnPrimary: { borderWidth: 0, overflow: 'hidden' },
   hostBtnGradient: {
@@ -385,5 +385,5 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   hostBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkPrimary },
-  hostBtnPrimaryText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: '#fff' },
+  hostBtnPrimaryText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.white },
 })

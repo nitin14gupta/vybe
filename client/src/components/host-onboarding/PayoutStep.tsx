@@ -2,7 +2,7 @@ import { memo, useCallback, useMemo, useState } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator, Pressable } from 'react-native'
 import { CheckCircle2, XCircle, Info, Eye, EyeOff, ShieldCheck } from 'lucide-react-native'
 import { Input, LogoMark, TabSwitcher } from '@/components/ui'
-import { Colors, FontFamily, Radius } from '@/constants'
+import { Colors, FontFamily, Radius, withOpacity } from '@/constants'
 import type { BankInfo } from '@/hooks/useIfscLookup'
 
 const PAYOUT_TABS = ['Bank Account', 'UPI'] as const
@@ -252,7 +252,7 @@ const s = StyleSheet.create({
   },
   vpaRowText: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary },
   vpaRowResolved: {
-    backgroundColor: 'rgba(0,196,140,0.1)',
+    backgroundColor: withOpacity(Colors.accentGreen, 0.1),
     borderRadius: Radius.card,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -260,7 +260,7 @@ const s = StyleSheet.create({
   },
   vpaRowResolvedText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.accentGreen, flex: 1 },
   vpaRowError: {
-    backgroundColor: 'rgba(255,56,100,0.1)',
+    backgroundColor: withOpacity(Colors.brandCoral, 0.1),
     borderRadius: Radius.card,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -271,7 +271,7 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 8,
-    backgroundColor: 'rgba(255,184,48,0.1)',
+    backgroundColor: withOpacity(Colors.accentGold, 0.1),
     borderRadius: Radius.card,
     padding: 12,
   },

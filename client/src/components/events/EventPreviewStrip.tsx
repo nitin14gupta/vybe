@@ -3,7 +3,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { Colors, FontFamily, EVENT_ICONS, EVENT_ICON_FALLBACK } from "@/constants";
+import { Colors, FontFamily, EVENT_ICONS, EVENT_ICON_FALLBACK, withOpacity } from '@/constants';
 import { hSelection } from "@/lib/haptics";
 import { useAuthStore } from "@/store/auth";
 import type { EventSummary } from "@/api/apiService";
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: 14,
     overflow: "hidden",
-    shadowColor: "#000",
+    shadowColor: Colors.black,
     shadowOpacity: 0.3,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 8,
     right: 38,
-    backgroundColor: "rgba(17,17,17,0.85)",
+    backgroundColor: withOpacity(Colors.background, 0.85),
     borderRadius: 7,
     paddingHorizontal: 7,
     paddingVertical: 3,
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: "100%",
     minHeight: 158,
-    backgroundColor: "rgba(255,107,53,0.12)",
+    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
     borderRadius: 14,
     borderWidth: 1.5,
     borderColor: Colors.brandOrange,

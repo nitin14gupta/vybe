@@ -99,8 +99,8 @@ export function PaymentMethodSelector({
   if (amountToPay === 0) {
     return (
       <Pressable style={s.walletOnlyBtn} onPress={onWalletPay}>
-        <LinearGradient colors={['#FF6B35', '#FF3864']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.walletOnlyGradient}>
-          <Wallet size={18} color="#fff" strokeWidth={2} />
+        <LinearGradient colors={[Colors.brandOrange, Colors.brandCoral]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.walletOnlyGradient}>
+          <Wallet size={18} color={Colors.white} strokeWidth={2} />
           <Text style={s.walletOnlyText}>PAY WITH WALLET</Text>
         </LinearGradient>
       </Pressable>
@@ -215,7 +215,7 @@ const s = StyleSheet.create({
   methodLabel: { flex: 1, fontFamily: FontFamily.bodyMedium, fontSize: 15, color: Colors.inkPrimary },
   methodSub: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary, marginTop: 1 },
   dot: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  dotText: { fontFamily: FontFamily.headingBold, fontSize: 16, color: '#fff' },
+  dotText: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.white },
   upiAppIcon: { width: 36, height: 36, borderRadius: 10 },
   upiLoadingRow: { paddingVertical: 20, alignItems: 'center' },
   upiEmptyRow: { paddingHorizontal: 16, paddingVertical: 14 },
@@ -223,5 +223,5 @@ const s = StyleSheet.create({
 
   walletOnlyBtn: { borderRadius: 28, overflow: 'hidden', marginTop: 8 },
   walletOnlyGradient: { height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  walletOnlyText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: '#fff', letterSpacing: 0.8 },
+  walletOnlyText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.white, letterSpacing: 0.8 },
 })

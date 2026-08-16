@@ -8,7 +8,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated'
 import { hSelection } from '@/lib/haptics'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { ConfettiRain, PrimaryButton } from '@/components/ui'
 
 const STAR_LABELS = ['', 'Terrible', 'Bad', 'Okay', 'Great', 'Amazing!']
@@ -28,7 +28,7 @@ function AnimatedStar({ n, rating, onPress }: { n: number; rating: number; onPre
       <Animated.View style={aStyle}>
         <Star
           size={48}
-          color={filled ? Colors.brandOrange : 'rgba(255,255,255,0.15)'}
+          color={filled ? Colors.brandOrange : withOpacity(Colors.white, 0.15)}
           fill={filled ? Colors.brandOrange : 'transparent'}
           strokeWidth={1.4}
         />

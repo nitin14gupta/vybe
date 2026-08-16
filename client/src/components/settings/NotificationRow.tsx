@@ -6,7 +6,7 @@ import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { hTap, hMedium } from '@/lib/haptics'
 import { Bell, UserPlus, Flame, MessageCircle, PartyPopper, ShieldCheck, Trophy, Trash2 } from 'lucide-react-native'
 import type { AppNotification } from '@/api/apiService'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { OutlineButton, PrimaryButton } from '@/components/ui'
 
 // Re-export so callers don't need to import AppNotification separately
@@ -31,10 +31,10 @@ const ACTION_ICON: Record<string, any> = {
 }
 
 const TYPE_FALLBACK: Record<string, { Icon: any; bg: string; color: string }> = {
-  host_onboarding_complete: { Icon: PartyPopper, bg: 'rgba(255,107,53,0.16)', color: Colors.brandOrange },
-  report_submitted: { Icon: ShieldCheck, bg: 'rgba(255,107,53,0.16)', color: Colors.brandOrange },
-  host_badge_earned: { Icon: Trophy, bg: 'rgba(255,107,53,0.16)', color: Colors.brandOrange },
-  review_milestone: { Icon: Trophy, bg: 'rgba(255,107,53,0.16)', color: Colors.brandOrange },
+  host_onboarding_complete: { Icon: PartyPopper, bg: withOpacity(Colors.brandOrange, 0.16), color: Colors.brandOrange },
+  report_submitted: { Icon: ShieldCheck, bg: withOpacity(Colors.brandOrange, 0.16), color: Colors.brandOrange },
+  host_badge_earned: { Icon: Trophy, bg: withOpacity(Colors.brandOrange, 0.16), color: Colors.brandOrange },
+  review_milestone: { Icon: Trophy, bg: withOpacity(Colors.brandOrange, 0.16), color: Colors.brandOrange },
 }
 
 export const NotificationRow = React.memo(function NotificationRow({ item, onPress, onAction, onDismiss }: {
@@ -117,7 +117,7 @@ export const NotificationRow = React.memo(function NotificationRow({ item, onPre
             <PrimaryButton
               label={item.action_label}
               onPress={() => onAction(item)}
-              icon={<ActionIcon size={14} color="#111" strokeWidth={2} />}
+              icon={<ActionIcon size={14} color={Colors.background} strokeWidth={2} />}
               size="small"
             />
           ) : (
@@ -137,7 +137,7 @@ export const NotificationRow = React.memo(function NotificationRow({ item, onPre
 
 export function NotificationRowSkeleton() {
   return (
-    <AutoSkeletonView isLoading animationType="gradient" defaultRadius={7} gradientColors={['#1e1e1e', '#2e2e2e']}>
+    <AutoSkeletonView isLoading animationType="gradient" defaultRadius={7} gradientColors={[Colors.skeletonBase, Colors.skeletonHighlight]}>
       {Array.from({ length: 6 }).map((_, i) => (
         <View key={i} style={s.skRow}>
           <View style={s.skAvatar} />
@@ -200,9 +200,9 @@ const s = StyleSheet.create({
     paddingHorizontal: 20, paddingVertical: 14, gap: 14,
   },
   skTextBlock: { flex: 1, minWidth: 0, paddingTop: 2 },
-  skAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#2a2a2a' },
-  skLineTitle: { height: 14, width: '70%', borderRadius: 7, backgroundColor: '#2a2a2a' },
-  skLineBody: { height: 12, width: '85%', borderRadius: 6, backgroundColor: '#2a2a2a', marginTop: 6 },
-  skLineTime: { height: 10, width: '25%', borderRadius: 5, backgroundColor: '#2a2a2a', marginTop: 6 },
-  skActionBtn: { width: 76, height: 30, borderRadius: 15, backgroundColor: '#2a2a2a', marginLeft: 'auto' },
+  skAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.surfaceMuted },
+  skLineTitle: { height: 14, width: '70%', borderRadius: 7, backgroundColor: Colors.surfaceMuted },
+  skLineBody: { height: 12, width: '85%', borderRadius: 6, backgroundColor: Colors.surfaceMuted, marginTop: 6 },
+  skLineTime: { height: 10, width: '25%', borderRadius: 5, backgroundColor: Colors.surfaceMuted, marginTop: 6 },
+  skActionBtn: { width: 76, height: 30, borderRadius: 15, backgroundColor: Colors.surfaceMuted, marginLeft: 'auto' },
 })

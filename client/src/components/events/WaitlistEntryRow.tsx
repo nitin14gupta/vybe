@@ -1,7 +1,7 @@
 import { memo } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { Image } from 'expo-image'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import type { WaitlistEntry } from '@/api/apiService'
 
 function fmtCountdown(expiresAt: string) {
@@ -86,16 +86,16 @@ const s = StyleSheet.create({
   rowInfo: { flex: 1 },
   rowName: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.inkPrimary },
   rowUsername: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary, marginTop: 1 },
-  offerText: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: '#00C896', marginTop: 3 },
+  offerText: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.offerGreen, marginTop: 3 },
   joinedText: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkDisabled, marginTop: 3 },
 
   offerBadge: {
-    backgroundColor: 'rgba(0,200,150,0.15)',
+    backgroundColor: withOpacity(Colors.offerGreen, 0.15),
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#00C896',
+    borderColor: Colors.offerGreen,
   },
-  offerBadgeText: { color: '#00C896', fontFamily: FontFamily.bodyMedium, fontSize: 11 },
+  offerBadgeText: { color: Colors.offerGreen, fontFamily: FontFamily.bodyMedium, fontSize: 11 },
 })

@@ -1,7 +1,7 @@
 import { memo } from 'react'
 import { Pressable, Text, StyleSheet } from 'react-native'
 import { hSelection } from '@/lib/haptics'
-import { Colors, FontFamily, Radius } from '@/constants'
+import { Colors, FontFamily, Radius, withOpacity } from '@/constants'
 
 interface Props {
   label: string
@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   selected: {
-    backgroundColor: 'rgba(255,107,53,0.15)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.15),
   },
   unselected: {
     backgroundColor: Colors.elevated,

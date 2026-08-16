@@ -2,7 +2,7 @@ import React from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Calendar, ChevronRight, Clock, MapPin, Shield, Users } from 'lucide-react-native'
 import * as Clipboard from 'expo-clipboard'
-import { Colors, EVENT_ICONS, EVENT_ICON_FALLBACK, FontFamily } from '@/constants'
+import { Colors, EVENT_ICONS, EVENT_ICON_FALLBACK, FontFamily, withOpacity } from '@/constants'
 import { hTap, hSuccess } from '@/lib/haptics'
 import { usePillStore } from '@/store/pillStore'
 import { daysUntil, formatDateTime } from './eventDetailUtils'
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(255,107,53,0.15)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.15),
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,

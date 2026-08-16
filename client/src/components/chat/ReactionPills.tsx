@@ -1,6 +1,6 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { hSelection } from '@/lib/haptics'
-import { FontFamily } from '@/constants'
+import { FontFamily, Colors, withOpacity } from '@/constants'
 
 interface Props {
   reactions: Record<string, string> | null
@@ -52,14 +52,14 @@ const s = StyleSheet.create({
     paddingVertical: 3,
     gap: 3,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    shadowColor: '#000',
+    borderColor: withOpacity(Colors.white, 0.12),
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.35,
     shadowRadius: 2,
     elevation: 2,
   },
   emoji: { fontSize: 14 },
-  count: { fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: 'rgba(255,255,255,0.6)' },
-  countMine: { color: 'rgba(255,107,53,0.9)' },
+  count: { fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: withOpacity(Colors.white, 0.6) },
+  countMine: { color: withOpacity(Colors.brandOrange, 0.9) },
 })

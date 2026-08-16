@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native'
 import { ChevronLeft, ChevronRight, CalendarHeart, TriangleAlert } from 'lucide-react-native'
 import { PrimaryButton, OutlineButton, EventListCard, EventListCardSkeleton } from '@/components/ui'
 import type { DayEvents } from '@/hooks/useCalendarEvents'
-import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { Colors, FontFamily, Spacing, Radius, withOpacity } from '@/constants'
 import { hTap } from '@/lib/haptics'
 
 const MONTH_NAMES = [
@@ -151,7 +151,7 @@ const s = StyleSheet.create({
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 6 },
   emptyIconWrap: {
     width: 64, height: 64, borderRadius: 32,
-    backgroundColor: 'rgba(255,107,53,0.12)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 8,
   },

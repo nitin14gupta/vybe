@@ -2,7 +2,7 @@ import React from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, Clock, Shield } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { parseDate } from './eventDetailUtils'
 import type { EventDetail } from '@/api/apiService'
 
@@ -53,7 +53,7 @@ export function EventLockedScreen({ reason, event, onBack }: Props) {
         <Text style={styles.lockedBackText}>Back to Event</Text>
       </Pressable>
       <View style={styles.lockedBody}>
-        <View style={[styles.lockedIconWrap, reason === 'age' && { backgroundColor: 'rgba(255,56,100,0.12)' }]}>
+        <View style={[styles.lockedIconWrap, reason === 'age' && { backgroundColor: withOpacity(Colors.brandCoral, 0.12) }]}>
           {icon}
         </View>
         <Text style={styles.lockedTitle}>{title}</Text>
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: 'rgba(255,107,53,0.12)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,

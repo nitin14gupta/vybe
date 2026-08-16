@@ -5,7 +5,7 @@ import { Image } from 'expo-image'
 import { MapPin, Flame } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
-import { Colors, FontFamily, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constants'
+import { Colors, FontFamily, EVENT_ICONS, EVENT_ICON_FALLBACK, withOpacity } from '@/constants'
 import { parseServerDate, isEventPast } from '@/lib/dates'
 import { hSelection } from '@/lib/haptics'
 import { useAuthStore } from '@/store/auth'
@@ -51,8 +51,8 @@ const hp = StyleSheet.create({
     backgroundColor: 'rgba(10,10,10,0.92)',
     borderRadius: 20, paddingLeft: 4, paddingRight: 10, paddingVertical: 4,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.12)',
-    shadowColor: '#000',
+    borderColor: withOpacity(Colors.white, 0.12),
+    shadowColor: Colors.black,
     shadowOpacity: 0.4,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
@@ -63,10 +63,10 @@ const hp = StyleSheet.create({
   },
   avatar: { width: 20, height: 20, borderRadius: 10 },
   avatarCompact: { width: 16, height: 16, borderRadius: 8 },
-  avatarFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
-  initial: { fontFamily: FontFamily.headingBold, fontSize: 11, color: '#fff' },
+  avatarFallback: { backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+  initial: { fontFamily: FontFamily.headingBold, fontSize: 11, color: Colors.white },
   initialCompact: { fontSize: 9 },
-  text: { fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: '#fff' },
+  text: { fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: Colors.white },
   textCompact: { fontSize: 10 },
 })
 
@@ -133,14 +133,14 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
             transition={150}
           />
         ) : (
-          <LinearGradient colors={['#1a1a1a', '#0d0d0d']} style={[StyleSheet.absoluteFill, s.placeholder]}>
+          <LinearGradient colors={[Colors.surface, Colors.deepBackground]} style={[StyleSheet.absoluteFill, s.placeholder]}>
             <TypeIcon size={40} color={Colors.inkDisabled} strokeWidth={1.5} />
           </LinearGradient>
         )}
 
         {/* Gradient scrim for title legibility */}
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.78)']}
+          colors={['transparent', withOpacity(Colors.black, 0.78)]}
           style={s.gradient}
           pointerEvents="none"
         />
@@ -268,9 +268,9 @@ export function EventCardSkeleton() {
   return (
     <View style={[s.card, { elevation: 0, shadowOpacity: 0 }]}>
       {/* Static backgrounds so the skeleton maintains the visual card shape */}
-      <View style={[s.imageWrap, { backgroundColor: '#111' }]} />
+      <View style={[s.imageWrap, { backgroundColor: Colors.background }]} />
       <View style={[StyleSheet.absoluteFill, { backgroundColor: 'transparent' }]}>
-        <AutoSkeletonView isLoading animationType="gradient" defaultRadius={20} gradientColors={['#2a2a2a', '#3a3a3a']}>
+        <AutoSkeletonView isLoading animationType="gradient" defaultRadius={20} gradientColors={[Colors.surfaceMuted, '#3a3a3a']}>
           <View style={s.imageWrap}>
             {/* Top Left: Host Pill */}
             <View style={[s.skLine, s.hostPillPos, { width: 120, height: 28, borderRadius: 14 }]} />
@@ -305,7 +305,7 @@ const s = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: Colors.black,
     shadowOpacity: 0.25,
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 5 },
@@ -332,7 +332,7 @@ const s = StyleSheet.create({
   // now-empty slot instead of leaving a gap.
   priceBadgeNoHotlist: { right: 12 },
   priceBadgeFree: { backgroundColor: Colors.accentGreen },
-  priceText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: '#fff' },
+  priceText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.white },
 
   hostPillPos: {
     position: 'absolute', top: 12, left: 12,
@@ -343,17 +343,17 @@ const s = StyleSheet.create({
   // sharing its corner — Cancelled/Past events still show who hosted them.
   statusBadge: {
     position: 'absolute', top: 50, left: 12,
-    backgroundColor: 'rgba(17,17,17,0.85)',
+    backgroundColor: withOpacity(Colors.background, 0.85),
     borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3,
   },
-  cancelledBadge: { backgroundColor: 'rgba(255,56,100,0.85)' },
-  statusBadgeText: { fontFamily: FontFamily.bodyMedium, fontSize: 11, color: '#fff' },
+  cancelledBadge: { backgroundColor: withOpacity(Colors.brandCoral, 0.85) },
+  statusBadgeText: { fontFamily: FontFamily.bodyMedium, fontSize: 11, color: Colors.white },
 
   cardFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 14 },
-  title: { fontFamily: FontFamily.headingBold, fontSize: 16, color: '#fff', lineHeight: 21 },
-  hostName: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: 'rgba(255,107,53,0.9)', marginTop: 2 },
-  hostNameDeleted: { color: 'rgba(255,255,255,0.4)' },
-  date: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 3 },
+  title: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.white, lineHeight: 21 },
+  hostName: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: withOpacity(Colors.brandOrange, 0.9), marginTop: 2 },
+  hostNameDeleted: { color: withOpacity(Colors.white, 0.4) },
+  date: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: withOpacity(Colors.white, 0.75), marginTop: 3 },
 
   meta: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
@@ -370,7 +370,7 @@ const s = StyleSheet.create({
   stackAvatar: {
     width: 18, height: 18, borderRadius: 9,
     borderWidth: 1.5, borderColor: Colors.surface,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: Colors.surfaceMuted,
   },
   stackAvatarMore: {
     alignItems: 'center', justifyContent: 'center',
@@ -389,6 +389,6 @@ const s = StyleSheet.create({
   spotsText: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.brandOrange },
 
   skCard: { borderRadius: 20, overflow: 'hidden' },
-  skBlock: { backgroundColor: '#2a2a2a' },
-  skLine: { borderRadius: 5, backgroundColor: '#2a2a2a' },
+  skBlock: { backgroundColor: Colors.surfaceMuted },
+  skLine: { borderRadius: 5, backgroundColor: Colors.surfaceMuted },
 })

@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native'
 import { Users } from 'lucide-react-native'
-import { Colors, FontFamily, Spacing } from '@/constants'
+import { Colors, FontFamily, Spacing, withOpacity } from '@/constants'
 import { PrimaryButton, OutlineButton } from '@/components/ui'
 
 interface Props {
@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.screenPadding, gap: 12 },
   blockerIconWrap: {
     width: 88, height: 88, borderRadius: 44,
-    backgroundColor: 'rgba(255,107,53,0.1)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.1),
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 8,
   },

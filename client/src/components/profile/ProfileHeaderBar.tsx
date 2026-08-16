@@ -1,6 +1,7 @@
 import { Pressable, View, StyleSheet } from "react-native";
 import { ArrowLeft, MoreVertical } from "lucide-react-native";
 import { hTap } from "@/lib/haptics";
+import { Colors } from '@/constants'
 
 interface Props {
   topInset: number;
@@ -12,7 +13,7 @@ export function ProfileHeaderBar({ topInset, onBack, onMenu }: Props) {
   return (
     <View style={[s.headerOverlay, { paddingTop: topInset + 8 }]}>
       <Pressable onPress={onBack} style={s.headerCircleBtn} hitSlop={8}>
-        <ArrowLeft size={20} color="#fff" strokeWidth={2.2} />
+        <ArrowLeft size={20} color={Colors.white} strokeWidth={2.2} />
       </Pressable>
       <Pressable
         onPress={() => {
@@ -22,7 +23,7 @@ export function ProfileHeaderBar({ topInset, onBack, onMenu }: Props) {
         style={s.headerCircleBtn}
         hitSlop={8}
       >
-        <MoreVertical size={20} color="#fff" strokeWidth={1.8} />
+        <MoreVertical size={20} color={Colors.white} strokeWidth={1.8} />
       </Pressable>
     </View>
   );

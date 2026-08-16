@@ -38,7 +38,7 @@ export function NotificationPopBadge() {
       <Animated.View style={[s.calloutWrap, calloutStyle]} pointerEvents="none">
         <View style={s.arrow} />
         <View style={s.bubble}>
-          <Heart size={14} color="#fff" fill="#fff" strokeWidth={0} />
+          <Heart size={14} color={Colors.white} fill={Colors.white} strokeWidth={0} />
           <Text style={s.bubbleText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
         </View>
       </Animated.View>
@@ -50,7 +50,7 @@ const s = StyleSheet.create({
   dot: {
     position: 'absolute', top: -2, right: -2,
     width: 9, height: 9, borderRadius: 4.5,
-    backgroundColor: '#FF3040',
+    backgroundColor: Colors.notificationRed,
     borderWidth: 1.2, borderColor: Colors.background,
   },
   calloutWrap: {
@@ -67,7 +67,7 @@ const s = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 4,
-    backgroundColor: '#FF3040',
+    backgroundColor: Colors.notificationRed,
     transform: [{ rotate: '45deg' }],
     marginBottom: -8,
   },
@@ -75,12 +75,12 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#FF3040',
+    backgroundColor: Colors.notificationRed,
     borderRadius: 15,
     paddingHorizontal: 11,
     paddingVertical: 6,
-    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 4, shadowOffset: { width: 0, height: 2 },
+    shadowColor: Colors.black, shadowOpacity: 0.3, shadowRadius: 4, shadowOffset: { width: 0, height: 2 },
     elevation: 4,
   },
-  bubbleText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: '#fff' },
+  bubbleText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.white },
 })

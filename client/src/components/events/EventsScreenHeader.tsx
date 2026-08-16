@@ -1,7 +1,7 @@
 import React from "react";
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { List, Map, Plus, Search } from "lucide-react-native";
-import { Colors, FontFamily, FILTER_CHIPS } from "@/constants";
+import { Colors, FontFamily, FILTER_CHIPS, withOpacity } from '@/constants';
 import { hSelection, hTap } from "@/lib/haptics";
 import { TabSwitcher } from "@/components/ui";
 
@@ -46,14 +46,14 @@ export function MapFloatingHeader({
           onPress={() => { hTap(); onSearch() }}
           hitSlop={8}
         >
-          <Search size={16} color="#fff" strokeWidth={2} />
+          <Search size={16} color={Colors.white} strokeWidth={2} />
         </Pressable>
         <Pressable
           style={styles.addBtn}
           onPress={() => { hTap(); onCreate() }}
           hitSlop={8}
         >
-          <Plus size={18} color="#fff" strokeWidth={2.5} />
+          <Plus size={18} color={Colors.background} strokeWidth={2.5} />
         </Pressable>
       </View>
     </View>
@@ -118,7 +118,7 @@ export function ListModeHeader({
           onPress={() => { hTap(); onCreate() }}
           hitSlop={8}
         >
-          <Plus size={18} color="#fff" strokeWidth={2.5} />
+          <Plus size={18} color={Colors.background} strokeWidth={2.5} />
         </Pressable>
       </View>
     </Animated.View>
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   floatTitle: {
     fontFamily: FontFamily.headingBold,
     fontSize: 22,
-    color: "#fff",
+    color: Colors.white,
     letterSpacing: -0.3,
   },
   floatActions: { flexDirection: "row", alignItems: "center", gap: 8 },
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: Colors.brandOrange,
+    backgroundColor: Colors.inkPrimary,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: "rgba(255,255,255,0.14)",
+    backgroundColor: withOpacity(Colors.white, 0.14),
     alignItems: "center",
     justifyContent: "center",
   },
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.divider,
   },
-  filterChipActive: { backgroundColor: Colors.brandOrange, borderColor: Colors.brandOrange },
+  filterChipActive: { backgroundColor: Colors.inkPrimary, borderColor: Colors.inkPrimary },
   filterChipText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.inkSecondary },
-  filterChipTextActive: { color: "#fff", fontFamily: FontFamily.bodySemiBold },
+  filterChipTextActive: { color: Colors.background, fontFamily: FontFamily.bodySemiBold },
 });

@@ -4,7 +4,7 @@ import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { MessageCircle } from 'lucide-react-native'
 import { hSuccess } from '@/lib/haptics'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { PrimaryButton } from './PrimaryButton'
 
 const MAX_CHARS = 150
@@ -92,14 +92,14 @@ export function VibeIcebreakerModal({ visible, ...rest }: Props) {
 }
 
 const s = StyleSheet.create({
-  bg: { backgroundColor: '#1a1a1a' },
-  handleIndicator: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  bg: { backgroundColor: Colors.surface },
+  handleIndicator: { backgroundColor: withOpacity(Colors.white, 0.18) },
   content: { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 8 },
   iconRow: { alignItems: 'center', marginBottom: 16 },
-  iconBg: { width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(255,107,53,0.15)', alignItems: 'center', justifyContent: 'center' },
+  iconBg: { width: 60, height: 60, borderRadius: 30, backgroundColor: withOpacity(Colors.brandOrange, 0.15), alignItems: 'center', justifyContent: 'center' },
   heading: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.inkPrimary, textAlign: 'center', marginBottom: 8 },
   sub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center', lineHeight: 20, marginBottom: 20 },
-  inputWrapper: { backgroundColor: '#222', borderRadius: 16, borderWidth: 1, borderColor: '#333', padding: 14, marginBottom: 16, minHeight: 100 },
+  inputWrapper: { backgroundColor: Colors.elevated, borderRadius: 16, borderWidth: 1, borderColor: Colors.grayBorder, padding: 14, marginBottom: 16, minHeight: 100 },
   input: { fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkPrimary, lineHeight: 22, flex: 1 },
   charCount: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, textAlign: 'right', marginTop: 6 },
   charCountWarn: { color: Colors.brandCoral },

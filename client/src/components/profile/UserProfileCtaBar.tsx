@@ -1,6 +1,6 @@
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Flame, UserPlus, UserCheck, MessageCircle, Check } from "lucide-react-native";
-import { Colors, FontFamily } from "@/constants";
+import { Colors, FontFamily, withOpacity } from '@/constants';
 import { PrimaryButton } from "@/components/ui";
 import { hTap } from "@/lib/haptics";
 import { CooldownPill } from "./CooldownPill";
@@ -101,7 +101,7 @@ const s = StyleSheet.create({
     paddingTop: 16,
     backgroundColor: Colors.background,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "rgba(255,255,255,0.08)",
+    borderTopColor: withOpacity(Colors.white, 0.08),
   },
   ctaBtn: {
     height: 52,

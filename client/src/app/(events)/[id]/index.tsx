@@ -5,7 +5,7 @@ import { useGoBack } from '@/hooks/useGoBack'
 import { useEventDetail } from '@/hooks/useEventDetail'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, Ghost } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { BrandedLoader, BrandedRefreshControl } from '@/components/ui'
 import { ConfirmSheet, GuestListSheet, EventShareSheet, DotsSheet } from '@/components/ui'
 import { ReportEventSheet } from '@/components/events/ReportEventSheet'
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: withOpacity(Colors.white, 0.14),
     marginTop: 10,
   },
   scroll: { flex: 1 },

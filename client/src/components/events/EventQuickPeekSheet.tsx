@@ -5,7 +5,7 @@ import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { useRouter } from 'expo-router'
 import { Share2, UserCircle2, Ghost } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { hTap } from '@/lib/haptics'
 import { useAuthStore } from '@/store/auth'
 import { usePillStore } from '@/store/pillStore'
@@ -137,11 +137,11 @@ export function EventQuickPeekSheet({ visible, ...rest }: Props) {
 const s = StyleSheet.create({
   shareCardHost: { position: 'absolute', top: 0, left: -9999 },
   bg: { backgroundColor: Colors.surface },
-  handle: { backgroundColor: 'rgba(255,255,255,0.2)' },
+  handle: { backgroundColor: withOpacity(Colors.white, 0.2) },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   previewRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   previewImg: { width: 52, height: 52, borderRadius: 12 },
-  previewImgFallback: { backgroundColor: '#2a2a2a' },
+  previewImgFallback: { backgroundColor: Colors.surfaceMuted },
   previewText: { flex: 1, gap: 3 },
   previewTitle: { fontFamily: FontFamily.headingBold, fontSize: 15, color: Colors.inkPrimary },
   previewSub: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary },

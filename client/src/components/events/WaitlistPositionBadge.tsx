@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Animated, StyleSheet, Text, View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Colors, FontFamily, Spacing } from '@/constants'
+import { Colors, FontFamily, Spacing, withOpacity } from '@/constants'
 
 export function WaitlistPositionBadge({ position }: { position: number }) {
   const pulse = useRef(new Animated.Value(1)).current
@@ -42,7 +42,7 @@ const s = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,107,53,0.25)',
+    borderColor: withOpacity(Colors.brandOrange, 0.25),
   },
   circle: {
     width: 80,
@@ -54,7 +54,7 @@ const s = StyleSheet.create({
   num: {
     fontFamily: FontFamily.displayExtraBold,
     fontSize: 26,
-    color: '#fff',
+    color: Colors.white,
     letterSpacing: -0.5,
   },
 })

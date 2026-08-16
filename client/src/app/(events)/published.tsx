@@ -11,7 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import * as Clipboard from 'expo-clipboard'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { ConfettiRain, ShareToChatSheet } from '@/components/ui'
 import { usePillStore } from '@/store/pillStore'
 import ApiService from '@/api/apiService'
@@ -118,7 +118,7 @@ export default function PublishedScreen() {
         {/* Primary CTA */}
         <Pressable style={s.primaryBtn} onPress={goToMyEvents}>
           <LinearGradient
-            colors={['#FF6B35', '#FF3864']}
+            colors={[Colors.brandOrange, Colors.brandCoral]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={s.primaryGradient}
@@ -160,7 +160,7 @@ export default function PublishedScreen() {
 const s = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#0a0a0a',
+    backgroundColor: Colors.nearBlack,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -183,16 +183,16 @@ const s = StyleSheet.create({
   primaryBtnText: {
     fontFamily: FontFamily.headingBold,
     fontSize: 15,
-    color: '#fff',
+    color: Colors.white,
     letterSpacing: 1,
   },
 
   skipText: {
     fontFamily: FontFamily.bodyMedium,
     fontSize: 14,
-    color: 'rgba(255,255,255,0.35)',
+    color: withOpacity(Colors.white, 0.35),
     paddingBottom: 4,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.12)',
+    borderBottomColor: withOpacity(Colors.white, 0.12),
   },
 })

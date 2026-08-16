@@ -1,5 +1,5 @@
 import { Dimensions, StyleSheet } from 'react-native'
-import { Colors, FontFamily, EVENT_ICONS } from '@/constants'
+import { Colors, FontFamily, EVENT_ICONS, withOpacity } from '@/constants'
 
 export const W = Dimensions.get('window').width
 
@@ -27,7 +27,7 @@ export const ef = StyleSheet.create({
   fieldLabel: {
     fontFamily: FontFamily.bodyMedium,
     fontSize: 13,
-    color: '#fff',
+    color: Colors.white,
     marginBottom: 8,
   },
   errorText: {
@@ -52,7 +52,7 @@ export const ef = StyleSheet.create({
   inputWrapError: { borderColor: Colors.brandCoral },
   textInput: {
     flex: 1,
-    color: '#fff',
+    color: Colors.white,
     fontFamily: FontFamily.bodyRegular,
     fontSize: 15,
     paddingVertical: 10,
@@ -82,8 +82,8 @@ export const ef = StyleSheet.create({
   },
   typeChipActive: {
     backgroundColor: Colors.glassSurfaceActive,
-    borderColor: '#fff',
-    shadowColor: '#fff',
+    borderColor: Colors.white,
+    shadowColor: Colors.white,
     shadowOpacity: 0.2,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 3 },
@@ -91,7 +91,7 @@ export const ef = StyleSheet.create({
   },
   typeEmojiBadge: {
     width: 32, height: 32, borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.15)', // keep this local as it's specific
+    backgroundColor: withOpacity(Colors.white, 0.15), // keep this local as it's specific
     alignItems: 'center', justifyContent: 'center',
   },
   typeEmojiBadgeActive: {
@@ -100,7 +100,7 @@ export const ef = StyleSheet.create({
   },
   typeEmoji: { fontSize: 16 },
   typeLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.glassTextSecondary },
-  typeLabelActive: { color: '#fff', fontFamily: FontFamily.bodySemiBold },
+  typeLabelActive: { color: Colors.white, fontFamily: FontFamily.bodySemiBold },
 
   // Date/time picker row
   pickerRow: {
@@ -122,7 +122,7 @@ export const ef = StyleSheet.create({
     color: Colors.glassTextDisabled,
     marginBottom: 2,
   },
-  pickerValue: { fontFamily: FontFamily.bodyMedium, fontSize: 15, color: '#fff' },
+  pickerValue: { fontFamily: FontFamily.bodyMedium, fontSize: 15, color: Colors.white },
   pickerPlaceholder: { color: Colors.glassTextDisabled },
   timeRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
 
@@ -137,7 +137,7 @@ export const ef = StyleSheet.create({
   stepperValue: {
     fontFamily: FontFamily.headingBold,
     fontSize: 28,
-    color: '#fff',
+    color: Colors.white,
     minWidth: 60,
     textAlign: 'center',
   },
@@ -150,9 +150,9 @@ export const ef = StyleSheet.create({
     borderRadius: 12, borderWidth: 1, borderColor: Colors.glassBorder,
     alignItems: 'center',
   },
-  ageChipActive: { backgroundColor: Colors.glassSurfaceActive, borderColor: '#fff' },
+  ageChipActive: { backgroundColor: Colors.glassSurfaceActive, borderColor: Colors.white },
   ageText: { fontFamily: FontFamily.headingMedium, fontSize: 16, color: Colors.glassTextSecondary },
-  ageTextActive: { color: '#fff' },
+  ageTextActive: { color: Colors.white },
 
   // Location step
   step3Container: { flex: 1 },
@@ -173,10 +173,10 @@ export const ef = StyleSheet.create({
   locationNote: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
+    color: withOpacity(Colors.white, 0.6),
   },
   indiaBanner: {
-    backgroundColor: 'rgba(255,184,48,0.15)',
+    backgroundColor: withOpacity(Colors.accentGold, 0.15),
     borderRadius: 10, padding: 12,
     borderWidth: 1, borderColor: Colors.accentGold,
     marginBottom: 12,
@@ -194,9 +194,9 @@ export const ef = StyleSheet.create({
     flex: 1, paddingVertical: 12,
     borderRadius: 10, backgroundColor: Colors.glassSurface, alignItems: 'center',
   },
-  pricingBtnActive: { backgroundColor: '#fff' },
+  pricingBtnActive: { backgroundColor: Colors.white },
   pricingBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.glassTextSecondary },
-  pricingBtnTextActive: { color: '#000' },
+  pricingBtnTextActive: { color: Colors.black },
   currencySymbol: { color: Colors.glassTextSecondary, fontFamily: FontFamily.headingBold, fontSize: 18, marginRight: 4 },
 
   // Photos
@@ -238,7 +238,7 @@ export const ef = StyleSheet.create({
     borderColor: Colors.glassBorder,
   },
   autofillBtnText: {
-    color: '#fff',
+    color: Colors.white,
     fontFamily: FontFamily.bodyMedium,
     fontSize: 11,
   },
@@ -246,6 +246,6 @@ export const ef = StyleSheet.create({
   // Shared scroll container for steps 1, 2, 4
   stepScroll: { flex: 1 },
   stepContent: { padding: 24, paddingBottom: 40 },
-  stepTitle: { fontFamily: FontFamily.headingBold, fontSize: 26, color: '#fff', marginBottom: 6 },
+  stepTitle: { fontFamily: FontFamily.headingBold, fontSize: 26, color: Colors.white, marginBottom: 6 },
   stepSub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.glassTextSecondary, marginBottom: 24 },
 })

@@ -6,7 +6,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import NetInfo from '@react-native-community/netinfo'
 import { WifiOff, RefreshCw } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { useNetworkStore } from '@/store/networkStore'
 import { hTap } from '@/lib/haptics'
 
@@ -64,13 +64,13 @@ const s = StyleSheet.create({
     zIndex: 999,
     backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: 'rgba(245,240,235,0.1)',
+    borderColor: withOpacity(Colors.inkPrimary, 0.1),
     borderRadius: 14,
     paddingVertical: 10,
     paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -78,7 +78,7 @@ const s = StyleSheet.create({
   },
   iconWrap: {
     width: 28, height: 28, borderRadius: 14,
-    backgroundColor: 'rgba(245,240,235,0.08)',
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.08),
     alignItems: 'center', justifyContent: 'center',
     marginRight: 10,
   },
@@ -97,7 +97,7 @@ const s = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,107,53,0.12)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
   },
   retryText: {
     fontFamily: FontFamily.bodySemiBold,

@@ -9,7 +9,7 @@ import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { Heart, Lock, Users, X as XIcon } from 'lucide-react-native'
 import { hTap, hSelection } from '@/lib/haptics'
-import { Colors, FontFamily, Spacing } from '@/constants'
+import { Colors, FontFamily, Spacing, withOpacity } from '@/constants'
 import ApiService, { type EventGuest } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
 import { usePillStore } from '@/store/pillStore'
@@ -46,7 +46,7 @@ function GuestListSkeleton() {
           <View style={sk.subtitle} />
         </View>
       </View>
-      <AutoSkeletonView isLoading animationType="gradient" defaultRadius={8} gradientColors={['#2a2a2a', '#3a3a3a']}>
+      <AutoSkeletonView isLoading animationType="gradient" defaultRadius={8} gradientColors={[Colors.surfaceMuted, '#3a3a3a']}>
         <View style={s.grid}>
           {Array.from({ length: 12 }).map((_, i) => (
             <GuestTileSkeleton key={i} />
@@ -58,10 +58,10 @@ function GuestListSkeleton() {
 }
 
 const sk = StyleSheet.create({
-  circle: { backgroundColor: '#2a2a2a' },
-  line: { width: 48, height: 10, borderRadius: 5, backgroundColor: '#2a2a2a' },
-  title: { width: 130, height: 20, borderRadius: 6, backgroundColor: '#2a2a2a' },
-  subtitle: { width: 70, height: 13, borderRadius: 6, backgroundColor: '#2a2a2a' },
+  circle: { backgroundColor: Colors.surfaceMuted },
+  line: { width: 48, height: 10, borderRadius: 5, backgroundColor: Colors.surfaceMuted },
+  title: { width: 130, height: 20, borderRadius: 6, backgroundColor: Colors.surfaceMuted },
+  subtitle: { width: 70, height: 13, borderRadius: 6, backgroundColor: Colors.surfaceMuted },
 })
 
 function renderBackdrop(props: BottomSheetBackdropProps) {
@@ -101,7 +101,7 @@ const GuestTile = memo(function GuestTile({ guest, isMe, isFollowing, onOpenProf
           >
             <Heart
               size={16}
-              color={isFollowing ? Colors.brandCoral : '#fff'}
+              color={isFollowing ? Colors.brandCoral : Colors.white}
               fill={isFollowing ? Colors.brandCoral : 'transparent'}
               strokeWidth={2}
             />
@@ -207,7 +207,7 @@ function GuestListSheetCore({ eventId, guests, total, waitlist = [], canViewFull
         style={StyleSheet.absoluteFill}
       />
       <LinearGradient
-        colors={['rgba(26,26,26,0.45)', 'rgba(26,26,26,0.85)', 'rgba(26,26,26,0.96)']}
+        colors={[withOpacity(Colors.surface, 0.45), withOpacity(Colors.surface, 0.85), withOpacity(Colors.surface, 0.96)]}
         locations={[0, 0.3, 1]}
         style={StyleSheet.absoluteFill}
       />
@@ -304,7 +304,7 @@ export function GuestListSheet({ visible, eventId, guests, total, waitlist, canV
 
 const s = StyleSheet.create({
   bg: { backgroundColor: Colors.surface },
-  handleIndicator: { backgroundColor: 'rgba(255,255,255,0.2)' },
+  handleIndicator: { backgroundColor: withOpacity(Colors.white, 0.2) },
   container: { flex: 1 },
   header: {
     flexDirection: 'row',

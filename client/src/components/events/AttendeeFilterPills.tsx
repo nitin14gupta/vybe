@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { Colors, FontFamily, Spacing, Radius, withOpacity } from '@/constants'
 
 export type AttendeeFilter = 'all' | 'checked_in' | 'not_arrived'
 
@@ -71,7 +71,7 @@ const p = StyleSheet.create({
     fontSize: 13,
     color: Colors.inkSecondary,
   },
-  labelActive: { color: '#fff' },
+  labelActive: { color: Colors.white },
   badge: {
     minWidth: 18,
     height: 18,
@@ -81,11 +81,11 @@ const p = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 4,
   },
-  badgeActive: { backgroundColor: 'rgba(255,255,255,0.25)' },
+  badgeActive: { backgroundColor: withOpacity(Colors.white, 0.25) },
   badgeNum: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 11,
     color: Colors.inkSecondary,
   },
-  badgeNumActive: { color: '#fff' },
+  badgeNumActive: { color: Colors.white },
 })

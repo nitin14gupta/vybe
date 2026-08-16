@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from "react-native";
 import { InterestChip } from "@/components/ui";
-import { Colors, FontFamily, Radius } from "@/constants";
+import { Colors, FontFamily, Radius, withOpacity } from '@/constants';
 
 interface Props {
   badges?: string[];
@@ -29,7 +29,7 @@ const s = StyleSheet.create({
   badgeChip: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255,184,48,0.12)",
+    backgroundColor: withOpacity(Colors.accentGold, 0.12),
     borderRadius: Radius.pill,
     paddingHorizontal: 12,
     paddingVertical: 6,

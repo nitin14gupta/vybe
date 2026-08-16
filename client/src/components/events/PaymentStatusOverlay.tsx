@@ -27,7 +27,7 @@ export function PaymentStatusOverlay({
   return (
     <View style={s.root}>
       <Animated.View style={[s.circle, style]}>
-        <CheckCircle size={48} color="#fff" strokeWidth={2} />
+        <CheckCircle size={48} color={Colors.white} strokeWidth={2} />
       </Animated.View>
       <Text style={s.label}>{title}</Text>
       <Text style={s.sub}>{subtitle}</Text>

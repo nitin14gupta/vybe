@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { Mic, Square, RotateCcw } from 'lucide-react-native'
 import { RecordingWave, PlaybackWave, VoicePlayButton } from '@/components/ui'
-import { Colors, FontFamily, Radius } from '@/constants'
+import { Colors, FontFamily, Radius, withOpacity } from '@/constants'
 import type { useVoiceEdit } from '@/hooks/useVoiceEdit'
 
 interface Props {
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(255,107,53,0.1)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.1),
     borderWidth: 1.5,
     borderColor: Colors.brandOrange,
     alignItems: 'center',
@@ -143,10 +143,10 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingHorizontal: 12,
     paddingVertical: 7,
-    backgroundColor: 'rgba(255,107,53,0.08)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.08),
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: 'rgba(255,107,53,0.2)',
+    borderColor: withOpacity(Colors.brandOrange, 0.2),
   },
   rerecordText: {
     fontFamily: FontFamily.bodyMedium,

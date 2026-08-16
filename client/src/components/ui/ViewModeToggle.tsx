@@ -18,14 +18,14 @@ export function ViewModeToggle({ mode, onChange }: ViewModeToggleProps) {
         onPress={() => { if (mode !== 'card') { hTap(); onChange('card') } }}
         hitSlop={6}
       >
-        <LayoutGrid size={16} color={mode === 'card' ? '#111' : Colors.inkSecondary} strokeWidth={2} />
+        <LayoutGrid size={14} color={mode === 'card' ? Colors.background : Colors.inkSecondary} strokeWidth={2} />
       </Pressable>
       <Pressable
         style={[s.btn, mode === 'list' && s.btnActive]}
         onPress={() => { if (mode !== 'list') { hTap(); onChange('list') } }}
         hitSlop={6}
       >
-        <List size={16} color={mode === 'list' ? '#111' : Colors.inkSecondary} strokeWidth={2} />
+        <List size={14} color={mode === 'list' ? Colors.background : Colors.inkSecondary} strokeWidth={2} />
       </Pressable>
     </View>
   )
@@ -37,16 +37,16 @@ const s = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.divider,
-    borderRadius: 12,
-    padding: 4,
-    gap: 4,
+    borderRadius: 10,
+    padding: 3,
+    gap: 3,
   },
   btn: {
-    width: 34,
-    height: 34,
+    width: 28,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
+    borderRadius: 7,
   },
   btnActive: {
     backgroundColor: Colors.inkPrimary,

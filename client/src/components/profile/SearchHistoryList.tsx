@@ -92,7 +92,7 @@ const s = StyleSheet.create({
     gap: 14,
   },
   avatar: { width: 52, height: 52, borderRadius: 26 },
-  avatarFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
+  avatarFallback: { backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   avatarInitial: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary },
   info: { flex: 1, gap: 2 },
   name: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.inkPrimary },

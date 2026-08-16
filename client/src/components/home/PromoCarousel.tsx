@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, FlatList, Dimensions, Linking } from
 import { Image } from 'expo-image'
 import { router } from 'expo-router'
 import { hTap } from '@/lib/haptics'
-import { FontFamily, SOCIAL_LINKS } from '@/constants'
+import { FontFamily, SOCIAL_LINKS, Colors } from '@/constants'
 
 const { width: SCREEN_W } = Dimensions.get('window')
 const CARD_W = SCREEN_W - 16 * 2 - 36 // sits inside the home feed's 16px padding, peeks the next card
@@ -54,7 +54,7 @@ const s = StyleSheet.create({
   ctaBtn: {
     marginTop: 10,
     alignSelf: 'flex-start',
-    backgroundColor: '#111',
+    backgroundColor: Colors.background,
     borderRadius: 999,
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -62,7 +62,7 @@ const s = StyleSheet.create({
   ctaText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
-    color: '#fff',
+    color: Colors.white,
   },
   bleedImageWrap: {
     width: 128,

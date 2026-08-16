@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Image } from 'expo-image'
 import { MoreVertical } from 'lucide-react-native'
 import { router } from 'expo-router'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { PrimaryButton, OutlineButton } from '@/components/ui'
 import type { FollowUser } from '@/api/apiService'
 
@@ -62,7 +62,7 @@ export const UserFollowCard = memo(function UserFollowCard({ user, type, isMyPro
     <Pressable
       style={s.row}
       onPress={() => router.push(`/(profile)/${user.id}` as any)}
-      android_ripple={{ color: 'rgba(255,255,255,0.04)' }}
+      android_ripple={{ color: withOpacity(Colors.white, 0.04) }}
     >
       {/* Avatar */}
       <View style={s.avatar}>

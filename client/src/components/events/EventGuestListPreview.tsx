@@ -2,7 +2,7 @@ import React from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Image } from 'expo-image'
 import { ChevronRight } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { hTap } from '@/lib/haptics'
 import type { EventGuest } from '@/api/apiService'
 
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   guestCardTitle: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
   viewAllPill: {
     flexDirection: 'row', alignItems: 'center', gap: 2,
-    backgroundColor: 'rgba(255,107,53,0.1)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.1),
     paddingHorizontal: 12, paddingVertical: 6,
     borderRadius: 999,
   },

@@ -3,7 +3,7 @@ import { Dimensions, FlatList, Pressable, StyleSheet, View } from 'react-native'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { ArrowLeft, Bookmark, Flag, MoreVertical, Share2 } from 'lucide-react-native'
-import { Colors, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constants'
+import { Colors, EVENT_ICONS, EVENT_ICON_FALLBACK, withOpacity } from '@/constants'
 import { hTap } from '@/lib/haptics'
 import { useHotlistToggle } from '@/hooks/useHotlistToggle'
 import { isEventPast } from '@/lib/dates'
@@ -62,7 +62,7 @@ export function EventPhotoHero({ event, isHost, topInset, onBack, onShare, onOpt
         </>
       ) : (
         <LinearGradient
-          colors={['#1A1A1A', '#111111']}
+          colors={[Colors.surface, Colors.background]}
           style={[{ width: W, height: HERO_HEIGHT }, styles.heroPlaceholder]}
         >
           {(() => {
@@ -74,7 +74,7 @@ export function EventPhotoHero({ event, isHost, topInset, onBack, onShare, onOpt
 
       {/* Scrim — keeps overlay icons legible over any photo, without per-icon circles */}
       <LinearGradient
-        colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0)']}
+        colors={[withOpacity(Colors.black, 0.55), withOpacity(Colors.black, 0)]}
         style={[styles.heroScrim, { height: topInset + 72 }]}
         pointerEvents="none"
       />
@@ -82,29 +82,29 @@ export function EventPhotoHero({ event, isHost, topInset, onBack, onShare, onOpt
       {/* Overlay buttons */}
       <View style={[styles.heroOverlay, { top: topInset + 8 }]}>
         <Pressable style={styles.heroIconBtn} onPress={onBack} hitSlop={10}>
-          <ArrowLeft size={22} color="#fff" strokeWidth={2} />
+          <ArrowLeft size={22} color={Colors.white} strokeWidth={2} />
         </Pressable>
         <View style={{ flexDirection: 'row', gap: 4 }}>
           {!eventIsPast && (
             <Pressable style={styles.heroIconBtn} onPress={toggleHotlist} hitSlop={10}>
               <Bookmark
                 size={20}
-                color={hotlisted ? Colors.brandCoral : '#fff'}
+                color={hotlisted ? Colors.brandCoral : Colors.white}
                 fill={hotlisted ? Colors.brandCoral : 'transparent'}
                 strokeWidth={2}
               />
             </Pressable>
           )}
           <Pressable style={styles.heroIconBtn} onPress={() => { hTap(); onShare() }} hitSlop={10}>
-            <Share2 size={20} color="#fff" strokeWidth={2} />
+            <Share2 size={20} color={Colors.white} strokeWidth={2} />
           </Pressable>
           {isHost ? (
             <Pressable style={styles.heroIconBtn} onPress={() => { hTap(); onOptions() }} hitSlop={10}>
-              <MoreVertical size={20} color="#fff" strokeWidth={2} />
+              <MoreVertical size={20} color={Colors.white} strokeWidth={2} />
             </Pressable>
           ) : (
             <Pressable style={styles.heroIconBtn} onPress={() => { hTap(); onReport() }} hitSlop={10}>
-              <Flag size={20} color="#fff" strokeWidth={2} />
+              <Flag size={20} color={Colors.white} strokeWidth={2} />
             </Pressable>
           )}
         </View>
@@ -143,6 +143,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  photoDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.4)' },
-  photoDotActive: { backgroundColor: '#fff', width: 18 },
+  photoDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: withOpacity(Colors.white, 0.4) },
+  photoDotActive: { backgroundColor: Colors.white, width: 18 },
 })

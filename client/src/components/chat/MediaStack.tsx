@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { Image } from 'expo-image'
 import { Play, Layers } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import type { Message } from '@/api/apiService'
 import type { MediaViewerItem, MediaViewType } from '@/components/chat/MediaViewerModal'
 
@@ -24,7 +24,7 @@ function thumbUrl(msg: Message): string {
 function PlayBadge() {
   return (
     <View style={st.playBadge}>
-      <Play size={16} color="#fff" fill="#fff" strokeWidth={0} />
+      <Play size={16} color={Colors.white} fill={Colors.white} strokeWidth={0} />
     </View>
   )
 }
@@ -79,7 +79,7 @@ export function MediaStack({ messages, isMine, onOpen }: Props) {
           <Image source={{ uri: thumbUrl(front) }} style={st.stackImg} contentFit="cover" cachePolicy="memory-disk" priority="high" transition={150} />
           {front.content_type === 'video' && <PlayBadge />}
           <View style={st.countBadge}>
-            <Layers size={13} color="#fff" strokeWidth={2} />
+            <Layers size={13} color={Colors.white} strokeWidth={2} />
             <Text style={st.countText}>{messages.length}</Text>
           </View>
         </View>
@@ -95,7 +95,7 @@ const st = StyleSheet.create({
   wrapTheirs: { alignSelf: 'flex-start', alignItems: 'flex-start' },
 
   pairRow: { flexDirection: 'row', gap: 6 },
-  pairTile: { width: (STACK_WIDTH - 6) / 2, height: PAIR_HEIGHT, borderRadius: 14, overflow: 'hidden', backgroundColor: '#111' },
+  pairTile: { width: (STACK_WIDTH - 6) / 2, height: PAIR_HEIGHT, borderRadius: 14, overflow: 'hidden', backgroundColor: Colors.background },
   pairImg: { width: '100%', height: '100%' },
 
   stackWrap: { width: STACK_WIDTH, height: STACK_HEIGHT + 30 },
@@ -104,13 +104,13 @@ const st = StyleSheet.create({
     width: STACK_WIDTH - 36,
     height: STACK_HEIGHT,
     borderRadius: 18,
-    backgroundColor: '#111',
+    backgroundColor: Colors.background,
     overflow: 'hidden',
   },
   backCard: {
     top: 22, left: 30,
     transform: [{ rotate: '-11deg' }],
-    shadowColor: '#000',
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 6,
@@ -119,7 +119,7 @@ const st = StyleSheet.create({
   midCard: {
     top: 11, left: 15,
     transform: [{ rotate: '7deg' }],
-    shadowColor: '#000',
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
@@ -128,8 +128,8 @@ const st = StyleSheet.create({
   frontCard: {
     top: 0, left: 0,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.14)',
-    shadowColor: '#000',
+    borderColor: withOpacity(Colors.white, 0.14),
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.5,
     shadowRadius: 12,
@@ -137,11 +137,11 @@ const st = StyleSheet.create({
   },
   dimOverlay: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: withOpacity(Colors.black, 0.35),
   },
   dimOverlayLight: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.16)',
+    backgroundColor: withOpacity(Colors.black, 0.16),
   },
   countBadge: {
     position: 'absolute',
@@ -153,15 +153,15 @@ const st = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: withOpacity(Colors.black, 0.6),
   },
-  countText: { fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: '#fff' },
+  countText: { fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: Colors.white },
   playBadge: {
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.25)',
+    backgroundColor: withOpacity(Colors.black, 0.25),
   },
 
   timeBelow: { fontFamily: FontFamily.bodyRegular, fontSize: 10, color: Colors.inkDisabled, marginTop: 3 },

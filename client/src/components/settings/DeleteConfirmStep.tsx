@@ -1,6 +1,6 @@
 import { View, Text, TextInput, ActivityIndicator, StyleSheet } from 'react-native'
 import { Trash2 } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { OutlineButton } from '@/components/ui'
 
 interface Props {
@@ -35,7 +35,7 @@ export function DeleteConfirmStep({ typed, onTypedChange, deleting, onDelete, on
 
       <View style={styles.finalDeleteBtn}>
         {deleting ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={Colors.white} />
         ) : (
           <OutlineButton
             label="Delete My Account"
@@ -54,11 +54,11 @@ export function DeleteConfirmStep({ typed, onTypedChange, deleting, onDelete, on
 const styles = StyleSheet.create({
   iconCircle: {
     width: 80, height: 80, borderRadius: 40,
-    backgroundColor: 'rgba(255,56,100,0.1)',
+    backgroundColor: withOpacity(Colors.brandCoral, 0.1),
     alignItems: 'center', justifyContent: 'center',
     alignSelf: 'center', marginBottom: 20,
   },
-  iconCircleRed: { backgroundColor: 'rgba(255,56,100,0.15)' },
+  iconCircleRed: { backgroundColor: withOpacity(Colors.brandCoral, 0.15) },
   title: {
     fontFamily: FontFamily.headingBold, fontSize: 26, letterSpacing: -0.5,
     color: Colors.inkPrimary, textAlign: 'center', marginBottom: 14,
@@ -72,13 +72,13 @@ const styles = StyleSheet.create({
 
   typeInput: {
     backgroundColor: Colors.surface, borderRadius: 14, borderWidth: 1,
-    borderColor: 'rgba(255,56,100,0.4)', paddingHorizontal: 16, paddingVertical: 14,
+    borderColor: withOpacity(Colors.brandCoral, 0.4), paddingHorizontal: 16, paddingVertical: 14,
     fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.brandCoral,
     textAlign: 'center', letterSpacing: 4, marginBottom: 16, marginTop: 8,
   },
 
   finalDeleteBtn: { marginBottom: 4 },
   destructiveOutline: {
-    borderColor: 'rgba(255,56,100,0.5)',
+    borderColor: withOpacity(Colors.brandCoral, 0.5),
   },
 })

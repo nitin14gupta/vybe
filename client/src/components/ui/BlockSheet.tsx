@@ -5,7 +5,7 @@ import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { LinearGradient } from 'expo-linear-gradient'
 import { MessageSquareOff, BellOff } from 'lucide-react-native'
 import { hError, hTap } from '@/lib/haptics'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 
 interface Props {
   visible: boolean
@@ -55,11 +55,11 @@ function BlockSheetCore({ targetName, isBlocked, loading, onBlock, onUnblock, on
 
         <Pressable style={s.mainBtn} onPress={() => { isBlocked ? hTap() : hError(); (isBlocked ? onUnblock : onBlock)() }} disabled={loading}>
           <LinearGradient
-            colors={isBlocked ? ['#444', '#333'] : ['#FF6B35', '#FF3864']}
+            colors={isBlocked ? [Colors.grayBorder, Colors.grayBorder] : [Colors.brandOrange, Colors.brandCoral]}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={s.mainBtnGrad}
           >
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.mainBtnText}>{isBlocked ? 'Unblock' : 'Block'}</Text>}
+            {loading ? <ActivityIndicator color={Colors.white} /> : <Text style={s.mainBtnText}>{isBlocked ? 'Unblock' : 'Block'}</Text>}
           </LinearGradient>
         </Pressable>
 
@@ -78,14 +78,14 @@ export function BlockSheet({ visible, ...rest }: Props) {
 
 const s = StyleSheet.create({
   bg: { backgroundColor: Colors.elevated },
-  handleIndicator: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  handleIndicator: { backgroundColor: withOpacity(Colors.white, 0.18) },
   content: { paddingHorizontal: 24, paddingBottom: 36, paddingTop: 8 },
   title: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary, marginBottom: 20, textAlign: 'center' },
   bulletRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 14 },
   bulletText: { flex: 1, fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, lineHeight: 20 },
   mainBtn: { borderRadius: 14, overflow: 'hidden', marginTop: 20 },
   mainBtnGrad: { height: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 14 },
-  mainBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 16, color: '#fff' },
+  mainBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 16, color: Colors.white },
   cancelBtn: { height: 48, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
   cancelText: { fontFamily: FontFamily.bodyMedium, fontSize: 15, color: Colors.inkSecondary },
 })

@@ -2,7 +2,7 @@ import { View, Text, StyleSheet } from 'react-native'
 import {
   Trash2, ShieldOff, Wallet, Calendar, MessageCircle,
 } from 'lucide-react-native'
-import { Colors, FontFamily, Radius } from '@/constants'
+import { Colors, FontFamily, Radius, withOpacity } from '@/constants'
 import { PrimaryButton, OutlineButton } from '@/components/ui'
 
 const LOSSES = [
@@ -50,7 +50,7 @@ export function DeleteLossStep({ onContinue, onCancel }: Props) {
 const styles = StyleSheet.create({
   iconCircle: {
     width: 80, height: 80, borderRadius: 40,
-    backgroundColor: 'rgba(255,56,100,0.1)',
+    backgroundColor: withOpacity(Colors.brandCoral, 0.1),
     alignItems: 'center', justifyContent: 'center',
     alignSelf: 'center', marginBottom: 20,
   },
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   lossBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.divider },
   lossIcon: {
     width: 32, height: 32, borderRadius: 16,
-    backgroundColor: 'rgba(255,56,100,0.1)',
+    backgroundColor: withOpacity(Colors.brandCoral, 0.1),
     alignItems: 'center', justifyContent: 'center',
   },
   lossText: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, flex: 1 },

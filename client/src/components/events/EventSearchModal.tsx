@@ -56,7 +56,7 @@ export function EventSearchModal({ visible, onClose, nearbyEvents, lat, lng, nea
       <Screen bottom={false}>
         <View style={s.header}>
           <Pressable onPress={() => { hTap(); onClose() }} style={s.iconBtn}>
-            <X size={20} color="#fff" />
+            <X size={20} color={Colors.white} />
           </Pressable>
           <Text style={s.title}>Search Events</Text>
           <View style={{ width: 38 }} />
@@ -75,7 +75,7 @@ export function EventSearchModal({ visible, onClose, nearbyEvents, lat, lng, nea
               style={[s.filterIconBtn, (filtersOpen || chipKey !== 'all') && s.filterIconBtnActive]}
               hitSlop={8}
             >
-              <ListFilter size={16} color={filtersOpen || chipKey !== 'all' ? '#fff' : Colors.glassTextDisabled} strokeWidth={2} />
+              <ListFilter size={16} color={filtersOpen || chipKey !== 'all' ? Colors.white : Colors.glassTextDisabled} strokeWidth={2} />
             </Pressable>
           }
         />
@@ -181,7 +181,7 @@ const s = StyleSheet.create({
     backgroundColor: Colors.glassSurface,
     alignItems: 'center', justifyContent: 'center',
   },
-  title: { fontFamily: FontFamily.headingBold, fontSize: 17, color: '#fff' },
+  title: { fontFamily: FontFamily.headingBold, fontSize: 17, color: Colors.white },
 
   searchWrap: {
     marginHorizontal: 16, marginTop: 12, marginBottom: 12,
@@ -201,8 +201,8 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.glassBorder,
   },
   chipActive: { backgroundColor: Colors.brandOrange, borderColor: Colors.brandOrange },
-  chipText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: '#fff' },
-  chipTextActive: { color: '#fff', fontFamily: FontFamily.bodySemiBold },
+  chipText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.white },
+  chipTextActive: { color: Colors.white, fontFamily: FontFamily.bodySemiBold },
 
   listContent: { paddingHorizontal: 16, paddingBottom: 40, gap: 10 },
   section: { gap: 10 },
@@ -214,6 +214,6 @@ const s = StyleSheet.create({
   cardWrap: { marginBottom: 4 },
 
   center: { alignItems: 'center', justifyContent: 'center', gap: 10, padding: 40 },
-  emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 18, color: '#fff' },
+  emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.white },
   emptySub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.glassTextSecondary, textAlign: 'center' },
 })

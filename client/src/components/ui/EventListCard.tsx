@@ -4,7 +4,7 @@ import { Image, type ImageProps } from 'expo-image'
 import { router } from 'expo-router'
 import { MapPin, ChevronRight, Calendar } from 'lucide-react-native'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
-import { Colors, FontFamily, Radius, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constants'
+import { Colors, FontFamily, Radius, EVENT_ICONS, EVENT_ICON_FALLBACK, withOpacity } from '@/constants'
 import { formatEventDate } from '@/components/events/EventCard'
 import { HotlistButton } from '@/components/events/HotlistButton'
 import { isEventPast } from '@/lib/dates'
@@ -105,7 +105,7 @@ export const EventListCard = memo(EventListCardBase)
 // a bone, so a filled container swallows the thumb/lines into one blob.
 export function EventListCardSkeleton() {
   return (
-    <AutoSkeletonView isLoading animationType="gradient" defaultRadius={16} gradientColors={['#1e1e1e', '#2e2e2e']}>
+    <AutoSkeletonView isLoading animationType="gradient" defaultRadius={16} gradientColors={[Colors.skeletonBase, Colors.skeletonHighlight]}>
       <View style={s.skRow}>
         <View style={[s.thumb, s.skBlock]} />
         <View style={s.info}>
@@ -138,7 +138,7 @@ const s = StyleSheet.create({
     borderRadius: Radius.card + 8,
     backgroundColor: Colors.surface,
     padding: 12,
-    shadowColor: '#000',
+    shadowColor: Colors.black,
     shadowOpacity: 0.2,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -146,21 +146,21 @@ const s = StyleSheet.create({
   },
   thumb: { width: 120, height: 68, borderRadius: 14, overflow: 'hidden', position: 'relative' },
   thumbImg: { width: '100%', height: '100%' },
-  thumbFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
+  thumbFallback: { backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   hostBadge: {
     position: 'absolute', top: 5, left: 5,
     width: 20, height: 20, borderRadius: 10,
-    borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.85)',
+    borderWidth: 0.5, borderColor: withOpacity(Colors.white, 0.85),
   },
-  hostBadgeFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
-  hostInitial: { fontFamily: FontFamily.headingBold, fontSize: 9, color: '#fff' },
+  hostBadgeFallback: { backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+  hostInitial: { fontFamily: FontFamily.headingBold, fontSize: 9, color: Colors.white },
   priceBadge: {
     position: 'absolute', bottom: 5, right: 5,
     backgroundColor: Colors.brandOrange,
     borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
   },
   priceBadgeFree: { backgroundColor: Colors.accentGreen },
-  priceText: { fontFamily: FontFamily.bodySemiBold, fontSize: 10, color: '#fff' },
+  priceText: { fontFamily: FontFamily.bodySemiBold, fontSize: 10, color: Colors.white },
 
   info: { flex: 1, minWidth: 0, gap: 5 },
   title: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
@@ -171,10 +171,10 @@ const s = StyleSheet.create({
 
   chevronWrap: {
     width: 30, height: 30, borderRadius: 15,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: withOpacity(Colors.white, 0.06),
     alignItems: 'center', justifyContent: 'center',
   },
 
-  skBlock: { backgroundColor: '#2a2a2a' },
-  skLine: { borderRadius: 5, backgroundColor: '#2a2a2a' },
+  skBlock: { backgroundColor: Colors.surfaceMuted },
+  skLine: { borderRadius: 5, backgroundColor: Colors.surfaceMuted },
 })

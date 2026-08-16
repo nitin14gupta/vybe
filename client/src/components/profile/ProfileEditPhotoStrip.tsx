@@ -2,7 +2,7 @@ import { StyleSheet, ScrollView, Pressable } from 'react-native'
 import { router } from 'expo-router'
 import { Image } from 'expo-image'
 import { Plus } from 'lucide-react-native'
-import { Colors, Radius } from '@/constants'
+import { Colors, Radius, withOpacity } from '@/constants'
 import type { PhotoResponse } from '@/types/api'
 
 const SLOT_COUNT = 6
@@ -43,9 +43,9 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: Radius.sm,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: withOpacity(Colors.white, 0.04),
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: withOpacity(Colors.white, 0.08),
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',

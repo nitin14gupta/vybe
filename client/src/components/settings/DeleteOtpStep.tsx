@@ -1,6 +1,6 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { CheckCircle2 } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { PrimaryButton, OutlineButton, OTPInput } from '@/components/ui'
 import { hTap } from '@/lib/haptics'
 
@@ -82,7 +82,7 @@ export function DeleteOtpStep({
 const styles = StyleSheet.create({
   iconCircle: {
     width: 80, height: 80, borderRadius: 40,
-    backgroundColor: 'rgba(255,56,100,0.1)',
+    backgroundColor: withOpacity(Colors.brandCoral, 0.1),
     alignItems: 'center', justifyContent: 'center',
     alignSelf: 'center', marginBottom: 20,
   },
@@ -101,6 +101,6 @@ const styles = StyleSheet.create({
   otpInputWrap: { marginTop: 8 },
   resendArea: { alignItems: 'center', marginTop: 20 },
   resendCountdown: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary },
-  resendCountdownTimer: { fontFamily: FontFamily.bodySemiBold, color: 'rgba(255,107,53,0.75)' },
+  resendCountdownTimer: { fontFamily: FontFamily.bodySemiBold, color: withOpacity(Colors.brandOrange, 0.75) },
   resendLink: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandOrange },
 })

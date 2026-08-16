@@ -2,7 +2,7 @@ import { View, Text, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { BackButton } from '@/components/ui'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import LiquidPlasmaBackground from '@/components/LiquidPlasmaBackground'
 
 export default function BackgroundPreviewScreen() {
@@ -10,7 +10,7 @@ export default function BackgroundPreviewScreen() {
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
-      <LiquidPlasmaBackground colors={['#0a0a0a', Colors.brandOrange]} vertical />
+      <LiquidPlasmaBackground colors={[Colors.nearBlack, Colors.brandOrange]} vertical />
 
       <View style={s.topRow}>
         <BackButton transparent onPress={() => router.back()} />
@@ -27,7 +27,7 @@ export default function BackgroundPreviewScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0a0a0a' },
+  root: { flex: 1, backgroundColor: Colors.nearBlack },
   topRow: { paddingHorizontal: 16 },
   content: {
     flex: 1,
@@ -44,7 +44,7 @@ const s = StyleSheet.create({
   subtitle: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 15,
-    color: 'rgba(245,240,235,0.75)',
+    color: withOpacity(Colors.inkPrimary, 0.75),
     textAlign: 'center',
     lineHeight: 22,
   },

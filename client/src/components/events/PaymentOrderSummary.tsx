@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { ChevronDown, ChevronUp, Wallet } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { hTap } from '@/lib/haptics'
 
 function BillRow({ label, value, green }: { label: string; value: string; green?: boolean }) {
@@ -53,7 +53,7 @@ export function PaymentOrderSummary({
             <View style={s.billDivider} />
             <View style={s.billTotalRow}>
               <Text style={s.billTotalLabel}>Total</Text>
-              <LinearGradient colors={['#FF6B35', '#FF3864']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.billTotalBadge}>
+              <LinearGradient colors={[Colors.brandOrange, Colors.brandCoral]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.billTotalBadge}>
                 <Text style={s.billTotalValue}>₹{amountToPay}</Text>
               </LinearGradient>
             </View>
@@ -85,8 +85,8 @@ const s = StyleSheet.create({
   billTotalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   billTotalLabel: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
   billTotalBadge: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 4 },
-  billTotalValue: { fontFamily: FontFamily.headingBold, fontSize: 20, color: '#fff' },
+  billTotalValue: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.white },
 
-  walletBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,107,53,0.08)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,107,53,0.18)', paddingHorizontal: 14, paddingVertical: 10 },
+  walletBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: withOpacity(Colors.brandOrange, 0.08), borderRadius: 12, borderWidth: 1, borderColor: withOpacity(Colors.brandOrange, 0.18), paddingHorizontal: 14, paddingVertical: 10 },
   walletBannerText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.brandOrange, flex: 1 },
 })

@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { X, Share2, Download, MessageCircle } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
 import { buildProfileShareUrl } from '@/lib/deepLink'
-import { Colors } from '@/constants'
+import { Colors, withOpacity } from '@/constants'
 import { useQrShare } from '@/hooks/useQrShare'
 import { QrCard, PrimaryButton, OutlineButton, ShareToChatSheet } from '@/components/ui'
 
@@ -27,7 +27,7 @@ export default function ProfileQrScreen() {
         onPress={() => { hTap(); router.back() }}
         hitSlop={10}
       >
-        <X size={22} color="#fff" strokeWidth={2.2} />
+        <X size={22} color={Colors.white} strokeWidth={2.2} />
       </Pressable>
 
       <View style={s.center}>
@@ -66,11 +66,11 @@ export default function ProfileQrScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#000' },
+  root: { flex: 1, backgroundColor: Colors.black },
   closeBtn: {
     position: 'absolute', left: 16, zIndex: 10,
     width: 38, height: 38, borderRadius: 19,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: withOpacity(Colors.white, 0.12),
     alignItems: 'center', justifyContent: 'center',
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },

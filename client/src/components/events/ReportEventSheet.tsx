@@ -4,7 +4,7 @@ import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop, BottomSheetScro
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { X } from 'lucide-react-native'
 import { hSelection, hSuccess, hTap } from '@/lib/haptics'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { PrimaryButton } from '@/components/ui'
@@ -143,24 +143,24 @@ export function ReportEventSheet({ visible, ...rest }: Props) {
 }
 
 const s = StyleSheet.create({
-  bg: { backgroundColor: '#141414' },
-  handleIndicator: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  bg: { backgroundColor: Colors.sheetBackground },
+  handleIndicator: { backgroundColor: withOpacity(Colors.white, 0.18) },
   content: { paddingHorizontal: 20, paddingBottom: 48, paddingTop: 8 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, gap: 12 },
   title: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.inkPrimary, marginBottom: 4 },
   subtitle: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary },
-  options: { borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', overflow: 'hidden', marginBottom: 16 },
+  options: { borderRadius: 16, borderWidth: 1, borderColor: withOpacity(Colors.white, 0.08), overflow: 'hidden', marginBottom: 16 },
   option: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 18 },
-  optionBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(255,255,255,0.08)' },
+  optionBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: withOpacity(Colors.white, 0.08) },
   optionText: { fontFamily: FontFamily.bodyRegular, fontSize: 16, color: Colors.inkPrimary },
-  radio: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
+  radio: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: withOpacity(Colors.white, 0.25), alignItems: 'center', justifyContent: 'center' },
   radioSelected: { borderColor: Colors.brandOrange },
   radioDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: Colors.brandOrange },
   descInput: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: withOpacity(Colors.white, 0.05),
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: withOpacity(Colors.white, 0.08),
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontFamily: FontFamily.bodyRegular,

@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import Animated, {
   useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing,
 } from 'react-native-reanimated'
-import { FontFamily, Logo } from '@/constants'
+import { FontFamily, Logo, Colors } from '@/constants'
 import { FLYER_THEMES, type FlyerTheme } from '@/constants/flyerThemes'
 import { useFlyerThemeStore } from '@/store/flyerThemeStore'
 import { StyledQr } from '@/components/ui/QrCard'
@@ -249,7 +249,7 @@ const s = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    shadowColor: '#000',
+    shadowColor: Colors.black,
     shadowOpacity: 0.25,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
@@ -317,7 +317,7 @@ const s = StyleSheet.create({
   qrWrap: {
     padding: 6,
     borderRadius: 12,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderWidth: 1,
   },
   qrCaption: {

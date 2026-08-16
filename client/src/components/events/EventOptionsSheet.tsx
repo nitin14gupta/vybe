@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { Pencil, Users, X as XIcon } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 
 function renderOptionsBackdrop(props: BottomSheetBackdropProps) {
   return <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="close" opacity={0.5} />
@@ -66,7 +66,7 @@ export function EventOptionsSheet({ visible, ...rest }: Props) {
 
 const styles = StyleSheet.create({
   optionsBg: { backgroundColor: Colors.surface },
-  optionsHandle: { backgroundColor: 'rgba(255,255,255,0.2)' },
+  optionsHandle: { backgroundColor: withOpacity(Colors.white, 0.2) },
   optionsContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   optionItem: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16 },
   optionText: { fontFamily: FontFamily.bodyMedium, fontSize: 16, color: Colors.inkPrimary },

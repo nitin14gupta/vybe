@@ -8,7 +8,7 @@ import { useLocation } from '@/hooks/useLocation'
 import { setLocation } from '@/api/user'
 import { useOnboardingStore } from '@/store/onboarding'
 import { usePillStore } from '@/store/pillStore'
-import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { Colors, FontFamily, Spacing, Radius, withOpacity } from '@/constants'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function ProfileLocationScreen() {
@@ -77,7 +77,7 @@ export default function ProfileLocationScreen() {
             <Pressable
               onPress={() => { hSelection(); selectCity(c.name) }}
               style={s.cityRow}
-              android_ripple={{ color: 'rgba(255,255,255,0.04)' }}
+              android_ripple={{ color: withOpacity(Colors.white, 0.04) }}
             >
               <View>
                 <Text style={[s.cityName, selectedCity === c.name && s.cityNameSelected]}>
@@ -142,7 +142,7 @@ const s = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: Radius.card,
-    backgroundColor: 'rgba(255,107,53,0.12)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
     alignItems: 'center',
     justifyContent: 'center',
   },

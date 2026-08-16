@@ -5,7 +5,7 @@ import {
 import { Image } from 'expo-image'
 import { X, Heart } from 'lucide-react-native'
 import { hSuccess, hTap } from '@/lib/haptics'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { VibeIcebreakerModal } from './VibeIcebreakerModal'
 import { PrimaryButton } from './PrimaryButton'
 import { OutlineButton } from './OutlineButton'
@@ -117,10 +117,10 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: withOpacity(Colors.black, 0.7),
   },
   sheet: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: Colors.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 20,
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: withOpacity(Colors.white, 0.18),
     alignSelf: 'center',
     marginBottom: 16,
   },
@@ -180,9 +180,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: withOpacity(Colors.white, 0.08),
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: withOpacity(Colors.white, 0.12),
   },
   chipText: {
     fontFamily: FontFamily.bodyRegular,
@@ -190,10 +190,10 @@ const styles = StyleSheet.create({
     color: Colors.inkPrimary,
   },
   messageBox: {
-    backgroundColor: 'rgba(255,107,53,0.1)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.1),
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,107,53,0.3)',
+    borderColor: withOpacity(Colors.brandOrange, 0.3),
     padding: 16,
     marginBottom: 24,
   },

@@ -6,7 +6,7 @@ import { Pencil } from 'lucide-react-native'
 import { BackButton, OTPInput, PrimaryButton, Screen, KeyboardAvoidingWrapper, DeletedAccountSheet, LogoMark } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
 import { useCountdown } from '@/hooks/useCountdown'
-import { Colors, FontFamily, Spacing } from '@/constants'
+import { Colors, FontFamily, Spacing, withOpacity } from '@/constants'
 
 export default function OTPScreen() {
   const { phone } = useLocalSearchParams<{ phone: string }>()
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
   },
   countdownTimer: {
     fontFamily: FontFamily.bodySemiBold,
-    color: 'rgba(255,107,53,0.75)',
+    color: withOpacity(Colors.brandOrange, 0.75),
   },
   resendBtn: {
     fontFamily: FontFamily.bodySemiBold,

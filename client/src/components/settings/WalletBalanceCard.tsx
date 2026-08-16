@@ -2,23 +2,23 @@ import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-nati
 import { router } from 'expo-router'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Wallet, HeadphonesIcon } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 
 export function WalletBalanceCard({ balance, loading }: { balance: number; loading: boolean }) {
   return (
     <>
       <LinearGradient
-        colors={['#FF6B35', '#FF3864']}
+        colors={[Colors.brandOrange, Colors.brandCoral]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={s.balanceCard}
       >
         <View style={s.balanceIconRow}>
-          <Wallet size={20} color="rgba(255,255,255,0.8)" strokeWidth={1.8} />
+          <Wallet size={20} color={withOpacity(Colors.white, 0.8)} strokeWidth={1.8} />
           <Text style={s.balanceLabel}>Wallet Balance</Text>
         </View>
         {loading ? (
-          <ActivityIndicator color="#fff" style={{ marginTop: 8 }} />
+          <ActivityIndicator color={Colors.white} style={{ marginTop: 8 }} />
         ) : (
           <Text style={s.balanceAmount}>₹{balance}</Text>
         )}
@@ -43,9 +43,9 @@ export function WalletBalanceCard({ balance, loading }: { balance: number; loadi
 const s = StyleSheet.create({
   balanceCard: { margin: 16, borderRadius: 20, padding: 24 },
   balanceIconRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  balanceLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: 'rgba(255,255,255,0.8)' },
-  balanceAmount: { fontFamily: FontFamily.headingBold, fontSize: 48, color: '#fff', marginVertical: 4 },
-  balanceNote: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2 },
+  balanceLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: withOpacity(Colors.white, 0.8) },
+  balanceAmount: { fontFamily: FontFamily.headingBold, fontSize: 48, color: Colors.white, marginVertical: 4 },
+  balanceNote: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: withOpacity(Colors.white, 0.6), marginTop: 2 },
 
   infoCard: {
     marginHorizontal: 16, marginBottom: 8,
@@ -54,7 +54,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 12,
   },
   infoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  infoIconWrap: { width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(255,107,53,0.1)', alignItems: 'center', justifyContent: 'center', marginTop: 1 },
+  infoIconWrap: { width: 28, height: 28, borderRadius: 14, backgroundColor: withOpacity(Colors.brandOrange, 0.1), alignItems: 'center', justifyContent: 'center', marginTop: 1 },
   infoText: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, lineHeight: 19 },
   infoSub: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkDisabled, marginTop: 2 },
   infoLink: { fontFamily: FontFamily.bodyMedium, color: Colors.brandOrange },

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { Plus, X } from 'lucide-react-native'
-import { Colors, PLATFORM_FEE_INR, HOST_COMMISSION_RATE, HOST_COMMISSION_PERCENT_LABEL } from '@/constants'
+import { Colors, PLATFORM_FEE_INR, HOST_COMMISSION_RATE, HOST_COMMISSION_PERCENT_LABEL, withOpacity } from '@/constants'
 import type { CreateEventForm } from '@/hooks/useCreateEvent'
 import { ef } from './styles'
 import { usePillStore } from '@/store/pillStore'
@@ -126,12 +126,12 @@ const s = StyleSheet.create({
   lockedSection: { opacity: 0.45 },
   uploadOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: withOpacity(Colors.black, 0.45),
     alignItems: 'center',
     justifyContent: 'center',
   },
   submitError: {
-    backgroundColor: 'rgba(255,56,100,0.15)',
+    backgroundColor: withOpacity(Colors.brandCoral, 0.15),
     borderRadius: 10, padding: 12, marginTop: 12,
     borderWidth: 1, borderColor: Colors.brandCoral,
   },
@@ -139,7 +139,7 @@ const s = StyleSheet.create({
   freeDisabled: { opacity: 0.35 },
   feeBreakdown: {
     marginTop: 10,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: withOpacity(Colors.white, 0.05),
     borderRadius: 10,
     padding: 10,
   },

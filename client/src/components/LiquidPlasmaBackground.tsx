@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { StyleSheet, View, Dimensions } from 'react-native'
 import { Canvas, Fill, Shader, Skia } from '@shopify/react-native-skia'
 import { useSharedValue, withRepeat, withTiming, Easing, useDerivedValue } from 'react-native-reanimated'
+import { Colors } from '@/constants'
 
 const { width, height } = Dimensions.get('window')
 
@@ -73,8 +74,8 @@ interface Props {
 export default function LiquidPlasmaBackground({ colors, vertical = false }: Props = {}) {
   const time = useSharedValue(0)
   
-  const targetC1 = colors ? hexToRgb(colors[0]) : hexToRgb('#111111')
-  const targetC2 = colors ? hexToRgb(colors[1]) : hexToRgb('#FF3864')
+  const targetC1 = colors ? hexToRgb(colors[0]) : hexToRgb(Colors.background)
+  const targetC2 = colors ? hexToRgb(colors[1]) : hexToRgb(Colors.brandCoral)
 
   const c1 = useSharedValue(targetC1)
   const c2 = useSharedValue(targetC2)

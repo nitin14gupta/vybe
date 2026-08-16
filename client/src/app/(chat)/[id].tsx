@@ -6,7 +6,7 @@ import { useLocalSearchParams } from 'expo-router'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { Mic } from 'lucide-react-native'
 import { BlockSheet, ReportSheet } from '@/components/ui'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { useChatScreen } from '@/hooks/useChatScreen'
 import type { Message } from '@/api/apiService'
 
@@ -52,7 +52,7 @@ const SKELETON_ROWS: { mine: boolean; width: number }[] = [
 function MessageListSkeleton() {
   return (
     <View style={[s.body, s.msgList, { justifyContent: 'flex-end' }]}>
-      <AutoSkeletonView isLoading animationType="gradient" defaultRadius={16} gradientColors={['#1e1e1e', '#2e2e2e']}>
+      <AutoSkeletonView isLoading animationType="gradient" defaultRadius={16} gradientColors={[Colors.skeletonBase, Colors.skeletonHighlight]}>
         {SKELETON_ROWS.map((row, i) => (
           <View
             key={i}
@@ -341,7 +341,7 @@ const s = StyleSheet.create({
   selectionBar: {
     backgroundColor: Colors.background,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.1)',
+    borderTopColor: withOpacity(Colors.white, 0.1),
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 20,
@@ -363,7 +363,7 @@ const s = StyleSheet.create({
   selectionBarBtnTextDisabled: { color: Colors.inkDisabled },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   msgList: { paddingHorizontal: 16, paddingVertical: 12 },
-  skBubble: { height: 40, borderRadius: 16, backgroundColor: '#2a2a2a', marginBottom: 10 },
+  skBubble: { height: 40, borderRadius: 16, backgroundColor: Colors.surfaceMuted, marginBottom: 10 },
   loadMoreWrap: { paddingVertical: 14, alignItems: 'center' },
   seenLabel: {
     fontFamily: FontFamily.bodyRegular,
@@ -375,8 +375,8 @@ const s = StyleSheet.create({
   },
   voiceIndicatorWrap: { marginBottom: 12, maxWidth: '82%', alignSelf: 'flex-start' },
   voiceIndicatorBubble: {
-    backgroundColor: '#222',
-    borderWidth: 1, borderColor: '#2a2a2a',
+    backgroundColor: Colors.elevated,
+    borderWidth: 1, borderColor: Colors.surfaceMuted,
     borderRadius: 16, borderBottomLeftRadius: 4,
     paddingHorizontal: 14, paddingVertical: 10,
   },

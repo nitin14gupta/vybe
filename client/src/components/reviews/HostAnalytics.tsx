@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native'
 import { BarChart } from 'react-native-gifted-charts'
 import { AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react-native'
-import { Colors, FontFamily, Radius, Spacing } from '@/constants'
+import { Colors, FontFamily, Radius, Spacing, withOpacity } from '@/constants'
 import type { HostReviewEvent } from '@/api/apiService'
 
 const LOW_THRESHOLD = 3.5
@@ -79,7 +79,7 @@ function RatingBarChart({
         rulesType="dashed"
         dashWidth={4}
         dashGap={5}
-        rulesColor="rgba(255,255,255,0.1)"
+        rulesColor={withOpacity(Colors.white, 0.1)}
         yAxisTextStyle={a.axisLabel}
         xAxisLabelTextStyle={a.axisLabel}
         yAxisLabelWidth={20}
@@ -199,7 +199,7 @@ const a = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(255,56,100,0.1)',
+    backgroundColor: withOpacity(Colors.brandCoral, 0.1),
     borderRadius: Radius.pill,
     paddingHorizontal: 12,
     paddingVertical: 8,

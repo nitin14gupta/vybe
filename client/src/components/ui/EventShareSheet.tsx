@@ -13,7 +13,7 @@ import { Asset as MediaAsset, requestPermissionsAsync as requestMediaPermissions
 import { hTap, hSuccess, hSelection } from '@/lib/haptics'
 import { useImageShare } from '@/hooks/useImageShare'
 import { usePillStore } from '@/store/pillStore'
-import { Colors, FontFamily, FLYER_THEMES, type FlyerTheme } from '@/constants'
+import { Colors, FontFamily, FLYER_THEMES, type FlyerTheme, withOpacity } from '@/constants'
 import { useFlyerThemeStore } from '@/store/flyerThemeStore'
 import { EventShareCard, SHARE_CARD_WIDTH, SHARE_CARD_HEIGHT } from '@/components/events/EventShareCard'
 import { EventQrShareCard } from '@/components/events/EventQrShareCard'
@@ -225,7 +225,7 @@ function EventShareSheetCore({ onClose, eventId, title, dateTimeLabel, coverUrl,
 
         <View style={s.actionsRow}>
           <Pressable style={s.actionBtn} onPress={handleSave}>
-            <View style={s.actionIcon}><Download size={22} color="#fff" strokeWidth={2} /></View>
+            <View style={s.actionIcon}><Download size={22} color={Colors.white} strokeWidth={2} /></View>
             <Text style={s.actionLabel}>Save</Text>
           </Pressable>
           <Pressable style={s.actionBtn} onPress={handleShare}>
@@ -262,7 +262,7 @@ export function EventShareSheet(props: Props) {
 
 const s = StyleSheet.create({
   bg: { backgroundColor: Colors.elevated },
-  handle: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  handle: { backgroundColor: withOpacity(Colors.white, 0.18) },
   content: { paddingTop: 8, paddingBottom: 0, alignItems: 'center' },
   title: {
     fontFamily: FontFamily.headingBold,
@@ -279,7 +279,7 @@ const s = StyleSheet.create({
   carousel: { width: '100%', height: SHARE_CARD_HEIGHT, flexGrow: 0 },
   slidePlaceholder: {
     width: SHARE_CARD_WIDTH, height: SHARE_CARD_HEIGHT,
-    borderRadius: 20, backgroundColor: '#1a1a1a',
+    borderRadius: 20, backgroundColor: Colors.surface,
   },
   swatchRow: {
     height: SWATCH_ROW_HEIGHT,
@@ -293,7 +293,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 8,
     borderRadius: 24,
-    // backgroundColor: 'rgba(255,255,255,0.05)',
+    // backgroundColor: withOpacity(Colors.white, 0.05),
   },
   swatchRing: {
     borderRadius: 19,
@@ -310,7 +310,7 @@ const s = StyleSheet.create({
     height: 26,
     borderRadius: 16,
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: Colors.black,
     shadowOpacity: 0.3,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
@@ -327,7 +327,7 @@ const s = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: 'rgba(255,255,255,0.4)',
+    backgroundColor: withOpacity(Colors.white, 0.4),
   },
   dots: {
     flexDirection: 'row',
@@ -355,7 +355,7 @@ const s = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: withOpacity(Colors.white, 0.1),
     alignItems: 'center',
     justifyContent: 'center',
   },

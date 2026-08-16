@@ -8,7 +8,7 @@ import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
 import { Square, Mic, Send, Trash2, Plus, X, Play, Pause, Pencil } from 'lucide-react-native'
 import { RecordingWave, PlaybackWave } from '@/components/ui'
 import { hHeavy, hSuccess, hTap, hError } from '@/lib/haptics'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import type { Message } from '@/api/apiService'
 import type { RecordedVoice } from '@/hooks/useVoiceRecorder'
 import { ReplyBar } from './ReplyBar'
@@ -72,8 +72,8 @@ function VoicePreviewPlayer({ uri, durationMs }: { uri: string; durationMs: numb
     <View style={pv.wrap}>
       <Pressable onPress={toggle} style={pv.btn}>
         {status.playing
-          ? <Pause size={14} color="#111" strokeWidth={2.5} />
-          : <Play size={14} color="#111" strokeWidth={2.5} />
+          ? <Pause size={14} color={Colors.background} strokeWidth={2.5} />
+          : <Play size={14} color={Colors.background} strokeWidth={2.5} />
         }
       </Pressable>
       <View style={pv.wave}>
@@ -173,7 +173,7 @@ export function ChatInputBar({
           <Text style={s.recordTimer}>{formatTime(recordDurationMs)}</Text>
         </View>
         <Pressable style={s.recordStopBtn} onPress={() => { hTap(); onRecordStop() }}>
-          <Square size={15} color="#111" strokeWidth={0} fill="#111" />
+          <Square size={15} color={Colors.background} strokeWidth={0} fill={Colors.background} />
         </Pressable>
       </View>
     )
@@ -189,7 +189,7 @@ export function ChatInputBar({
         </Pressable>
         <VoicePreviewPlayer uri={recordedVoice.uri} durationMs={recordedVoice.durationMs} />
         <Pressable style={s.sendBtn} onPress={() => { hSuccess(); onSendVoice() }}>
-          <Send size={16} color="#111" strokeWidth={2.5} fill="#111" />
+          <Send size={16} color={Colors.background} strokeWidth={2.5} fill={Colors.background} />
         </Pressable>
       </View>
     )
@@ -250,7 +250,7 @@ export function ChatInputBar({
 
           {hasText && (
             <Pressable style={s.sendBtn} onPress={onSend}>
-              <Send size={17} color="#111" strokeWidth={2} fill="#111" />
+              <Send size={17} color={Colors.background} strokeWidth={2} fill={Colors.background} />
             </Pressable>
           )}
         </View>
@@ -286,9 +286,9 @@ const s = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: Colors.surface,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderTopColor: withOpacity(Colors.white, 0.06),
     gap: 8,
   },
   editBarText: { flex: 1, fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: Colors.brandOrange },
@@ -297,11 +297,11 @@ const s = StyleSheet.create({
   recordBar: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 14, paddingVertical: 10,
-    backgroundColor: 'rgba(255,107,53,0.05)', gap: 10,
+    backgroundColor: withOpacity(Colors.brandOrange, 0.05), gap: 10,
   },
   iconBtn: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: withOpacity(Colors.white, 0.06),
     alignItems: 'center', justifyContent: 'center',
   },
   recordCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -318,13 +318,13 @@ const s = StyleSheet.create({
   },
   addBtn: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: withOpacity(Colors.white, 0.07),
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 2,
   },
   inputWrap: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: Colors.surface,
     borderRadius: 22,
     borderWidth: 1,
     borderColor: '#252525',

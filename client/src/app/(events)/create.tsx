@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { hTap, hSuccess } from '@/lib/haptics'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import {
   BrandedLoader,
   DateTimePickerSheet,
@@ -211,7 +211,7 @@ const s = StyleSheet.create({
   loadingOverlay: {
     ...StyleSheet.absoluteFill,
     zIndex: 10,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: withOpacity(Colors.black, 0.55),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -222,7 +222,7 @@ const s = StyleSheet.create({
   stepTitle: {
     fontFamily: FontFamily.headingBold,
     fontSize: 26,
-    color: '#fff',
+    color: Colors.white,
     marginBottom: 6,
     letterSpacing: -0.5,
   },

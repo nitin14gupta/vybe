@@ -10,7 +10,7 @@ import {
 import { hTap } from '@/lib/haptics'
 import { Colors, FontFamily, Radius, ComponentSize } from '@/constants'
 
-const CARD_BORDER = '#2A2A2A'
+const CARD_BORDER = Colors.surfaceMuted
 
 function SaveButton({ onPress }: { onPress: () => void }) {
   const scale = useSharedValue(1)

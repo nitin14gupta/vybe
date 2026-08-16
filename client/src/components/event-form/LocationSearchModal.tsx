@@ -29,7 +29,7 @@ export function LocationSearchModal({
       <Screen bottom={false}>
         <View style={s.modalHeader}>
           <Pressable onPress={onClose} style={s.iconBtn}>
-            <X size={20} color="#fff" />
+            <X size={20} color={Colors.white} />
           </Pressable>
           <Text style={s.modalTitle}>Location</Text>
           <View style={{ width: 38 }} />
@@ -45,7 +45,7 @@ export function LocationSearchModal({
         />
 
         {loading ? (
-          <AutoSkeletonView isLoading animationType="gradient" defaultRadius={7} gradientColors={['#4a4a4a', '#6a6a6a']}>
+          <AutoSkeletonView isLoading animationType="gradient" defaultRadius={7} gradientColors={[Colors.skeletonAlt, Colors.skeletonAltHighlight]}>
             {Array.from({ length: 6 }).map((_, i) => (
               <View key={i} style={s.skRow}>
                 <View style={s.skIcon} />
@@ -67,7 +67,7 @@ export function LocationSearchModal({
                 style={s.resultItem}
                 onPress={() => onSelect(item)}
               >
-                <MapPin size={20} color="#fff" style={{ marginTop: 2, marginRight: 12 }} />
+                <MapPin size={20} color={Colors.white} style={{ marginTop: 2, marginRight: 12 }} />
                 <View style={{ flex: 1 }}>
                   <Text style={s.resultName} numberOfLines={1}>{item.name || item.display_name.split(',')[0]}</Text>
                   <Text style={s.resultAddress} numberOfLines={2}>{item.display_name}</Text>
@@ -108,7 +108,7 @@ const s = StyleSheet.create({
   },
   modalTitle: {
     fontFamily: FontFamily.headingBold,
-    fontSize: 17, color: '#fff',
+    fontSize: 17, color: Colors.white,
   },
   searchWrap: {
     marginHorizontal: 16, marginTop: 12, marginBottom: 20,
@@ -122,7 +122,7 @@ const s = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: Colors.glassSurface,
   },
   resultName: {
-    fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: '#fff',
+    fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.white,
     marginBottom: 4,
   },
   resultAddress: {
@@ -141,8 +141,8 @@ const s = StyleSheet.create({
     fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.glassTextDisabled,
   },
   skRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, gap: 14 },
-  skIcon: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#4a4a4a' },
+  skIcon: { width: 52, height: 52, borderRadius: 26, backgroundColor: Colors.skeletonAlt },
   skInfo: { flex: 1, gap: 8 },
-  skLineName: { height: 14, width: '55%', borderRadius: 7, backgroundColor: '#4a4a4a' },
-  skLineAddress: { height: 12, width: '35%', borderRadius: 6, backgroundColor: '#4a4a4a' },
+  skLineName: { height: 14, width: '55%', borderRadius: 7, backgroundColor: Colors.skeletonAlt },
+  skLineAddress: { height: 12, width: '35%', borderRadius: 6, backgroundColor: Colors.skeletonAlt },
 })

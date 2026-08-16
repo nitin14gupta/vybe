@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native'
 import { BottomSheetModal, BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { hSelection } from '@/lib/haptics'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 
 const MAX_SHEET_HEIGHT = Dimensions.get('window').height * 0.7
 
@@ -47,7 +47,7 @@ function SortSheetCore<T extends string>({ title, options, selected, onSelect, o
           <Pressable
             key={opt.key}
             style={[s.row, selected === opt.key && s.rowActive]}
-            android_ripple={{ color: 'rgba(255,255,255,0.06)' }}
+            android_ripple={{ color: withOpacity(Colors.white, 0.06) }}
             onPress={() => { hSelection(); onSelect(opt.key); sheetRef.current?.dismiss() }}
           >
             <Text style={[s.rowText, selected === opt.key && s.rowTextActive]} numberOfLines={1}>{opt.label}</Text>
@@ -67,7 +67,7 @@ export function SortSheet<T extends string>(props: Props<T>) {
 
 const s = StyleSheet.create({
   bg: { backgroundColor: Colors.elevated },
-  handle: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  handle: { backgroundColor: withOpacity(Colors.white, 0.18) },
   content: { paddingTop: 8, paddingBottom: 0 },
   title: {
     fontFamily: FontFamily.headingBold,
@@ -86,7 +86,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
-  rowActive: { backgroundColor: 'rgba(255,107,53,0.06)' },
+  rowActive: { backgroundColor: withOpacity(Colors.brandOrange, 0.06) },
   rowText: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 15,

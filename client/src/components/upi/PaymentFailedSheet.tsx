@@ -4,7 +4,7 @@ import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withSequence, withDelay } from 'react-native-reanimated'
 import { XCircle, AlertCircle, RefreshCw, ArrowLeft } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { hTap } from '@/lib/haptics'
 import { PrimaryButton, OutlineButton } from '@/components/ui'
 
@@ -69,8 +69,8 @@ function PaymentFailedCore({ message, onRetry, onBack }: Omit<Props, 'visible'>)
       <BottomSheetView style={s.content}>
         <Animated.View style={iconStyle}>
           {isCancelled
-            ? <AlertCircle size={52} color="#FFB830" strokeWidth={1.5} />
-            : <XCircle size={52} color="#FF3864" strokeWidth={1.5} />
+            ? <AlertCircle size={52} color={Colors.accentGold} strokeWidth={1.5} />
+            : <XCircle size={52} color={Colors.brandCoral} strokeWidth={1.5} />
           }
         </Animated.View>
 
@@ -111,8 +111,8 @@ export function PaymentFailedSheet({ visible, message, onRetry, onBack }: Props)
 }
 
 const s = StyleSheet.create({
-  bg: { backgroundColor: '#141414' },
-  handle: { backgroundColor: 'rgba(255,255,255,0.1)' },
+  bg: { backgroundColor: Colors.sheetBackground },
+  handle: { backgroundColor: withOpacity(Colors.white, 0.1) },
   content: { paddingHorizontal: 28, paddingBottom: 40, paddingTop: 8, alignItems: 'center' },
 
   iconWrap: { marginTop: 8, marginBottom: 20 },

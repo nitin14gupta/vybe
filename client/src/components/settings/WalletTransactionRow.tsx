@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native'
 import { Image } from 'expo-image'
 import { ArrowDownLeft, ArrowUpRight } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import type { WalletTransaction } from '@/api/apiService'
 
 // Postgres returns timestamps like "2025-06-12 10:30:00.123456+05:30" — normalise to ISO
@@ -52,8 +52,8 @@ const s = StyleSheet.create({
   txRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 14, backgroundColor: Colors.surface },
   txIconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   txCover: { width: 36, height: 36, borderRadius: 10 },
-  txIconCredit: { backgroundColor: 'rgba(0,196,140,0.12)' },
-  txIconDebit: { backgroundColor: 'rgba(255,255,255,0.06)' },
+  txIconCredit: { backgroundColor: withOpacity(Colors.accentGreen, 0.12) },
+  txIconDebit: { backgroundColor: withOpacity(Colors.white, 0.06) },
   txMid: { flex: 1 },
   txDesc: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.inkPrimary },
   txDate: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary, marginTop: 2 },

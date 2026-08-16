@@ -5,7 +5,7 @@ import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { Flame } from 'lucide-react-native'
 import { hMedium, hTap } from '@/lib/haptics'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import type { DiscoverUser } from '@/api/apiService'
 import { PrimaryButton } from './PrimaryButton'
 
@@ -133,8 +133,8 @@ export function VibeRequestModal({ visible, user, onSend, onClose }: Props) {
 }
 
 const s = StyleSheet.create({
-  bg: { backgroundColor: '#1a1a1a' },
-  handleIndicator: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  bg: { backgroundColor: Colors.surface },
+  handleIndicator: { backgroundColor: withOpacity(Colors.white, 0.18) },
   content: { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 8 },
   partnerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
   avatar: { width: 52, height: 52, borderRadius: 26},
@@ -143,10 +143,10 @@ const s = StyleSheet.create({
   partnerInfo: { flex: 1, marginLeft: 12 },
   partnerName: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
   partnerCity: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, marginTop: 2 },
-  flameBadge: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,107,53,0.15)', alignItems: 'center', justifyContent: 'center' },
+  flameBadge: { width: 36, height: 36, borderRadius: 18, backgroundColor: withOpacity(Colors.brandOrange, 0.15), alignItems: 'center', justifyContent: 'center' },
   heading: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.inkPrimary, marginBottom: 4 },
   sub: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, marginBottom: 20, lineHeight: 18 },
-  inputWrapper: { backgroundColor: '#222', borderRadius: 16, borderWidth: 1, borderColor: '#333', padding: 14, marginBottom: 16, minHeight: 100 },
+  inputWrapper: { backgroundColor: Colors.elevated, borderRadius: 16, borderWidth: 1, borderColor: Colors.grayBorder, padding: 14, marginBottom: 16, minHeight: 100 },
   input: { fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkPrimary, lineHeight: 22, flex: 1 },
   charCount: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, textAlign: 'right', marginTop: 6 },
   charCountWarn: { color: Colors.brandCoral },

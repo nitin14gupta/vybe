@@ -28,7 +28,7 @@ const s = StyleSheet.create({
   card: {
     width: SHARE_CARD_WIDTH,
     height: SHARE_CARD_HEIGHT,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
@@ -45,7 +45,7 @@ const s = StyleSheet.create({
   title: {
     fontFamily: FontFamily.headingBold,
     fontSize: 17,
-    color: '#111',
+    color: Colors.background,
     textAlign: 'center',
   },
   meta: {

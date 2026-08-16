@@ -98,7 +98,7 @@ const s = StyleSheet.create({
     color: Colors.inkPrimary,
   },
   inputGlass: {
-    color: '#fff',
+    color: Colors.white,
     paddingVertical: 10,
   },
 })

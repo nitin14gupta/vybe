@@ -1,7 +1,7 @@
 import { forwardRef } from 'react'
 import { View, Text, StyleSheet, type ImageSourcePropType } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
-import { FontFamily, LogoBlack } from '@/constants'
+import { FontFamily, LogoBlack, Colors } from '@/constants'
 
 interface StyledQrProps {
   data: string
@@ -22,12 +22,12 @@ export function StyledQr({
       <QRCode
         value={data}
         size={size - padding * 2}
-        color="#000"
-        backgroundColor="#fff"
+        color={Colors.black}
+        backgroundColor={Colors.white}
         ecl={errorCorrectionLevel}
         logo={showLogo ? logoSource : undefined}
         logoSize={size * 0.22}
-        logoBackgroundColor="#fff"
+        logoBackgroundColor={Colors.white}
         logoBorderRadius={8}
         logoMargin={2}
         quietZone={padding}
@@ -57,7 +57,7 @@ export const QrCard = forwardRef<View, QrCardProps>(({ data, title, subtitle, si
 
 const s = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderRadius: 28,
     paddingHorizontal: 28,
     paddingTop: 32,
@@ -65,11 +65,11 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  qr: { backgroundColor: '#fff' },
+  qr: { backgroundColor: Colors.white },
   title: {
     fontFamily: FontFamily.headingBold,
     fontSize: 18,
-    color: '#111',
+    color: Colors.background,
     marginTop: 16,
   },
   subtitle: {

@@ -1,6 +1,6 @@
 import React from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 
 export function LockedBanner({ capacityLocked }: { capacityLocked: boolean }) {
   return (
@@ -35,15 +35,15 @@ export function DateShiftBanner({ onCancel, onConfirm }: { onCancel: () => void;
 
 const s = StyleSheet.create({
   lockedBanner: {
-    backgroundColor: 'rgba(255,56,100,0.12)',
+    backgroundColor: withOpacity(Colors.brandCoral, 0.12),
     borderBottomWidth: 1, borderBottomColor: Colors.brandCoral,
     paddingVertical: 10, paddingHorizontal: 20,
   },
   lockedText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.brandCoral, textAlign: 'center' },
 
   dateShiftBanner: {
-    backgroundColor: 'rgba(255,184,48,0.08)',
-    borderBottomWidth: 1, borderBottomColor: 'rgba(255,184,48,0.3)',
+    backgroundColor: withOpacity(Colors.accentGold, 0.08),
+    borderBottomWidth: 1, borderBottomColor: withOpacity(Colors.accentGold, 0.3),
     paddingVertical: 14, paddingHorizontal: 20, gap: 8,
   },
   dateShiftTitle: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.accentGold },
@@ -60,5 +60,5 @@ const s = StyleSheet.create({
     backgroundColor: Colors.accentGold,
     alignItems: 'center', justifyContent: 'center',
   },
-  dateShiftConfirmText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: '#111' },
+  dateShiftConfirmText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.background },
 })

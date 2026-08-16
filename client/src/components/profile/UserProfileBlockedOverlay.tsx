@@ -39,7 +39,7 @@ const s = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: "#2a2a2a",
+    backgroundColor: Colors.surfaceMuted,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 4,

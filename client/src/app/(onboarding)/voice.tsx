@@ -13,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { OutlineButton, StepDots, PrimaryButton, TextLinkButton, Screen, RecordingWave, PlaybackWave, Orb, LogoMark } from '@/components/ui'
 import { useVoice } from '@/hooks/useVoice'
-import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { Colors, FontFamily, Spacing, Radius, withOpacity } from '@/constants'
 
 
 export default function VoiceScreen() {
@@ -183,8 +183,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 15,
-    color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.45)',
+    color: Colors.white,
+    textShadowColor: withOpacity(Colors.black, 0.45),
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },

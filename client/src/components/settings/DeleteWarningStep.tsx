@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native'
 import { AlertTriangle } from 'lucide-react-native'
-import { Colors, FontFamily, SUPPORT_EMAIL } from '@/constants'
+import { Colors, FontFamily, SUPPORT_EMAIL, withOpacity } from '@/constants'
 import { PrimaryButton, OutlineButton } from '@/components/ui'
 
 interface Props {
@@ -35,7 +35,7 @@ export function DeleteWarningStep({ onContinue, onCancel }: Props) {
 const styles = StyleSheet.create({
   iconCircle: {
     width: 80, height: 80, borderRadius: 40,
-    backgroundColor: 'rgba(255,56,100,0.1)',
+    backgroundColor: withOpacity(Colors.brandCoral, 0.1),
     alignItems: 'center', justifyContent: 'center',
     alignSelf: 'center', marginBottom: 20,
   },

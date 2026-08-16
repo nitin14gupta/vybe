@@ -3,7 +3,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { AlertCircle, ArrowLeft, QrCode, Users } from 'lucide-react-native'
-import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { Colors, FontFamily, Spacing, Radius, withOpacity } from '@/constants'
 import { BrandedLoader, EmptyState } from '@/components/ui'
 import { AttendeeRow } from '@/components/events/AttendeeRow'
 import { AttendeeFilterPills, type AttendeeFilter } from '@/components/events/AttendeeFilterPills'
@@ -145,7 +145,7 @@ const s = StyleSheet.create({
     borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: withOpacity(Colors.white, 0.06),
   },
   iconBtnDim: { opacity: 0.45 },
   headerCenter: { flex: 1, alignItems: 'center' },

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native'
 import { Image } from 'expo-image'
 import { Link as LinkIcon } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import ApiService, { type LinkPreview } from '@/api/apiService'
 
 const CARD_WIDTH = 240
@@ -39,7 +39,7 @@ export function LinkPreviewCard({ url, isMine }: Props) {
   if (loading) {
     return (
       <View style={[s.card, s.loadingCard]}>
-        <ActivityIndicator size="small" color={isMine ? '#fff' : Colors.inkSecondary} />
+        <ActivityIndicator size="small" color={isMine ? Colors.white : Colors.inkSecondary} />
       </View>
     )
   }
@@ -52,7 +52,7 @@ export function LinkPreviewCard({ url, isMine }: Props) {
     return (
       <View style={s.card}>
         <View style={s.plainRow}>
-          <LinkIcon size={16} color={isMine ? '#fff' : Colors.brandOrange} strokeWidth={2} />
+          <LinkIcon size={16} color={isMine ? Colors.white : Colors.brandOrange} strokeWidth={2} />
           <Text style={[s.plainUrl, isMine && s.textOnMine]} numberOfLines={1}>{hostname}</Text>
         </View>
       </View>
@@ -89,7 +89,7 @@ const s = StyleSheet.create({
     marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.3,
   },
   textOnMine: { color: Colors.inkPrimary },
-  descOnMine: { color: 'rgba(255,255,255,0.65)' },
+  descOnMine: { color: withOpacity(Colors.white, 0.65) },
   plainRow: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12 },
   plainUrl: { flex: 1, fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.brandOrange },
 })

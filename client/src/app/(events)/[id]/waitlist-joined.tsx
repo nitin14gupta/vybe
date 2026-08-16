@@ -6,7 +6,7 @@ import { StatusBar } from 'expo-status-bar'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Users } from 'lucide-react-native'
-import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { Colors, FontFamily, Spacing, Radius, withOpacity } from '@/constants'
 import { PrimaryButton, OutlineButton, BackButton, ConfirmSheet } from '@/components/ui'
 import { WaitlistPositionBadge } from '@/components/events/WaitlistPositionBadge'
 import { WaitlistInfoCard } from '@/components/events/WaitlistInfoCard'
@@ -181,9 +181,9 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(255,107,53,0.1)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.1),
     borderWidth: 1,
-    borderColor: 'rgba(255,107,53,0.22)',
+    borderColor: withOpacity(Colors.brandOrange, 0.22),
     paddingHorizontal: Spacing.md,
     paddingVertical: 10,
     borderRadius: Radius.pill,
@@ -205,6 +205,6 @@ const s = StyleSheet.create({
     gap: Spacing.sm,
   },
   leaveBtn: {
-    borderColor: 'rgba(255,56,100,0.35)',
+    borderColor: withOpacity(Colors.brandCoral, 0.35),
   },
 })

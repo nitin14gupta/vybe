@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Text, Pressable, FlatList, Dimensions, StyleSheet } from "react-native";
 import { Image as ExpoImage } from "expo-image";
-import { Colors, FontFamily } from "@/constants";
+import { Colors, FontFamily, withOpacity } from '@/constants';
 
 const { width: W } = Dimensions.get("window");
 
@@ -66,7 +66,7 @@ const s = StyleSheet.create({
   photoFallback: {
     width: W,
     height: W * 1.2,
-    backgroundColor: "#1a1a1a",
+    backgroundColor: Colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -86,7 +86,7 @@ const s = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "rgba(255,255,255,0.4)",
+    backgroundColor: withOpacity(Colors.white, 0.4),
   },
-  photoDotActive: { backgroundColor: "#fff", width: 16 },
+  photoDotActive: { backgroundColor: Colors.white, width: 16 },
 });

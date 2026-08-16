@@ -1,7 +1,7 @@
 import React, { memo } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { Image, type ImageProps } from 'expo-image'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { router } from 'expo-router'
 import { EventSummary } from '@/api/apiService'
 
@@ -67,19 +67,19 @@ const s = StyleSheet.create({
   card: {
     width: '100%',
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.02)',
+    backgroundColor: withOpacity(Colors.white, 0.02),
     borderRadius: 16,
     padding: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: withOpacity(Colors.white, 0.05),
   },
   imageContainer: {
     width: 112,
     height: 63,
     borderRadius: 8,
     overflow: 'hidden',
-    backgroundColor: '#2A2A2A',
+    backgroundColor: Colors.surfaceMuted,
     marginRight: 14,
   },
   image: {
@@ -89,7 +89,7 @@ const s = StyleSheet.create({
   imageFallback: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,107,53,0.1)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.1),
   },
   fallbackMonth: {
     fontFamily: FontFamily.bodySemiBold,
@@ -119,7 +119,7 @@ const s = StyleSheet.create({
     marginBottom: 6,
   },
   priceWrap: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: withOpacity(Colors.white, 0.08),
     alignSelf: 'flex-start',
     paddingHorizontal: 8,
     paddingVertical: 2,

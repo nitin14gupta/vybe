@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, MapPin, Star } from 'lucide-react-native'
 import { hSuccess } from '@/lib/haptics'
-import { Colors, FontFamily, Radius } from '@/constants'
+import { Colors, FontFamily, Radius, withOpacity } from '@/constants'
 import ApiService, { type EventDetail } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { ConfettiRain, PrimaryButton, BrandedLoader } from '@/components/ui'
@@ -166,8 +166,8 @@ const s = StyleSheet.create({
   },
   circleBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: withOpacity(Colors.white, 0.08),
+    borderWidth: 1, borderColor: withOpacity(Colors.white, 0.1),
     alignItems: 'center', justifyContent: 'center',
   },
 

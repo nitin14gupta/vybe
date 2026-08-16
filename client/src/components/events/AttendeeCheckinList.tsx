@@ -10,7 +10,7 @@ import {
 import { Image } from 'expo-image'
 import { CheckCircle, Search, UserCheck, Users } from 'lucide-react-native'
 import { hSuccess } from '@/lib/haptics'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import type { EventAttendee } from '@/api/apiService'
 import { PrimaryButton, BrandedRefreshControl } from '@/components/ui'
 
@@ -164,6 +164,6 @@ const s = StyleSheet.create({
   rowName: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.inkPrimary },
   rowNameChecked: { textDecorationLine: 'line-through' },
   rowSub: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary },
-  checkedInTag: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(0,196,140,0.12)', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 4 },
+  checkedInTag: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: withOpacity(Colors.accentGreen, 0.12), borderRadius: 20, paddingHorizontal: 8, paddingVertical: 4 },
   checkedInText: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.accentGreen },
 })

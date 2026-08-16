@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react'
 import { Animated, Dimensions, StyleSheet, View } from 'react-native'
+import { Colors } from '@/constants'
 
-const COLORS = ['#FF6B35', '#FF3864', '#FFB59D', '#FFBA3A', '#CF0346']
+const COLORS = [Colors.brandOrange, Colors.brandCoral, '#FFB59D', '#FFBA3A', '#CF0346']
 const { width: W, height: H } = Dimensions.get('window')
 const COUNT = 32
 

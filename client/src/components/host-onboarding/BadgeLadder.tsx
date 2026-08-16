@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { View, Text, Image, StyleSheet } from 'react-native'
-import { Colors, FontFamily, Radius, HOST_BADGE_IMAGES } from '@/constants'
+import { Colors, FontFamily, Radius, HOST_BADGE_IMAGES, withOpacity } from '@/constants'
 
 const TIERS = [
   { key: 'Rising', label: 'Rising', req: '2+ events hosted', text: Colors.accentGreen },
@@ -55,7 +55,7 @@ const s = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 9,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: withOpacity(Colors.white, 0.06),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -94,7 +94,7 @@ const s = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: withOpacity(Colors.white, 0.06),
     alignItems: 'center',
     justifyContent: 'center',
   },

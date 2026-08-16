@@ -2,7 +2,7 @@ import React from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, X as XIcon } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import type { EventDetail } from '@/api/apiService'
 
 interface Props {
@@ -26,7 +26,7 @@ export function EventCancelledScreen({ event, isHost, onBack }: Props) {
         <Text style={styles.lockedBackText}>Back</Text>
       </Pressable>
       <View style={styles.lockedBody}>
-        <View style={[styles.lockedIconWrap, { backgroundColor: 'rgba(255,56,100,0.12)' }]}>
+        <View style={[styles.lockedIconWrap, { backgroundColor: withOpacity(Colors.brandCoral, 0.12) }]}>
           <XIcon size={40} color={Colors.brandCoral} strokeWidth={2} />
         </View>
         <Text style={styles.lockedTitle}>Event Cancelled</Text>
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: 'rgba(255,107,53,0.12)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,

@@ -7,7 +7,7 @@ import {
 } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { AlertTriangle } from 'lucide-react-native'
-import { Colors, FontFamily, SUPPORT_EMAIL } from '@/constants'
+import { Colors, FontFamily, SUPPORT_EMAIL, withOpacity } from '@/constants'
 import { hTap } from '@/lib/haptics'
 import { PrimaryButton } from './PrimaryButton'
 
@@ -88,13 +88,13 @@ export function DeletedAccountSheet({ visible, ...rest }: Props) {
 }
 
 const s = StyleSheet.create({
-  bg: { backgroundColor: '#1a1a1a' },
-  handle: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  bg: { backgroundColor: Colors.surface },
+  handle: { backgroundColor: withOpacity(Colors.white, 0.18) },
   content: { paddingHorizontal: 24, paddingBottom: 40, paddingTop: 8, gap: 12, alignItems: 'center' },
 
   iconWrap: {
     width: 68, height: 68, borderRadius: 34,
-    backgroundColor: 'rgba(255,56,100,0.12)',
+    backgroundColor: withOpacity(Colors.brandCoral, 0.12),
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 4,
   },

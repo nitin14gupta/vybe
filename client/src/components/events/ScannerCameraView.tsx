@@ -4,7 +4,7 @@ import { CameraView } from 'expo-camera'
 import { AlertTriangle, CheckCircle, QrCode, XCircle } from 'lucide-react-native'
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated'
 import { hTap } from '@/lib/haptics'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { PrimaryButton } from '@/components/ui'
 
 export type ScanResult = {
@@ -64,17 +64,17 @@ export function ScannerCameraView({
         >
           {scanResult.already_checked_in ? (
             <>
-              <AlertTriangle size={16} color="#fff" strokeWidth={2} />
+              <AlertTriangle size={16} color={Colors.white} strokeWidth={2} />
               <Text style={s.resultText}>{scanResult.name} already checked in</Text>
             </>
           ) : scanResult.ok ? (
             <>
-              <CheckCircle size={16} color="#fff" strokeWidth={2} />
+              <CheckCircle size={16} color={Colors.white} strokeWidth={2} />
               <Text style={s.resultText}>{scanResult.name} checked in!</Text>
             </>
           ) : (
             <>
-              <XCircle size={16} color="#fff" strokeWidth={2} />
+              <XCircle size={16} color={Colors.white} strokeWidth={2} />
               <Text style={s.resultText}>{scanResult.error || 'Invalid ticket'}</Text>
             </>
           )}
@@ -83,7 +83,7 @@ export function ScannerCameraView({
 
       {scanning && (
         <View style={s.scanningOverlay}>
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={Colors.white} />
         </View>
       )}
     </CameraView>
@@ -110,7 +110,7 @@ const s = StyleSheet.create({
     position: 'absolute',
     width: CORNER_SIZE,
     height: CORNER_SIZE,
-    borderColor: '#fff',
+    borderColor: Colors.white,
   },
   tl: { top: 0, left: 0, borderTopWidth: CORNER_BORDER, borderLeftWidth: CORNER_BORDER, borderTopLeftRadius: 6 },
   tr: { top: 0, right: 0, borderTopWidth: CORNER_BORDER, borderRightWidth: CORNER_BORDER, borderTopRightRadius: 6 },
@@ -120,7 +120,7 @@ const s = StyleSheet.create({
     position: 'absolute',
     bottom: 12,
     alignSelf: 'center',
-    color: 'rgba(255,255,255,0.75)',
+    color: withOpacity(Colors.white, 0.75),
     fontFamily: FontFamily.bodyRegular,
     fontSize: 12,
   },
@@ -136,13 +136,13 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  resultSuccess: { backgroundColor: 'rgba(0,196,140,0.9)' },
-  resultWarning: { backgroundColor: 'rgba(255,107,53,0.9)' },
-  resultError: { backgroundColor: 'rgba(220,53,69,0.92)' },
-  resultText: { color: '#fff', fontFamily: FontFamily.bodyMedium, fontSize: 14 },
+  resultSuccess: { backgroundColor: withOpacity(Colors.accentGreen, 0.9) },
+  resultWarning: { backgroundColor: withOpacity(Colors.brandOrange, 0.9) },
+  resultError: { backgroundColor: withOpacity(Colors.destructive, 0.92) },
+  resultText: { color: Colors.white, fontFamily: FontFamily.bodyMedium, fontSize: 14 },
   scanningOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: withOpacity(Colors.black, 0.35),
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -175,7 +175,7 @@ export default function QrPaymentScreen() {
     return `${m}:${s.toString().padStart(2, '0')}`
   }
 
-  const timerColor = timeLeft < 30 ? '#FF3864' : timeLeft < 120 ? Colors.brandOrange : Colors.accentGreen
+  const timerColor = timeLeft < 30 ? Colors.brandCoral : timeLeft < 120 ? Colors.brandOrange : Colors.accentGreen
 
   const handleManualCheck = async () => {
     if (verifying) return

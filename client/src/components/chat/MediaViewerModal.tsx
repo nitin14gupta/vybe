@@ -7,7 +7,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { X } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 
 const { width: W, height: H } = Dimensions.get('window')
 
@@ -137,14 +137,14 @@ export function MediaViewerModal({ visible, items, initialIndex = 0, onClose }: 
       )}
 
       <Pressable style={s.closeBtn} onPress={onClose} hitSlop={12}>
-        <X size={22} color="#fff" strokeWidth={2} />
+        <X size={22} color={Colors.white} strokeWidth={2} />
       </Pressable>
     </Modal>
   )
 }
 
 const s = StyleSheet.create({
-  bg: { backgroundColor: '#000' },
+  bg: { backgroundColor: Colors.black },
   container: {
     flex: 1,
     alignItems: 'center',
@@ -157,7 +157,7 @@ const s = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: withOpacity(Colors.black, 0.55),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -168,11 +168,11 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 12,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: withOpacity(Colors.black, 0.55),
   },
   counterText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 12,
-    color: '#fff',
+    color: Colors.white,
   },
 })

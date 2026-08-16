@@ -7,7 +7,7 @@ import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { router } from 'expo-router'
 import { X, Flame, Check } from 'lucide-react-native'
 import { hTap, hSuccess } from '@/lib/haptics'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import type { VibeRequest } from '@/api/apiService'
 
 // Flat shapes only, no background on the wrapper — AutoSkeletonView shimmers
@@ -27,8 +27,8 @@ function RequestCardSkeleton() {
 }
 
 const sk = StyleSheet.create({
-  avatar: { backgroundColor: '#2a2a2a' },
-  line: { height: 10, borderRadius: 5, backgroundColor: '#2a2a2a' },
+  avatar: { backgroundColor: Colors.surfaceMuted },
+  line: { height: 10, borderRadius: 5, backgroundColor: Colors.surfaceMuted },
 })
 
 interface Props {
@@ -65,7 +65,7 @@ function RequestCard({ req, onBeginAccept, onPass }: { req: VibeRequest; onBegin
         </View>
       </Pressable>
       {actioned === 'pending' ? (
-        <View style={s.actionedBadge}><Check size={14} color="#4CAF50" strokeWidth={2.5} /><Text style={s.actionedText}>Accepting…</Text></View>
+        <View style={s.actionedBadge}><Check size={14} color={Colors.onlineGreen} strokeWidth={2.5} /><Text style={s.actionedText}>Accepting…</Text></View>
       ) : actioned === 'passed' ? (
         <View style={[s.actionedBadge, s.actionedBadgePassed]}><Text style={s.actionedText}>Passed</Text></View>
       ) : (
@@ -74,7 +74,7 @@ function RequestCard({ req, onBeginAccept, onPass }: { req: VibeRequest; onBegin
             <X size={18} color={Colors.inkSecondary} strokeWidth={2} />
           </Pressable>
           <Pressable style={s.acceptBtn} onPress={() => { hSuccess(); setActioned('pending'); onBeginAccept(req.id, req.name) }}>
-            <Flame size={16} color="#111" fill="#111" />
+            <Flame size={16} color={Colors.background} fill={Colors.background} />
           </Pressable>
         </View>
       )}
@@ -115,7 +115,7 @@ function VibeInboxSheetCore({ requests, loading, onBeginAccept, onPass, onClose 
       {loading ? (
         <BottomSheetView style={s.fullContent}>
           {Header}
-          <AutoSkeletonView isLoading animationType="gradient" defaultRadius={16} gradientColors={['#2a2a2a', '#3a3a3a']}>
+          <AutoSkeletonView isLoading animationType="gradient" defaultRadius={16} gradientColors={[Colors.surfaceMuted, '#3a3a3a']}>
             <View style={{ gap: 12 }}>
               {Array.from({ length: 4 }).map((_, i) => (
                 <RequestCardSkeleton key={i} />
@@ -153,30 +153,30 @@ export function VibeInboxSheet({ visible, ...rest }: Props) {
 }
 
 const s = StyleSheet.create({
-  bg: { backgroundColor: '#141414' },
-  handleIndicator: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  bg: { backgroundColor: Colors.sheetBackground },
+  handleIndicator: { backgroundColor: withOpacity(Colors.white, 0.18) },
   fullContent: { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 8 },
   listContent: { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 8 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary },
   countBadge: { width: 22, height: 22, borderRadius: 11, backgroundColor: Colors.brandOrange, alignItems: 'center', justifyContent: 'center' },
-  countBadgeText: { fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: '#111' },
-  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e1e1e', borderRadius: 16, borderWidth: 1, borderColor: '#2a2a2a', padding: 14, gap: 12 },
+  countBadgeText: { fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: Colors.background },
+  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.skeletonBase, borderRadius: 16, borderWidth: 1, borderColor: Colors.surfaceMuted, padding: 14, gap: 12 },
   cardActioned: { opacity: 0.55 },
   cardLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   cardAvatar: { width: 52, height: 52, borderRadius: 26 },
-  cardAvatarFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
+  cardAvatarFallback: { backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   cardAvatarInitial: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary },
   cardInfo: { flex: 1 },
   cardName: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkPrimary },
   cardCity: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkSecondary },
   cardMsg: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary, fontStyle: 'italic', marginTop: 3, lineHeight: 16 },
   cardActions: { flexDirection: 'row', gap: 8 },
-  passBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
+  passBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: withOpacity(Colors.white, 0.15), alignItems: 'center', justifyContent: 'center' },
   acceptBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.brandOrange, alignItems: 'center', justifyContent: 'center' },
-  actionedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, backgroundColor: 'rgba(76,175,80,0.12)', borderWidth: 1, borderColor: 'rgba(76,175,80,0.3)' },
-  actionedBadgePassed: { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' },
+  actionedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, backgroundColor: withOpacity(Colors.onlineGreen, 0.12), borderWidth: 1, borderColor: withOpacity(Colors.onlineGreen, 0.3) },
+  actionedBadgePassed: { backgroundColor: withOpacity(Colors.white, 0.05), borderColor: withOpacity(Colors.white, 0.1) },
   actionedText: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkSecondary },
   emptyBox: { paddingVertical: 40, alignItems: 'center', gap: 10 },
   emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },

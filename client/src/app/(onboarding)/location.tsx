@@ -4,7 +4,7 @@ import { hTap, hSelection } from '@/lib/haptics'
 import { Search, MapPin, Check } from 'lucide-react-native'
 import { OutlineButton, StepDots, Input, PrimaryButton, Screen, LogoMark } from '@/components/ui'
 import { useLocation } from '@/hooks/useLocation'
-import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { Colors, FontFamily, Spacing, Radius, withOpacity } from '@/constants'
 
 export default function LocationScreen() {
   const {
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: Radius.card,
-    backgroundColor: 'rgba(255,107,53,0.12)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
     alignItems: 'center',
     justifyContent: 'center',
   },

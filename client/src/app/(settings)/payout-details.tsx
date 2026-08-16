@@ -4,7 +4,7 @@ import { router, useFocusEffect } from 'expo-router'
 import { ArrowLeft, Landmark, CheckCircle2 } from 'lucide-react-native'
 import { AppHeader, HeaderIconBtn, PrimaryButton } from '@/components/ui'
 import ApiService, { type PayoutDetailsResponse } from '@/api/apiService'
-import { Colors, FontFamily, Radius } from '@/constants'
+import { Colors, FontFamily, Radius, withOpacity } from '@/constants'
 
 export default function PayoutDetailsScreen() {
   const [details, setDetails] = useState<PayoutDetailsResponse | null>(null)
@@ -113,7 +113,7 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   iconWrap: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(0,196,140,0.12)',
+    backgroundColor: withOpacity(Colors.accentGreen, 0.12),
     alignItems: 'center', justifyContent: 'center',
   },
   rowLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.inkSecondary, marginBottom: 2 },

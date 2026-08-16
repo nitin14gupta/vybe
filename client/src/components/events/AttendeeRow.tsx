@@ -2,7 +2,7 @@ import { memo } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
-import { Colors, FontFamily, Spacing } from '@/constants'
+import { Colors, FontFamily, Spacing, withOpacity } from '@/constants'
 import type { EventAttendee } from '@/api/apiService'
 
 export function parseAttendeeDate(iso: string): Date {
@@ -87,7 +87,7 @@ export const AttendeeRow = memo(function AttendeeRow({ item, position }: { item:
     <Pressable
       style={r.root}
       onPress={() => router.push(`/(profile)/${item.id}` as any)}
-      android_ripple={{ color: 'rgba(255,255,255,0.04)' }}
+      android_ripple={{ color: withOpacity(Colors.white, 0.04) }}
     >
       <Avatar name={item.name} avatar={item.avatar} checkedIn={checkedIn} />
 
@@ -131,9 +131,9 @@ const r = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,107,53,0.15)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.15),
     borderWidth: 1,
-    borderColor: 'rgba(255,107,53,0.35)',
+    borderColor: withOpacity(Colors.brandOrange, 0.35),
     alignItems: 'center',
     justifyContent: 'center',
   },

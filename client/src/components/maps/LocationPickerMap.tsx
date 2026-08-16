@@ -7,14 +7,15 @@ import type { NativeSyntheticEvent } from 'react-native'
 import * as Location from 'expo-location'
 import { useLiveLocation } from '@/hooks/useLiveLocation'
 import { MAP_PROVIDER, TILE_STYLE, DEFAULT_MAP_CENTER } from '@/constants/mapConfig'
+import { Colors } from '@/constants'
 
 const ADDRESS_DEBOUNCE_MS = 500
 
 const DARK_MAP_STYLE = [
-  { elementType: 'geometry', stylers: [{ color: '#1a1a1a' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#111111' }] },
+  { elementType: 'geometry', stylers: [{ color: Colors.surface }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: Colors.background }] },
   { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2c2c2c' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0d0d0d' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: Colors.deepBackground }] },
   { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#1c1c1c' }] },
 ]
 

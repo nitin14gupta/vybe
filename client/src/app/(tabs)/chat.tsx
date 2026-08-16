@@ -18,7 +18,7 @@ import { useConversations } from '@/hooks/useConversations'
 import { useExpandTabBarOnFocus } from '@/hooks/useExpandTabBarOnFocus'
 import { useAuthStore } from '@/store/auth'
 import ApiService from '@/api/apiService'
-import { Colors, ComponentSize, FontFamily, Radius } from '@/constants'
+import { Colors, ComponentSize, FontFamily, Radius, withOpacity } from '@/constants'
 import { isRecentlyActive } from '@/lib/formatLastSeen'
 import type { Conversation } from '@/api/apiService'
 
@@ -120,7 +120,7 @@ const ConvRow = memo(function ConvRow({ conv, onPress, onLongPress, onAvatarPres
 
 function ConvListSkeleton() {
   return (
-    <AutoSkeletonView isLoading animationType="gradient" defaultRadius={7} gradientColors={['#1e1e1e', '#2e2e2e']}>
+    <AutoSkeletonView isLoading animationType="gradient" defaultRadius={7} gradientColors={[Colors.skeletonBase, Colors.skeletonHighlight]}>
       {Array.from({ length: 8 }).map((_, i) => (
         <View key={i} style={s.skRow}>
           <View style={s.skAvatar} />
@@ -239,7 +239,7 @@ export default function ChatScreen() {
           <Text style={s.title}>Messages</Text>
           {/* Vibe inbox badge button */}
           <Pressable style={s.inboxBtn} onPress={() => { hTap(); setInboxOpen(true) }}>
-            <Flame size={22} color={Colors.brandOrange} fill={Colors.brandOrange} />
+            <Flame size={22} color={Colors.inkPrimary} fill={Colors.inkPrimary} />
             {pendingVibes.length > 0 && (
               <View style={s.inboxBadge}>
                 <Text style={s.inboxBadgeText}>
@@ -262,7 +262,7 @@ export default function ChatScreen() {
           <Text style={s.emptyTitle}>Couldn't load messages</Text>
           <Text style={s.emptySub}>Check your connection and try again</Text>
           <Pressable onPress={() => { hTap(); refresh() }} style={s.retryBtn} android_ripple={null}>
-            <RefreshCw size={16} color={Colors.brandOrange} strokeWidth={1.8} />
+            <RefreshCw size={16} color={Colors.inkPrimary} strokeWidth={1.8} />
             <Text style={s.retryBtnText}>Retry</Text>
           </Pressable>
         </View>
@@ -291,7 +291,7 @@ export default function ChatScreen() {
           ListFooterComponent={
             loadingMore ? (
               <View style={s.footerLoading}>
-                <ActivityIndicator color={Colors.brandOrange} size="small" />
+                <ActivityIndicator color={Colors.inkSecondary} size="small" />
               </View>
             ) : null
           }
@@ -372,7 +372,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
+    borderBottomColor: withOpacity(Colors.white, 0.08),
   },
   headerTop: {
     flexDirection: 'row',
@@ -387,18 +387,17 @@ const s = StyleSheet.create({
   },
   inboxBtn: {
     width: 44, height: 44, borderRadius: 22,
-    // backgroundColor: 'rgba(255,107,53,0.12)',
     alignItems: 'center', justifyContent: 'center',
   },
   inboxBadge: {
     position: 'absolute', top: -2, right: -2,
     minWidth: 18, height: 18, borderRadius: 9,
-    backgroundColor: Colors.brandOrange,
+    backgroundColor: Colors.inkPrimary,
     alignItems: 'center', justifyContent: 'center',
     paddingHorizontal: 3,
     borderWidth: 2, borderColor: Colors.background,
   },
-  inboxBadgeText: { fontFamily: FontFamily.bodySemiBold, fontSize: 10, color: '#111' },
+  inboxBadgeText: { fontFamily: FontFamily.bodySemiBold, fontSize: 10, color: Colors.background },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -422,9 +421,9 @@ const s = StyleSheet.create({
   retryBtn: {
     marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24,
-    borderWidth: 1, borderColor: Colors.brandOrange,
+    borderWidth: 1, borderColor: Colors.divider,
   },
-  retryBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandOrange },
+  retryBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkPrimary },
   exploreBtn: { marginTop: 12 },
   listContent: { paddingBottom: ComponentSize.navBar + 32 },
 
@@ -433,7 +432,7 @@ const s = StyleSheet.create({
   pendingSectionLabel: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 12,
-    color: Colors.brandOrange,
+    color: Colors.inkSecondary,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
     paddingHorizontal: 20,
@@ -449,7 +448,7 @@ const s = StyleSheet.create({
   },
   pendingAvatar: { width: '100%', height: '100%', borderRadius: 28 },
   pendingAvatarFallback: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: Colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -463,12 +462,12 @@ const s = StyleSheet.create({
 
   // Loading skeleton
   skRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, gap: 14 },
-  skAvatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#2a2a2a' },
+  skAvatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: Colors.surfaceMuted },
   skBody: { flex: 1, gap: 8 },
   skTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  skLineName: { height: 14, width: '45%', borderRadius: 7, backgroundColor: '#2a2a2a' },
-  skLineTime: { height: 11, width: 36, borderRadius: 6, backgroundColor: '#2a2a2a' },
-  skLinePreview: { height: 12, width: '70%', borderRadius: 6, backgroundColor: '#2a2a2a' },
+  skLineName: { height: 14, width: '45%', borderRadius: 7, backgroundColor: Colors.surfaceMuted },
+  skLineTime: { height: 11, width: 36, borderRadius: 6, backgroundColor: Colors.surfaceMuted },
+  skLinePreview: { height: 12, width: '70%', borderRadius: 6, backgroundColor: Colors.surfaceMuted },
 
   // Conversation rows
   convRow: {
@@ -487,12 +486,12 @@ const s = StyleSheet.create({
     width: 13,
     height: 13,
     borderRadius: 6.5,
-    backgroundColor: '#4CAF50',
+    backgroundColor: Colors.onlineGreen,
     borderWidth: 2,
     borderColor: Colors.background,
   },
   convAvatarFallback: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: Colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -504,7 +503,7 @@ const s = StyleSheet.create({
   convNameDeleted: { color: Colors.inkDisabled, fontStyle: 'italic' },
   convAvatarDeleted: { backgroundColor: Colors.elevated, alignItems: 'center', justifyContent: 'center' },
   convTime: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary, marginLeft: 8 },
-  convTimeUnread: { color: Colors.brandOrange },
+  convTimeUnread: { color: Colors.inkPrimary, fontFamily: FontFamily.bodySemiBold },
   convBottomRow: { flexDirection: 'row', alignItems: 'center' },
   convPreview: {
     fontFamily: FontFamily.bodyRegular,
@@ -518,11 +517,11 @@ const s = StyleSheet.create({
     minWidth: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: Colors.brandOrange,
+    backgroundColor: Colors.inkPrimary,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,
     marginLeft: 8,
   },
-  unreadText: { fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: '#111' },
+  unreadText: { fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: Colors.background },
 })

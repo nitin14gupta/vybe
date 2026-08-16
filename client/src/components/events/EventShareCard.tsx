@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Calendar } from 'lucide-react-native'
-import { Colors, FontFamily, Logo } from '@/constants'
+import { Colors, FontFamily, Logo, withOpacity } from '@/constants'
 
 export const SHARE_CARD_WIDTH = 320
 export const SHARE_CARD_HEIGHT = 400
@@ -30,14 +30,14 @@ export const EventShareCard = forwardRef<View, Props>(
           onLoad={onImageLoad}
         />
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.9)']}
+          colors={['transparent', withOpacity(Colors.black, 0.9)]}
           locations={[0.4, 1]}
           style={StyleSheet.absoluteFill}
         />
         <View style={s.content}>
           <Text style={s.title} numberOfLines={2}>{title}</Text>
           <View style={s.metaRow}>
-            <Calendar size={16} color="#fff" strokeWidth={2} />
+            <Calendar size={16} color={Colors.white} strokeWidth={2} />
             <Text style={s.meta}>{dateTimeLabel}</Text>
           </View>
           <View style={s.brandRow}>
@@ -51,11 +51,11 @@ export const EventShareCard = forwardRef<View, Props>(
 )
 
 const s = StyleSheet.create({
-  card: { width: SHARE_CARD_WIDTH, height: SHARE_CARD_HEIGHT, overflow: 'hidden', backgroundColor: '#111' },
+  card: { width: SHARE_CARD_WIDTH, height: SHARE_CARD_HEIGHT, overflow: 'hidden', backgroundColor: Colors.background },
   content: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 20, gap: 8 },
-  title: { fontFamily: FontFamily.headingBold, fontSize: 24, color: '#fff' },
+  title: { fontFamily: FontFamily.headingBold, fontSize: 24, color: Colors.white },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  meta: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: '#fff' },
+  meta: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.white },
   logo: { width: 16, height: 16, borderRadius: 4 },
   brandRow: {
     flexDirection: 'row',

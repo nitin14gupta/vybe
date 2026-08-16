@@ -8,7 +8,7 @@ import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, Mail, ChevronRight } from 'lucide-react-native'
 import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, PrimaryButton } from '@/components/ui'
-import { Colors, FontFamily, SUPPORT_EMAIL } from '@/constants'
+import { Colors, FontFamily, SUPPORT_EMAIL, withOpacity } from '@/constants'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { hTap, hSuccess } from '@/lib/haptics'
@@ -173,7 +173,7 @@ const s = StyleSheet.create({
   content: { paddingHorizontal: 16, gap: 12 },
 
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 8 },
-  heroIcon: { width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,107,53,0.12)', alignItems: 'center', justifyContent: 'center' },
+  heroIcon: { width: 56, height: 56, borderRadius: 28, backgroundColor: withOpacity(Colors.brandOrange, 0.12), alignItems: 'center', justifyContent: 'center' },
   heroText: { flex: 1 },
   heroTitle: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
   heroSub: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, marginTop: 2 },
@@ -183,7 +183,7 @@ const s = StyleSheet.create({
   topicCard: { backgroundColor: Colors.surface, borderRadius: 16, overflow: 'hidden' },
   topicRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14 },
   topicBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.divider },
-  topicRowSelected: { backgroundColor: 'rgba(255,107,53,0.06)' },
+  topicRowSelected: { backgroundColor: withOpacity(Colors.brandOrange, 0.06) },
   topicLabel: { flex: 1, fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkPrimary },
   topicLabelSelected: { fontFamily: FontFamily.bodyMedium, color: Colors.brandOrange },
 
@@ -195,7 +195,7 @@ const s = StyleSheet.create({
   input: { fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkPrimary, lineHeight: 22, minHeight: 120 },
   charCount: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, textAlign: 'right', marginTop: 8 },
 
-  noteCard: { backgroundColor: 'rgba(255,107,53,0.07)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,107,53,0.18)', padding: 14 },
+  noteCard: { backgroundColor: withOpacity(Colors.brandOrange, 0.07), borderRadius: 12, borderWidth: 1, borderColor: withOpacity(Colors.brandOrange, 0.18), padding: 14 },
   noteText: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, lineHeight: 19 },
 
   sendBtn: { marginTop: 4 },

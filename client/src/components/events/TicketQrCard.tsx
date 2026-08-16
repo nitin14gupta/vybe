@@ -95,8 +95,8 @@ export function TicketQrCard({ ticket }: { ticket: TicketInfo }) {
   )
 }
 
-const CARD_BG = '#1A1A1A'
-const CARD_BORDER = '#2A2A2A'
+const CARD_BG = Colors.surface
+const CARD_BORDER = Colors.surfaceMuted
 const QR_BG = '#ECECEC'
 
 const s = StyleSheet.create({
@@ -108,7 +108,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: CARD_BORDER,
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: Colors.black,
     shadowOpacity: 0.3,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 8 },
@@ -144,7 +144,7 @@ const s = StyleSheet.create({
     gap: 8,
   },
   hostAvatar: { width: 22, height: 22, borderRadius: 11 },
-  hostAvatarFallback: { backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
+  hostAvatarFallback: { backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
   hostAvatarInitial: { fontFamily: FontFamily.headingBold, fontSize: 11, color: Colors.inkPrimary },
   hostRowText: {
     fontFamily: FontFamily.bodyRegular,
@@ -181,10 +181,10 @@ const s = StyleSheet.create({
     gap: 12,
   },
   qrPaper: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     padding: 12,
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: Colors.black,
     shadowOpacity: 0.1,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
@@ -198,7 +198,7 @@ const s = StyleSheet.create({
   scanHint: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
-    color: '#222',
+    color: Colors.elevated,
     textAlign: 'center',
   },
   orderRef: {

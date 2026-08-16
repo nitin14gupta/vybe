@@ -13,7 +13,7 @@ import { StatusBar } from 'expo-status-bar'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Calendar, MapPin, ShieldCheck, Wallet, Music2 } from 'lucide-react-native'
-import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { Colors, FontFamily, Spacing, Radius, withOpacity } from '@/constants'
 import { BackButton, BrandedLoader, PrimaryButton } from '@/components/ui'
 import ApiService, { type EventDetail } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
@@ -148,12 +148,12 @@ export default function BookScreen() {
               transition={150}
             />
           ) : (
-            <LinearGradient colors={['#2A2A2A', '#111']} style={[s.bannerImg, { alignItems: 'center', justifyContent: 'center' }]}>
-              <Music2 size={52} color="rgba(255,107,53,0.4)" strokeWidth={1.2} />
+            <LinearGradient colors={[Colors.surfaceMuted, Colors.background]} style={[s.bannerImg, { alignItems: 'center', justifyContent: 'center' }]}>
+              <Music2 size={52} color={withOpacity(Colors.brandOrange, 0.4)} strokeWidth={1.2} />
             </LinearGradient>
           )}
           <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.55)', Colors.surface]}
+            colors={['transparent', withOpacity(Colors.black, 0.55), Colors.surface]}
             start={{ x: 0, y: 0.2 }} end={{ x: 0, y: 1 }}
             style={StyleSheet.absoluteFill}
           />
@@ -218,7 +218,7 @@ export default function BookScreen() {
                 value={walletEnabled}
                 onValueChange={v => { hSelection(); setWalletEnabled(v) }}
                 trackColor={{ false: Colors.divider, true: Colors.brandOrange }}
-                thumbColor="#fff"
+                thumbColor={Colors.white}
               />
             </View>
           )}
@@ -277,12 +277,12 @@ const s = StyleSheet.create({
   priceDivider: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.divider },
   priceSep: { height: 1, backgroundColor: Colors.divider, marginTop: 2 },
 
-  freeTag: { backgroundColor: 'rgba(255,107,53,0.08)', borderRadius: Radius.card, borderWidth: 1, borderColor: 'rgba(255,107,53,0.2)', paddingVertical: 14, paddingHorizontal: Spacing.md, alignItems: 'center', marginBottom: Spacing.lg },
+  freeTag: { backgroundColor: withOpacity(Colors.brandOrange, 0.08), borderRadius: Radius.card, borderWidth: 1, borderColor: withOpacity(Colors.brandOrange, 0.2), paddingVertical: 14, paddingHorizontal: Spacing.md, alignItems: 'center', marginBottom: Spacing.lg },
   freeText: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.brandOrange },
 
   walletCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.elevated, borderRadius: Radius.card, borderWidth: 1, borderColor: Colors.divider, paddingHorizontal: Spacing.md, paddingVertical: 12, marginBottom: Spacing.lg },
   walletLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  walletIconWrap: { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(255,107,53,0.12)', alignItems: 'center', justifyContent: 'center' },
+  walletIconWrap: { width: 34, height: 34, borderRadius: 17, backgroundColor: withOpacity(Colors.brandOrange, 0.12), alignItems: 'center', justifyContent: 'center' },
   walletLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.inkPrimary },
   walletSub: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary, marginTop: 1 },
 

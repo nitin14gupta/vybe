@@ -4,7 +4,7 @@ import Animated, {
   useSharedValue, useAnimatedStyle,
   withRepeat, withSequence, withTiming, Easing,
 } from 'react-native-reanimated'
-import { Logo } from '@/constants'
+import { Logo, Colors, withOpacity } from '@/constants'
 
 export function SplashScreen() {
   const scale = useSharedValue(1)
@@ -55,7 +55,7 @@ const LOADER_BAR_WIDTH = 36
 const s = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: Colors.black,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -66,14 +66,14 @@ const s = StyleSheet.create({
     width: 100,
     height: 14,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: withOpacity(Colors.white, 0.04),
     marginTop: -6,
   },
   shadowInner: {
     width: 60,
     height: 8,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: withOpacity(Colors.white, 0.05),
     marginTop: -9,
   },
   logoGlow: {
@@ -82,7 +82,7 @@ const s = StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#fff',
+    shadowColor: Colors.white,
     shadowOpacity: 0.14,
     shadowRadius: 34,
     shadowOffset: { width: 0, height: 0 },
@@ -97,7 +97,7 @@ const s = StyleSheet.create({
     width: LOADER_WIDTH,
     height: 3,
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: withOpacity(Colors.white, 0.12),
     overflow: 'hidden',
   },
   loaderBar: {
@@ -106,6 +106,6 @@ const s = StyleSheet.create({
     bottom: 0,
     width: LOADER_BAR_WIDTH,
     borderRadius: 2,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
   },
 })

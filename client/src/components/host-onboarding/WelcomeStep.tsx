@@ -2,7 +2,7 @@ import { memo } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { MapPin, ShieldCheck, Wallet } from 'lucide-react-native'
 import { LogoMark } from '@/components/ui'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { InfoRow } from './InfoRow'
 
 function WelcomeStepBase() {
@@ -17,19 +17,19 @@ function WelcomeStepBase() {
       <View style={s.rows}>
         <InfoRow
           icon={<MapPin size={17} color={Colors.brandOrange} strokeWidth={2} />}
-          iconBg="rgba(255,107,53,0.14)"
+          iconBg={withOpacity(Colors.brandOrange, 0.14)}
           title="Your events get discovered"
           sub="Automatically surfaces in Trending and nearby feeds the moment you publish."
         />
         <InfoRow
           icon={<ShieldCheck size={17} color={Colors.accentGreen} strokeWidth={2} />}
-          iconBg="rgba(0,196,140,0.14)"
+          iconBg={withOpacity(Colors.accentGreen, 0.14)}
           title="Phone-verified guests only"
           sub="Every attendee is identity-verified before they can book your event."
         />
         <InfoRow
           icon={<Wallet size={17} color={Colors.accentGold} strokeWidth={2} />}
-          iconBg="rgba(255,184,48,0.14)"
+          iconBg={withOpacity(Colors.accentGold, 0.14)}
           title="Automatic payouts"
           sub="Revenue lands in your UPI account after each event — no chasing payments."
         />

@@ -157,5 +157,5 @@ const s = StyleSheet.create({
     backgroundColor: Colors.brandOrange,
     alignItems: 'center', justifyContent: 'center',
   },
-  filterBadgeText: { fontFamily: FontFamily.bodySemiBold, fontSize: 10, color: '#fff' },
+  filterBadgeText: { fontFamily: FontFamily.bodySemiBold, fontSize: 10, color: Colors.white },
 })

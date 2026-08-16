@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Image } from 'expo-image'
 import { VideoView, useVideoPlayer } from 'expo-video'
 import { X, Send, Play, Check, Crop } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import ImagePicker from 'react-native-image-crop-picker'
 import { PrimaryButton } from '@/components/ui/PrimaryButton'
 import type { PendingMedia } from '@/hooks/useMediaPicker'
@@ -65,12 +65,12 @@ export function MediaPreviewModal({ media, onSend, onCancel, onRemove, onUpdate,
 
         // --- Custom UI Options (Black Palette) ---
         cropperToolbarTitle: 'Adjust Photo',
-        cropperToolbarColor: '#000000', // Black header
+        cropperToolbarColor: Colors.black, // Black header
         cropperStatusBarLight: false, // For dark status bar (light icons)
-        cropperToolbarWidgetColor: '#FFFFFF', // White text/icons in header
-        cropperActiveWidgetColor: '#111111', // Neutral dark color for active buttons (scale/rotate)
+        cropperToolbarWidgetColor: Colors.white, // White text/icons in header
+        cropperActiveWidgetColor: Colors.background, // Neutral dark color for active buttons (scale/rotate)
         cropperChooseColor: Colors.brandOrange, // iOS Choose button
-        cropperCancelColor: '#FFFFFF', // iOS Cancel button
+        cropperCancelColor: Colors.white, // iOS Cancel button
         hideBottomControls: false, // Ensure scale/rotate bottom bar is visible
         enableRotationGesture: true, // Allow two-finger rotation
       }
@@ -107,7 +107,7 @@ export function MediaPreviewModal({ media, onSend, onCancel, onRemove, onUpdate,
       <View style={[mp.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <View style={mp.header}>
           <Pressable style={mp.iconBtn} onPress={onCancel} hitSlop={10}>
-            <X size={22} color="#fff" strokeWidth={2.5} />
+            <X size={22} color={Colors.white} strokeWidth={2.5} />
           </Pressable>
           {multi && (
             <Text style={mp.headerTitle}>{activeIndex + 1} of {media.length}</Text>
@@ -134,7 +134,7 @@ export function MediaPreviewModal({ media, onSend, onCancel, onRemove, onUpdate,
                     <Image source={{ uri: item.uri }} style={mp.media} contentFit="contain" />
                     {onUpdate && index === activeIndex && (
                       <Pressable style={mp.cropOverlayBtn} onPress={() => handleCrop(item.uri, index)}>
-                        <Crop size={24} color="#fff" strokeWidth={2.5} />
+                        <Crop size={24} color={Colors.white} strokeWidth={2.5} />
                       </Pressable>
                     )}
                   </>
@@ -162,7 +162,7 @@ export function MediaPreviewModal({ media, onSend, onCancel, onRemove, onUpdate,
                 />
                 {item.type === 'video' && (
                   <View style={mp.thumbPlayBadge}>
-                    <Play size={10} color="#fff" fill="#fff" strokeWidth={0} />
+                    <Play size={10} color={Colors.white} fill={Colors.white} strokeWidth={0} />
                   </View>
                 )}
                 <Pressable
@@ -173,7 +173,7 @@ export function MediaPreviewModal({ media, onSend, onCancel, onRemove, onUpdate,
                     if (index <= activeIndex) setActiveIndex(i => Math.max(0, i - 1))
                   }}
                 >
-                  <X size={10} color="#fff" strokeWidth={3} />
+                  <X size={10} color={Colors.white} strokeWidth={3} />
                 </Pressable>
               </Pressable>
             )}
@@ -205,7 +205,7 @@ export function MediaPreviewModal({ media, onSend, onCancel, onRemove, onUpdate,
 const mp = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: Colors.black,
   },
   header: {
     flexDirection: 'row',
@@ -223,13 +223,13 @@ const mp = StyleSheet.create({
     right: 20,
     bottom: 20,
     width: 50, height: 50, borderRadius: 25,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: withOpacity(Colors.black, 0.5),
     alignItems: 'center', justifyContent: 'center',
   },
   headerTitle: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 14,
-    color: '#fff',
+    color: Colors.white,
   },
   mainList: { flex: 1 },
   mediaWrap: {
@@ -251,7 +251,7 @@ const mp = StyleSheet.create({
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: 0,
     alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.25)',
+    backgroundColor: withOpacity(Colors.black, 0.25),
     borderRadius: 10,
   },
   thumbRemove: {
@@ -259,7 +259,7 @@ const mp = StyleSheet.create({
     top: -5, right: -5,
     width: 18, height: 18, borderRadius: 9,
     backgroundColor: 'rgba(20,20,20,0.9)',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
+    borderWidth: 1, borderColor: withOpacity(Colors.white, 0.25),
     alignItems: 'center', justifyContent: 'center',
   },
   footer: {
@@ -272,7 +272,7 @@ const mp = StyleSheet.create({
   hint: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 13,
-    color: 'rgba(255,255,255,0.45)',
+    color: withOpacity(Colors.white, 0.45),
     letterSpacing: 0.2,
   },
   sendBtn: { width: '100%' },

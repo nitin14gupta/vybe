@@ -16,7 +16,7 @@ import { ArrowLeft, PartyPopper, Share2 } from 'lucide-react-native'
 import ViewShot, { type ViewShotRef } from 'react-native-view-shot'
 import { Asset as MediaAsset, requestPermissionsAsync as requestMediaPermissionsAsync } from 'expo-media-library'
 import { hTap, hSuccess } from '@/lib/haptics'
-import { Colors, FontFamily, Spacing } from '@/constants'
+import { Colors, FontFamily, Spacing, withOpacity } from '@/constants'
 import ApiService, { type TicketInfo } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { getOrFetch, peekCached } from '@/lib/queryCache'
@@ -180,7 +180,7 @@ export default function TicketScreen() {
       >
         {/* Soft neutral glow bleeds into status bar area */}
         <LinearGradient
-          colors={['rgba(255,255,255,0.08)', 'transparent']}
+          colors={[withOpacity(Colors.white, 0.08), 'transparent']}
           style={s.ambientGlow}
           pointerEvents="none"
         />
@@ -265,9 +265,9 @@ const s = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.07)',
+    backgroundColor: withOpacity(Colors.white, 0.07),
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: withOpacity(Colors.white, 0.1),
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -84,7 +84,7 @@ export default function ProfileScreen() {
           {error ?? 'Could not load profile'}
         </Text>
         <Pressable onPress={() => { hTap(); refresh() }} style={{ paddingHorizontal: 24, paddingVertical: 10, borderRadius: 20 }}>
-          <Text style={{ color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold, fontSize: 14 }}>Retry</Text>
+          <Text style={{ color: Colors.inkPrimary, fontFamily: FontFamily.bodySemiBold, fontSize: 14 }}>Retry</Text>
         </Pressable>
       </View>
     )

@@ -1,6 +1,6 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { hSelection } from '@/lib/haptics'
-import { Colors, FontFamily, Radius } from '@/constants'
+import { Colors, FontFamily, Radius, withOpacity } from '@/constants'
 
 const OPTIONS = ['Male', 'Female', 'Non-binary', 'Prefer not to say'] as const
 type Gender = typeof OPTIONS[number]
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   selected: {
-    backgroundColor: 'rgba(255,107,53,0.12)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
     borderColor: Colors.brandOrange,
   },
   unselected: {

@@ -4,7 +4,7 @@ import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, Calendar, Clock, MapPin, Shield, Users } from 'lucide-react-native'
-import { Colors, FontFamily, PLATFORM_FEE_INR, HOST_COMMISSION_RATE, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constants'
+import { Colors, FontFamily, PLATFORM_FEE_INR, HOST_COMMISSION_RATE, EVENT_ICONS, EVENT_ICON_FALLBACK, withOpacity } from '@/constants'
 import { hTap, hSelection } from '@/lib/haptics'
 import { EventCard } from '@/components/events/EventCard'
 import { StaticEventMap } from '@/components/maps'
@@ -131,7 +131,7 @@ export function EventPreviewOverlay({ visible, form, onClose }: Props) {
                 transition={150}
               />
             ) : (
-              <LinearGradient colors={['#1A1A1A', '#111111']} style={[StyleSheet.absoluteFill, s.heroPlaceholder]}>
+              <LinearGradient colors={[Colors.surface, Colors.background]} style={[StyleSheet.absoluteFill, s.heroPlaceholder]}>
                 {(() => {
                   const TypeIcon = EVENT_ICONS[form.eventType] ?? EVENT_ICON_FALLBACK
                   return <TypeIcon size={40} color={Colors.inkDisabled} strokeWidth={1.5} />
@@ -298,7 +298,7 @@ const s = StyleSheet.create({
   categoryRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   categoryChip: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: 'rgba(255,107,53,0.15)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.15),
     borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4,
   },
   categoryChipText: { color: Colors.brandOrange, fontFamily: FontFamily.bodyMedium, fontSize: 12, textTransform: 'capitalize' },
@@ -338,7 +338,7 @@ const s = StyleSheet.create({
   stickyBar: {
     position: 'absolute', left: 0, right: 0, bottom: 0,
     paddingHorizontal: 20, paddingTop: 10,
-    backgroundColor: 'rgba(17,17,17,0.95)',
+    backgroundColor: withOpacity(Colors.background, 0.95),
     gap: 8,
   },
   stickyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { Camera, Images } from 'lucide-react-native'
-import { Colors, FontFamily, Radius } from '@/constants'
+import { Colors, FontFamily, Radius, withOpacity } from '@/constants'
 
 interface Props {
   onCamera: () => void
@@ -37,7 +37,7 @@ export const MediaPickerSheet = forwardRef<BottomSheetModal, Props>(
           <Text style={s.heading}>Add to message</Text>
 
           <View style={s.grid}>
-            <Pressable style={s.tile} onPress={() => pick(onCamera)} android_ripple={{ color: 'rgba(255,255,255,0.06)', borderless: false }}>
+            <Pressable style={s.tile} onPress={() => pick(onCamera)} android_ripple={{ color: withOpacity(Colors.white, 0.06), borderless: false }}>
               <View style={s.iconWrap}>
                 <Camera size={26} color={Colors.brandOrange} strokeWidth={1.6} />
               </View>
@@ -45,7 +45,7 @@ export const MediaPickerSheet = forwardRef<BottomSheetModal, Props>(
               <Text style={s.tileSub}>Photo</Text>
             </Pressable>
 
-            <Pressable style={s.tile} onPress={() => pick(onLibrary)} android_ripple={{ color: 'rgba(255,255,255,0.06)', borderless: false }}>
+            <Pressable style={s.tile} onPress={() => pick(onLibrary)} android_ripple={{ color: withOpacity(Colors.white, 0.06), borderless: false }}>
               <View style={s.iconWrap}>
                 <Images size={26} color={Colors.brandOrange} strokeWidth={1.6} />
               </View>
@@ -65,7 +65,7 @@ MediaPickerSheet.displayName = 'MediaPickerSheet'
 
 const s = StyleSheet.create({
   bg: { backgroundColor: '#161616' },
-  handle: { backgroundColor: 'rgba(255,255,255,0.15)', width: 36 },
+  handle: { backgroundColor: withOpacity(Colors.white, 0.15), width: 36 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
   heading: {
     fontFamily: FontFamily.headingBold,
@@ -80,10 +80,10 @@ const s = StyleSheet.create({
   },
   tile: {
     flex: 1,
-    backgroundColor: '#1e1e1e',
+    backgroundColor: Colors.skeletonBase,
     borderRadius: Radius.card,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
+    borderColor: withOpacity(Colors.white, 0.07),
     paddingVertical: 20,
     paddingHorizontal: 16,
     alignItems: 'center',
@@ -94,7 +94,7 @@ const s = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: 'rgba(255,107,53,0.1)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.1),
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,

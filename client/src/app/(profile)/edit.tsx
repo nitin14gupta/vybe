@@ -16,7 +16,7 @@ import { useInterests } from '@/hooks/useInterests'
 import { useVoiceEdit } from '@/hooks/useVoiceEdit'
 import { useOnboardingStore } from '@/store/onboarding'
 import { usePillStore } from '@/store/pillStore'
-import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { Colors, FontFamily, Spacing, Radius, withOpacity } from '@/constants'
 
 export default function EditProfileScreen() {
   const {
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   changeBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: 'rgba(255,107,53,0.1)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.1),
     borderRadius: Radius.pill,
   },
   changeBtnText: {

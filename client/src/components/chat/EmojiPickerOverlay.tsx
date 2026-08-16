@@ -4,7 +4,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-na
 import EmojiKeyboard, { type EmojiType } from 'rn-emoji-keyboard'
 import { Reply, Copy, Flag, Trash2, Undo2, Pencil, CheckSquare } from 'lucide-react-native'
 import { hSelection, hTap } from '@/lib/haptics'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 
 const QUICK_EMOJIS = ['❤️', '😂', '😮', '😢', '😡', '👍']
 const SCREEN_HEIGHT = Dimensions.get('window').height
@@ -140,25 +140,25 @@ export function EmojiPickerOverlay({
         onEmojiSelected={handleFullPickerSelect}
         enableSearchBar
         theme={{
-          backdrop: 'rgba(0,0,0,0.7)',
+          backdrop: withOpacity(Colors.black, 0.7),
           knob: Colors.brandOrange,
-          container: '#1a1a1a',
-          header: '#222',
-          skinTonesContainer: '#1a1a1a',
+          container: Colors.surface,
+          header: Colors.elevated,
+          skinTonesContainer: Colors.surface,
           category: {
             icon: Colors.inkSecondary,
             iconActive: Colors.brandOrange,
-            container: '#222',
-            containerActive: 'rgba(255,107,53,0.15)',
+            container: Colors.elevated,
+            containerActive: withOpacity(Colors.brandOrange, 0.15),
           },
           search: {
-            background: '#222',
+            background: Colors.elevated,
             text: Colors.inkPrimary,
             placeholder: Colors.inkDisabled,
             icon: Colors.inkSecondary,
           },
           emoji: {
-            selected: 'rgba(255,107,53,0.2)',
+            selected: withOpacity(Colors.brandOrange, 0.2),
           },
         }}
       />
@@ -169,7 +169,7 @@ export function EmojiPickerOverlay({
 const s = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: withOpacity(Colors.black, 0.3),
   },
   menu: {
     position: 'absolute',
@@ -180,18 +180,18 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: '#1e1e1e',
+    backgroundColor: Colors.skeletonBase,
     borderRadius: 32,
     paddingHorizontal: 10,
     paddingVertical: 8,
     gap: 4,
-    shadowColor: '#000',
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: withOpacity(Colors.white, 0.1),
   },
   emojiBtn: {
     width: 40,
@@ -201,7 +201,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   emojiBtnActive: {
-    backgroundColor: 'rgba(255,107,53,0.2)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.2),
   },
   emojiText: { fontSize: 24 },
   moreBtnWrap: {
@@ -210,7 +210,7 @@ const s = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: withOpacity(Colors.white, 0.08),
   },
   moreBtnText: {
     fontFamily: FontFamily.headingBold,
@@ -220,16 +220,16 @@ const s = StyleSheet.create({
   },
   actionCard: {
     minWidth: 210,
-    backgroundColor: '#1e1e1e',
+    backgroundColor: Colors.skeletonBase,
     borderRadius: 16,
     paddingVertical: 4,
-    shadowColor: '#000',
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: withOpacity(Colors.white, 0.1),
     overflow: 'hidden',
   },
   actionRow: {

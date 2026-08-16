@@ -5,7 +5,7 @@ import Animated, {
   withTiming, runOnJS, Easing,
 } from 'react-native-reanimated'
 import { usePillStore } from '@/store/pillStore'
-import { FontFamily } from '@/constants'
+import { FontFamily, Colors, withOpacity } from '@/constants'
 import { LogoMark } from './LogoMark'
 
 const { height } = Dimensions.get('window')
@@ -41,7 +41,7 @@ export function PillOverlay() {
     transform: [{ translateY: translateY.value }],
   }))
 
-  const badgeTint = type === 'error' ? 'rgba(255,100,100,0.2)' : 'rgba(255,255,255,0.12)'
+  const badgeTint = type === 'error' ? withOpacity(Colors.destructive, 0.2) : withOpacity(Colors.white, 0.12)
 
   if (!visible && opacity.value === 0) return null
 
@@ -69,7 +69,7 @@ const s = StyleSheet.create({
     paddingRight: 18,
     paddingVertical: 8,
     backgroundColor: 'rgba(38,38,38,0.9)',
-    shadowColor: '#000',
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -85,7 +85,7 @@ const s = StyleSheet.create({
   text: {
     fontFamily: FontFamily.bodyMedium,
     fontSize: 14,
-    color: '#fff',
+    color: Colors.white,
     flexShrink: 1,
     lineHeight: 20,
   },

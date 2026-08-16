@@ -1,7 +1,7 @@
 import React from 'react'
 import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native'
 import { AlertTriangle, MapPin } from 'lucide-react-native'
-import { Colors } from '@/constants'
+import { Colors, withOpacity } from '@/constants'
 import { LocationPickerMap } from '@/components/maps'
 import { useLocationSearch } from '@/hooks/useLocationSearch'
 import { LocationSearchModal } from './LocationSearchModal'
@@ -38,7 +38,7 @@ export function Step3Where({ form, set, errors, setErrors, disabled, inline = fa
         onPress={() => { if (!disabled) search.setSearchOpen(true) }}
       >
         <MapPin size={16} color={Colors.brandOrange} style={{ marginRight: 8 }} />
-        <Text style={[ef.textInput, { flex: 1, color: form.locationName ? '#fff' : Colors.glassTextDisabled }]}>
+        <Text style={[ef.textInput, { flex: 1, color: form.locationName ? Colors.white : Colors.glassTextDisabled }]}>
           {form.locationName || "e.g. 142 Carter Rd, Bandra West"}
         </Text>
       </Pressable>
@@ -66,7 +66,7 @@ export function Step3Where({ form, set, errors, setErrors, disabled, inline = fa
       />
       {!inline && (
         <View style={ef.mapCentrePin} pointerEvents="none">
-          <MapPin size={36} color={Colors.brandOrange} fill="rgba(255,107,53,0.25)" />
+          <MapPin size={36} color={Colors.brandOrange} fill={withOpacity(Colors.brandOrange, 0.25)} />
         </View>
       )}
     </View>

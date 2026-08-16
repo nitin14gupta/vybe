@@ -1,6 +1,6 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { X, Mic, Image, Film, Calendar, User } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import type { Message } from '@/api/apiService'
 
 interface Props {
@@ -57,9 +57,9 @@ const s = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: Colors.surface,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderTopColor: withOpacity(Colors.white, 0.06),
     gap: 10,
   },
   accent: { width: 3, height: 32, borderRadius: 2, backgroundColor: Colors.brandOrange },

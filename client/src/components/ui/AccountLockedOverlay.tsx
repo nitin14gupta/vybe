@@ -7,7 +7,7 @@ import {
 } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { Lock } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { useLockStore } from '@/store/lockStore'
 import { useAuth } from '@/hooks/useAuth'
 import { hTap } from '@/lib/haptics'
@@ -87,12 +87,12 @@ export function AccountLockedOverlay() {
 }
 
 const s = StyleSheet.create({
-  bg: { backgroundColor: '#1a1a1a' },
+  bg: { backgroundColor: Colors.surface },
   content: { paddingHorizontal: 24, paddingBottom: 40, paddingTop: 32, gap: 12, alignItems: 'center' },
 
   iconWrap: {
     width: 68, height: 68, borderRadius: 34,
-    backgroundColor: 'rgba(255,56,100,0.12)',
+    backgroundColor: withOpacity(Colors.brandCoral, 0.12),
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 4,
   },

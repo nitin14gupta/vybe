@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Wrench } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { useMaintenanceStore } from '@/store/maintenanceStore'
 import { API_BASE_URL } from '@/api/config'
 import { hTap } from '@/lib/haptics'
@@ -68,7 +68,7 @@ const s = StyleSheet.create({
 
   iconWrap: {
     width: 76, height: 76, borderRadius: 38,
-    backgroundColor: 'rgba(255,107,53,0.12)',
+    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 8,
   },

@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, CheckCircle } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import ApiService, { type EventAttendee } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { ScannerCameraView, type ScanResult } from '@/components/events/ScannerCameraView'
@@ -177,7 +177,7 @@ const s = StyleSheet.create({
   },
   headerBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontFamily: FontFamily.headingBold, fontSize: 17, color: Colors.inkPrimary },
-  checkedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(0,196,140,0.12)', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+  checkedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: withOpacity(Colors.accentGreen, 0.12), borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
   checkedBadgeText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.accentGreen },
 
   cameraSection: { height: 260 },

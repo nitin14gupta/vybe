@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, TextInput, ActivityIndicator, Keyboa
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
 import { CheckCircle2, XCircle, X, Bookmark } from 'lucide-react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { hTap, hSuccess } from '@/lib/haptics'
 import ApiService from '@/api/apiService'
 import { useVpaValidation } from '@/hooks/useVpaValidation'
@@ -133,7 +133,7 @@ function UpiIdSheetCore({
             <CheckCircle2 size={20} color={Colors.accentGreen} strokeWidth={2} style={s.inputIcon} />
           )}
           {!checking && vpaError && (
-            <XCircle size={20} color="#FF3864" strokeWidth={2} style={s.inputIcon} />
+            <XCircle size={20} color={Colors.brandCoral} strokeWidth={2} style={s.inputIcon} />
           )}
         </View>
 
@@ -187,8 +187,8 @@ export function UpiIdSheet({
 }
 
 const s = StyleSheet.create({
-  sheetBg: { backgroundColor: '#141414' },
-  sheetHandle: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  sheetBg: { backgroundColor: Colors.sheetBackground },
+  sheetHandle: { backgroundColor: withOpacity(Colors.white, 0.18) },
   content: { paddingHorizontal: 24, paddingBottom: 40, paddingTop: 12 },
 
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
@@ -197,24 +197,24 @@ const s = StyleSheet.create({
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: withOpacity(Colors.white, 0.05),
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: withOpacity(Colors.white, 0.08),
     paddingHorizontal: 16,
     marginBottom: 8,
   },
-  inputWrapError: { borderColor: '#FF3864' },
+  inputWrapError: { borderColor: Colors.brandCoral },
   inputWrapSuccess: { borderColor: Colors.accentGreen },
   input: { flex: 1, paddingVertical: 14, fontFamily: FontFamily.bodyRegular, fontSize: 16, color: Colors.inkPrimary },
   inputIcon: { marginLeft: 8 },
 
-  savedChip: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(255,107,53,0.12)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3, marginLeft: 8 },
+  savedChip: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: withOpacity(Colors.brandOrange, 0.12), borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3, marginLeft: 8 },
   savedChipText: { fontFamily: FontFamily.bodyMedium, fontSize: 11, color: Colors.brandOrange },
 
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 20 },
   nameText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.accentGreen },
-  errorText: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: '#FF3864', marginBottom: 20 },
+  errorText: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.brandCoral, marginBottom: 20 },
   hint: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkDisabled, marginBottom: 20 },
 
   btnRow: { flexDirection: 'row', gap: 10 },

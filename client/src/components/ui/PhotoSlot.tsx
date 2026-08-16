@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, Pressable, ActivityIndicator, Dimensions } from
 import { Image, type ImageProps } from 'expo-image'
 import { hTap, hError } from '@/lib/haptics'
 import { Camera, X, Plus, AlertCircle, Crown } from 'lucide-react-native'
-import { Colors, FontFamily, Spacing, Radius } from '@/constants'
+import { Colors, FontFamily, Spacing, Radius, withOpacity } from '@/constants'
 
 export type SlotState = 'idle' | 'uploading' | 'done' | 'error'
 
@@ -56,13 +56,13 @@ export function PhotoSlot({
 
           {isUploading && (
             <View style={styles.uploadOverlay}>
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color={Colors.white} />
             </View>
           )}
 
           {isError && (
             <Pressable onPress={() => retryUpload(item.id)} style={styles.errorOverlay}>
-              <AlertCircle size={18} color="#fff" />
+              <AlertCircle size={18} color={Colors.white} />
               <Text style={styles.retryTxt}>Tap to retry</Text>
             </Pressable>
           )}
@@ -73,7 +73,7 @@ export function PhotoSlot({
               style={styles.removeBtn}
               hitSlop={10}
             >
-              <X size={11} color="#fff" strokeWidth={3} />
+              <X size={11} color={Colors.white} strokeWidth={3} />
             </Pressable>
           )}
 
@@ -102,10 +102,10 @@ const styles = StyleSheet.create({
   slot: {
     width: ITEM_SIZE,
     height: ITEM_SIZE,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: withOpacity(Colors.white, 0.03),
     borderRadius: Radius.card,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: withOpacity(Colors.white, 0.1),
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -133,13 +133,13 @@ const styles = StyleSheet.create({
   },
   uploadOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: withOpacity(Colors.black, 0.4),
     alignItems: 'center',
     justifyContent: 'center',
   },
   errorOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(255, 60, 60, 0.7)',
+    backgroundColor: withOpacity(Colors.destructive, 0.7),
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   retryTxt: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 11,
-    color: '#fff',
+    color: Colors.white,
   },
   removeBtn: {
     position: 'absolute',
@@ -156,9 +156,9 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: withOpacity(Colors.black, 0.6),
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: withOpacity(Colors.white, 0.2),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -169,12 +169,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: withOpacity(Colors.black, 0.7),
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: 'rgba(255,107,53,0.3)',
+    borderColor: withOpacity(Colors.brandOrange, 0.3),
   },
   mainBadgeText: {
     fontFamily: FontFamily.bodySemiBold,

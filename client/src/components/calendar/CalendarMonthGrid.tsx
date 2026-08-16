@@ -104,8 +104,8 @@ const s = StyleSheet.create({
   dayCircleSelected: { backgroundColor: Colors.brandOrange },
   dayText: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.inkPrimary },
   dayTextToday: { color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold },
-  dayTextSelected: { color: '#111', fontFamily: FontFamily.bodySemiBold },
+  dayTextSelected: { color: Colors.background, fontFamily: FontFamily.bodySemiBold },
   dot: { width: 4, height: 4, borderRadius: 12, backgroundColor: 'transparent' },
   dotVisible: { backgroundColor: Colors.inkPrimary },
-  dotSelected: { backgroundColor: '#111' },
+  dotSelected: { backgroundColor: Colors.background },
 })

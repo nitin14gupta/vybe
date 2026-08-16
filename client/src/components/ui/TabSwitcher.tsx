@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { hTap } from '@/lib/haptics'
 
 export interface TabSwitcherItem {
@@ -78,7 +78,7 @@ export function TabSwitcher({ tabs, activeTab, onChange, variant = 'pill', fill 
 const s = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: withOpacity(Colors.white, 0.05),
     borderRadius: 12,
     padding: 4,
   },
@@ -108,7 +108,7 @@ const s = StyleSheet.create({
     color: Colors.inkSecondary,
   },
   tabTextActive: {
-    color: '#111',
+    color: Colors.background,
   },
 
   // Underline variant — matches (profile)/follows.tsx's tab switcher

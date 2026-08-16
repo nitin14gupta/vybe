@@ -12,7 +12,7 @@ import {
   GeoJSONSource,
   Layer,
 } from '@maplibre/maplibre-react-native'
-import { Colors, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constants'
+import { Colors, EVENT_ICONS, EVENT_ICON_FALLBACK, withOpacity } from '@/constants'
 import { MAP_PROVIDER, TILE_STYLE, DEFAULT_MAP_CENTER, type MapBounds } from '@/constants/mapConfig'
 import { useGoogleMaps } from '@/hooks/useGoogleMaps'
 import { useMapLibre, eventsToGeoJSON } from '@/hooks/useMapLibre'
@@ -20,12 +20,12 @@ import type { EventSummary } from '@/api/apiService'
 import type { ViewStyle } from 'react-native'
 
 const DARK_MAP_STYLE = [
-  { elementType: 'geometry', stylers: [{ color: '#1a1a1a' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#111111' }] },
+  { elementType: 'geometry', stylers: [{ color: Colors.surface }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: Colors.background }] },
   { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
   { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2c2c2c' }] },
   { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#212121' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0d0d0d' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: Colors.deepBackground }] },
   { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#1c1c1c' }] },
   { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#2f3948' }] },
   { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#757575' }] },
@@ -39,12 +39,12 @@ const HEATMAP_PAINT = {
   'heatmap-intensity': 1.1,
   'heatmap-color': [
     'interpolate', ['linear'], ['heatmap-density'],
-    0, 'rgba(0,0,0,0)',
+    0, withOpacity(Colors.black, 0),
     0.15, 'rgba(29,233,182,0.18)',
     0.35, 'rgba(79,195,247,0.35)',
     0.60, 'rgba(206,147,216,0.5)',
     0.82, 'rgba(255,82,82,0.55)',
-    1.0, 'rgba(255,107,53,0.6)',
+    1.0, withOpacity(Colors.brandOrange, 0.6),
   ] as any,
   'heatmap-opacity': 0.7,
 }
@@ -274,10 +274,10 @@ function HeadingCone({ heading }: { heading: number }) {
             r={CONE_RADIUS}
             gradientUnits="userSpaceOnUse"
           >
-            <Stop offset="0" stopColor="#9fc4ff" stopOpacity={0.5} />
-            <Stop offset="0.45" stopColor="#9fc4ff" stopOpacity={0.28} />
-            <Stop offset="0.8" stopColor="#9fc4ff" stopOpacity={0.1} />
-            <Stop offset="1" stopColor="#9fc4ff" stopOpacity={0} />
+            <Stop offset="0" stopColor={Colors.mapRadarBlue} stopOpacity={0.5} />
+            <Stop offset="0.45" stopColor={Colors.mapRadarBlue} stopOpacity={0.28} />
+            <Stop offset="0.8" stopColor={Colors.mapRadarBlue} stopOpacity={0.1} />
+            <Stop offset="1" stopColor={Colors.mapRadarBlue} stopOpacity={0} />
           </RadialGradient>
         </Defs>
         <Path d={CONE_PATH} fill="url(#beam)" />
@@ -322,10 +322,10 @@ const c = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#007AFF',
     borderWidth: 2.5,
-    borderColor: '#fff',
+    borderColor: Colors.white,
     marginTop: -8,
     marginLeft: -8,
-    shadowColor: '#000',
+    shadowColor: Colors.black,
     shadowOpacity: 0.25,
     shadowRadius: 3,
     shadowOffset: { width: 0, height: 1 },
@@ -426,7 +426,7 @@ const p = StyleSheet.create({
     height: PIN_H,
     borderRadius: PIN_RADIUS,
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: Colors.black,
     shadowOpacity: 0.4,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
