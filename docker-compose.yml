@@ -5,3 +5,15 @@ services:
     ports:
       - "6379:6379"
     restart: unless-stopped
+
+  gorave-server:
+    build:
+      context: ./server
+    container_name: gorave-server
+    env_file:
+      - ./server/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - gorave-redis
+    restart: unless-stopped

@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import time
 from collections import deque
 from datetime import datetime, timedelta, timezone
@@ -124,7 +125,7 @@ async def _get_redis():
     if _redis is None:
         try:
             import redis.asyncio as aioredis
-            _redis = aioredis.from_url("redis://localhost:6379", decode_responses=True)
+            _redis = aioredis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"), decode_responses=True)
             await _redis.ping()
         except Exception as e:
             _redis = None

@@ -56,7 +56,7 @@ async def _get_scheduler_redis():
     if _scheduler_redis is None:
         try:
             import redis.asyncio as aioredis
-            client = aioredis.from_url("redis://localhost:6379", decode_responses=True)
+            client = aioredis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"), decode_responses=True)
             await client.ping()
             _scheduler_redis = client
         except Exception as e:
