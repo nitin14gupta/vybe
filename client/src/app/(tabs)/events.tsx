@@ -1,9 +1,9 @@
 import React, { useCallback, useRef, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
+  ActivityIndicator,
   BackHandler,
   FlatList,
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -60,6 +60,9 @@ export default function EventsScreen() {
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const previewListRef = useRef<FlatList>(null);
+  const loadMoreList = useCallback(() => {
+    setListCount((c) => (c < events.length ? c + LIST_PAGE : c));
+  }, [events.length]);
 
   // Events tab back → navigate to discover tab
   useFocusEffect(
@@ -278,12 +281,12 @@ export default function EventsScreen() {
             </View>
           </View>
         ) : hasError ? (
-          <View style={{ paddingTop: insets.top + LIST_HEADER_CONTENT_HEIGHT }}>
+          <View style={{ flex: 1, paddingTop: insets.top + LIST_HEADER_CONTENT_HEIGHT }}>
             <FilterChipsRow activeChip={activeChip} onSelect={handleChip} />
             <ListErrorState onRetry={reload} />
           </View>
         ) : isEmpty ? (
-          <View style={{ paddingTop: insets.top + LIST_HEADER_CONTENT_HEIGHT }}>
+          <View style={{ flex: 1, paddingTop: insets.top + LIST_HEADER_CONTENT_HEIGHT }}>
             <FilterChipsRow activeChip={activeChip} onSelect={handleChip} />
             <ListEmptyState onCreate={goToCreate} />
           </View>
@@ -296,6 +299,8 @@ export default function EventsScreen() {
             showsVerticalScrollIndicator={false}
             onScroll={scrollHandler}
             scrollEventThrottle={16}
+            onEndReachedThreshold={0.4}
+            onEndReached={loadMoreList}
             refreshControl={
               <BrandedRefreshControl refreshing={loading} onRefresh={reload} />
             }
@@ -309,16 +314,9 @@ export default function EventsScreen() {
             }
             ListFooterComponent={
               hasMore ? (
-                <Pressable
-                  style={styles.loadMoreBtn}
-                  onPress={() => setListCount((c) => c + LIST_PAGE)}
-                >
-                  <Text style={styles.loadMoreText}>
-                    Load {Math.min(events.length - listCount, LIST_PAGE)} more events
-                  </Text>
-                </Pressable>
-              ) : events.length > LIST_PAGE ? (
-                <Text style={styles.listEndText}>All {events.length} events shown</Text>
+                <View style={styles.footerLoader}>
+                  <ActivityIndicator color={Colors.inkSecondary} />
+                </View>
               ) : null
             }
             renderItem={renderListItem}
@@ -345,24 +343,9 @@ const styles = StyleSheet.create({
 
   listContent: { padding: 16, paddingBottom: ComponentSize.navBar + 16, gap: 16 },
 
-  loadMoreBtn: {
-    marginTop: 8,
-    marginHorizontal: 32,
-    paddingVertical: 13,
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.divider,
+  footerLoader: {
+    paddingVertical: 20,
     alignItems: "center",
-  },
-  loadMoreText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkPrimary },
-  listEndText: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 13,
-    color: Colors.inkDisabled,
-    textAlign: "center",
-    marginTop: 12,
-    marginBottom: 24,
   },
 
   cardViewToggle: { position: "absolute", right: 16, bottom: 16 + ComponentSize.navBar },

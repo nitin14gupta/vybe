@@ -172,6 +172,8 @@ export interface EventDetail extends EventSummary {
   my_checked_in_at: string | null
   avg_rating: number | null
   review_count: number
+  host_avg_rating: number | null
+  host_review_count: number
   my_rsvp_status: 'going' | 'waitlist' | 'cancelled' | null
   my_waitlist_position: number | null
   my_offer_expires_at: string | null

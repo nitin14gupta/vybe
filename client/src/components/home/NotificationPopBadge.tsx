@@ -51,7 +51,6 @@ const s = StyleSheet.create({
     position: 'absolute', top: -2, right: -2,
     width: 9, height: 9, borderRadius: 4.5,
     backgroundColor: Colors.notificationRed,
-    borderWidth: 1.2, borderColor: Colors.background,
   },
   calloutWrap: {
     position: 'absolute',

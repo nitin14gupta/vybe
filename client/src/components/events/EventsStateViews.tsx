@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Flame, Plus } from "lucide-react-native";
 import { Colors, FontFamily } from "@/constants";
 import { PrimaryButton } from "@/components/ui";
+import { TemplateFan } from "@/components/home/TemplateFan";
 import { hTap } from "@/lib/haptics";
 
 export function MapErrorOverlay({ onRetry }: { onRetry: () => void }) {
@@ -45,10 +46,14 @@ export function ListErrorState({ onRetry }: { onRetry: () => void }) {
 
 export function ListEmptyState({ onCreate }: { onCreate: () => void }) {
   return (
-    <View style={[styles.listEmpty, { flex: 1 }]}>
-      <Flame size={48} color={Colors.inkDisabled} strokeWidth={1.2} />
+    // Centering within the space left below the header+chips row lands
+    // visually low (that leftover region's own middle sits well under the
+    // screen's true vertical middle) — nudge up so the fan reads as
+    // centered on the screen, not just on its flex parent.
+    <View style={[styles.listEmpty, { flex: 1 }, styles.listEmptyFanShift]}>
+      <TemplateFan onCreatePress={onCreate} />
       <Text style={styles.listEmptyTitle}>No events nearby yet</Text>
-      <Text style={styles.listEmptySub}>Be the first to host one</Text>
+      <Text style={styles.listEmptySub}>Tap a card to host one</Text>
       <PrimaryButton
         label="Create Event"
         size="small"
@@ -81,6 +86,7 @@ const styles = StyleSheet.create({
   mapEmptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
   mapEmptyCta: { marginTop: 4 },
   listEmpty: { flex: 1, alignItems: "center", justifyContent: "center", gap: 10 },
+  listEmptyFanShift: { marginTop: -70 },
   listEmptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary },
   listEmptySub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary },
   listEmptyCta: { marginTop: 8 },

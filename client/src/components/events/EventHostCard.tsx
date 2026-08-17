@@ -69,9 +69,9 @@ export function EventHostCard({ event, isHost }: Props) {
           <View>
             <View style={styles.ratingRow}>
               <Star size={13} color={Colors.accentGold} fill={Colors.accentGold} strokeWidth={0} />
-              <Text style={styles.ratingValue}>{event.avg_rating != null ? event.avg_rating.toFixed(1) : '—'}</Text>
+              <Text style={styles.ratingValue}>{event.host_avg_rating != null ? event.host_avg_rating.toFixed(1) : '—'}</Text>
             </View>
-            <Text style={styles.ratingSub}>{event.review_count} rating{event.review_count === 1 ? '' : 's'}</Text>
+            <Text style={styles.ratingSub}>{event.host_review_count} rating{event.host_review_count === 1 ? '' : 's'}</Text>
           </View>
           <ChevronRight size={14} color={Colors.inkDisabled} strokeWidth={2} style={styles.ratingChevron} />
         </Pressable>

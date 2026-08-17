@@ -6,14 +6,19 @@ import Animated, {
 } from 'react-native-reanimated'
 import { Colors, FontFamily } from '@/constants'
 import { PrimaryButton } from './PrimaryButton'
+import { LogoMark } from './LogoMark'
 
 interface Props {
-  icon: ReactNode
+  icon?: ReactNode
   title: string
   subtitle?: string
   ctaLabel?: string
   onCtaPress?: () => void
+  ctaIcon?: ReactNode
   compact?: boolean
+  // Opt out of the default floating drift for this one call site — the icon
+  // renders still instead.
+  staticIcon?: boolean
 }
 
 // Gentle, endless up/down drift on the icon — the one change that makes every
@@ -38,14 +43,15 @@ function FloatingIcon({ children }: { children: ReactNode }) {
   return <Animated.View style={style}>{children}</Animated.View>
 }
 
-export function EmptyState({ icon, title, subtitle, ctaLabel, onCtaPress, compact }: Props) {
+export function EmptyState({ icon, title, subtitle, ctaLabel, onCtaPress, ctaIcon, compact, staticIcon }: Props) {
+  const resolvedIcon = icon ?? <LogoMark size={64} opacity={0.12} />
   return (
     <View style={[s.wrap, compact && s.wrapCompact]}>
-      <FloatingIcon>{icon}</FloatingIcon>
+      {staticIcon ? resolvedIcon : <FloatingIcon>{resolvedIcon}</FloatingIcon>}
       <Text style={s.title}>{title}</Text>
       {subtitle ? <Text style={s.subtitle}>{subtitle}</Text> : null}
       {ctaLabel && onCtaPress ? (
-        <PrimaryButton label={ctaLabel} onPress={onCtaPress} size="small" style={s.cta} />
+        <PrimaryButton label={ctaLabel} onPress={onCtaPress} size="small" style={s.cta} icon={ctaIcon} />
       ) : null}
     </View>
   )
