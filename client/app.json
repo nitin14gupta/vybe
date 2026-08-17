@@ -136,7 +136,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "apiUrl": "http://192.168.0.103:8000",
+      "apiUrl": "https://gorave.uilora.com",
       "router": {},
       "eas": {
         "build": {
