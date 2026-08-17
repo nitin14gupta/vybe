@@ -83,7 +83,7 @@ const s = StyleSheet.create({
   label: {
     fontFamily: FontFamily.bodyMedium,
     fontSize: 13,
-    color: Colors.white,
+    color: Colors.inkPrimary,
     marginBottom: 8,
   },
   wrap: {
@@ -108,7 +108,7 @@ const s = StyleSheet.create({
   wrapError: { borderColor: Colors.brandCoral },
   input: {
     flex: 1,
-    color: Colors.white,
+    color: Colors.inkPrimary,
     fontFamily: FontFamily.bodyRegular,
     fontSize: 15,
     paddingVertical: 10,

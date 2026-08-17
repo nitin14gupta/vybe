@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: withOpacity(Colors.black, 0.7),
+    backgroundColor: withOpacity(Colors.background, 0.7),
   },
   sheet: {
     backgroundColor: Colors.surface,
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: withOpacity(Colors.white, 0.18),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.18),
     alignSelf: 'center',
     marginBottom: 16,
   },
@@ -180,9 +180,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: withOpacity(Colors.white, 0.08),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.08),
     borderWidth: 1,
-    borderColor: withOpacity(Colors.white, 0.12),
+    borderColor: withOpacity(Colors.inkPrimary, 0.12),
   },
   chipText: {
     fontFamily: FontFamily.bodyRegular,

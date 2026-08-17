@@ -154,7 +154,7 @@ export function VibeInboxSheet({ visible, ...rest }: Props) {
 
 const s = StyleSheet.create({
   bg: { backgroundColor: Colors.sheetBackground },
-  handleIndicator: { backgroundColor: withOpacity(Colors.white, 0.18) },
+  handleIndicator: { backgroundColor: withOpacity(Colors.inkPrimary, 0.18) },
   fullContent: { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 8 },
   listContent: { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 8 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
@@ -173,10 +173,10 @@ const s = StyleSheet.create({
   cardCity: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkSecondary },
   cardMsg: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary, fontStyle: 'italic', marginTop: 3, lineHeight: 16 },
   cardActions: { flexDirection: 'row', gap: 8 },
-  passBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: withOpacity(Colors.white, 0.15), alignItems: 'center', justifyContent: 'center' },
+  passBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: withOpacity(Colors.inkPrimary, 0.15), alignItems: 'center', justifyContent: 'center' },
   acceptBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.brandOrange, alignItems: 'center', justifyContent: 'center' },
   actionedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, backgroundColor: withOpacity(Colors.onlineGreen, 0.12), borderWidth: 1, borderColor: withOpacity(Colors.onlineGreen, 0.3) },
-  actionedBadgePassed: { backgroundColor: withOpacity(Colors.white, 0.05), borderColor: withOpacity(Colors.white, 0.1) },
+  actionedBadgePassed: { backgroundColor: withOpacity(Colors.inkPrimary, 0.05), borderColor: withOpacity(Colors.inkPrimary, 0.1) },
   actionedText: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkSecondary },
   emptyBox: { paddingVertical: 40, alignItems: 'center', gap: 10 },
   emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },

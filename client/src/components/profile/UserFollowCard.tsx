@@ -62,7 +62,7 @@ export const UserFollowCard = memo(function UserFollowCard({ user, type, isMyPro
     <Pressable
       style={s.row}
       onPress={() => router.push(`/(profile)/${user.id}` as any)}
-      android_ripple={{ color: withOpacity(Colors.white, 0.04) }}
+      android_ripple={{ color: withOpacity(Colors.inkPrimary, 0.04) }}
     >
       {/* Avatar */}
       <View style={s.avatar}>

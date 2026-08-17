@@ -28,7 +28,7 @@ export default function InterestsScreen() {
 
       {loadingList ? (
         <View style={styles.listLoader}>
-          <ActivityIndicator color={Colors.brandOrange} />
+          <ActivityIndicator color={Colors.inkSecondary} />
         </View>
       ) : (
         <ScrollView
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     color: Colors.inkSecondary,
   },
   count: { color: Colors.inkSecondary },
-  countReady: { color: Colors.brandOrange },
+  countReady: { color: Colors.accentGreen },
   maxHint: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 12,

@@ -43,9 +43,9 @@ function CreateEventSheetCore({ onCreateEvent, onClose }: Omit<Props, 'visible'>
         <Text style={s.title}>Create</Text>
 
         <View style={{ gap: 12 }}>
-          <Pressable style={s.card} android_ripple={{ color: withOpacity(Colors.white, 0.06) }} onPress={handlePress}>
+          <Pressable style={s.card} android_ripple={{ color: withOpacity(Colors.inkPrimary, 0.06) }} onPress={handlePress}>
             <View style={s.cardIcon}>
-              <Plus size={20} color={Colors.white} strokeWidth={2.5} />
+              <Plus size={20} color={Colors.inkPrimary} strokeWidth={2.5} />
             </View>
             <View style={s.cardText}>
               <Text style={s.cardTitle}>Host an event</Text>
@@ -57,13 +57,13 @@ function CreateEventSheetCore({ onCreateEvent, onClose }: Omit<Props, 'visible'>
               end={{ x: 1, y: 1 }}
               style={s.cardBadge}
             >
-              <PartyPopper size={22} color={Colors.white} strokeWidth={2} />
+              <PartyPopper size={22} color={Colors.inkPrimary} strokeWidth={2} />
             </LinearGradient>
           </Pressable>
 
-          <Pressable style={s.card} android_ripple={{ color: withOpacity(Colors.white, 0.06) }} onPress={handlePress}>
+          <Pressable style={s.card} android_ripple={{ color: withOpacity(Colors.inkPrimary, 0.06) }} onPress={handlePress}>
             <View style={s.cardIcon}>
-              <Plus size={20} color={Colors.white} strokeWidth={2.5} />
+              <Plus size={20} color={Colors.inkPrimary} strokeWidth={2.5} />
             </View>
             <View style={s.cardText}>
               <Text style={s.cardTitle}>Sell tickets</Text>
@@ -74,9 +74,9 @@ function CreateEventSheetCore({ onCreateEvent, onClose }: Omit<Props, 'visible'>
             </View>
           </Pressable>
 
-          <Pressable style={s.card} android_ripple={{ color: withOpacity(Colors.white, 0.06) }} onPress={handlePress}>
+          <Pressable style={s.card} android_ripple={{ color: withOpacity(Colors.inkPrimary, 0.06) }} onPress={handlePress}>
             <View style={s.cardIcon}>
-              <Plus size={20} color={Colors.white} strokeWidth={2.5} />
+              <Plus size={20} color={Colors.inkPrimary} strokeWidth={2.5} />
             </View>
             <View style={s.cardText}>
               <Text style={s.cardTitle}>Private gathering</Text>
@@ -101,7 +101,7 @@ export function CreateEventSheet(props: Props) {
 
 const s = StyleSheet.create({
   bg: { backgroundColor: Colors.elevated },
-  handle: { backgroundColor: withOpacity(Colors.white, 0.18) },
+  handle: { backgroundColor: withOpacity(Colors.inkPrimary, 0.18) },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 0 },
   title: {
     fontFamily: FontFamily.headingBold,
@@ -123,7 +123,7 @@ const s = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: withOpacity(Colors.white, 0.08),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.08),
     alignItems: 'center',
     justifyContent: 'center',
   },

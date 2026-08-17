@@ -67,12 +67,12 @@ const s = StyleSheet.create({
   card: {
     width: '100%',
     flexDirection: 'row',
-    backgroundColor: withOpacity(Colors.white, 0.02),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.02),
     borderRadius: 16,
     padding: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: withOpacity(Colors.white, 0.05),
+    borderColor: withOpacity(Colors.inkPrimary, 0.05),
   },
   imageContainer: {
     width: 112,
@@ -119,7 +119,7 @@ const s = StyleSheet.create({
     marginBottom: 6,
   },
   priceWrap: {
-    backgroundColor: withOpacity(Colors.white, 0.08),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.08),
     alignSelf: 'flex-start',
     paddingHorizontal: 8,
     paddingVertical: 2,

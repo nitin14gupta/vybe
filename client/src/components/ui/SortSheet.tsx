@@ -47,7 +47,7 @@ function SortSheetCore<T extends string>({ title, options, selected, onSelect, o
           <Pressable
             key={opt.key}
             style={[s.row, selected === opt.key && s.rowActive]}
-            android_ripple={{ color: withOpacity(Colors.white, 0.06) }}
+            android_ripple={{ color: withOpacity(Colors.inkPrimary, 0.06) }}
             onPress={() => { hSelection(); onSelect(opt.key); sheetRef.current?.dismiss() }}
           >
             <Text style={[s.rowText, selected === opt.key && s.rowTextActive]} numberOfLines={1}>{opt.label}</Text>
@@ -67,7 +67,7 @@ export function SortSheet<T extends string>(props: Props<T>) {
 
 const s = StyleSheet.create({
   bg: { backgroundColor: Colors.elevated },
-  handle: { backgroundColor: withOpacity(Colors.white, 0.18) },
+  handle: { backgroundColor: withOpacity(Colors.inkPrimary, 0.18) },
   content: { paddingTop: 8, paddingBottom: 0 },
   title: {
     fontFamily: FontFamily.headingBold,

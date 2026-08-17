@@ -45,7 +45,7 @@ function DotsSheetCore({ title, actions, onAction, onClose }: Omit<Props, 'visib
             {i > 0 && <View style={s.divider} />}
             <Pressable
               style={s.row}
-              android_ripple={{ color: withOpacity(Colors.white, 0.06) }}
+              android_ripple={{ color: withOpacity(Colors.inkPrimary, 0.06) }}
               onPress={() => { action.destructive ? hError() : hTap(); sheetRef.current?.dismiss(); onAction(action.key) }}
             >
               <Text style={[s.rowText, action.destructive && s.rowTextDestructive]}>{action.label}</Text>
@@ -65,7 +65,7 @@ export function DotsSheet(props: Props) {
 
 const s = StyleSheet.create({
   bg: { backgroundColor: Colors.elevated },
-  handle: { backgroundColor: withOpacity(Colors.white, 0.18) },
+  handle: { backgroundColor: withOpacity(Colors.inkPrimary, 0.18) },
   content: { paddingTop: 8, paddingBottom: 0 },
   title: {
     fontFamily: FontFamily.headingBold,

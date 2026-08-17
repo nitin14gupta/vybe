@@ -38,7 +38,7 @@ export function NotificationPopBadge() {
       <Animated.View style={[s.calloutWrap, calloutStyle]} pointerEvents="none">
         <View style={s.arrow} />
         <View style={s.bubble}>
-          <Heart size={14} color={Colors.white} fill={Colors.white} strokeWidth={0} />
+          <Heart size={14} color={Colors.inkPrimary} fill={Colors.inkPrimary} strokeWidth={0} />
           <Text style={s.bubbleText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
         </View>
       </Animated.View>
@@ -79,8 +79,8 @@ const s = StyleSheet.create({
     borderRadius: 15,
     paddingHorizontal: 11,
     paddingVertical: 6,
-    shadowColor: Colors.black, shadowOpacity: 0.3, shadowRadius: 4, shadowOffset: { width: 0, height: 2 },
+    shadowColor: Colors.background, shadowOpacity: 0.3, shadowRadius: 4, shadowOffset: { width: 0, height: 2 },
     elevation: 4,
   },
-  bubbleText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.white },
+  bubbleText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkPrimary },
 })

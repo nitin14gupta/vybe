@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: 14,
     overflow: "hidden",
-    shadowColor: Colors.black,
+    shadowColor: Colors.background,
     shadowOpacity: 0.3,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },

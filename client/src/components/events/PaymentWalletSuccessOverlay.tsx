@@ -52,7 +52,7 @@ export function PaymentWalletSuccessOverlay({ amount, onDone }: { amount: number
       <View style={s.center}>
         {[0, 1, 2, 3, 4, 5, 6, 7].map(i => <Particle key={i} index={i} />)}
         <Animated.View style={[s.circle, circleStyle]}>
-          <Wallet size={36} color={Colors.white} strokeWidth={2} />
+          <Wallet size={36} color={Colors.inkPrimary} strokeWidth={2} />
         </Animated.View>
         <Text style={s.label}>₹{amount} from Gorave Wallet</Text>
         <Text style={s.sub}>applied to your booking</Text>
@@ -62,10 +62,10 @@ export function PaymentWalletSuccessOverlay({ amount, onDone }: { amount: number
 }
 
 const s = StyleSheet.create({
-  root: { ...StyleSheet.absoluteFill, backgroundColor: withOpacity(Colors.black, 0.85), alignItems: 'center', justifyContent: 'center', zIndex: 100 },
+  root: { ...StyleSheet.absoluteFill, backgroundColor: withOpacity(Colors.background, 0.85), alignItems: 'center', justifyContent: 'center', zIndex: 100 },
   center: { alignItems: 'center', justifyContent: 'center' },
   circle: { width: 100, height: 100, borderRadius: 50, backgroundColor: Colors.brandOrange, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
-  label: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.white, textAlign: 'center' },
-  sub: { fontFamily: FontFamily.bodyRegular, fontSize: 15, color: withOpacity(Colors.white, 0.6), marginTop: 6 },
+  label: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.inkPrimary, textAlign: 'center' },
+  sub: { fontFamily: FontFamily.bodyRegular, fontSize: 15, color: withOpacity(Colors.inkPrimary, 0.6), marginTop: 6 },
   particle: { position: 'absolute', width: 10, height: 10, borderRadius: 5 },
 })

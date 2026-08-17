@@ -126,12 +126,12 @@ export function Step5Photos({ form, set, errors, setErrors, disabled, inline }: 
               />
               {isCoverUploading && (
                 <View style={s.uploadOverlay}>
-                  <ActivityIndicator size="large" color={Colors.white} />
+                  <ActivityIndicator size="large" color={Colors.inkPrimary} />
                 </View>
               )}
               {!disabled && !isCoverUploading && (
                 <Pressable style={s.removeBtnTopRight} onPress={() => removePhoto(0)} hitSlop={12}>
-                  <X size={16} color={Colors.white} strokeWidth={3} />
+                  <X size={16} color={Colors.inkPrimary} strokeWidth={3} />
                 </Pressable>
               )}
             </>
@@ -170,12 +170,12 @@ export function Step5Photos({ form, set, errors, setErrors, disabled, inline }: 
                     />
                     {uploading && (
                       <View style={s.uploadOverlay}>
-                        <ActivityIndicator size="small" color={Colors.white} />
+                        <ActivityIndicator size="small" color={Colors.inkPrimary} />
                       </View>
                     )}
                     {!disabled && !uploading && (
                       <Pressable style={s.removeBtnSmall} onPress={() => removePhoto(i)} hitSlop={8}>
-                        <X size={12} color={Colors.white} strokeWidth={3} />
+                        <X size={12} color={Colors.inkPrimary} strokeWidth={3} />
                       </Pressable>
                     )}
                   </>
@@ -215,13 +215,13 @@ const s = StyleSheet.create({
   scrollContent: { paddingBottom: 100 },
   header: { padding: 24, paddingBottom: 0 },
   coverSlot: {
-    backgroundColor: withOpacity(Colors.white, 0.05),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.05),
     marginTop: 12,
     justifyContent: 'center',
     alignItems: 'center',
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: withOpacity(Colors.white, 0.1),
+    borderColor: withOpacity(Colors.inkPrimary, 0.1),
   },
   placeholderContainer: {
     alignItems: 'center',
@@ -241,16 +241,16 @@ const s = StyleSheet.create({
   },
   smallSlot: {
     borderRadius: 12,
-    backgroundColor: withOpacity(Colors.white, 0.05),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.05),
     borderWidth: 1,
-    borderColor: withOpacity(Colors.white, 0.1),
+    borderColor: withOpacity(Colors.inkPrimary, 0.1),
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
   },
   uploadOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: withOpacity(Colors.black, 0.5),
+    backgroundColor: withOpacity(Colors.background, 0.5),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -261,7 +261,7 @@ const s = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: withOpacity(Colors.black, 0.6),
+    backgroundColor: withOpacity(Colors.background, 0.6),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -272,7 +272,7 @@ const s = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: withOpacity(Colors.black, 0.6),
+    backgroundColor: withOpacity(Colors.background, 0.6),
     alignItems: 'center',
     justifyContent: 'center',
   },

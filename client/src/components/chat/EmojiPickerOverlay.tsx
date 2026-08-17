@@ -140,7 +140,7 @@ export function EmojiPickerOverlay({
         onEmojiSelected={handleFullPickerSelect}
         enableSearchBar
         theme={{
-          backdrop: withOpacity(Colors.black, 0.7),
+          backdrop: withOpacity(Colors.background, 0.7),
           knob: Colors.brandOrange,
           container: Colors.surface,
           header: Colors.elevated,
@@ -169,7 +169,7 @@ export function EmojiPickerOverlay({
 const s = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: withOpacity(Colors.black, 0.3),
+    backgroundColor: withOpacity(Colors.background, 0.3),
   },
   menu: {
     position: 'absolute',
@@ -185,13 +185,13 @@ const s = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     gap: 4,
-    shadowColor: Colors.black,
+    shadowColor: Colors.background,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 10,
     borderWidth: 1,
-    borderColor: withOpacity(Colors.white, 0.1),
+    borderColor: withOpacity(Colors.inkPrimary, 0.1),
   },
   emojiBtn: {
     width: 40,
@@ -210,7 +210,7 @@ const s = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: withOpacity(Colors.white, 0.08),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.08),
   },
   moreBtnText: {
     fontFamily: FontFamily.headingBold,
@@ -223,13 +223,13 @@ const s = StyleSheet.create({
     backgroundColor: Colors.skeletonBase,
     borderRadius: 16,
     paddingVertical: 4,
-    shadowColor: Colors.black,
+    shadowColor: Colors.background,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 10,
     borderWidth: 1,
-    borderColor: withOpacity(Colors.white, 0.1),
+    borderColor: withOpacity(Colors.inkPrimary, 0.1),
     overflow: 'hidden',
   },
   actionRow: {

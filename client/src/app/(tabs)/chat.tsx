@@ -372,7 +372,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: withOpacity(Colors.white, 0.08),
+    borderBottomColor: withOpacity(Colors.inkPrimary, 0.08),
   },
   headerTop: {
     flexDirection: 'row',

@@ -59,7 +59,7 @@ function BlockSheetCore({ targetName, isBlocked, loading, onBlock, onUnblock, on
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={s.mainBtnGrad}
           >
-            {loading ? <ActivityIndicator color={Colors.white} /> : <Text style={s.mainBtnText}>{isBlocked ? 'Unblock' : 'Block'}</Text>}
+            {loading ? <ActivityIndicator color={Colors.inkPrimary} /> : <Text style={s.mainBtnText}>{isBlocked ? 'Unblock' : 'Block'}</Text>}
           </LinearGradient>
         </Pressable>
 
@@ -78,14 +78,14 @@ export function BlockSheet({ visible, ...rest }: Props) {
 
 const s = StyleSheet.create({
   bg: { backgroundColor: Colors.elevated },
-  handleIndicator: { backgroundColor: withOpacity(Colors.white, 0.18) },
+  handleIndicator: { backgroundColor: withOpacity(Colors.inkPrimary, 0.18) },
   content: { paddingHorizontal: 24, paddingBottom: 36, paddingTop: 8 },
   title: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary, marginBottom: 20, textAlign: 'center' },
   bulletRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 14 },
   bulletText: { flex: 1, fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, lineHeight: 20 },
   mainBtn: { borderRadius: 14, overflow: 'hidden', marginTop: 20 },
   mainBtnGrad: { height: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 14 },
-  mainBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 16, color: Colors.white },
+  mainBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 16, color: Colors.inkPrimary },
   cancelBtn: { height: 48, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
   cancelText: { fontFamily: FontFamily.bodyMedium, fontSize: 15, color: Colors.inkSecondary },
 })

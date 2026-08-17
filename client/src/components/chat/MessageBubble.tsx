@@ -62,7 +62,7 @@ function ReplyPreview({ metadata, isMine, onPress }: {
         ) : null}
         {mediaIcon ? (
           <View style={rp.iconRow}>
-            <mediaIcon.Icon size={11} color={withOpacity(Colors.white, 0.4)} strokeWidth={2} />
+            <mediaIcon.Icon size={11} color={withOpacity(Colors.inkPrimary, 0.4)} strokeWidth={2} />
             <Text style={rp.text} numberOfLines={1}>{mediaIcon.label}</Text>
           </View>
         ) : (
@@ -82,12 +82,12 @@ const rp = StyleSheet.create({
     alignSelf: 'stretch',
   },
   wrapMine: { backgroundColor: withOpacity(Colors.brandOrange, 0.15) },
-  wrapTheirs: { backgroundColor: withOpacity(Colors.white, 0.07) },
+  wrapTheirs: { backgroundColor: withOpacity(Colors.inkPrimary, 0.07) },
   accent: { width: 3, backgroundColor: Colors.brandOrange },
   body: { flex: 1, paddingHorizontal: 7, paddingVertical: 4, gap: 1 },
   sender: { fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: Colors.brandOrange },
   iconRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  text: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: withOpacity(Colors.white, 0.5) },
+  text: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: withOpacity(Colors.inkPrimary, 0.5) },
 })
 
 // ── Voice bubble ──────────────────────────────────────────────────────────────
@@ -178,7 +178,7 @@ function ImageChatBubble({ url, isMine, width: srcW, height: srcH, isPending }: 
       />
       {isPending && (
         <View style={mc.pendingOverlay}>
-          <ActivityIndicator size="small" color={Colors.white} />
+          <ActivityIndicator size="small" color={Colors.inkPrimary} />
         </View>
       )}
     </View>
@@ -235,15 +235,15 @@ function VideoChatBubble({ url, isMine, width: srcW, height: srcH, isPending, on
         nativeControls={false}
       />
       {isPending
-        ? <View style={mc.playOverlay}><ActivityIndicator size="small" color={Colors.white} /></View>
-        : <View style={mc.playOverlay}><Play size={28} color={Colors.white} fill={Colors.white} strokeWidth={0} /></View>
+        ? <View style={mc.playOverlay}><ActivityIndicator size="small" color={Colors.inkPrimary} /></View>
+        : <View style={mc.playOverlay}><Play size={28} color={Colors.inkPrimary} fill={Colors.inkPrimary} strokeWidth={0} /></View>
       }
     </>
   ) : localUri ? (
-    <View style={mc.playOverlay}><Play size={28} color={Colors.white} fill={Colors.white} strokeWidth={0} /></View>
+    <View style={mc.playOverlay}><Play size={28} color={Colors.inkPrimary} fill={Colors.inkPrimary} strokeWidth={0} /></View>
   ) : (
     <View style={[mc.downloadPlaceholder, boxStyle]}>
-      <Film size={32} color={withOpacity(Colors.white, 0.5)} strokeWidth={1.5} />
+      <Film size={32} color={withOpacity(Colors.inkPrimary, 0.5)} strokeWidth={1.5} />
       {downloading
         ? <ActivityIndicator size="small" color={Colors.brandOrange} style={{ marginTop: 8 }} />
         : <>
@@ -271,7 +271,7 @@ const mc = StyleSheet.create({
   pendingOverlay: {
     position: 'absolute', bottom: 8, right: 8,
     width: 28, height: 28, borderRadius: 14,
-    backgroundColor: withOpacity(Colors.black, 0.45),
+    backgroundColor: withOpacity(Colors.background, 0.45),
     alignItems: 'center', justifyContent: 'center',
   },
   videoWrap: { borderRadius: 14, overflow: 'hidden', backgroundColor: Colors.background },
@@ -279,7 +279,7 @@ const mc = StyleSheet.create({
   playOverlay: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     alignItems: 'center', justifyContent: 'center',
-    backgroundColor: withOpacity(Colors.black, 0.3),
+    backgroundColor: withOpacity(Colors.background, 0.3),
   },
   downloadPlaceholder: {
     borderRadius: 14,
@@ -680,7 +680,7 @@ const sel = StyleSheet.create({
   checkboxWrap: { width: 36, alignItems: 'center', justifyContent: 'center' },
   checkbox: {
     width: 20, height: 20, borderRadius: 5,
-    borderWidth: 1.5, borderColor: withOpacity(Colors.white, 0.3),
+    borderWidth: 1.5, borderColor: withOpacity(Colors.inkPrimary, 0.3),
     alignItems: 'center', justifyContent: 'center',
   },
   checkboxChecked: { backgroundColor: Colors.brandOrange, borderColor: Colors.brandOrange },
@@ -720,7 +720,7 @@ const s = StyleSheet.create({
     right: 8,
     fontFamily: FontFamily.bodyRegular,
     fontSize: 10,
-    color: withOpacity(Colors.white, 0.4),
+    color: withOpacity(Colors.inkPrimary, 0.4),
   },
 
   timeBelow: { fontFamily: FontFamily.bodyRegular, fontSize: 10, color: Colors.inkDisabled, marginTop: 3 },
@@ -750,6 +750,6 @@ const s = StyleSheet.create({
   profileAvatarInitial: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
   profileChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 12, paddingBottom: 4 },
   profileCardBtn: { marginHorizontal: 12, marginBottom: 12, marginTop: 4 },
-  profileChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: withOpacity(Colors.white, 0.08) },
+  profileChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: withOpacity(Colors.inkPrimary, 0.08) },
   profileChipText: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkPrimary },
 })

@@ -56,7 +56,7 @@ export default function ManageWaitlistScreen() {
               style={s.admitGradient}
             >
               {admitting
-                ? <ActivityIndicator color={Colors.white} />
+                ? <ActivityIndicator color={Colors.inkPrimary} />
                 : <Text style={s.admitText}>Admit Next ({pending.length} waiting)</Text>}
             </LinearGradient>
           </Pressable>
@@ -107,7 +107,7 @@ const s = StyleSheet.create({
 
   admitBtn: { marginHorizontal: 20, marginTop: 16, marginBottom: 8, borderRadius: 14, overflow: 'hidden' },
   admitGradient: { paddingVertical: 14, alignItems: 'center', borderRadius: 14 },
-  admitText: { color: Colors.white, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
+  admitText: { color: Colors.inkPrimary, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
 
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingTop: 12 },

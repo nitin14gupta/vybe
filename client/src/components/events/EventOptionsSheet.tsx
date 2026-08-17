@@ -66,7 +66,7 @@ export function EventOptionsSheet({ visible, ...rest }: Props) {
 
 const styles = StyleSheet.create({
   optionsBg: { backgroundColor: Colors.surface },
-  optionsHandle: { backgroundColor: withOpacity(Colors.white, 0.2) },
+  optionsHandle: { backgroundColor: withOpacity(Colors.inkPrimary, 0.2) },
   optionsContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   optionItem: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16 },
   optionText: { fontFamily: FontFamily.bodyMedium, fontSize: 16, color: Colors.inkPrimary },

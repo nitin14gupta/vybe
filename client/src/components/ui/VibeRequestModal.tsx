@@ -134,7 +134,7 @@ export function VibeRequestModal({ visible, user, onSend, onClose }: Props) {
 
 const s = StyleSheet.create({
   bg: { backgroundColor: Colors.surface },
-  handleIndicator: { backgroundColor: withOpacity(Colors.white, 0.18) },
+  handleIndicator: { backgroundColor: withOpacity(Colors.inkPrimary, 0.18) },
   content: { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 8 },
   partnerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
   avatar: { width: 52, height: 52, borderRadius: 26},

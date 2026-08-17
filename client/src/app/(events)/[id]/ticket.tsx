@@ -180,7 +180,7 @@ export default function TicketScreen() {
       >
         {/* Soft neutral glow bleeds into status bar area */}
         <LinearGradient
-          colors={[withOpacity(Colors.white, 0.08), 'transparent']}
+          colors={[withOpacity(Colors.inkPrimary, 0.08), 'transparent']}
           style={s.ambientGlow}
           pointerEvents="none"
         />
@@ -265,9 +265,9 @@ const s = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: withOpacity(Colors.white, 0.07),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.07),
     borderWidth: 1,
-    borderColor: withOpacity(Colors.white, 0.1),
+    borderColor: withOpacity(Colors.inkPrimary, 0.1),
     alignItems: 'center',
     justifyContent: 'center',
   },

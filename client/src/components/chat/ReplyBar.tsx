@@ -59,7 +59,7 @@ const s = StyleSheet.create({
     paddingVertical: 8,
     backgroundColor: Colors.surface,
     borderTopWidth: 1,
-    borderTopColor: withOpacity(Colors.white, 0.06),
+    borderTopColor: withOpacity(Colors.inkPrimary, 0.06),
     gap: 10,
   },
   accent: { width: 3, height: 32, borderRadius: 2, backgroundColor: Colors.brandOrange },

@@ -56,13 +56,13 @@ export function PhotoSlot({
 
           {isUploading && (
             <View style={styles.uploadOverlay}>
-              <ActivityIndicator size="small" color={Colors.white} />
+              <ActivityIndicator size="small" color={Colors.inkPrimary} />
             </View>
           )}
 
           {isError && (
             <Pressable onPress={() => retryUpload(item.id)} style={styles.errorOverlay}>
-              <AlertCircle size={18} color={Colors.white} />
+              <AlertCircle size={18} color={Colors.inkPrimary} />
               <Text style={styles.retryTxt}>Tap to retry</Text>
             </Pressable>
           )}
@@ -73,7 +73,7 @@ export function PhotoSlot({
               style={styles.removeBtn}
               hitSlop={10}
             >
-              <X size={11} color={Colors.white} strokeWidth={3} />
+              <X size={11} color={Colors.inkPrimary} strokeWidth={3} />
             </Pressable>
           )}
 
@@ -102,10 +102,10 @@ const styles = StyleSheet.create({
   slot: {
     width: ITEM_SIZE,
     height: ITEM_SIZE,
-    backgroundColor: withOpacity(Colors.white, 0.03),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.03),
     borderRadius: Radius.card,
     borderWidth: 1.5,
-    borderColor: withOpacity(Colors.white, 0.1),
+    borderColor: withOpacity(Colors.inkPrimary, 0.1),
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   },
   uploadOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: withOpacity(Colors.black, 0.4),
+    backgroundColor: withOpacity(Colors.background, 0.4),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   retryTxt: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 11,
-    color: Colors.white,
+    color: Colors.inkPrimary,
   },
   removeBtn: {
     position: 'absolute',
@@ -156,9 +156,9 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: withOpacity(Colors.black, 0.6),
+    backgroundColor: withOpacity(Colors.background, 0.6),
     borderWidth: 1,
-    borderColor: withOpacity(Colors.white, 0.2),
+    borderColor: withOpacity(Colors.inkPrimary, 0.2),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: withOpacity(Colors.black, 0.7),
+    backgroundColor: withOpacity(Colors.background, 0.7),
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: Radius.pill,

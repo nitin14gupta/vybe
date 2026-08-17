@@ -14,11 +14,11 @@ export function WalletBalanceCard({ balance, loading }: { balance: number; loadi
         style={s.balanceCard}
       >
         <View style={s.balanceIconRow}>
-          <Wallet size={20} color={withOpacity(Colors.white, 0.8)} strokeWidth={1.8} />
+          <Wallet size={20} color={withOpacity(Colors.inkPrimary, 0.8)} strokeWidth={1.8} />
           <Text style={s.balanceLabel}>Wallet Balance</Text>
         </View>
         {loading ? (
-          <ActivityIndicator color={Colors.white} style={{ marginTop: 8 }} />
+          <ActivityIndicator color={Colors.inkPrimary} style={{ marginTop: 8 }} />
         ) : (
           <Text style={s.balanceAmount}>₹{balance}</Text>
         )}
@@ -43,9 +43,9 @@ export function WalletBalanceCard({ balance, loading }: { balance: number; loadi
 const s = StyleSheet.create({
   balanceCard: { margin: 16, borderRadius: 20, padding: 24 },
   balanceIconRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  balanceLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: withOpacity(Colors.white, 0.8) },
-  balanceAmount: { fontFamily: FontFamily.headingBold, fontSize: 48, color: Colors.white, marginVertical: 4 },
-  balanceNote: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: withOpacity(Colors.white, 0.6), marginTop: 2 },
+  balanceLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: withOpacity(Colors.inkPrimary, 0.8) },
+  balanceAmount: { fontFamily: FontFamily.headingBold, fontSize: 48, color: Colors.inkPrimary, marginVertical: 4 },
+  balanceNote: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: withOpacity(Colors.inkPrimary, 0.6), marginTop: 2 },
 
   infoCard: {
     marginHorizontal: 16, marginBottom: 8,

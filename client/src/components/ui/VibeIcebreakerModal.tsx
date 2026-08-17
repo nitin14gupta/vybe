@@ -93,7 +93,7 @@ export function VibeIcebreakerModal({ visible, ...rest }: Props) {
 
 const s = StyleSheet.create({
   bg: { backgroundColor: Colors.surface },
-  handleIndicator: { backgroundColor: withOpacity(Colors.white, 0.18) },
+  handleIndicator: { backgroundColor: withOpacity(Colors.inkPrimary, 0.18) },
   content: { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 8 },
   iconRow: { alignItems: 'center', marginBottom: 16 },
   iconBg: { width: 60, height: 60, borderRadius: 30, backgroundColor: withOpacity(Colors.brandOrange, 0.15), alignItems: 'center', justifyContent: 'center' },

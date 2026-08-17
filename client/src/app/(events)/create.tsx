@@ -211,7 +211,7 @@ const s = StyleSheet.create({
   loadingOverlay: {
     ...StyleSheet.absoluteFill,
     zIndex: 10,
-    backgroundColor: withOpacity(Colors.black, 0.55),
+    backgroundColor: withOpacity(Colors.background, 0.55),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -222,7 +222,7 @@ const s = StyleSheet.create({
   stepTitle: {
     fontFamily: FontFamily.headingBold,
     fontSize: 26,
-    color: Colors.white,
+    color: Colors.inkPrimary,
     marginBottom: 6,
     letterSpacing: -0.5,
   },

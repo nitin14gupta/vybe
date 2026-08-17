@@ -153,7 +153,7 @@ export default function BookScreen() {
             </LinearGradient>
           )}
           <LinearGradient
-            colors={['transparent', withOpacity(Colors.black, 0.55), Colors.surface]}
+            colors={['transparent', withOpacity(Colors.background, 0.55), Colors.surface]}
             start={{ x: 0, y: 0.2 }} end={{ x: 0, y: 1 }}
             style={StyleSheet.absoluteFill}
           />
@@ -218,7 +218,7 @@ export default function BookScreen() {
                 value={walletEnabled}
                 onValueChange={v => { hSelection(); setWalletEnabled(v) }}
                 trackColor={{ false: Colors.divider, true: Colors.brandOrange }}
-                thumbColor={Colors.white}
+                thumbColor={Colors.inkPrimary}
               />
             </View>
           )}

@@ -145,7 +145,7 @@ const s = StyleSheet.create({
     borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: withOpacity(Colors.white, 0.06),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.06),
   },
   iconBtnDim: { opacity: 0.45 },
   headerCenter: { flex: 1, alignItems: 'center' },

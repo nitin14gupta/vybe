@@ -86,7 +86,7 @@ const s = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: withOpacity(Colors.white, 0.4),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.4),
   },
-  photoDotActive: { backgroundColor: Colors.white, width: 16 },
+  photoDotActive: { backgroundColor: Colors.inkPrimary, width: 16 },
 });

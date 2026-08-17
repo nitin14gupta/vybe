@@ -137,14 +137,14 @@ export function MediaViewerModal({ visible, items, initialIndex = 0, onClose }: 
       )}
 
       <Pressable style={s.closeBtn} onPress={onClose} hitSlop={12}>
-        <X size={22} color={Colors.white} strokeWidth={2} />
+        <X size={22} color={Colors.inkPrimary} strokeWidth={2} />
       </Pressable>
     </Modal>
   )
 }
 
 const s = StyleSheet.create({
-  bg: { backgroundColor: Colors.black },
+  bg: { backgroundColor: Colors.background },
   container: {
     flex: 1,
     alignItems: 'center',
@@ -157,7 +157,7 @@ const s = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: withOpacity(Colors.black, 0.55),
+    backgroundColor: withOpacity(Colors.background, 0.55),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -168,11 +168,11 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 12,
-    backgroundColor: withOpacity(Colors.black, 0.55),
+    backgroundColor: withOpacity(Colors.background, 0.55),
   },
   counterText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 12,
-    color: Colors.white,
+    color: Colors.inkPrimary,
   },
 })

@@ -156,7 +156,7 @@ export function EventRsvpBar({
               >
                 <View style={styles.offerTitleRow}>
                   <Text style={styles.offerTitle}>Spot Reserved!</Text>
-                  <PartyPopper size={13} color={Colors.white} strokeWidth={2} />
+                  <PartyPopper size={13} color={Colors.inkPrimary} strokeWidth={2} />
                 </View>
                 <Text style={styles.offerTimer}>
                   Confirm by {offerSecondsLeft != null ? fmtCountdown(offerSecondsLeft) : '...'}
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
 
   bookBtn: { borderRadius: 14, overflow: 'hidden' },
   bookGradient: { paddingHorizontal: 28, paddingVertical: 14, borderRadius: 14, alignItems: 'center', minWidth: 120 },
-  bookBtnText: { color: Colors.white, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
+  bookBtnText: { color: Colors.inkPrimary, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
 
   reviewedPill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 120,
   },
-  goingBtnText: { color: Colors.white, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
+  goingBtnText: { color: Colors.inkPrimary, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
 
   waitlistActiveBtn: {
     flexDirection: 'row',
@@ -304,12 +304,12 @@ const styles = StyleSheet.create({
   offerTitle: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
-    color: Colors.white,
+    color: Colors.inkPrimary,
   },
   offerTimer: {
     fontFamily: FontFamily.headingBold,
     fontSize: 16,
-    color: Colors.white,
+    color: Colors.inkPrimary,
     letterSpacing: 0.5,
   },
   eventFullBtn: {
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   },
 
   inProgressBtn: {
-    backgroundColor: withOpacity(Colors.white, 0.06),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.06),
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 14,
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
   hostBtn: {
     flex: 1, height: 48, borderRadius: 24,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    borderWidth: 1, borderColor: withOpacity(Colors.white, 0.18),
+    borderWidth: 1, borderColor: withOpacity(Colors.inkPrimary, 0.18),
   },
   hostBtnPrimary: { borderWidth: 0, overflow: 'hidden' },
   hostBtnGradient: {
@@ -385,5 +385,5 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   hostBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkPrimary },
-  hostBtnPrimaryText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.white },
+  hostBtnPrimaryText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkPrimary },
 })

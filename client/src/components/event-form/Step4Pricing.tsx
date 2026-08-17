@@ -126,7 +126,7 @@ const s = StyleSheet.create({
   lockedSection: { opacity: 0.45 },
   uploadOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: withOpacity(Colors.black, 0.45),
+    backgroundColor: withOpacity(Colors.background, 0.45),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -139,7 +139,7 @@ const s = StyleSheet.create({
   freeDisabled: { opacity: 0.35 },
   feeBreakdown: {
     marginTop: 10,
-    backgroundColor: withOpacity(Colors.white, 0.05),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.05),
     borderRadius: 10,
     padding: 10,
   },

@@ -137,7 +137,7 @@ export function EventQuickPeekSheet({ visible, ...rest }: Props) {
 const s = StyleSheet.create({
   shareCardHost: { position: 'absolute', top: 0, left: -9999 },
   bg: { backgroundColor: Colors.surface },
-  handle: { backgroundColor: withOpacity(Colors.white, 0.2) },
+  handle: { backgroundColor: withOpacity(Colors.inkPrimary, 0.2) },
   content: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
   previewRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   previewImg: { width: 52, height: 52, borderRadius: 12 },

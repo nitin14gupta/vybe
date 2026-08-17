@@ -30,14 +30,14 @@ export const EventShareCard = forwardRef<View, Props>(
           onLoad={onImageLoad}
         />
         <LinearGradient
-          colors={['transparent', withOpacity(Colors.black, 0.9)]}
+          colors={['transparent', withOpacity(Colors.background, 0.9)]}
           locations={[0.4, 1]}
           style={StyleSheet.absoluteFill}
         />
         <View style={s.content}>
           <Text style={s.title} numberOfLines={2}>{title}</Text>
           <View style={s.metaRow}>
-            <Calendar size={16} color={Colors.white} strokeWidth={2} />
+            <Calendar size={16} color={Colors.inkPrimary} strokeWidth={2} />
             <Text style={s.meta}>{dateTimeLabel}</Text>
           </View>
           <View style={s.brandRow}>
@@ -53,9 +53,9 @@ export const EventShareCard = forwardRef<View, Props>(
 const s = StyleSheet.create({
   card: { width: SHARE_CARD_WIDTH, height: SHARE_CARD_HEIGHT, overflow: 'hidden', backgroundColor: Colors.background },
   content: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 20, gap: 8 },
-  title: { fontFamily: FontFamily.headingBold, fontSize: 24, color: Colors.white },
+  title: { fontFamily: FontFamily.headingBold, fontSize: 24, color: Colors.inkPrimary },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  meta: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.white },
+  meta: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.inkPrimary },
   logo: { width: 16, height: 16, borderRadius: 4 },
   brandRow: {
     flexDirection: 'row',

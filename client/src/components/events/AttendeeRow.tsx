@@ -87,7 +87,7 @@ export const AttendeeRow = memo(function AttendeeRow({ item, position }: { item:
     <Pressable
       style={r.root}
       onPress={() => router.push(`/(profile)/${item.id}` as any)}
-      android_ripple={{ color: withOpacity(Colors.white, 0.04) }}
+      android_ripple={{ color: withOpacity(Colors.inkPrimary, 0.04) }}
     >
       <Avatar name={item.name} avatar={item.avatar} checkedIn={checkedIn} />
 

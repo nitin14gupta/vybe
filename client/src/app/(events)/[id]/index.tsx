@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: withOpacity(Colors.white, 0.14),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.14),
     marginTop: 10,
   },
   scroll: { flex: 1 },

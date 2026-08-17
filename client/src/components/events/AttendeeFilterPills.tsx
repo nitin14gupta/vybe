@@ -71,7 +71,7 @@ const p = StyleSheet.create({
     fontSize: 13,
     color: Colors.inkSecondary,
   },
-  labelActive: { color: Colors.white },
+  labelActive: { color: Colors.inkPrimary },
   badge: {
     minWidth: 18,
     height: 18,
@@ -81,11 +81,11 @@ const p = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 4,
   },
-  badgeActive: { backgroundColor: withOpacity(Colors.white, 0.25) },
+  badgeActive: { backgroundColor: withOpacity(Colors.inkPrimary, 0.25) },
   badgeNum: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 11,
     color: Colors.inkSecondary,
   },
-  badgeNumActive: { color: Colors.white },
+  badgeNumActive: { color: Colors.inkPrimary },
 })

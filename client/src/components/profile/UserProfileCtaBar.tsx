@@ -101,7 +101,7 @@ const s = StyleSheet.create({
     paddingTop: 16,
     backgroundColor: Colors.background,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: withOpacity(Colors.white, 0.08),
+    borderTopColor: withOpacity(Colors.inkPrimary, 0.08),
   },
   ctaBtn: {
     height: 52,

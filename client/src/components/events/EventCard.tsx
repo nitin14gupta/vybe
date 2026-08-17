@@ -51,8 +51,8 @@ const hp = StyleSheet.create({
     backgroundColor: 'rgba(10,10,10,0.92)',
     borderRadius: 20, paddingLeft: 4, paddingRight: 10, paddingVertical: 4,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: withOpacity(Colors.white, 0.12),
-    shadowColor: Colors.black,
+    borderColor: withOpacity(Colors.inkPrimary, 0.12),
+    shadowColor: Colors.background,
     shadowOpacity: 0.4,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
@@ -64,9 +64,9 @@ const hp = StyleSheet.create({
   avatar: { width: 20, height: 20, borderRadius: 10 },
   avatarCompact: { width: 16, height: 16, borderRadius: 8 },
   avatarFallback: { backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
-  initial: { fontFamily: FontFamily.headingBold, fontSize: 11, color: Colors.white },
+  initial: { fontFamily: FontFamily.headingBold, fontSize: 11, color: Colors.inkPrimary },
   initialCompact: { fontSize: 9 },
-  text: { fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: Colors.white },
+  text: { fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: Colors.inkPrimary },
   textCompact: { fontSize: 10 },
 })
 
@@ -140,7 +140,7 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
 
         {/* Gradient scrim for title legibility */}
         <LinearGradient
-          colors={['transparent', withOpacity(Colors.black, 0.78)]}
+          colors={['transparent', withOpacity(Colors.background, 0.78)]}
           style={s.gradient}
           pointerEvents="none"
         />
@@ -305,7 +305,7 @@ const s = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: Colors.black,
+    shadowColor: Colors.background,
     shadowOpacity: 0.25,
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 5 },
@@ -332,7 +332,7 @@ const s = StyleSheet.create({
   // now-empty slot instead of leaving a gap.
   priceBadgeNoHotlist: { right: 12 },
   priceBadgeFree: { backgroundColor: Colors.accentGreen },
-  priceText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.white },
+  priceText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.inkPrimary },
 
   hostPillPos: {
     position: 'absolute', top: 12, left: 12,
@@ -347,13 +347,13 @@ const s = StyleSheet.create({
     borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3,
   },
   cancelledBadge: { backgroundColor: withOpacity(Colors.brandCoral, 0.85) },
-  statusBadgeText: { fontFamily: FontFamily.bodyMedium, fontSize: 11, color: Colors.white },
+  statusBadgeText: { fontFamily: FontFamily.bodyMedium, fontSize: 11, color: Colors.inkPrimary },
 
   cardFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 14 },
-  title: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.white, lineHeight: 21 },
+  title: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary, lineHeight: 21 },
   hostName: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: withOpacity(Colors.brandOrange, 0.9), marginTop: 2 },
-  hostNameDeleted: { color: withOpacity(Colors.white, 0.4) },
-  date: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: withOpacity(Colors.white, 0.75), marginTop: 3 },
+  hostNameDeleted: { color: withOpacity(Colors.inkPrimary, 0.4) },
+  date: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: withOpacity(Colors.inkPrimary, 0.75), marginTop: 3 },
 
   meta: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',

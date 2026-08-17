@@ -27,7 +27,7 @@ export default function ProfileQrScreen() {
         onPress={() => { hTap(); router.back() }}
         hitSlop={10}
       >
-        <X size={22} color={Colors.white} strokeWidth={2.2} />
+        <X size={22} color={Colors.inkPrimary} strokeWidth={2.2} />
       </Pressable>
 
       <View style={s.center}>
@@ -66,11 +66,11 @@ export default function ProfileQrScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.black },
+  root: { flex: 1, backgroundColor: Colors.background },
   closeBtn: {
     position: 'absolute', left: 16, zIndex: 10,
     width: 38, height: 38, borderRadius: 19,
-    backgroundColor: withOpacity(Colors.white, 0.12),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.12),
     alignItems: 'center', justifyContent: 'center',
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },

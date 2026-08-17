@@ -13,7 +13,7 @@ export function ProfileHeaderBar({ topInset, onBack, onMenu }: Props) {
   return (
     <View style={[s.headerOverlay, { paddingTop: topInset + 8 }]}>
       <Pressable onPress={onBack} style={s.headerCircleBtn} hitSlop={8}>
-        <ArrowLeft size={20} color={Colors.white} strokeWidth={2.2} />
+        <ArrowLeft size={20} color={Colors.inkPrimary} strokeWidth={2.2} />
       </Pressable>
       <Pressable
         onPress={() => {
@@ -23,7 +23,7 @@ export function ProfileHeaderBar({ topInset, onBack, onMenu }: Props) {
         style={s.headerCircleBtn}
         hitSlop={8}
       >
-        <MoreVertical size={20} color={Colors.white} strokeWidth={1.8} />
+        <MoreVertical size={20} color={Colors.inkPrimary} strokeWidth={1.8} />
       </Pressable>
     </View>
   );

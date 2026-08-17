@@ -62,7 +62,7 @@ const s = StyleSheet.create({
   ctaText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
-    color: Colors.white,
+    color: Colors.inkPrimary,
   },
   bleedImageWrap: {
     width: 128,

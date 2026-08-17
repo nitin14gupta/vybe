@@ -288,7 +288,7 @@ const s = StyleSheet.create({
     paddingVertical: 8,
     backgroundColor: Colors.surface,
     borderTopWidth: 1,
-    borderTopColor: withOpacity(Colors.white, 0.06),
+    borderTopColor: withOpacity(Colors.inkPrimary, 0.06),
     gap: 8,
   },
   editBarText: { flex: 1, fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: Colors.brandOrange },
@@ -301,7 +301,7 @@ const s = StyleSheet.create({
   },
   iconBtn: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: withOpacity(Colors.white, 0.06),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.06),
     alignItems: 'center', justifyContent: 'center',
   },
   recordCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -318,7 +318,7 @@ const s = StyleSheet.create({
   },
   addBtn: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: withOpacity(Colors.white, 0.07),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.07),
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 2,
   },

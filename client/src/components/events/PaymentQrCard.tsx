@@ -90,8 +90,8 @@ const s = StyleSheet.create({
   qrCropImage: { width: 350, height: 440, marginTop: -80 },
 
   qrPlaceholder: { width: 240, height: 240, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.elevated },
-  expiredOverlay: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', backgroundColor: withOpacity(Colors.black, 0.55) },
-  expiredOverlayText: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.white },
+  expiredOverlay: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', backgroundColor: withOpacity(Colors.background, 0.55) },
+  expiredOverlayText: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.inkPrimary },
 
   scanHint: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center' },
 })

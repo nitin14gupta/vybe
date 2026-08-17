@@ -129,6 +129,6 @@ const styles = StyleSheet.create({
   chatBadgeText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 9,
-    color: Colors.white,
+    color: Colors.inkPrimary,
   },
 });

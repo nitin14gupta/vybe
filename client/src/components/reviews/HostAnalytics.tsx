@@ -79,7 +79,7 @@ function RatingBarChart({
         rulesType="dashed"
         dashWidth={4}
         dashGap={5}
-        rulesColor={withOpacity(Colors.white, 0.1)}
+        rulesColor={withOpacity(Colors.inkPrimary, 0.1)}
         yAxisTextStyle={a.axisLabel}
         xAxisLabelTextStyle={a.axisLabel}
         yAxisLabelWidth={20}

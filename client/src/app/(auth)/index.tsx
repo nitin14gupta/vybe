@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.headingBold,
     fontSize: 15,
     letterSpacing: 1,
-    color: Colors.white,
+    color: Colors.inkPrimary,
   },
   card: {
     flex: 1,

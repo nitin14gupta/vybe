@@ -70,7 +70,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: Colors.black,
+    shadowColor: Colors.background,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

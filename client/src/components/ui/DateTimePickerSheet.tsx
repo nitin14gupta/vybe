@@ -103,7 +103,7 @@ export function DateTimePickerSheet({
           display="spinner"
           minimumDate={minimumDate}
           maximumDate={maximumDate}
-          textColor={Colors.white}
+          textColor={Colors.inkPrimary}
           themeVariant="dark"
           onChange={(_: DateTimePickerEvent, date?: Date) => {
             if (date) setLocalDate(date)
@@ -159,7 +159,7 @@ export function useDateTimePicker(initial?: Date) {
 const s = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: withOpacity(Colors.black, 0.55),
+    backgroundColor: withOpacity(Colors.background, 0.55),
   },
   sheet: {
     position: 'absolute',
@@ -182,5 +182,5 @@ const s = StyleSheet.create({
   },
   doneBtn: { width: '100%', borderRadius: 14, overflow: 'hidden', marginTop: 12 },
   doneGrad: { paddingVertical: 15, alignItems: 'center' },
-  doneTxt: { color: Colors.white, fontSize: 16, fontWeight: '700' },
+  doneTxt: { color: Colors.inkPrimary, fontSize: 16, fontWeight: '700' },
 })

@@ -112,7 +112,7 @@ export function PaymentFailedSheet({ visible, message, onRetry, onBack }: Props)
 
 const s = StyleSheet.create({
   bg: { backgroundColor: Colors.sheetBackground },
-  handle: { backgroundColor: withOpacity(Colors.white, 0.1) },
+  handle: { backgroundColor: withOpacity(Colors.inkPrimary, 0.1) },
   content: { paddingHorizontal: 28, paddingBottom: 40, paddingTop: 8, alignItems: 'center' },
 
   iconWrap: { marginTop: 8, marginBottom: 20 },

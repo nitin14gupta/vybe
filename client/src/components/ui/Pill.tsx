@@ -41,7 +41,7 @@ export function PillOverlay() {
     transform: [{ translateY: translateY.value }],
   }))
 
-  const badgeTint = type === 'error' ? withOpacity(Colors.destructive, 0.2) : withOpacity(Colors.white, 0.12)
+  const badgeTint = type === 'error' ? withOpacity(Colors.destructive, 0.2) : withOpacity(Colors.inkPrimary, 0.12)
 
   if (!visible && opacity.value === 0) return null
 
@@ -69,7 +69,7 @@ const s = StyleSheet.create({
     paddingRight: 18,
     paddingVertical: 8,
     backgroundColor: 'rgba(38,38,38,0.9)',
-    shadowColor: Colors.black,
+    shadowColor: Colors.background,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -85,7 +85,7 @@ const s = StyleSheet.create({
   text: {
     fontFamily: FontFamily.bodyMedium,
     fontSize: 14,
-    color: Colors.white,
+    color: Colors.inkPrimary,
     flexShrink: 1,
     lineHeight: 20,
   },

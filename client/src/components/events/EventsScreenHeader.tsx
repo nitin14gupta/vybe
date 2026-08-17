@@ -46,7 +46,7 @@ export function MapFloatingHeader({
           onPress={() => { hTap(); onSearch() }}
           hitSlop={8}
         >
-          <Search size={16} color={Colors.white} strokeWidth={2} />
+          <Search size={16} color={Colors.inkPrimary} strokeWidth={2} />
         </Pressable>
         <Pressable
           style={styles.addBtn}
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   floatTitle: {
     fontFamily: FontFamily.headingBold,
     fontSize: 22,
-    color: Colors.white,
+    color: Colors.inkPrimary,
     letterSpacing: -0.3,
   },
   floatActions: { flexDirection: "row", alignItems: "center", gap: 8 },
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: withOpacity(Colors.white, 0.14),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.14),
     alignItems: "center",
     justifyContent: "center",
   },

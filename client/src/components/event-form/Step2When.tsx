@@ -92,11 +92,11 @@ function Inner({ form, set, errors, setErrors, openDate, openStartTime, openEndD
           style={[ef.stepperBtn, form.capacity <= minCapacity && { opacity: 0.35 }]}
           onPress={() => !disabled && set('capacity', Math.max(minCapacity, form.capacity - 5))}
         >
-          <Minus size={18} color={Colors.white} />
+          <Minus size={18} color={Colors.inkPrimary} />
         </Pressable>
         <Text style={ef.stepperValue}>{form.capacity}</Text>
         <Pressable style={ef.stepperBtn} onPress={() => (!disabled || capacityUnlocked) && set('capacity', Math.min(200, form.capacity + 5))}>
-          <Plus size={18} color={Colors.white} />
+          <Plus size={18} color={Colors.inkPrimary} />
         </Pressable>
       </View>
       {capacityNote ? <Text style={ef.fieldLockNote}>{capacityNote}</Text> : null}

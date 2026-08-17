@@ -67,7 +67,7 @@ export function ConfirmSheet({ visible, ...rest }: Props) {
 
 const s = StyleSheet.create({
   bg: { backgroundColor: Colors.surface },
-  handleIndicator: { backgroundColor: withOpacity(Colors.white, 0.18) },
+  handleIndicator: { backgroundColor: withOpacity(Colors.inkPrimary, 0.18) },
   content: { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 8, gap: 12 },
   title: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary, textAlign: 'center' },
   body: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center', lineHeight: 20 },

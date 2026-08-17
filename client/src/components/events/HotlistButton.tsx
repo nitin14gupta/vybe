@@ -25,7 +25,7 @@ export function HotlistButton({
     <Pressable style={[s.btn, style]} onPress={toggle} hitSlop={8}>
       <Bookmark
         size={size}
-        color={hotlisted ? Colors.brandCoral : Colors.white}
+        color={hotlisted ? Colors.brandCoral : Colors.inkPrimary}
         fill={hotlisted ? Colors.brandCoral : 'transparent'}
         strokeWidth={2}
       />

@@ -77,7 +77,7 @@ export default function ProfileLocationScreen() {
             <Pressable
               onPress={() => { hSelection(); selectCity(c.name) }}
               style={s.cityRow}
-              android_ripple={{ color: withOpacity(Colors.white, 0.04) }}
+              android_ripple={{ color: withOpacity(Colors.inkPrimary, 0.04) }}
             >
               <View>
                 <Text style={[s.cityName, selectedCity === c.name && s.cityNameSelected]}>

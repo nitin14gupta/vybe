@@ -341,7 +341,7 @@ const s = StyleSheet.create({
   selectionBar: {
     backgroundColor: Colors.background,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: withOpacity(Colors.white, 0.1),
+    borderTopColor: withOpacity(Colors.inkPrimary, 0.1),
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 20,

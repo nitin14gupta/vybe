@@ -37,7 +37,7 @@ export const MediaPickerSheet = forwardRef<BottomSheetModal, Props>(
           <Text style={s.heading}>Add to message</Text>
 
           <View style={s.grid}>
-            <Pressable style={s.tile} onPress={() => pick(onCamera)} android_ripple={{ color: withOpacity(Colors.white, 0.06), borderless: false }}>
+            <Pressable style={s.tile} onPress={() => pick(onCamera)} android_ripple={{ color: withOpacity(Colors.inkPrimary, 0.06), borderless: false }}>
               <View style={s.iconWrap}>
                 <Camera size={26} color={Colors.brandOrange} strokeWidth={1.6} />
               </View>
@@ -45,7 +45,7 @@ export const MediaPickerSheet = forwardRef<BottomSheetModal, Props>(
               <Text style={s.tileSub}>Photo</Text>
             </Pressable>
 
-            <Pressable style={s.tile} onPress={() => pick(onLibrary)} android_ripple={{ color: withOpacity(Colors.white, 0.06), borderless: false }}>
+            <Pressable style={s.tile} onPress={() => pick(onLibrary)} android_ripple={{ color: withOpacity(Colors.inkPrimary, 0.06), borderless: false }}>
               <View style={s.iconWrap}>
                 <Images size={26} color={Colors.brandOrange} strokeWidth={1.6} />
               </View>
@@ -65,7 +65,7 @@ MediaPickerSheet.displayName = 'MediaPickerSheet'
 
 const s = StyleSheet.create({
   bg: { backgroundColor: '#161616' },
-  handle: { backgroundColor: withOpacity(Colors.white, 0.15), width: 36 },
+  handle: { backgroundColor: withOpacity(Colors.inkPrimary, 0.15), width: 36 },
   content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 },
   heading: {
     fontFamily: FontFamily.headingBold,
@@ -83,7 +83,7 @@ const s = StyleSheet.create({
     backgroundColor: Colors.skeletonBase,
     borderRadius: Radius.card,
     borderWidth: 1,
-    borderColor: withOpacity(Colors.white, 0.07),
+    borderColor: withOpacity(Colors.inkPrimary, 0.07),
     paddingVertical: 20,
     paddingHorizontal: 16,
     alignItems: 'center',

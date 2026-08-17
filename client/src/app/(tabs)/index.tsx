@@ -163,12 +163,12 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: withOpacity(Colors.white, 0.2),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.2),
     alignItems: 'center',
     justifyContent: 'center',
   },
-  hostCardTitle: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.white },
-  hostCardSubtitle: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: withOpacity(Colors.white, 0.85), marginTop: 1 },
+  hostCardTitle: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
+  hostCardSubtitle: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: withOpacity(Colors.inkPrimary, 0.85), marginTop: 1 },
 
   sectionHeaderRow: {
     flexDirection: 'row',

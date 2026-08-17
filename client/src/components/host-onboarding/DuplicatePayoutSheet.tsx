@@ -60,7 +60,7 @@ const s = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: withOpacity(Colors.white, 0.06),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.06),
     borderWidth: 1,
     borderColor: Colors.divider,
     alignItems: 'center',

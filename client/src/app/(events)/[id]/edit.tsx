@@ -291,7 +291,7 @@ export default function EditEventScreen() {
               style={s.saveGradient}
             >
               {saving ? (
-                <ActivityIndicator color={Colors.white} />
+                <ActivityIndicator color={Colors.inkPrimary} />
               ) : (
                 <Text style={s.saveText}>Save Changes</Text>
               )}
@@ -331,5 +331,5 @@ const s = StyleSheet.create({
   saveBtn: { borderRadius: 16, overflow: 'hidden' },
   saveBtnDisabled: { opacity: 0.5 },
   saveGradient: { height: 54, alignItems: 'center', justifyContent: 'center', borderRadius: 16 },
-  saveText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.white, letterSpacing: 0.5 },
+  saveText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.inkPrimary, letterSpacing: 0.5 },
 })

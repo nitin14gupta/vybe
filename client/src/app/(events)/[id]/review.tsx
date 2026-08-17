@@ -166,8 +166,8 @@ const s = StyleSheet.create({
   },
   circleBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: withOpacity(Colors.white, 0.08),
-    borderWidth: 1, borderColor: withOpacity(Colors.white, 0.1),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.08),
+    borderWidth: 1, borderColor: withOpacity(Colors.inkPrimary, 0.1),
     alignItems: 'center', justifyContent: 'center',
   },
 

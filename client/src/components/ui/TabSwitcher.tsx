@@ -78,7 +78,7 @@ export function TabSwitcher({ tabs, activeTab, onChange, variant = 'pill', fill 
 const s = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: withOpacity(Colors.white, 0.05),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.05),
     borderRadius: 12,
     padding: 4,
   },

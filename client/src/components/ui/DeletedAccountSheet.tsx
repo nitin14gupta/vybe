@@ -89,7 +89,7 @@ export function DeletedAccountSheet({ visible, ...rest }: Props) {
 
 const s = StyleSheet.create({
   bg: { backgroundColor: Colors.surface },
-  handle: { backgroundColor: withOpacity(Colors.white, 0.18) },
+  handle: { backgroundColor: withOpacity(Colors.inkPrimary, 0.18) },
   content: { paddingHorizontal: 24, paddingBottom: 40, paddingTop: 8, gap: 12, alignItems: 'center' },
 
   iconWrap: {

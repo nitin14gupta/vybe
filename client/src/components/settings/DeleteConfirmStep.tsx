@@ -35,7 +35,7 @@ export function DeleteConfirmStep({ typed, onTypedChange, deleting, onDelete, on
 
       <View style={styles.finalDeleteBtn}>
         {deleting ? (
-          <ActivityIndicator color={Colors.white} />
+          <ActivityIndicator color={Colors.inkPrimary} />
         ) : (
           <OutlineButton
             label="Delete My Account"

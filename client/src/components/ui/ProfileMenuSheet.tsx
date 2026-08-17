@@ -189,12 +189,12 @@ export function ProfileMenuSheet({ visible, ...rest }: Props) {
 
 const s = StyleSheet.create({
   bg: { backgroundColor: Colors.elevated },
-  handleIndicator: { backgroundColor: withOpacity(Colors.white, 0.18) },
+  handleIndicator: { backgroundColor: withOpacity(Colors.inkPrimary, 0.18) },
   content: { paddingHorizontal: 8, paddingBottom: 36, paddingTop: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingVertical: 16, borderRadius: 12 },
   rowText: { fontFamily: FontFamily.bodyMedium, fontSize: 16, color: Colors.inkPrimary },
   rowTextOrange: { color: Colors.brandOrange },
-  divider: { height: StyleSheet.hairlineWidth, backgroundColor: withOpacity(Colors.white, 0.1), marginHorizontal: 20, marginVertical: 4 },
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: withOpacity(Colors.inkPrimary, 0.1), marginHorizontal: 20, marginVertical: 4 },
   cancelRow: { alignItems: 'center', paddingVertical: 14 },
   cancelText: { fontFamily: FontFamily.bodyMedium, fontSize: 15, color: Colors.inkSecondary },
 })

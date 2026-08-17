@@ -85,7 +85,7 @@ const s = StyleSheet.create({
   billTotalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   billTotalLabel: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
   billTotalBadge: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 4 },
-  billTotalValue: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.white },
+  billTotalValue: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary },
 
   walletBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: withOpacity(Colors.brandOrange, 0.08), borderRadius: 12, borderWidth: 1, borderColor: withOpacity(Colors.brandOrange, 0.18), paddingHorizontal: 14, paddingVertical: 10 },
   walletBannerText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.brandOrange, flex: 1 },

@@ -22,7 +22,7 @@ export function StyledQr({
       <QRCode
         value={data}
         size={size - padding * 2}
-        color={Colors.black}
+        color={Colors.background}
         backgroundColor={Colors.white}
         ecl={errorCorrectionLevel}
         logo={showLogo ? logoSource : undefined}

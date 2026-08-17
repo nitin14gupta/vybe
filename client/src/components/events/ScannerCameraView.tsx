@@ -64,17 +64,17 @@ export function ScannerCameraView({
         >
           {scanResult.already_checked_in ? (
             <>
-              <AlertTriangle size={16} color={Colors.white} strokeWidth={2} />
+              <AlertTriangle size={16} color={Colors.inkPrimary} strokeWidth={2} />
               <Text style={s.resultText}>{scanResult.name} already checked in</Text>
             </>
           ) : scanResult.ok ? (
             <>
-              <CheckCircle size={16} color={Colors.white} strokeWidth={2} />
+              <CheckCircle size={16} color={Colors.inkPrimary} strokeWidth={2} />
               <Text style={s.resultText}>{scanResult.name} checked in!</Text>
             </>
           ) : (
             <>
-              <XCircle size={16} color={Colors.white} strokeWidth={2} />
+              <XCircle size={16} color={Colors.inkPrimary} strokeWidth={2} />
               <Text style={s.resultText}>{scanResult.error || 'Invalid ticket'}</Text>
             </>
           )}
@@ -83,7 +83,7 @@ export function ScannerCameraView({
 
       {scanning && (
         <View style={s.scanningOverlay}>
-          <ActivityIndicator color={Colors.white} />
+          <ActivityIndicator color={Colors.inkPrimary} />
         </View>
       )}
     </CameraView>
@@ -110,7 +110,7 @@ const s = StyleSheet.create({
     position: 'absolute',
     width: CORNER_SIZE,
     height: CORNER_SIZE,
-    borderColor: Colors.white,
+    borderColor: Colors.inkPrimary,
   },
   tl: { top: 0, left: 0, borderTopWidth: CORNER_BORDER, borderLeftWidth: CORNER_BORDER, borderTopLeftRadius: 6 },
   tr: { top: 0, right: 0, borderTopWidth: CORNER_BORDER, borderRightWidth: CORNER_BORDER, borderTopRightRadius: 6 },
@@ -120,7 +120,7 @@ const s = StyleSheet.create({
     position: 'absolute',
     bottom: 12,
     alignSelf: 'center',
-    color: withOpacity(Colors.white, 0.75),
+    color: withOpacity(Colors.inkPrimary, 0.75),
     fontFamily: FontFamily.bodyRegular,
     fontSize: 12,
   },
@@ -139,10 +139,10 @@ const s = StyleSheet.create({
   resultSuccess: { backgroundColor: withOpacity(Colors.accentGreen, 0.9) },
   resultWarning: { backgroundColor: withOpacity(Colors.brandOrange, 0.9) },
   resultError: { backgroundColor: withOpacity(Colors.destructive, 0.92) },
-  resultText: { color: Colors.white, fontFamily: FontFamily.bodyMedium, fontSize: 14 },
+  resultText: { color: Colors.inkPrimary, fontFamily: FontFamily.bodyMedium, fontSize: 14 },
   scanningOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: withOpacity(Colors.black, 0.35),
+    backgroundColor: withOpacity(Colors.background, 0.35),
     alignItems: 'center',
     justifyContent: 'center',
   },

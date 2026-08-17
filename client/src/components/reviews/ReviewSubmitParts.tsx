@@ -28,7 +28,7 @@ function AnimatedStar({ n, rating, onPress }: { n: number; rating: number; onPre
       <Animated.View style={aStyle}>
         <Star
           size={48}
-          color={filled ? Colors.brandOrange : withOpacity(Colors.white, 0.15)}
+          color={filled ? Colors.brandOrange : withOpacity(Colors.inkPrimary, 0.15)}
           fill={filled ? Colors.brandOrange : 'transparent'}
           strokeWidth={1.4}
         />

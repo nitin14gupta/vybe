@@ -183,16 +183,16 @@ const s = StyleSheet.create({
   primaryBtnText: {
     fontFamily: FontFamily.headingBold,
     fontSize: 15,
-    color: Colors.white,
+    color: Colors.inkPrimary,
     letterSpacing: 1,
   },
 
   skipText: {
     fontFamily: FontFamily.bodyMedium,
     fontSize: 14,
-    color: withOpacity(Colors.white, 0.35),
+    color: withOpacity(Colors.inkPrimary, 0.35),
     paddingBottom: 4,
     borderBottomWidth: 1,
-    borderBottomColor: withOpacity(Colors.white, 0.12),
+    borderBottomColor: withOpacity(Colors.inkPrimary, 0.12),
   },
 })

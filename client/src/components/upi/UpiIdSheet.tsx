@@ -188,7 +188,7 @@ export function UpiIdSheet({
 
 const s = StyleSheet.create({
   sheetBg: { backgroundColor: Colors.sheetBackground },
-  sheetHandle: { backgroundColor: withOpacity(Colors.white, 0.18) },
+  sheetHandle: { backgroundColor: withOpacity(Colors.inkPrimary, 0.18) },
   content: { paddingHorizontal: 24, paddingBottom: 40, paddingTop: 12 },
 
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
@@ -197,10 +197,10 @@ const s = StyleSheet.create({
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: withOpacity(Colors.white, 0.05),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.05),
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: withOpacity(Colors.white, 0.08),
+    borderColor: withOpacity(Colors.inkPrimary, 0.08),
     paddingHorizontal: 16,
     marginBottom: 8,
   },

@@ -238,7 +238,7 @@ export function ShareToChatSheet(props: Props) {
 
 const st = StyleSheet.create({
   bg: { backgroundColor: Colors.elevated },
-  handle: { backgroundColor: withOpacity(Colors.white, 0.18) },
+  handle: { backgroundColor: withOpacity(Colors.inkPrimary, 0.18) },
 
   container: { flex: 1 },
   header: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12, gap: 14 },
@@ -246,7 +246,7 @@ const st = StyleSheet.create({
 
   preview: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: withOpacity(Colors.white, 0.05),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.05),
     borderRadius: 14, padding: 10,
   },
   previewImg: { width: 44, height: 44, borderRadius: 10 },

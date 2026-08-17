@@ -53,7 +53,7 @@ const s = StyleSheet.create({
   txIconWrap: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   txCover: { width: 36, height: 36, borderRadius: 10 },
   txIconCredit: { backgroundColor: withOpacity(Colors.accentGreen, 0.12) },
-  txIconDebit: { backgroundColor: withOpacity(Colors.white, 0.06) },
+  txIconDebit: { backgroundColor: withOpacity(Colors.inkPrimary, 0.06) },
   txMid: { flex: 1 },
   txDesc: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.inkPrimary },
   txDate: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary, marginTop: 2 },

@@ -6,7 +6,7 @@ import { Pencil } from 'lucide-react-native'
 import { BackButton, OTPInput, PrimaryButton, Screen, KeyboardAvoidingWrapper, DeletedAccountSheet, LogoMark } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
 import { useCountdown } from '@/hooks/useCountdown'
-import { Colors, FontFamily, Spacing, withOpacity } from '@/constants'
+import { Colors, FontFamily, Spacing } from '@/constants'
 
 export default function OTPScreen() {
   const { phone } = useLocalSearchParams<{ phone: string }>()
@@ -85,7 +85,7 @@ export default function OTPScreen() {
           <View style={styles.sentRow}>
             <Text style={styles.sentText}>Sent to +91 {phone}</Text>
             <Pressable onPress={() => router.back()}>
-              <Pencil size={14} color={Colors.brandOrange} strokeWidth={2} />
+              <Pencil size={14} color={Colors.inkSecondary} strokeWidth={2} />
             </Pressable>
           </View>
 
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   errorMsg: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 13,
-    color: Colors.brandCoral,
+    color: Colors.destructive,
     marginTop: 12,
   },
   resendArea: {
@@ -178,12 +178,12 @@ const styles = StyleSheet.create({
   },
   countdownTimer: {
     fontFamily: FontFamily.bodySemiBold,
-    color: withOpacity(Colors.brandOrange, 0.75),
+    color: Colors.inkPrimary,
   },
   resendBtn: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 14,
-    color: Colors.brandOrange,
+    color: Colors.inkSecondary,
   },
   footer: {
     paddingHorizontal: Spacing.screenPadding,

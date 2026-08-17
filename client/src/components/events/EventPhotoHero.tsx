@@ -74,7 +74,7 @@ export function EventPhotoHero({ event, isHost, topInset, onBack, onShare, onOpt
 
       {/* Scrim — keeps overlay icons legible over any photo, without per-icon circles */}
       <LinearGradient
-        colors={[withOpacity(Colors.black, 0.55), withOpacity(Colors.black, 0)]}
+        colors={[withOpacity(Colors.background, 0.55), withOpacity(Colors.background, 0)]}
         style={[styles.heroScrim, { height: topInset + 72 }]}
         pointerEvents="none"
       />
@@ -82,29 +82,29 @@ export function EventPhotoHero({ event, isHost, topInset, onBack, onShare, onOpt
       {/* Overlay buttons */}
       <View style={[styles.heroOverlay, { top: topInset + 8 }]}>
         <Pressable style={styles.heroIconBtn} onPress={onBack} hitSlop={10}>
-          <ArrowLeft size={22} color={Colors.white} strokeWidth={2} />
+          <ArrowLeft size={22} color={Colors.inkPrimary} strokeWidth={2} />
         </Pressable>
         <View style={{ flexDirection: 'row', gap: 4 }}>
           {!eventIsPast && (
             <Pressable style={styles.heroIconBtn} onPress={toggleHotlist} hitSlop={10}>
               <Bookmark
                 size={20}
-                color={hotlisted ? Colors.brandCoral : Colors.white}
+                color={hotlisted ? Colors.brandCoral : Colors.inkPrimary}
                 fill={hotlisted ? Colors.brandCoral : 'transparent'}
                 strokeWidth={2}
               />
             </Pressable>
           )}
           <Pressable style={styles.heroIconBtn} onPress={() => { hTap(); onShare() }} hitSlop={10}>
-            <Share2 size={20} color={Colors.white} strokeWidth={2} />
+            <Share2 size={20} color={Colors.inkPrimary} strokeWidth={2} />
           </Pressable>
           {isHost ? (
             <Pressable style={styles.heroIconBtn} onPress={() => { hTap(); onOptions() }} hitSlop={10}>
-              <MoreVertical size={20} color={Colors.white} strokeWidth={2} />
+              <MoreVertical size={20} color={Colors.inkPrimary} strokeWidth={2} />
             </Pressable>
           ) : (
             <Pressable style={styles.heroIconBtn} onPress={() => { hTap(); onReport() }} hitSlop={10}>
-              <Flag size={20} color={Colors.white} strokeWidth={2} />
+              <Flag size={20} color={Colors.inkPrimary} strokeWidth={2} />
             </Pressable>
           )}
         </View>
@@ -143,6 +143,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  photoDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: withOpacity(Colors.white, 0.4) },
-  photoDotActive: { backgroundColor: Colors.white, width: 18 },
+  photoDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: withOpacity(Colors.inkPrimary, 0.4) },
+  photoDotActive: { backgroundColor: Colors.inkPrimary, width: 18 },
 })

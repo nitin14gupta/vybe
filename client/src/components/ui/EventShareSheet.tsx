@@ -225,7 +225,7 @@ function EventShareSheetCore({ onClose, eventId, title, dateTimeLabel, coverUrl,
 
         <View style={s.actionsRow}>
           <Pressable style={s.actionBtn} onPress={handleSave}>
-            <View style={s.actionIcon}><Download size={22} color={Colors.white} strokeWidth={2} /></View>
+            <View style={s.actionIcon}><Download size={22} color={Colors.inkPrimary} strokeWidth={2} /></View>
             <Text style={s.actionLabel}>Save</Text>
           </Pressable>
           <Pressable style={s.actionBtn} onPress={handleShare}>
@@ -262,7 +262,7 @@ export function EventShareSheet(props: Props) {
 
 const s = StyleSheet.create({
   bg: { backgroundColor: Colors.elevated },
-  handle: { backgroundColor: withOpacity(Colors.white, 0.18) },
+  handle: { backgroundColor: withOpacity(Colors.inkPrimary, 0.18) },
   content: { paddingTop: 8, paddingBottom: 0, alignItems: 'center' },
   title: {
     fontFamily: FontFamily.headingBold,
@@ -293,7 +293,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 8,
     borderRadius: 24,
-    // backgroundColor: withOpacity(Colors.white, 0.05),
+    // backgroundColor: withOpacity(Colors.inkPrimary, 0.05),
   },
   swatchRing: {
     borderRadius: 19,
@@ -310,7 +310,7 @@ const s = StyleSheet.create({
     height: 26,
     borderRadius: 16,
     overflow: 'hidden',
-    shadowColor: Colors.black,
+    shadowColor: Colors.background,
     shadowOpacity: 0.3,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
@@ -327,7 +327,7 @@ const s = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: withOpacity(Colors.white, 0.4),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.4),
   },
   dots: {
     flexDirection: 'row',
@@ -355,7 +355,7 @@ const s = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: withOpacity(Colors.white, 0.1),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.1),
     alignItems: 'center',
     justifyContent: 'center',
   },

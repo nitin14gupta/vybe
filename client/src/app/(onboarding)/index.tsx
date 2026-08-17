@@ -99,6 +99,6 @@ const styles = StyleSheet.create({
   goBack: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 14,
-    color: Colors.brandOrange,
+    color: Colors.inkSecondary,
   },
 })

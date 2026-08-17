@@ -54,7 +54,7 @@ const s = StyleSheet.create({
   num: {
     fontFamily: FontFamily.displayExtraBold,
     fontSize: 26,
-    color: Colors.white,
+    color: Colors.inkPrimary,
     letterSpacing: -0.5,
   },
 })

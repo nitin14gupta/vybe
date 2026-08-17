@@ -23,9 +23,7 @@ export const Colors = {
   // Structure
   divider: '#2A2A2A',          // borders, separators
 
-  // Pure neutrals — use sparingly; prefer a semantic token above when one fits
   white: '#FFFFFF',
-  black: '#000000',
   nearBlack: '#0A0A0A',
 
   // Skeleton loading shimmer (two-stop gradient)

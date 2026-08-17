@@ -34,7 +34,7 @@ function TogglePill({ Icon, label, active, onPress }: {
   onPress: () => void
 }) {
   return (
-    <Pressable style={[s.pill, active && s.pillActive]} onPress={onPress} android_ripple={{ color: withOpacity(Colors.white, 0.06) }}>
+    <Pressable style={[s.pill, active && s.pillActive]} onPress={onPress} android_ripple={{ color: withOpacity(Colors.inkPrimary, 0.06) }}>
       <Icon size={16} color={active ? Colors.background : Colors.inkSecondary} strokeWidth={2.2} />
       <Text style={[s.pillLabel, active && s.pillLabelActive]}>{label}</Text>
     </Pressable>
@@ -48,7 +48,7 @@ const CityRow = memo(function CityRow({ city, selected, onPress }: {
 }) {
   const handlePress = useCallback(() => onPress(city), [onPress, city])
   return (
-    <Pressable style={s.cityRow} onPress={handlePress} android_ripple={{ color: withOpacity(Colors.white, 0.06) }}>
+    <Pressable style={s.cityRow} onPress={handlePress} android_ripple={{ color: withOpacity(Colors.inkPrimary, 0.06) }}>
       <View>
         <Text style={[s.cityName, selected && s.cityNameSelected]}>{city.name}</Text>
         <Text style={s.cityState}>{city.state}</Text>
@@ -136,7 +136,7 @@ function CalendarFilterSheetCore({ filters, onApply, onClose }: Omit<Props, 'vis
 
             <View style={s.section}>
               <Text style={s.sectionLabel}>LOCATION</Text>
-              <Pressable style={s.locationCard} onPress={() => { hTap(); setView('city') }} android_ripple={{ color: withOpacity(Colors.white, 0.06) }}>
+              <Pressable style={s.locationCard} onPress={() => { hTap(); setView('city') }} android_ripple={{ color: withOpacity(Colors.inkPrimary, 0.06) }}>
                 <View style={s.rowLeft}>
                   <MapPin size={18} color={Colors.inkSecondary} strokeWidth={2} />
                   <Text style={s.rowLabel}>{draft.city ? draft.city.name : 'All cities'}</Text>
@@ -182,7 +182,7 @@ function CalendarFilterSheetCore({ filters, onApply, onClose }: Omit<Props, 'vis
             showsVerticalScrollIndicator={false}
             contentContainerStyle={s.cityList}
             ListHeaderComponent={
-              <Pressable style={s.cityRow} onPress={() => pickCity(null)} android_ripple={{ color: withOpacity(Colors.white, 0.06) }}>
+              <Pressable style={s.cityRow} onPress={() => pickCity(null)} android_ripple={{ color: withOpacity(Colors.inkPrimary, 0.06) }}>
                 <Text style={[s.cityName, !draft.city && s.cityNameSelected]}>All cities</Text>
                 {!draft.city && <Check size={18} color={Colors.inkPrimary} strokeWidth={2.5} />}
               </Pressable>
@@ -204,7 +204,7 @@ export function CalendarFilterSheet({ visible, ...rest }: Props) {
 
 const s = StyleSheet.create({
   bg: { backgroundColor: Colors.surface },
-  handleIndicator: { backgroundColor: withOpacity(Colors.white, 0.2) },
+  handleIndicator: { backgroundColor: withOpacity(Colors.inkPrimary, 0.2) },
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -247,7 +247,7 @@ const s = StyleSheet.create({
 
   applyWrap: { paddingHorizontal: Spacing.screenPadding, paddingTop: 8, paddingBottom: 24 },
   applyBtn: { borderRadius: Radius.pill, paddingVertical: 15, alignItems: 'center' },
-  applyText: { fontFamily: FontFamily.bodySemiBold, fontSize: 16, color: Colors.white, letterSpacing: 0.3 },
+  applyText: { fontFamily: FontFamily.bodySemiBold, fontSize: 16, color: Colors.inkPrimary, letterSpacing: 0.3 },
 
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 8,

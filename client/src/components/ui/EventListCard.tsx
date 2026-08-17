@@ -138,7 +138,7 @@ const s = StyleSheet.create({
     borderRadius: Radius.card + 8,
     backgroundColor: Colors.surface,
     padding: 12,
-    shadowColor: Colors.black,
+    shadowColor: Colors.background,
     shadowOpacity: 0.2,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -150,17 +150,17 @@ const s = StyleSheet.create({
   hostBadge: {
     position: 'absolute', top: 5, left: 5,
     width: 20, height: 20, borderRadius: 10,
-    borderWidth: 0.5, borderColor: withOpacity(Colors.white, 0.85),
+    borderWidth: 0.5, borderColor: withOpacity(Colors.inkPrimary, 0.85),
   },
   hostBadgeFallback: { backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
-  hostInitial: { fontFamily: FontFamily.headingBold, fontSize: 9, color: Colors.white },
+  hostInitial: { fontFamily: FontFamily.headingBold, fontSize: 9, color: Colors.inkPrimary },
   priceBadge: {
     position: 'absolute', bottom: 5, right: 5,
     backgroundColor: Colors.brandOrange,
     borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
   },
   priceBadgeFree: { backgroundColor: Colors.accentGreen },
-  priceText: { fontFamily: FontFamily.bodySemiBold, fontSize: 10, color: Colors.white },
+  priceText: { fontFamily: FontFamily.bodySemiBold, fontSize: 10, color: Colors.inkPrimary },
 
   info: { flex: 1, minWidth: 0, gap: 5 },
   title: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
@@ -171,7 +171,7 @@ const s = StyleSheet.create({
 
   chevronWrap: {
     width: 30, height: 30, borderRadius: 15,
-    backgroundColor: withOpacity(Colors.white, 0.06),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.06),
     alignItems: 'center', justifyContent: 'center',
   },
 

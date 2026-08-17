@@ -249,7 +249,7 @@ const s = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    shadowColor: Colors.black,
+    shadowColor: Colors.background,
     shadowOpacity: 0.25,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
@@ -317,7 +317,7 @@ const s = StyleSheet.create({
   qrWrap: {
     padding: 6,
     borderRadius: 12,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.inkPrimary,
     borderWidth: 1,
   },
   qrCaption: {

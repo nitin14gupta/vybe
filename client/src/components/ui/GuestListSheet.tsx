@@ -101,7 +101,7 @@ const GuestTile = memo(function GuestTile({ guest, isMe, isFollowing, onOpenProf
           >
             <Heart
               size={16}
-              color={isFollowing ? Colors.brandCoral : Colors.white}
+              color={isFollowing ? Colors.brandCoral : Colors.inkPrimary}
               fill={isFollowing ? Colors.brandCoral : 'transparent'}
               strokeWidth={2}
             />
@@ -304,7 +304,7 @@ export function GuestListSheet({ visible, eventId, guests, total, waitlist, canV
 
 const s = StyleSheet.create({
   bg: { backgroundColor: Colors.surface },
-  handleIndicator: { backgroundColor: withOpacity(Colors.white, 0.2) },
+  handleIndicator: { backgroundColor: withOpacity(Colors.inkPrimary, 0.2) },
   container: { flex: 1 },
   header: {
     flexDirection: 'row',

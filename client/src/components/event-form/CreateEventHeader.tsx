@@ -22,8 +22,8 @@ export function CreateEventHeader({
           hitSlop={10}
         >
           {step > 1
-            ? <ChevronLeft size={20} color={Colors.white} strokeWidth={2.2} />
-            : <X size={20} color={Colors.white} strokeWidth={2.2} />}
+            ? <ChevronLeft size={20} color={Colors.inkPrimary} strokeWidth={2.2} />
+            : <X size={20} color={Colors.inkPrimary} strokeWidth={2.2} />}
         </Pressable>
 
         <Text style={s.headerTitle}>Create Event</Text>
@@ -63,7 +63,7 @@ const s = StyleSheet.create({
   headerTitle: {
     fontFamily: FontFamily.headingBold,
     fontSize: 17,
-    color: Colors.white,
+    color: Colors.inkPrimary,
     letterSpacing: -0.2,
   },
   stepPill: {
@@ -76,7 +76,7 @@ const s = StyleSheet.create({
   stepPillNum: {
     fontFamily: FontFamily.headingBold,
     fontSize: 16,
-    color: Colors.white,
+    color: Colors.inkPrimary,
   },
   stepPillOf: {
     fontFamily: FontFamily.bodyMedium,
@@ -95,5 +95,5 @@ const s = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: Colors.glassSurface,
   },
-  segActive: { backgroundColor: Colors.white },
+  segActive: { backgroundColor: Colors.inkPrimary },
 })

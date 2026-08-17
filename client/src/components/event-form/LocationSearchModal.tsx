@@ -29,7 +29,7 @@ export function LocationSearchModal({
       <Screen bottom={false}>
         <View style={s.modalHeader}>
           <Pressable onPress={onClose} style={s.iconBtn}>
-            <X size={20} color={Colors.white} />
+            <X size={20} color={Colors.inkPrimary} />
           </Pressable>
           <Text style={s.modalTitle}>Location</Text>
           <View style={{ width: 38 }} />
@@ -67,7 +67,7 @@ export function LocationSearchModal({
                 style={s.resultItem}
                 onPress={() => onSelect(item)}
               >
-                <MapPin size={20} color={Colors.white} style={{ marginTop: 2, marginRight: 12 }} />
+                <MapPin size={20} color={Colors.inkPrimary} style={{ marginTop: 2, marginRight: 12 }} />
                 <View style={{ flex: 1 }}>
                   <Text style={s.resultName} numberOfLines={1}>{item.name || item.display_name.split(',')[0]}</Text>
                   <Text style={s.resultAddress} numberOfLines={2}>{item.display_name}</Text>
@@ -108,7 +108,7 @@ const s = StyleSheet.create({
   },
   modalTitle: {
     fontFamily: FontFamily.headingBold,
-    fontSize: 17, color: Colors.white,
+    fontSize: 17, color: Colors.inkPrimary,
   },
   searchWrap: {
     marginHorizontal: 16, marginTop: 12, marginBottom: 20,
@@ -122,7 +122,7 @@ const s = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: Colors.glassSurface,
   },
   resultName: {
-    fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.white,
+    fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.inkPrimary,
     marginBottom: 4,
   },
   resultAddress: {
