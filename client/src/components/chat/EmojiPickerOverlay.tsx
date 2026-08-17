@@ -141,7 +141,7 @@ export function EmojiPickerOverlay({
         enableSearchBar
         theme={{
           backdrop: withOpacity(Colors.background, 0.7),
-          knob: Colors.brandOrange,
+          knob: Colors.inkSecondary,
           container: Colors.surface,
           header: Colors.elevated,
           skinTonesContainer: Colors.surface,

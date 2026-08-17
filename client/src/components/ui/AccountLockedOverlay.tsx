@@ -56,7 +56,7 @@ function AccountLockedOverlayCore({ reason }: { reason: string }) {
     >
       <BottomSheetView style={s.content}>
         <View style={s.iconWrap}>
-          <Lock size={32} color={Colors.brandCoral} strokeWidth={1.8} />
+          <Lock size={32} color={Colors.destructive} strokeWidth={1.8} />
         </View>
 
         <Text style={s.title}>Your account has been locked by the Gorave team.</Text>
@@ -92,7 +92,7 @@ const s = StyleSheet.create({
 
   iconWrap: {
     width: 68, height: 68, borderRadius: 34,
-    backgroundColor: withOpacity(Colors.brandCoral, 0.12),
+    backgroundColor: withOpacity(Colors.destructive, 0.12),
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 4,
   },

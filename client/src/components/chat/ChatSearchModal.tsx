@@ -256,7 +256,7 @@ const s = StyleSheet.create({
   sectionAction: {
     fontFamily: FontFamily.bodyMedium,
     fontSize: 13,
-    color: Colors.brandOrange,
+    color: Colors.inkPrimary,
   },
   row: {
     flexDirection: 'row',

@@ -47,8 +47,8 @@ function EventOptionsSheetCore({ onEdit, onCancel, onWaitlist, onClose, showWait
         )}
         <View style={styles.optionDivider} />
         <Pressable style={styles.optionItem} onPress={() => { onClose(); onCancel() }}>
-          <XIcon size={20} color={Colors.brandCoral} strokeWidth={1.8} />
-          <Text style={[styles.optionText, { color: Colors.brandCoral }]}>Cancel Event</Text>
+          <XIcon size={20} color={Colors.destructive} strokeWidth={1.8} />
+          <Text style={[styles.optionText, { color: Colors.destructive }]}>Cancel Event</Text>
         </Pressable>
       </BottomSheetView>
     </BottomSheetModal>

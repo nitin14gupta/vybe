@@ -39,9 +39,9 @@ export function PaymentOrderSummary({
             To Pay: <Text style={s.billSummaryValue}>₹{amountToPay}</Text>
           </Text>
           {expanded ? (
-            <ChevronUp size={18} color={Colors.brandCoral} strokeWidth={2.2} />
+            <ChevronUp size={18} color={Colors.inkSecondary} strokeWidth={2.2} />
           ) : (
-            <ChevronDown size={18} color={Colors.brandCoral} strokeWidth={2.2} />
+            <ChevronDown size={18} color={Colors.inkSecondary} strokeWidth={2.2} />
           )}
         </Pressable>
 
@@ -63,7 +63,7 @@ export function PaymentOrderSummary({
 
       {walletApplied > 0 && (
         <View style={s.walletBanner}>
-          <Wallet size={16} color={Colors.brandOrange} strokeWidth={1.8} />
+          <Wallet size={16} color={Colors.accentGreen} strokeWidth={1.8} />
           <Text style={s.walletBannerText}>₹{walletApplied} from Gorave Wallet will be used</Text>
         </View>
       )}
@@ -87,6 +87,6 @@ const s = StyleSheet.create({
   billTotalBadge: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 4 },
   billTotalValue: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary },
 
-  walletBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: withOpacity(Colors.brandOrange, 0.08), borderRadius: 12, borderWidth: 1, borderColor: withOpacity(Colors.brandOrange, 0.18), paddingHorizontal: 14, paddingVertical: 10 },
-  walletBannerText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.brandOrange, flex: 1 },
+  walletBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: withOpacity(Colors.accentGreen, 0.08), borderRadius: 12, borderWidth: 1, borderColor: withOpacity(Colors.accentGreen, 0.18), paddingHorizontal: 14, paddingVertical: 10 },
+  walletBannerText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.accentGreen, flex: 1 },
 })

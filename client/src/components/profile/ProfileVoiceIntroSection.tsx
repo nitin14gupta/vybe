@@ -10,7 +10,7 @@ interface Props {
 }
 
 export function ProfileVoiceIntroSection({ voice, hasExistingVoice }: Props) {
-  const { isRecording, seconds, recorded, saveError, playing, tapRecord, handlePlayPause, handleRetake } = voice
+  const { isRecording, seconds, playbackSeconds, recorded, saveError, playing, tapRecord, handlePlayPause, handleRetake } = voice
   const fmt = (s: number) => `${s}s`
 
   if (isRecording) {
@@ -36,7 +36,7 @@ export function ProfileVoiceIntroSection({ voice, hasExistingVoice }: Props) {
           <View style={styles.waveWrap}>
             <PlaybackWave isActive={playing} compact />
           </View>
-          <Text style={styles.timer}>{fmt(seconds)}</Text>
+          <Text style={styles.timer}>{fmt(playbackSeconds)}</Text>
           <Pressable onPress={handleRetake} style={styles.retakeBtn} hitSlop={8}>
             <RotateCcw size={14} color={Colors.inkSecondary} strokeWidth={2} />
           </Pressable>
@@ -56,7 +56,7 @@ export function ProfileVoiceIntroSection({ voice, hasExistingVoice }: Props) {
           <Text style={styles.existingLabel}>Current</Text>
         </View>
         <Pressable onPress={tapRecord} style={styles.rerecordBtn}>
-          <Mic size={13} color={Colors.brandOrange} strokeWidth={2} />
+          <Mic size={13} color={Colors.inkPrimary} strokeWidth={2} />
           <Text style={styles.rerecordText}>Record new intro</Text>
         </Pressable>
       </View>
@@ -66,7 +66,7 @@ export function ProfileVoiceIntroSection({ voice, hasExistingVoice }: Props) {
   return (
     <View style={styles.box}>
       <Pressable onPress={tapRecord} style={styles.micBtn}>
-        <Mic size={22} color={Colors.brandOrange} strokeWidth={2} />
+        <Mic size={22} color={Colors.inkPrimary} strokeWidth={2} />
       </Pressable>
       <View style={styles.textCol}>
         <Text style={styles.title}>Record voice intro</Text>
@@ -92,9 +92,9 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.1),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.08),
     borderWidth: 1.5,
-    borderColor: Colors.brandOrange,
+    borderColor: Colors.divider,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.brandCoral,
+    backgroundColor: Colors.inkPrimary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -143,20 +143,20 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingHorizontal: 12,
     paddingVertical: 7,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.08),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.08),
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: withOpacity(Colors.brandOrange, 0.2),
+    borderColor: withOpacity(Colors.inkPrimary, 0.2),
   },
   rerecordText: {
     fontFamily: FontFamily.bodyMedium,
     fontSize: 13,
-    color: Colors.brandOrange,
+    color: Colors.inkPrimary,
   },
   error: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 12,
-    color: Colors.brandCoral,
+    color: Colors.destructive,
     textAlign: 'center',
   },
 })

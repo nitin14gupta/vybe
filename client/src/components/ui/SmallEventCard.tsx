@@ -89,18 +89,18 @@ const s = StyleSheet.create({
   imageFallback: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: withOpacity(Colors.brandOrange, 0.1),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.1),
   },
   fallbackMonth: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 11,
-    color: Colors.brandOrange,
+    color: Colors.inkPrimary,
     marginBottom: 0,
   },
   fallbackDay: {
     fontFamily: FontFamily.headingBold,
     fontSize: 16,
-    color: Colors.brandOrange,
+    color: Colors.inkPrimary,
   },
   content: {
     flex: 1,

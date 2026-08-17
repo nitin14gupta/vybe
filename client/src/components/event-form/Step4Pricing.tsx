@@ -131,11 +131,11 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   submitError: {
-    backgroundColor: withOpacity(Colors.brandCoral, 0.15),
+    backgroundColor: withOpacity(Colors.destructive, 0.15),
     borderRadius: 10, padding: 12, marginTop: 12,
-    borderWidth: 1, borderColor: Colors.brandCoral,
+    borderWidth: 1, borderColor: Colors.destructive,
   },
-  submitErrorText: { color: Colors.brandCoral, fontFamily: 'Satoshi-Medium', fontSize: 13 },
+  submitErrorText: { color: Colors.destructive, fontFamily: 'Satoshi-Medium', fontSize: 13 },
   freeDisabled: { opacity: 0.35 },
   feeBreakdown: {
     marginTop: 10,

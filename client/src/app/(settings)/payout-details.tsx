@@ -31,7 +31,7 @@ export default function PayoutDetailsScreen() {
 
       {loading ? (
         <View style={s.center}>
-          <ActivityIndicator color={Colors.brandOrange} />
+          <ActivityIndicator color={Colors.inkSecondary} />
         </View>
       ) : error ? (
         <View style={s.center}>

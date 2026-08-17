@@ -37,7 +37,7 @@ export function useNotificationSetup() {
           name: 'Gorave notifications',
           importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 250, 250, 250],
-          lightColor: Colors.brandOrange,
+          lightColor: Colors.inkPrimary,
         })
       }
       const { status: existing } = await Notifications.getPermissionsAsync()

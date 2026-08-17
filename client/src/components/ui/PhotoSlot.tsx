@@ -92,7 +92,7 @@ export function PhotoSlot({
           <Text style={styles.addLabel}>Add photo</Text>
         </View>
       ) : (
-        <Plus size={22} color={Colors.brandOrange} strokeWidth={1.5} />
+        <Plus size={22} color={Colors.inkPrimary} strokeWidth={1.5} />
       )}
     </Pressable>
   )
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: Colors.brandOrange,
+    backgroundColor: Colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },

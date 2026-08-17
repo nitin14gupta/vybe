@@ -1,5 +1,6 @@
 import { ReactNode } from 'react'
-import { KeyboardAvoidingView, ScrollView, Platform, StyleSheet } from 'react-native'
+import { ScrollView, Platform, StyleSheet } from 'react-native'
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { Colors } from '@/constants'
 
 interface Props {

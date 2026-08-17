@@ -157,7 +157,7 @@ const s = StyleSheet.create({
   followsBack: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 12,
-    color: Colors.brandOrange,
+    color: Colors.inkSecondary,
     marginTop: 2,
   },
   actions: {

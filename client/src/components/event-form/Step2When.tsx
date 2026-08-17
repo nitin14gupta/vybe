@@ -54,7 +54,7 @@ function Inner({ form, set, errors, setErrors, openDate, openStartTime, openEndD
     <>
       <Text style={ef.fieldLabel}>Starts</Text>
       <PickerRow
-        icon={<Calendar size={18} color={Colors.brandOrange} />}
+        icon={<Calendar size={18} color={Colors.inkPrimary} />}
         label="Date"
         value={form.dateTime ? fmt(form.dateTime) : ''}
         placeholder="Select a date"
@@ -62,7 +62,7 @@ function Inner({ form, set, errors, setErrors, openDate, openStartTime, openEndD
       />
       {errors.dateTime ? <Text style={ef.errorText}>{errors.dateTime}</Text> : null}
       <PickerRow
-        icon={<Clock size={18} color={Colors.brandOrange} />}
+        icon={<Clock size={18} color={Colors.inkPrimary} />}
         label="Start Time"
         value={form.dateTime ? fmtTime(form.dateTime) : ''}
         placeholder="Select a time"
@@ -71,14 +71,14 @@ function Inner({ form, set, errors, setErrors, openDate, openStartTime, openEndD
 
       <Text style={[ef.fieldLabel, { marginTop: 20 }]}>Ends</Text>
       <PickerRow
-        icon={<Calendar size={18} color={Colors.brandOrange} />}
+        icon={<Calendar size={18} color={Colors.inkPrimary} />}
         label="End Date"
         value={form.endTime ? fmt(form.endTime) : ''}
         placeholder="Select end date"
         onPress={disabled ? () => {} : openEndDate}
       />
       <PickerRow
-        icon={<Clock size={18} color={Colors.brandOrange} />}
+        icon={<Clock size={18} color={Colors.inkPrimary} />}
         label="End Time"
         value={form.endTime ? fmtTime(form.endTime) : ''}
         placeholder="Select end time"

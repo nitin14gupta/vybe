@@ -21,7 +21,7 @@ export function DeleteLossStep({ onContinue, onCancel }: Props) {
   return (
     <>
       <View style={styles.iconCircle}>
-        <Trash2 size={36} color={Colors.brandCoral} strokeWidth={1.8} />
+        <Trash2 size={36} color={Colors.destructive} strokeWidth={1.8} />
       </View>
       <Text style={styles.title}>What you'll lose</Text>
       <Text style={styles.body}>
@@ -32,7 +32,7 @@ export function DeleteLossStep({ onContinue, onCancel }: Props) {
         {LOSSES.map(({ icon: Icon, text }, i) => (
           <View key={i} style={[styles.lossRow, i < LOSSES.length - 1 && styles.lossBorder]}>
             <View style={styles.lossIcon}>
-              <Icon size={16} color={Colors.brandCoral} strokeWidth={1.8} />
+              <Icon size={16} color={Colors.destructive} strokeWidth={1.8} />
             </View>
             <Text style={styles.lossText}>{text}</Text>
           </View>
@@ -50,7 +50,7 @@ export function DeleteLossStep({ onContinue, onCancel }: Props) {
 const styles = StyleSheet.create({
   iconCircle: {
     width: 80, height: 80, borderRadius: 40,
-    backgroundColor: withOpacity(Colors.brandCoral, 0.1),
+    backgroundColor: withOpacity(Colors.destructive, 0.1),
     alignItems: 'center', justifyContent: 'center',
     alignSelf: 'center', marginBottom: 20,
   },
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   lossBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.divider },
   lossIcon: {
     width: 32, height: 32, borderRadius: 16,
-    backgroundColor: withOpacity(Colors.brandCoral, 0.1),
+    backgroundColor: withOpacity(Colors.destructive, 0.1),
     alignItems: 'center', justifyContent: 'center',
   },
   lossText: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, flex: 1 },

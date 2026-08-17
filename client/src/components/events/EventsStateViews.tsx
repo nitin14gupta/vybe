@@ -20,7 +20,7 @@ export function MapEmptyOverlay({ onCreate }: { onCreate: () => void }) {
   return (
     <View style={styles.mapEmpty} pointerEvents="box-none">
       <View style={styles.mapEmptyCard}>
-        <Flame size={28} color={Colors.brandOrange} strokeWidth={1.5} />
+        <Flame size={28} color={Colors.inkDisabled} strokeWidth={1.5} />
         <Text style={styles.mapEmptyTitle}>No events nearby</Text>
         <PrimaryButton
           label="Create one"

@@ -90,7 +90,7 @@ function VibeInboxSheetCore({ requests, loading, onBeginAccept, onPass, onClose 
   const Header = (
     <View style={s.headerRow}>
       <View style={s.headerLeft}>
-        <Flame size={20} color={Colors.brandOrange} fill={Colors.brandOrange} />
+        <Flame size={20} color={Colors.inkPrimary} fill={Colors.inkPrimary} />
         <Text style={s.title}>Vibe Requests</Text>
         {requests.length > 0 && (
           <View style={s.countBadge}><Text style={s.countBadgeText}>{requests.length}</Text></View>
@@ -160,7 +160,7 @@ const s = StyleSheet.create({
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary },
-  countBadge: { width: 22, height: 22, borderRadius: 11, backgroundColor: Colors.brandOrange, alignItems: 'center', justifyContent: 'center' },
+  countBadge: { width: 22, height: 22, borderRadius: 11, backgroundColor: Colors.inkPrimary, alignItems: 'center', justifyContent: 'center' },
   countBadgeText: { fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: Colors.background },
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.skeletonBase, borderRadius: 16, borderWidth: 1, borderColor: Colors.surfaceMuted, padding: 14, gap: 12 },
   cardActioned: { opacity: 0.55 },
@@ -174,7 +174,7 @@ const s = StyleSheet.create({
   cardMsg: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary, fontStyle: 'italic', marginTop: 3, lineHeight: 16 },
   cardActions: { flexDirection: 'row', gap: 8 },
   passBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: withOpacity(Colors.inkPrimary, 0.15), alignItems: 'center', justifyContent: 'center' },
-  acceptBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.brandOrange, alignItems: 'center', justifyContent: 'center' },
+  acceptBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.accentGreen, alignItems: 'center', justifyContent: 'center' },
   actionedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, backgroundColor: withOpacity(Colors.onlineGreen, 0.12), borderWidth: 1, borderColor: withOpacity(Colors.onlineGreen, 0.3) },
   actionedBadgePassed: { backgroundColor: withOpacity(Colors.inkPrimary, 0.05), borderColor: withOpacity(Colors.inkPrimary, 0.1) },
   actionedText: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkSecondary },

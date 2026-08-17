@@ -31,10 +31,10 @@ const ACTION_ICON: Record<string, any> = {
 }
 
 const TYPE_FALLBACK: Record<string, { Icon: any; bg: string; color: string }> = {
-  host_onboarding_complete: { Icon: PartyPopper, bg: withOpacity(Colors.brandOrange, 0.16), color: Colors.brandOrange },
-  report_submitted: { Icon: ShieldCheck, bg: withOpacity(Colors.brandOrange, 0.16), color: Colors.brandOrange },
-  host_badge_earned: { Icon: Trophy, bg: withOpacity(Colors.brandOrange, 0.16), color: Colors.brandOrange },
-  review_milestone: { Icon: Trophy, bg: withOpacity(Colors.brandOrange, 0.16), color: Colors.brandOrange },
+  host_onboarding_complete: { Icon: PartyPopper, bg: withOpacity(Colors.accentGold, 0.16), color: Colors.accentGold },
+  report_submitted: { Icon: ShieldCheck, bg: withOpacity(Colors.inkPrimary, 0.16), color: Colors.inkPrimary },
+  host_badge_earned: { Icon: Trophy, bg: withOpacity(Colors.accentGold, 0.16), color: Colors.accentGold },
+  review_milestone: { Icon: Trophy, bg: withOpacity(Colors.accentGold, 0.16), color: Colors.accentGold },
 }
 
 export const NotificationRow = React.memo(function NotificationRow({ item, onPress, onAction, onDismiss }: {

@@ -12,7 +12,7 @@ import { ArrowLeft, ShieldOff } from 'lucide-react-native'
 import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn } from '@/components/ui'
 import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 import ApiService, { BlockedUser } from '@/api/apiService'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { ConfirmSheet } from '@/components/ui'
 import { usePillStore } from '@/store/pillStore'
 
@@ -87,7 +87,7 @@ export default function BlockedUsersScreen() {
 
       {loading ? (
         <View style={[s.center, { paddingTop: headerHeight }]}>
-          <ActivityIndicator color={Colors.brandOrange} />
+          <ActivityIndicator color={Colors.inkSecondary} />
         </View>
       ) : blocked.length === 0 ? (
         <View style={[s.center, { paddingTop: headerHeight }]}>
@@ -142,7 +142,7 @@ const s = StyleSheet.create({
   city: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary, marginTop: 2 },
   unblockBtn: {
     paddingHorizontal: 16, paddingVertical: 8,
-    borderRadius: 20, borderWidth: 1, borderColor: Colors.brandOrange,
+    borderRadius: 20, borderWidth: 1, borderColor: withOpacity(Colors.inkPrimary, 0.3),
   },
-  unblockText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.brandOrange },
+  unblockText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.inkPrimary },
 })

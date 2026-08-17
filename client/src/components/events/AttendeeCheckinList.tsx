@@ -106,7 +106,7 @@ export function AttendeeCheckinList({
       </View>
 
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 16 }} color={Colors.brandOrange} />
+        <ActivityIndicator style={{ marginTop: 16 }} color={Colors.inkSecondary} />
       ) : (
         <FlatList
           data={attendees}

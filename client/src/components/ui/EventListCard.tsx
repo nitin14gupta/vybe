@@ -72,7 +72,7 @@ function EventListCardBase({
       <View style={s.info}>
         <Text style={s.title} numberOfLines={1}>{event.title}</Text>
         <View style={s.timeRow}>
-          <Calendar size={12} color={Colors.brandOrange} strokeWidth={2.2} />
+          <Calendar size={12} color={Colors.inkSecondary} strokeWidth={2.2} />
           <Text style={s.time} numberOfLines={1}>{formatEventDate(event.date_time)}</Text>
         </View>
         {event.location_name ? (
@@ -165,7 +165,7 @@ const s = StyleSheet.create({
   info: { flex: 1, minWidth: 0, gap: 5 },
   title: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
   timeRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  time: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.brandOrange },
+  time: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.inkSecondary },
   locRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   loc: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary, flexShrink: 1 },
 

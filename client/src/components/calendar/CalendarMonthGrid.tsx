@@ -105,7 +105,7 @@ const s = StyleSheet.create({
   dayText: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.inkPrimary },
   dayTextToday: { color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold },
   dayTextSelected: { color: Colors.background, fontFamily: FontFamily.bodySemiBold },
-  dot: { width: 4, height: 4, borderRadius: 12, backgroundColor: 'transparent' },
+  dot: { width: 6, height: 6, borderRadius: 3, overflow: 'hidden', backgroundColor: 'transparent' },
   dotVisible: { backgroundColor: Colors.inkPrimary },
   dotSelected: { backgroundColor: Colors.background },
 })

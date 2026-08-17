@@ -37,7 +37,7 @@ export function Step3Where({ form, set, errors, setErrors, disabled, inline = fa
         style={[ef.inputWrap, errors.locationName && ef.inputWrapError]}
         onPress={() => { if (!disabled) search.setSearchOpen(true) }}
       >
-        <MapPin size={16} color={Colors.brandOrange} style={{ marginRight: 8 }} />
+        <MapPin size={16} color={Colors.inkPrimary} style={{ marginRight: 8 }} />
         <Text style={[ef.textInput, { flex: 1, color: form.locationName ? Colors.inkPrimary : Colors.glassTextDisabled }]}>
           {form.locationName || "e.g. 142 Carter Rd, Bandra West"}
         </Text>

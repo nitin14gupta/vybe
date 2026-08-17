@@ -2,7 +2,7 @@ import { Pressable, Text } from 'react-native'
 import { Map } from 'lucide-react-native'
 import * as Linking from 'expo-linking'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Colors, FontFamily } from '@/constants'
+import { Colors, FontFamily, withOpacity } from '@/constants'
 import { useLiveLocation } from '@/hooks/useLiveLocation'
 
 export function LocationWarning() {
@@ -19,8 +19,8 @@ export function LocationWarning() {
         top: insets.top + 60,
         left: 16,
         right: 16,
-        backgroundColor: '#2A1A10',
-        borderColor: Colors.brandOrange,
+        backgroundColor: Colors.elevated,
+        borderColor: withOpacity(Colors.inkPrimary, 0.1),
         borderWidth: 1,
         borderRadius: 8,
         paddingHorizontal: 12,
@@ -35,8 +35,8 @@ export function LocationWarning() {
         elevation: 5,
       }}
     >
-      <Map size={18} color={Colors.brandOrange} />
-      <Text style={{ color: Colors.brandOrange, marginLeft: 10, fontFamily: FontFamily.bodyMedium, fontSize: 13, flex: 1 }}>
+      <Map size={18} color={Colors.inkPrimary} />
+      <Text style={{ color: Colors.inkPrimary, marginLeft: 10, fontFamily: FontFamily.bodyMedium, fontSize: 13, flex: 1 }}>
         We are having trouble finding your location. Tap to enable it in Settings.
       </Text>
     </Pressable>

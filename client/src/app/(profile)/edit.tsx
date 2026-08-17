@@ -3,7 +3,8 @@ import { useCallback } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router, useFocusEffect } from 'expo-router'
 import { hSuccess } from '@/lib/haptics'
-import { AppHeader, APP_HEADER_BAR_HEIGHT, BackButton, PrimaryButton, Screen, BioInput, BrandedLoader } from '@/components/ui'
+import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, PrimaryButton, Screen, BioInput, BrandedLoader } from '@/components/ui'
+import { ArrowLeft } from 'lucide-react-native'
 import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 import { ProfileEditPhotoStrip } from '@/components/profile/ProfileEditPhotoStrip'
 import { ProfileNameField } from '@/components/profile/ProfileNameField'
@@ -68,11 +69,11 @@ export default function EditProfileScreen() {
       <AppHeader
         title="Edit Profile"
         hideProgress={hideProgress}
-        leftAction={<BackButton onPress={() => router.back()} />}
+        leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
         rightAction={
           <Pressable onPress={() => { hSuccess(); onPressSave() }} disabled={!canSave} hitSlop={8} style={styles.saveArea}>
             {saving
-              ? <ActivityIndicator size="small" color={Colors.brandOrange} />
+              ? <ActivityIndicator size="small" color={Colors.inkSecondary} />
               : <Text style={[styles.saveBtn, !canSave && styles.saveBtnDisabled]}>Save</Text>
             }
           </Pressable>
@@ -206,13 +207,13 @@ const styles = StyleSheet.create({
   changeBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.1),
+    backgroundColor: Colors.glassSurface,
     borderRadius: Radius.pill,
   },
   changeBtnText: {
     fontFamily: FontFamily.bodyMedium,
     fontSize: 13,
-    color: Colors.brandOrange,
+    color: Colors.inkSecondary,
   },
 
   savePad: { marginTop: 8 },

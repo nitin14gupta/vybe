@@ -88,7 +88,7 @@ function VibeRequestModalCore({ user, onSend, onClose }: Omit<Props, 'visible'>)
             {user?.city ? <Text style={s.partnerCity}>{user.city}</Text> : null}
           </View>
           <View style={s.flameBadge}>
-            <Flame size={18} color={Colors.brandOrange} fill={Colors.brandOrange} />
+            <Flame size={18} color={Colors.inkPrimary} fill={Colors.inkPrimary} />
           </View>
         </View>
 
@@ -143,13 +143,13 @@ const s = StyleSheet.create({
   partnerInfo: { flex: 1, marginLeft: 12 },
   partnerName: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
   partnerCity: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, marginTop: 2 },
-  flameBadge: { width: 36, height: 36, borderRadius: 18, backgroundColor: withOpacity(Colors.brandOrange, 0.15), alignItems: 'center', justifyContent: 'center' },
+  flameBadge: { width: 36, height: 36, borderRadius: 18, backgroundColor: withOpacity(Colors.inkPrimary, 0.15), alignItems: 'center', justifyContent: 'center' },
   heading: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.inkPrimary, marginBottom: 4 },
   sub: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, marginBottom: 20, lineHeight: 18 },
   inputWrapper: { backgroundColor: Colors.elevated, borderRadius: 16, borderWidth: 1, borderColor: Colors.grayBorder, padding: 14, marginBottom: 16, minHeight: 100 },
   input: { fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkPrimary, lineHeight: 22, flex: 1 },
   charCount: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, textAlign: 'right', marginTop: 6 },
-  charCountWarn: { color: Colors.brandCoral },
+  charCountWarn: { color: Colors.destructive },
   sendBtn: { marginBottom: 12 },
   cancelBtn: { alignItems: 'center', paddingVertical: 10 },
   cancelText: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary },

@@ -60,7 +60,7 @@ function VibeIcebreakerCore({ partnerName, onSend, onClose }: Omit<Props, 'visib
       <BottomSheetView style={s.content}>
         <View style={s.iconRow}>
           <View style={s.iconBg}>
-            <MessageCircle size={28} color={Colors.brandOrange} strokeWidth={1.8} />
+            <MessageCircle size={28} color={Colors.inkPrimary} strokeWidth={1.8} />
           </View>
         </View>
         <Text style={s.heading}>Write back to unlock the chat</Text>
@@ -96,11 +96,11 @@ const s = StyleSheet.create({
   handleIndicator: { backgroundColor: withOpacity(Colors.inkPrimary, 0.18) },
   content: { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 8 },
   iconRow: { alignItems: 'center', marginBottom: 16 },
-  iconBg: { width: 60, height: 60, borderRadius: 30, backgroundColor: withOpacity(Colors.brandOrange, 0.15), alignItems: 'center', justifyContent: 'center' },
+  iconBg: { width: 60, height: 60, borderRadius: 30, backgroundColor: withOpacity(Colors.inkPrimary, 0.15), alignItems: 'center', justifyContent: 'center' },
   heading: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.inkPrimary, textAlign: 'center', marginBottom: 8 },
   sub: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center', lineHeight: 20, marginBottom: 20 },
   inputWrapper: { backgroundColor: Colors.elevated, borderRadius: 16, borderWidth: 1, borderColor: Colors.grayBorder, padding: 14, marginBottom: 16, minHeight: 100 },
   input: { fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkPrimary, lineHeight: 22, flex: 1 },
   charCount: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, textAlign: 'right', marginTop: 6 },
-  charCountWarn: { color: Colors.brandCoral },
+  charCountWarn: { color: Colors.destructive },
 })

@@ -35,11 +35,11 @@ export function DateShiftBanner({ onCancel, onConfirm }: { onCancel: () => void;
 
 const s = StyleSheet.create({
   lockedBanner: {
-    backgroundColor: withOpacity(Colors.brandCoral, 0.12),
-    borderBottomWidth: 1, borderBottomColor: Colors.brandCoral,
+    backgroundColor: withOpacity(Colors.accentGold, 0.12),
+    borderBottomWidth: 1, borderBottomColor: Colors.accentGold,
     paddingVertical: 10, paddingHorizontal: 20,
   },
-  lockedText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.brandCoral, textAlign: 'center' },
+  lockedText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.accentGold, textAlign: 'center' },
 
   dateShiftBanner: {
     backgroundColor: withOpacity(Colors.accentGold, 0.08),

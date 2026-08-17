@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, Pressable, FlatList, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, StyleSheet, Pressable, FlatList, Platform } from 'react-native'
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { router } from 'expo-router'
 import { hTap, hSelection } from '@/lib/haptics'
 import { Search, MapPin, Check } from 'lucide-react-native'

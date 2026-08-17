@@ -37,7 +37,7 @@ const UpNextCard = memo(function UpNextCard({ event, onPress, onTicketPress }: {
         onPress={() => onPress(event.id)}
         footer={
           <Pressable style={s.ticketFooter} onPress={() => onTicketPress(event.id)}>
-            <QrCode size={15} color={Colors.brandOrange} strokeWidth={2} />
+            <QrCode size={15} color={Colors.inkSecondary} strokeWidth={2} />
             <Text style={s.ticketFooterText}>
               {d ? relativeDayLabel(d) : ''} · View Ticket
             </Text>

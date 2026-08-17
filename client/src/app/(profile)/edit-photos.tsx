@@ -1,7 +1,8 @@
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from 'react-native'
 import { router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { AppHeader, APP_HEADER_BAR_HEIGHT, BackButton, Screen, PhotoSlot, PrimaryButton } from '@/components/ui'
+import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, Screen, PhotoSlot, PrimaryButton } from '@/components/ui'
+import { ArrowLeft } from 'lucide-react-native'
 import { MediaPreviewModal } from '@/components/chat/MediaPreviewModal'
 import { useEditPhotos } from '@/hooks/useEditPhotos'
 import { useHeaderScroll } from '@/hooks/useHeaderScroll'
@@ -29,15 +30,15 @@ export default function EditPhotosScreen() {
   if (loading) {
     return (
       <Screen top={false}>
-        <AppHeader title="Edit Photos" leftAction={<BackButton onPress={() => router.back()} />} />
-        <View style={styles.center}><ActivityIndicator color={Colors.brandOrange} /></View>
+        <AppHeader title="Edit Photos" leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>} />
+        <View style={styles.center}><ActivityIndicator color={Colors.inkSecondary} /></View>
       </Screen>
     )
   }
 
   return (
     <Screen top={false}>
-      <AppHeader title="Edit Photos" hideProgress={hideProgress} leftAction={<BackButton onPress={() => router.back()} />} />
+      <AppHeader title="Edit Photos" hideProgress={hideProgress} leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>} />
 
       <ScrollView
         contentContainerStyle={[styles.content, { paddingTop: headerHeight + 12 }]}

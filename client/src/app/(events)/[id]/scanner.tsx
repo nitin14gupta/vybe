@@ -184,6 +184,6 @@ const s = StyleSheet.create({
   camera: { flex: 1 },
   noPermission: { alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.elevated, gap: 12 },
   noPermText: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center', paddingHorizontal: 32 },
-  settingsLink: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, backgroundColor: Colors.brandOrange },
+  settingsLink: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, backgroundColor: Colors.surfaceMuted },
   settingsLinkText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkPrimary },
 })

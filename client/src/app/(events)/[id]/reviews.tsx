@@ -131,7 +131,7 @@ export default function ReviewsScreen() {
           }
           ListFooterComponent={loadingMore ? (
             <View style={s.footerLoader}>
-              <ActivityIndicator color={Colors.brandOrange} />
+              <ActivityIndicator color={Colors.inkSecondary} />
             </View>
           ) : null}
         />

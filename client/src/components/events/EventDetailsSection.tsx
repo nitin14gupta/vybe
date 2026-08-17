@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
   section: { marginBottom: 20 },
   sectionTitle: { fontFamily: FontFamily.headingBold, fontSize: 17, color: Colors.inkPrimary, marginBottom: 8 },
   sectionBody: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, lineHeight: 22 },
-  readMore: { color: Colors.brandOrange, fontFamily: FontFamily.bodyMedium, fontSize: 13, marginTop: 6 },
+  readMore: { color: Colors.inkPrimary, fontFamily: FontFamily.bodyMedium, fontSize: 13, marginTop: 6 },
 
   miniMapWrap: { height: 160, borderRadius: 16, overflow: 'hidden', marginBottom: 16 },
 })

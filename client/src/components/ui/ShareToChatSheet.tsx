@@ -171,7 +171,7 @@ function ShareToChatSheetCore({
     <View>
       {loadingMore && (
         <View style={st.loadingMoreRow}>
-          <ActivityIndicator size="small" color={Colors.brandOrange} />
+          <ActivityIndicator size="small" color={Colors.inkSecondary} />
         </View>
       )}
       <View style={st.footer}>

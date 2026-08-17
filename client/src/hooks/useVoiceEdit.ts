@@ -22,6 +22,10 @@ export function useVoiceEdit(existingUrl?: string | null) {
 
   const isRecording = recorderState.isRecording
   const seconds = Math.round((recorderState.durationMillis ?? 0) / 1000)
+  // The recorder's own durationMillis resets once stop() is called, so once
+  // there's a recording to play back, read its length from the player
+  // instead (same source onboarding's voice screen uses for its playback timer).
+  const playbackSeconds = Math.round(playerStatus.duration ?? 0)
   const playing = playerStatus.playing
 
   useEffect(() => {
@@ -111,6 +115,7 @@ export function useVoiceEdit(existingUrl?: string | null) {
   return {
     isRecording,
     seconds,
+    playbackSeconds,
     recorded,
     uploading,
     saveError,

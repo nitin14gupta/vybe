@@ -311,13 +311,13 @@ const s = StyleSheet.create({
   backLinkText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 15,
-    color: Colors.brandOrange,
+    color: Colors.inkPrimary,
   },
   retryBtn: {
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: Colors.brandOrange,
+    backgroundColor: Colors.surfaceMuted,
     marginBottom: 16,
   },
   retryText: {

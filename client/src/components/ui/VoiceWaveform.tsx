@@ -66,7 +66,7 @@ export function RecordingWave({ isActive }: { isActive: boolean }) {
           maxH={1}
           minH={0.15}
           duration={325 + (i % 3) * 55}
-          color={Colors.brandOrange}
+          color={Colors.inkPrimary}
         />
       ))}
     </View>

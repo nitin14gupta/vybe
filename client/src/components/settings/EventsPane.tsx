@@ -61,7 +61,7 @@ export function EventsPane({
       ListFooterComponent={
         page.loadingMore ? (
           <View style={s.footerLoader}>
-            <ActivityIndicator color={Colors.brandOrange} />
+            <ActivityIndicator color={Colors.inkSecondary} />
           </View>
         ) : null
       }

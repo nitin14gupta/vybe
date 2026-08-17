@@ -77,7 +77,7 @@ export default function SupportScreen() {
         {/* Hero */}
         <View style={s.heroRow}>
           <View style={s.heroIcon}>
-            <Mail size={28} color={Colors.brandOrange} strokeWidth={1.8} />
+            <Mail size={28} color={Colors.inkPrimary} strokeWidth={1.8} />
           </View>
           <View style={s.heroText}>
             <Text style={s.heroTitle}>We're here to help</Text>
@@ -173,7 +173,7 @@ const s = StyleSheet.create({
   content: { paddingHorizontal: 16, gap: 12 },
 
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 8 },
-  heroIcon: { width: 56, height: 56, borderRadius: 28, backgroundColor: withOpacity(Colors.brandOrange, 0.12), alignItems: 'center', justifyContent: 'center' },
+  heroIcon: { width: 56, height: 56, borderRadius: 28, backgroundColor: withOpacity(Colors.inkPrimary, 0.12), alignItems: 'center', justifyContent: 'center' },
   heroText: { flex: 1 },
   heroTitle: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary },
   heroSub: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, marginTop: 2 },
@@ -183,23 +183,23 @@ const s = StyleSheet.create({
   topicCard: { backgroundColor: Colors.surface, borderRadius: 16, overflow: 'hidden' },
   topicRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14 },
   topicBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.divider },
-  topicRowSelected: { backgroundColor: withOpacity(Colors.brandOrange, 0.06) },
+  topicRowSelected: {},
   topicLabel: { flex: 1, fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkPrimary },
-  topicLabelSelected: { fontFamily: FontFamily.bodyMedium, color: Colors.brandOrange },
+  topicLabelSelected: { fontFamily: FontFamily.bodyMedium, color: Colors.inkPrimary },
 
   radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: Colors.inkDisabled, alignItems: 'center', justifyContent: 'center' },
-  radioSelected: { borderColor: Colors.brandOrange },
-  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.brandOrange },
+  radioSelected: { borderColor: Colors.inkPrimary },
+  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.inkPrimary },
 
   inputCard: { backgroundColor: Colors.surface, borderRadius: 16, padding: 16 },
   input: { fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkPrimary, lineHeight: 22, minHeight: 120 },
   charCount: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, textAlign: 'right', marginTop: 8 },
 
-  noteCard: { backgroundColor: withOpacity(Colors.brandOrange, 0.07), borderRadius: 12, borderWidth: 1, borderColor: withOpacity(Colors.brandOrange, 0.18), padding: 14 },
+  noteCard: { backgroundColor: withOpacity(Colors.inkPrimary, 0.07), borderRadius: 12, borderWidth: 1, borderColor: withOpacity(Colors.inkPrimary, 0.18), padding: 14 },
   noteText: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, lineHeight: 19 },
 
   sendBtn: { marginTop: 4 },
 
   directEmail: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkDisabled, textAlign: 'center', marginTop: 4 },
-  emailLink: { color: Colors.brandOrange, fontFamily: FontFamily.bodyMedium },
+  emailLink: { color: Colors.inkPrimary, fontFamily: FontFamily.bodyMedium },
 })

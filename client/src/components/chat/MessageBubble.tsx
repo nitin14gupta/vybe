@@ -81,11 +81,11 @@ const rp = StyleSheet.create({
     overflow: 'hidden',
     alignSelf: 'stretch',
   },
-  wrapMine: { backgroundColor: withOpacity(Colors.brandOrange, 0.15) },
+  wrapMine: { backgroundColor: withOpacity(Colors.inkPrimary, 0.15) },
   wrapTheirs: { backgroundColor: withOpacity(Colors.inkPrimary, 0.07) },
-  accent: { width: 3, backgroundColor: Colors.brandOrange },
+  accent: { width: 3, backgroundColor: Colors.inkSecondary },
   body: { flex: 1, paddingHorizontal: 7, paddingVertical: 4, gap: 1 },
-  sender: { fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: Colors.brandOrange },
+  sender: { fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: Colors.inkPrimary },
   iconRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   text: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: withOpacity(Colors.inkPrimary, 0.5) },
 })
@@ -132,10 +132,10 @@ const VoiceBubble = forwardRef<VoiceBubbleHandle, {
         }
       </View>
       <View style={vb.waveWrap}>
-        <PlaybackWave isActive={status.playing} color={isMine ? Colors.brandOrange : '#888'} />
+        <PlaybackWave isActive={status.playing} color={Colors.inkSecondary} />
       </View>
       {isPending
-        ? <ActivityIndicator size="small" color={Colors.brandOrange} />
+        ? <ActivityIndicator size="small" color={Colors.inkSecondary} />
         : <Text style={[vb.duration, { color: isMine ? Colors.inkPrimary : Colors.inkSecondary }]}>
             {durationStr}
           </Text>
@@ -148,7 +148,7 @@ const vb = StyleSheet.create({
   bubble: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 12, minWidth: 200 },
   bubbleMine: { backgroundColor: withOpacity(Colors.brandOrange, 0.18), borderWidth: 1, borderColor: withOpacity(Colors.brandOrange, 0.35), borderBottomRightRadius: 4 },
   bubbleTheirs: { backgroundColor: Colors.elevated, borderWidth: 1, borderColor: Colors.surfaceMuted, borderBottomLeftRadius: 4 },
-  playBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.brandOrange, alignItems: 'center', justifyContent: 'center' },
+  playBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.inkPrimary, alignItems: 'center', justifyContent: 'center' },
   waveWrap: { flex: 1, overflow: 'hidden' },
   duration: { fontFamily: FontFamily.bodyRegular, fontSize: 11, minWidth: 30, textAlign: 'right' },
 })
@@ -245,9 +245,9 @@ function VideoChatBubble({ url, isMine, width: srcW, height: srcH, isPending, on
     <View style={[mc.downloadPlaceholder, boxStyle]}>
       <Film size={32} color={withOpacity(Colors.inkPrimary, 0.5)} strokeWidth={1.5} />
       {downloading
-        ? <ActivityIndicator size="small" color={Colors.brandOrange} style={{ marginTop: 8 }} />
+        ? <ActivityIndicator size="small" color={Colors.inkSecondary} style={{ marginTop: 8 }} />
         : <>
-            <Download size={18} color={Colors.brandOrange} strokeWidth={2} style={{ marginTop: 10 }} />
+            <Download size={18} color={Colors.inkSecondary} strokeWidth={2} style={{ marginTop: 10 }} />
             <Text style={mc.downloadText}>Tap to download</Text>
           </>
       }
@@ -708,7 +708,7 @@ const s = StyleSheet.create({
   bubblePending: { opacity: 0.6 },
   bubbleFailed: {
     borderWidth: 1,
-    borderColor: Colors.brandCoral,
+    borderColor: Colors.destructive,
     opacity: 0.85,
   },
   text: { fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkPrimary, lineHeight: 21 },
@@ -730,7 +730,7 @@ const s = StyleSheet.create({
   failedText: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 11,
-    color: Colors.brandCoral,
+    color: Colors.destructive,
     marginTop: 3,
   },
 

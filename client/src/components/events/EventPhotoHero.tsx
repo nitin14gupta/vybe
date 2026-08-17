@@ -89,8 +89,8 @@ export function EventPhotoHero({ event, isHost, topInset, onBack, onShare, onOpt
             <Pressable style={styles.heroIconBtn} onPress={toggleHotlist} hitSlop={10}>
               <Bookmark
                 size={20}
-                color={hotlisted ? Colors.brandCoral : Colors.inkPrimary}
-                fill={hotlisted ? Colors.brandCoral : 'transparent'}
+                color={hotlisted ? Colors.brandOrange : Colors.inkPrimary}
+                fill={hotlisted ? Colors.brandOrange : 'transparent'}
                 strokeWidth={2}
               />
             </Pressable>

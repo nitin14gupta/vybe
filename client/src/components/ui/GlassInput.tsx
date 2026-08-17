@@ -105,7 +105,7 @@ const s = StyleSheet.create({
     borderColor: Colors.glassBorderThick,
     backgroundColor: Colors.glassSurfaceActive,
   },
-  wrapError: { borderColor: Colors.brandCoral },
+  wrapError: { borderColor: Colors.destructive },
   input: {
     flex: 1,
     color: Colors.inkPrimary,
@@ -122,7 +122,7 @@ const s = StyleSheet.create({
     paddingBottom: 6,
   },
   errorText: {
-    color: Colors.brandCoral,
+    color: Colors.destructive,
     fontFamily: FontFamily.bodyRegular,
     fontSize: 12,
     marginTop: 4,

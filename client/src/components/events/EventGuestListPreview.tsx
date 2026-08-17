@@ -21,7 +21,7 @@ export function EventGuestListPreview({ guests, guestTotal, onPress }: Props) {
         <Text style={styles.guestCardTitle}>Guest List</Text>
         <View style={styles.viewAllPill}>
           <Text style={styles.viewAllText}>View all</Text>
-          <ChevronRight size={14} color={Colors.brandOrange} strokeWidth={2} />
+          <ChevronRight size={14} color={Colors.inkPrimary} strokeWidth={2} />
         </View>
       </View>
       <View style={styles.guestCardBottom}>
@@ -70,11 +70,11 @@ const styles = StyleSheet.create({
   guestCardTitle: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
   viewAllPill: {
     flexDirection: 'row', alignItems: 'center', gap: 2,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.1),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.1),
     paddingHorizontal: 12, paddingVertical: 6,
     borderRadius: 999,
   },
-  viewAllText: { fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: Colors.brandOrange },
+  viewAllText: { fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: Colors.inkPrimary },
   guestCardBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   guestStack: { flexDirection: 'row', alignItems: 'center' },
   guestStackAvatar: {

@@ -7,7 +7,7 @@ import Animated, {
 import { Wallet } from 'lucide-react-native'
 import { Colors, FontFamily, withOpacity } from '@/constants'
 
-const P_COLORS = [Colors.brandOrange, Colors.brandCoral, Colors.accentGreen, Colors.accentGold, Colors.brandOrange, Colors.accentGreen, Colors.brandCoral, Colors.accentGold]
+const P_COLORS = [Colors.accentGreen, Colors.accentGold, Colors.accentGreen, Colors.accentGold, Colors.accentGreen, Colors.accentGreen, Colors.accentGold, Colors.accentGold]
 
 function Particle({ index }: { index: number }) {
   const angle = (index / 8) * Math.PI * 2
@@ -64,7 +64,7 @@ export function PaymentWalletSuccessOverlay({ amount, onDone }: { amount: number
 const s = StyleSheet.create({
   root: { ...StyleSheet.absoluteFill, backgroundColor: withOpacity(Colors.background, 0.85), alignItems: 'center', justifyContent: 'center', zIndex: 100 },
   center: { alignItems: 'center', justifyContent: 'center' },
-  circle: { width: 100, height: 100, borderRadius: 50, backgroundColor: Colors.brandOrange, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+  circle: { width: 100, height: 100, borderRadius: 50, backgroundColor: Colors.accentGreen, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
   label: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.inkPrimary, textAlign: 'center' },
   sub: { fontFamily: FontFamily.bodyRegular, fontSize: 15, color: withOpacity(Colors.inkPrimary, 0.6), marginTop: 6 },
   particle: { position: 'absolute', width: 10, height: 10, borderRadius: 5 },

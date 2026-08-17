@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, Pressable, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, Pressable, FlatList, Platform, ActivityIndicator } from 'react-native'
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { router } from 'expo-router'
 import { hTap, hSuccess, hSelection } from '@/lib/haptics'
 import { Search, MapPin, Check, ChevronLeft } from 'lucide-react-native'
@@ -40,7 +41,7 @@ export default function ProfileLocationScreen() {
         <Text style={s.title}>Change City</Text>
         <Pressable onPress={() => { hSuccess(); handleSave() }} disabled={!selectedCity || saving} hitSlop={8} style={s.saveArea} android_ripple={null}>
           {saving
-            ? <ActivityIndicator size="small" color={Colors.brandOrange} />
+            ? <ActivityIndicator size="small" color={Colors.inkSecondary} />
             : <Text style={[s.saveBtn, !selectedCity && s.saveBtnDisabled]}>Save</Text>
           }
         </Pressable>
@@ -66,7 +67,7 @@ export default function ProfileLocationScreen() {
           ListHeaderComponent={
             <Pressable onPress={() => { hTap(); detectLocation() }} style={s.detectRow} android_ripple={null}>
               <View style={s.detectIcon}>
-                <MapPin size={20} color={Colors.brandOrange} strokeWidth={2} />
+                <MapPin size={20} color={Colors.inkPrimary} strokeWidth={2} />
               </View>
               <Text style={s.detectText}>
                 {detecting ? 'Detecting…' : 'Use my current location'}
@@ -142,14 +143,14 @@ const s = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: Radius.card,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.08),
     alignItems: 'center',
     justifyContent: 'center',
   },
   detectText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 15,
-    color: Colors.brandOrange,
+    color: Colors.inkPrimary,
   },
 
   cityRow: {

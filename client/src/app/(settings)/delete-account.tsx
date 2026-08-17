@@ -121,7 +121,7 @@ export default function DeleteAccountScreen() {
       <View style={s.root}>
         <AppHeader title="Delete Account" leftAction={backAction} />
         <View style={s.center}>
-          <ActivityIndicator color={Colors.brandOrange} />
+          <ActivityIndicator color={Colors.inkSecondary} />
         </View>
       </View>
     )

@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     gap: 8,
   },
-  wrapError: { borderColor: Colors.brandCoral },
+  wrapError: { borderColor: Colors.destructive },
   wrapOk: { borderColor: Colors.accentGreen },
   atSign: {
     fontFamily: FontFamily.bodyMedium,
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   taken: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 15,
-    color: Colors.brandCoral,
+    color: Colors.destructive,
   },
   hint: {
     fontFamily: FontFamily.bodyRegular,
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
   hintError: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 11,
-    color: Colors.brandCoral,
+    color: Colors.destructive,
     marginTop: -4,
   },
 })

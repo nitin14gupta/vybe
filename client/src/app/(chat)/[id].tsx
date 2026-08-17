@@ -34,7 +34,7 @@ function VoiceIndicator() {
   return (
     <View style={s.voiceIndicatorWrap}>
       <View style={[s.voiceIndicatorBubble, s.voiceIndicatorRow]}>
-        <Mic size={14} color={Colors.brandOrange} strokeWidth={2} />
+        <Mic size={14} color={Colors.inkSecondary} strokeWidth={2} />
         <Text style={s.voiceIndicatorText}>Recording…</Text>
       </View>
     </View>
@@ -211,7 +211,7 @@ export default function ChatDetailScreen() {
                 <>
                   {screen.loadingMore && (
                     <View style={s.loadMoreWrap}>
-                      <ActivityIndicator size="small" color={Colors.brandOrange} />
+                      <ActivityIndicator size="small" color={Colors.inkSecondary} />
                     </View>
                   )}
                   <ChatPartnerPreview
@@ -358,7 +358,7 @@ const s = StyleSheet.create({
   selectionBarBtnText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 15,
-    color: Colors.brandCoral,
+    color: Colors.destructive,
   },
   selectionBarBtnTextDisabled: { color: Colors.inkDisabled },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -381,5 +381,5 @@ const s = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 10,
   },
   voiceIndicatorRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  voiceIndicatorText: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.brandOrange },
+  voiceIndicatorText: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary },
 })

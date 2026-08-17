@@ -137,7 +137,7 @@ export function Step5Photos({ form, set, errors, setErrors, disabled, inline }: 
             </>
           ) : slotStates[0] === 'uploading' ? (
             <View style={s.uploadOverlay}>
-              <ActivityIndicator size="large" color={Colors.brandOrange} />
+              <ActivityIndicator size="large" color={Colors.inkSecondary} />
             </View>
           ) : (
             <View style={s.placeholderContainer}>
@@ -181,7 +181,7 @@ export function Step5Photos({ form, set, errors, setErrors, disabled, inline }: 
                   </>
                 ) : uploading ? (
                   <View style={s.uploadOverlay}>
-                    <ActivityIndicator size="small" color={Colors.brandOrange} />
+                    <ActivityIndicator size="small" color={Colors.inkSecondary} />
                   </View>
                 ) : (
                   <Plus size={20} color={Colors.glassTextDisabled} />

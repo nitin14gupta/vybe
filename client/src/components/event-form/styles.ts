@@ -31,7 +31,7 @@ export const ef = StyleSheet.create({
     marginBottom: 8,
   },
   errorText: {
-    color: Colors.brandCoral,
+    color: Colors.destructive,
     fontFamily: FontFamily.bodyRegular,
     fontSize: 12,
     marginTop: 4,
@@ -49,7 +49,7 @@ export const ef = StyleSheet.create({
     paddingVertical: 4,
     minHeight: 52,
   },
-  inputWrapError: { borderColor: Colors.brandCoral },
+  inputWrapError: { borderColor: Colors.destructive },
   textInput: {
     flex: 1,
     color: Colors.inkPrimary,
@@ -227,7 +227,7 @@ export const ef = StyleSheet.create({
 
   // Lock note & Actions
   fieldLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
-  fieldLockNote: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.brandCoral },
+  fieldLockNote: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.accentGold },
   sectionLocked: { opacity: 0.45 },
   autofillBtn: {
     backgroundColor: Colors.glassSurface,

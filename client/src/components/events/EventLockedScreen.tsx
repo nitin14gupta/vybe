@@ -31,19 +31,19 @@ export function EventLockedScreen({ reason, event, onBack }: Props) {
       : '3 hours before the event'
     title = 'Check-in not open yet'
     subtitle = `Scanner unlocks 3 hours before the event starts.\n\nComes alive at ${opensAt}.`
-    icon = <Clock size={40} color={Colors.brandOrange} strokeWidth={1.5} />
+    icon = <Clock size={40} color={Colors.inkPrimary} strokeWidth={1.5} />
   } else if (reason === 'edit') {
     title = 'Editing is closed'
     subtitle = 'Events can only be edited up to 7 hours before they start.\n\nThis window has passed for this event.'
-    icon = <Clock size={40} color={Colors.brandOrange} strokeWidth={1.5} />
+    icon = <Clock size={40} color={Colors.inkPrimary} strokeWidth={1.5} />
   } else if (reason === 'cancel') {
     title = 'Cancellation is closed'
     subtitle = 'Events can only be cancelled at least 48 hours in advance.\n\nThis window has passed for this event.'
-    icon = <Clock size={40} color={Colors.brandOrange} strokeWidth={1.5} />
+    icon = <Clock size={40} color={Colors.inkPrimary} strokeWidth={1.5} />
   } else {
     title = `${event.age_restriction}+ Only`
     subtitle = `This event has an age restriction of ${event.age_restriction}+.\n\nYou must be ${event.age_restriction} or older to attend.`
-    icon = <Shield size={40} color={Colors.brandCoral} strokeWidth={1.5} />
+    icon = <Shield size={40} color={Colors.destructive} strokeWidth={1.5} />
   }
 
   return (
@@ -53,7 +53,7 @@ export function EventLockedScreen({ reason, event, onBack }: Props) {
         <Text style={styles.lockedBackText}>Back to Event</Text>
       </Pressable>
       <View style={styles.lockedBody}>
-        <View style={[styles.lockedIconWrap, reason === 'age' && { backgroundColor: withOpacity(Colors.brandCoral, 0.12) }]}>
+        <View style={[styles.lockedIconWrap, reason === 'age' && { backgroundColor: withOpacity(Colors.destructive, 0.12) }]}>
           {icon}
         </View>
         <Text style={styles.lockedTitle}>{title}</Text>
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.12),
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,

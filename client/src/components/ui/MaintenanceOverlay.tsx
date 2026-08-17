@@ -29,7 +29,7 @@ function MaintenanceOverlayCore({ message }: { message: string }) {
   return (
     <View style={[s.root, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}>
       <View style={s.iconWrap}>
-        <Wrench size={32} color={Colors.brandOrange} strokeWidth={1.8} />
+        <Wrench size={32} color={Colors.inkPrimary} strokeWidth={1.8} />
       </View>
 
       <Text style={s.title}>We&apos;ll be right back</Text>
@@ -68,7 +68,7 @@ const s = StyleSheet.create({
 
   iconWrap: {
     width: 76, height: 76, borderRadius: 38,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.12),
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 8,
   },

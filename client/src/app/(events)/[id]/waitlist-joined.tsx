@@ -89,7 +89,7 @@ export default function WaitlistJoinedScreen() {
 
           {/* Position chip */}
           <View style={s.posChip}>
-            <Users size={14} color={Colors.brandOrange} strokeWidth={1.8} />
+            <Users size={14} color={Colors.inkSecondary} strokeWidth={1.8} />
             <Text style={s.posText}>
               Position{' '}
               <Text style={s.posNum}>#{pos}</Text>
@@ -181,9 +181,9 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.1),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.1),
     borderWidth: 1,
-    borderColor: withOpacity(Colors.brandOrange, 0.22),
+    borderColor: withOpacity(Colors.inkPrimary, 0.22),
     paddingHorizontal: Spacing.md,
     paddingVertical: 10,
     borderRadius: Radius.pill,
@@ -195,7 +195,7 @@ const s = StyleSheet.create({
   },
   posNum: {
     fontFamily: FontFamily.bodySemiBold,
-    color: Colors.brandOrange,
+    color: Colors.inkPrimary,
   },
 
   actions: {
@@ -205,6 +205,6 @@ const s = StyleSheet.create({
     gap: Spacing.sm,
   },
   leaveBtn: {
-    borderColor: withOpacity(Colors.brandCoral, 0.35),
+    borderColor: withOpacity(Colors.destructive, 0.35),
   },
 })

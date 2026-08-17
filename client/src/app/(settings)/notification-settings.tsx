@@ -72,7 +72,7 @@ export default function NotificationSettingsScreen() {
 
       {loading || !prefs ? (
         <View style={s.center}>
-          <ActivityIndicator color={Colors.brandOrange} />
+          <ActivityIndicator color={Colors.inkSecondary} />
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>

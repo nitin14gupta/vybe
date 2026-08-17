@@ -65,6 +65,6 @@ const s = StyleSheet.create({
   ctaBtnPendingText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 16,
-    color: Colors.brandOrange,
+    color: Colors.inkDisabled,
   },
 });

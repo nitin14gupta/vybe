@@ -20,7 +20,7 @@ export function NotificationsErrorState({ onRetry }: { onRetry: () => void }) {
       <Text style={s.title}>Couldn't load notifications</Text>
       <Text style={s.sub}>Check your connection and try again</Text>
       <Pressable style={s.retryBtn} onPress={() => { hTap(); onRetry() }} android_ripple={null}>
-        <RefreshCw size={16} color={Colors.brandOrange} strokeWidth={1.8} />
+        <RefreshCw size={16} color={Colors.inkPrimary} strokeWidth={1.8} />
         <Text style={s.retryBtnText}>Retry</Text>
       </Pressable>
     </View>
@@ -35,5 +35,5 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6,
     marginTop: 4, paddingVertical: 10, paddingHorizontal: 16,
   },
-  retryBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandOrange },
+  retryBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkPrimary },
 })

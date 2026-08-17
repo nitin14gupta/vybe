@@ -70,7 +70,7 @@ function CreateEventSheetCore({ onCreateEvent, onClose }: Omit<Props, 'visible'>
               <Text style={s.cardSubtitle}>Host a paid gathering or workshop</Text>
             </View>
             <View style={[s.cardBadge, s.badgeDark]}>
-              <Ticket size={22} color={Colors.brandOrange} strokeWidth={2} />
+              <Ticket size={22} color={Colors.accentGold} strokeWidth={2} />
             </View>
           </Pressable>
 
@@ -83,7 +83,7 @@ function CreateEventSheetCore({ onCreateEvent, onClose }: Omit<Props, 'visible'>
               <Text style={s.cardSubtitle}>Invite-only for your inner circle</Text>
             </View>
             <View style={[s.cardBadge, s.badgeDark]}>
-              <Lock size={22} color={Colors.brandOrange} strokeWidth={2} />
+              <Lock size={22} color={Colors.inkPrimary} strokeWidth={2} />
             </View>
           </Pressable>
         </View>
@@ -138,6 +138,6 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   badgeDark: {
-    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.12),
   },
 })

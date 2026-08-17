@@ -55,7 +55,7 @@ function BlockSheetCore({ targetName, isBlocked, loading, onBlock, onUnblock, on
 
         <Pressable style={s.mainBtn} onPress={() => { isBlocked ? hTap() : hError(); (isBlocked ? onUnblock : onBlock)() }} disabled={loading}>
           <LinearGradient
-            colors={isBlocked ? [Colors.grayBorder, Colors.grayBorder] : [Colors.brandOrange, Colors.brandCoral]}
+            colors={isBlocked ? [Colors.grayBorder, Colors.grayBorder] : [Colors.destructive, Colors.destructive]}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={s.mainBtnGrad}
           >

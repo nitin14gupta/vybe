@@ -59,7 +59,7 @@ export function InAppBrowserModal({ visible, url, onClose }: Props) {
           />
           {loading && (
             <View style={[StyleSheet.absoluteFill, s.loadingOverlay]} pointerEvents="none">
-              <ActivityIndicator color={Colors.brandOrange} />
+              <ActivityIndicator color={Colors.inkSecondary} />
             </View>
           )}
         </View>

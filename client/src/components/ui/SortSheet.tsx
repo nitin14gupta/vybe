@@ -2,10 +2,11 @@ import { useRef, useEffect } from 'react'
 import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native'
 import { BottomSheetModal, BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
+import { Check } from 'lucide-react-native'
 import { hSelection } from '@/lib/haptics'
 import { Colors, FontFamily, withOpacity } from '@/constants'
 
-const MAX_SHEET_HEIGHT = Dimensions.get('window').height * 0.7
+const MAX_SHEET_HEIGHT = Dimensions.get('window').height * 0.8
 
 export interface SortOption<T extends string = string> {
   key: T
@@ -46,15 +47,15 @@ function SortSheetCore<T extends string>({ title, options, selected, onSelect, o
         {options.map(opt => (
           <Pressable
             key={opt.key}
-            style={[s.row, selected === opt.key && s.rowActive]}
+            style={s.row}
             android_ripple={{ color: withOpacity(Colors.inkPrimary, 0.06) }}
             onPress={() => { hSelection(); onSelect(opt.key); sheetRef.current?.dismiss() }}
           >
             <Text style={[s.rowText, selected === opt.key && s.rowTextActive]} numberOfLines={1}>{opt.label}</Text>
-            {selected === opt.key && <View style={s.dot} />}
+            {selected === opt.key && <Check size={18} color={Colors.inkPrimary} strokeWidth={2.5} />}
           </Pressable>
         ))}
-        <View style={{ height: 16 }} />
+        <View style={{ height: 20 }} />
       </BottomSheetScrollView>
     </BottomSheetModal>
   )
@@ -84,20 +85,15 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 18,
   },
-  rowActive: { backgroundColor: withOpacity(Colors.brandOrange, 0.06) },
   rowText: {
     fontFamily: FontFamily.bodyRegular,
-    fontSize: 15,
-    color: Colors.inkPrimary,
+    fontSize: 16,
+    color: Colors.inkSecondary,
   },
   rowTextActive: {
     fontFamily: FontFamily.bodySemiBold,
-    color: Colors.brandOrange,
-  },
-  dot: {
-    width: 8, height: 8, borderRadius: 4,
-    backgroundColor: Colors.brandOrange,
+    color: Colors.inkPrimary,
   },
 })

@@ -145,7 +145,7 @@ export function EventPreviewOverlay({ visible, form, onClose }: Props) {
               <View style={s.categoryChip}>
                 {(() => {
                   const TypeIcon = EVENT_ICONS[form.eventType] ?? EVENT_ICON_FALLBACK
-                  return <TypeIcon size={12} color={Colors.brandOrange} strokeWidth={2} />
+                  return <TypeIcon size={12} color={Colors.inkSecondary} strokeWidth={2} />
                 })()}
                 <Text style={s.categoryChipText}>{(form.eventType || 'other').replace('_', ' ')}</Text>
               </View>
@@ -161,7 +161,7 @@ export function EventPreviewOverlay({ visible, form, onClose }: Props) {
 
             <View style={s.infoCard}>
               <View style={s.infoRow}>
-                <Calendar size={16} color={Colors.brandOrange} />
+                <Calendar size={16} color={Colors.inkSecondary} />
                 <Text style={s.infoText}>{formatFullDateTime(form.dateTime)}</Text>
               </View>
               {form.endTime && (
@@ -177,7 +177,7 @@ export function EventPreviewOverlay({ visible, form, onClose }: Props) {
                 <>
                   <View style={s.infoDivider} />
                   <View style={s.infoRow}>
-                    <MapPin size={16} color={Colors.brandOrange} />
+                    <MapPin size={16} color={Colors.inkSecondary} />
                     <Text style={s.infoText}>{form.locationName}</Text>
                   </View>
                 </>
@@ -298,10 +298,10 @@ const s = StyleSheet.create({
   categoryRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   categoryChip: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.15),
+    backgroundColor: Colors.surface,
     borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4,
   },
-  categoryChipText: { color: Colors.brandOrange, fontFamily: FontFamily.bodyMedium, fontSize: 12, textTransform: 'capitalize' },
+  categoryChipText: { color: Colors.inkSecondary, fontFamily: FontFamily.bodyMedium, fontSize: 12, textTransform: 'capitalize' },
   ageBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.surface, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
   ageBadgeText: { color: Colors.inkSecondary, fontFamily: FontFamily.bodyMedium, fontSize: 12 },
 

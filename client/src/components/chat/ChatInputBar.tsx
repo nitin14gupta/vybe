@@ -77,7 +77,7 @@ function VoicePreviewPlayer({ uri, durationMs }: { uri: string; durationMs: numb
         }
       </Pressable>
       <View style={pv.wave}>
-        <PlaybackWave isActive={status.playing} color={Colors.brandOrange} compact />
+        <PlaybackWave isActive={status.playing} color={Colors.inkSecondary} compact />
       </View>
       <Text style={pv.dur}>{`${mins}:${secs}`}</Text>
     </View>
@@ -88,7 +88,7 @@ const pv = StyleSheet.create({
   wrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
   btn: {
     width: 30, height: 30, borderRadius: 15,
-    backgroundColor: Colors.brandOrange,
+    backgroundColor: Colors.inkPrimary,
     alignItems: 'center', justifyContent: 'center',
   },
   wave: { flex: 1, overflow: 'hidden' },
@@ -200,7 +200,7 @@ export function ChatInputBar({
   if (recordState === 'sending') {
     return (
       <View style={s.recordBar} onLayout={onLayout}>
-        <ActivityIndicator size="small" color={Colors.brandOrange} />
+        <ActivityIndicator size="small" color={Colors.inkSecondary} />
         <Text style={s.sendingText}>Sending…</Text>
       </View>
     )
@@ -215,7 +215,7 @@ export function ChatInputBar({
       <View onLayout={onLayout}>
         {editingMessage ? (
           <View style={s.editBar}>
-            <Pencil size={14} color={Colors.brandOrange} strokeWidth={2} />
+            <Pencil size={14} color={Colors.inkSecondary} strokeWidth={2} />
             <Text style={s.editBarText}>Editing message</Text>
             <Pressable onPress={onCancelEdit} style={s.cancelEditBtn} hitSlop={8}>
               <X size={16} color={Colors.inkSecondary} strokeWidth={2} />
@@ -270,16 +270,16 @@ const s = StyleSheet.create({
   blockBtnRow: { flexDirection: 'row', gap: 10 },
   unblockBtn: {
     flex: 1, height: 40, borderRadius: 12,
-    borderWidth: 1, borderColor: Colors.brandOrange,
+    borderWidth: 1, borderColor: Colors.inkPrimary,
     alignItems: 'center', justifyContent: 'center',
   },
-  unblockBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandOrange },
+  unblockBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkPrimary },
   deleteBtn: {
     flex: 1, height: 40, borderRadius: 12,
-    borderWidth: 1, borderColor: Colors.brandCoral,
+    borderWidth: 1, borderColor: Colors.destructive,
     alignItems: 'center', justifyContent: 'center',
   },
-  deleteBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandCoral },
+  deleteBtnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.destructive },
 
   editBar: {
     flexDirection: 'row',
@@ -291,13 +291,13 @@ const s = StyleSheet.create({
     borderTopColor: withOpacity(Colors.inkPrimary, 0.06),
     gap: 8,
   },
-  editBarText: { flex: 1, fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: Colors.brandOrange },
+  editBarText: { flex: 1, fontFamily: FontFamily.bodySemiBold, fontSize: 12, color: Colors.inkSecondary },
   cancelEditBtn: { padding: 4 },
 
   recordBar: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 14, paddingVertical: 10,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.05), gap: 10,
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.05), gap: 10,
   },
   iconBtn: {
     width: 36, height: 36, borderRadius: 18,
@@ -305,7 +305,7 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   recordCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  recordTimer: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.brandOrange, minWidth: 36, textAlign: 'right' },
+  recordTimer: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.inkPrimary, minWidth: 36, textAlign: 'right' },
   recordStopBtn: {
     width: 42, height: 42, borderRadius: 21,
     backgroundColor: Colors.brandOrange, alignItems: 'center', justifyContent: 'center', elevation: 4,

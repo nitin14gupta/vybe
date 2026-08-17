@@ -39,7 +39,7 @@ export default function EventDetailScreen() {
     return (
       <View style={[styles.root, styles.center]}>
         <Pressable onPress={goBack} style={[styles.backBtn, { position: 'absolute', top: insets.top + 8, left: 0 }]}>
-          <ArrowLeft size={24} color={Colors.brandOrange} strokeWidth={2} />
+          <ArrowLeft size={24} color={Colors.inkPrimary} strokeWidth={2} />
         </Pressable>
         <View style={styles.deletedIconWrap}>
           <Ghost size={40} color={Colors.inkDisabled} strokeWidth={1.5} />

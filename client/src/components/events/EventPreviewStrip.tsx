@@ -3,21 +3,16 @@ import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { Colors, FontFamily, EVENT_ICONS, EVENT_ICON_FALLBACK, withOpacity } from '@/constants';
+import { Colors, FontFamily, EVENT_ICONS, EVENT_ICON_FALLBACK } from '@/constants';
 import { hSelection } from "@/lib/haptics";
 import { useAuthStore } from "@/store/auth";
 import type { EventSummary } from "@/api/apiService";
-import { formatEventDate, HostPill } from "@/components/events/EventCard";
+import { formatEventDate, HostPill, PriceBadge } from "@/components/events/EventCard";
 import { HotlistButton } from "@/components/events/HotlistButton";
 import { isEventPast } from "@/lib/dates";
 
 const CARD_W = 268;
 const CARD_MARGIN = 10;
-
-function formatPrice(price: number, isFree: boolean) {
-  if (isFree) return "Free";
-  return `₹${price}`;
-}
 
 // ── Preview card (map mode bottom strip) ────────────────────────────────────
 
@@ -57,11 +52,12 @@ function PreviewCardBase({
             <TypeIcon size={28} color={Colors.inkDisabled} strokeWidth={1.5} />
           </View>
         )}
-        <View style={styles.previewPriceBadge}>
-          <Text style={[styles.previewPriceText, event.is_free && { color: Colors.accentGreen }]}>
-            {formatPrice(event.price_inr, event.is_free)}
-          </Text>
-        </View>
+        <PriceBadge
+          price={event.price_inr}
+          isFree={event.is_free}
+          compact
+          style={styles.previewPriceBadgePos}
+        />
         {!canOpenHost && event.host_name && !event.host_is_deleted ? (
           <HostPill
             name={event.host_name}
@@ -195,20 +191,8 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
   },
-  previewPriceBadge: {
-    position: "absolute",
-    top: 8,
-    right: 38,
-    backgroundColor: withOpacity(Colors.background, 0.85),
-    borderRadius: 7,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-  },
-  previewPriceText: {
-    color: Colors.brandOrange,
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 12,
-  },
+  // Position only — PriceBadge (from EventCard.tsx) owns the badge's own look.
+  previewPriceBadgePos: { position: "absolute", top: 8, right: 38 },
   // HostPill (from EventCard.tsx) handles its own pill chrome/compact sizing —
   // this only positions it, so there's exactly one place that owns the
   // pill's actual look instead of two hand-rolled copies drifting apart.
@@ -236,10 +220,10 @@ const styles = StyleSheet.create({
     width: 80,
     height: "100%",
     minHeight: 158,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
+    backgroundColor: Colors.surface,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: Colors.brandOrange,
+    borderColor: Colors.divider,
     alignItems: "center",
     justifyContent: "center",
     gap: 2,
@@ -247,12 +231,12 @@ const styles = StyleSheet.create({
   moreCount: {
     fontFamily: FontFamily.headingBold,
     fontSize: 22,
-    color: Colors.brandOrange,
+    color: Colors.inkPrimary,
   },
   moreLabel: {
     fontFamily: FontFamily.bodyMedium,
     fontSize: 12,
-    color: Colors.brandOrange,
+    color: Colors.inkSecondary,
     textAlign: "center",
   },
 });

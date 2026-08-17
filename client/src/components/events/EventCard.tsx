@@ -81,9 +81,38 @@ export function formatEventDate(iso: string | null | undefined) {
   })
 }
 
-function formatPrice(price: number, isFree: boolean) {
+export function formatPrice(price: number, isFree: boolean) {
   return isFree ? 'Free' : `₹${price}`
 }
+
+// The one place that owns what a price badge looks like — same reasoning as
+// HostPill above: callers (EventCard, the map-mode preview strip) position
+// it themselves via `style`, but never hand-roll their own bg/text colors.
+export function PriceBadge({
+  price,
+  isFree,
+  compact,
+  style,
+}: {
+  price: number
+  isFree: boolean
+  compact?: boolean
+  style?: StyleProp<ViewStyle>
+}) {
+  return (
+    <View style={[pb.badge, compact && pb.badgeCompact, isFree && pb.badgeFree, style]}>
+      <Text style={[pb.text, compact && pb.textCompact]}>{formatPrice(price, isFree)}</Text>
+    </View>
+  )
+}
+
+const pb = StyleSheet.create({
+  badge: { backgroundColor: Colors.brandOrange, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
+  badgeCompact: { borderRadius: 7, paddingHorizontal: 7, paddingVertical: 3 },
+  badgeFree: { backgroundColor: Colors.accentGreen },
+  text: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.inkPrimary },
+  textCompact: { fontSize: 12 },
+})
 
 interface Props {
   event: EventSummary
@@ -145,9 +174,11 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
           pointerEvents="none"
         />
 
-        <View style={[s.priceBadge, eventIsPast && s.priceBadgeNoHotlist, event.is_free && s.priceBadgeFree]}>
-          <Text style={s.priceText}>{formatPrice(event.price_inr, event.is_free)}</Text>
-        </View>
+        <PriceBadge
+          price={event.price_inr}
+          isFree={event.is_free}
+          style={[s.priceBadgePos, eventIsPast && s.priceBadgeNoHotlist]}
+        />
 
         {/* Host pill (display only when not tappable) — avatar + name,
             Partiful-style organizer credit. The tappable version is the
@@ -226,7 +257,7 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
 
       {spotsLow && !isPast && !isCancelled && (
         <View style={s.spotsBar}>
-          <Flame size={13} color={Colors.brandOrange} strokeWidth={2} />
+          <Flame size={13} color={Colors.inkPrimary} strokeWidth={2} />
           <Text style={s.spotsText}>Only {event.spots_left} spots left</Text>
         </View>
       )}
@@ -323,16 +354,14 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(10,10,10,0.55)',
     alignItems: 'center', justifyContent: 'center',
   },
-  priceBadge: {
-    position: 'absolute', top: 12, right: 50,
-    backgroundColor: Colors.brandOrange,
-    borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4,
-  },
+  // Position only — PriceBadge (exported above) owns the badge's own look.
+  priceBadgePos: { position: 'absolute', top: 12, right: 50 },
+  // Kept for the skeleton's placeholder block below, which needs the same
+  // top/right slot but sizes/colors itself independently.
+  priceBadge: { position: 'absolute', top: 12, right: 50 },
   // Past events hide the hotlist button — slide the price over into that
   // now-empty slot instead of leaving a gap.
   priceBadgeNoHotlist: { right: 12 },
-  priceBadgeFree: { backgroundColor: Colors.accentGreen },
-  priceText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.inkPrimary },
 
   hostPillPos: {
     position: 'absolute', top: 12, left: 12,
@@ -346,12 +375,12 @@ const s = StyleSheet.create({
     backgroundColor: withOpacity(Colors.background, 0.85),
     borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3,
   },
-  cancelledBadge: { backgroundColor: withOpacity(Colors.brandCoral, 0.85) },
+  cancelledBadge: { backgroundColor: withOpacity(Colors.destructive, 0.85) },
   statusBadgeText: { fontFamily: FontFamily.bodyMedium, fontSize: 11, color: Colors.inkPrimary },
 
   cardFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 14 },
   title: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary, lineHeight: 21 },
-  hostName: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: withOpacity(Colors.brandOrange, 0.9), marginTop: 2 },
+  hostName: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: withOpacity(Colors.inkPrimary, 0.75), marginTop: 2 },
   hostNameDeleted: { color: withOpacity(Colors.inkPrimary, 0.4) },
   date: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: withOpacity(Colors.inkPrimary, 0.75), marginTop: 3 },
 
@@ -386,7 +415,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 14, paddingVertical: 8,
   },
-  spotsText: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.brandOrange },
+  spotsText: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.inkPrimary },
 
   skCard: { borderRadius: 20, overflow: 'hidden' },
   skBlock: { backgroundColor: Colors.surfaceMuted },

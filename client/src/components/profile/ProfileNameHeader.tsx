@@ -58,7 +58,7 @@ const s = StyleSheet.create({
   username: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 13,
-    color: Colors.brandOrange,
+    color: Colors.inkSecondary,
     marginTop: -6,
   },
   city: {

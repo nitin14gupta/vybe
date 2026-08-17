@@ -119,7 +119,7 @@ function UpiIdSheetCore({
           />
           {isAlreadySaved && !checking && (
             <View style={s.savedChip}>
-              <Bookmark size={11} color={Colors.brandOrange} strokeWidth={2} fill={Colors.brandOrange} />
+              <Bookmark size={11} color={Colors.inkPrimary} strokeWidth={2} fill={Colors.inkPrimary} />
               <Text style={s.savedChipText}>Saved</Text>
             </View>
           )}
@@ -133,7 +133,7 @@ function UpiIdSheetCore({
             <CheckCircle2 size={20} color={Colors.accentGreen} strokeWidth={2} style={s.inputIcon} />
           )}
           {!checking && vpaError && (
-            <XCircle size={20} color={Colors.brandCoral} strokeWidth={2} style={s.inputIcon} />
+            <XCircle size={20} color={Colors.destructive} strokeWidth={2} style={s.inputIcon} />
           )}
         </View>
 
@@ -204,17 +204,17 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 8,
   },
-  inputWrapError: { borderColor: Colors.brandCoral },
+  inputWrapError: { borderColor: Colors.destructive },
   inputWrapSuccess: { borderColor: Colors.accentGreen },
   input: { flex: 1, paddingVertical: 14, fontFamily: FontFamily.bodyRegular, fontSize: 16, color: Colors.inkPrimary },
   inputIcon: { marginLeft: 8 },
 
-  savedChip: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: withOpacity(Colors.brandOrange, 0.12), borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3, marginLeft: 8 },
-  savedChipText: { fontFamily: FontFamily.bodyMedium, fontSize: 11, color: Colors.brandOrange },
+  savedChip: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: withOpacity(Colors.inkPrimary, 0.12), borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3, marginLeft: 8 },
+  savedChipText: { fontFamily: FontFamily.bodyMedium, fontSize: 11, color: Colors.inkPrimary },
 
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 20 },
   nameText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.accentGreen },
-  errorText: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.brandCoral, marginBottom: 20 },
+  errorText: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.destructive, marginBottom: 20 },
   hint: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkDisabled, marginBottom: 20 },
 
   btnRow: { flexDirection: 'row', gap: 10 },

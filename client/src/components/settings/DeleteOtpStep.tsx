@@ -25,7 +25,7 @@ export function DeleteOtpStep({
   return (
     <>
       <View style={styles.iconCircle}>
-        <CheckCircle2 size={36} color={Colors.brandOrange} strokeWidth={1.8} />
+        <CheckCircle2 size={36} color={Colors.inkPrimary} strokeWidth={1.8} />
       </View>
       <Text style={styles.title}>Verify it's you</Text>
       <Text style={styles.body}>
@@ -82,7 +82,7 @@ export function DeleteOtpStep({
 const styles = StyleSheet.create({
   iconCircle: {
     width: 80, height: 80, borderRadius: 40,
-    backgroundColor: withOpacity(Colors.brandCoral, 0.1),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.1),
     alignItems: 'center', justifyContent: 'center',
     alignSelf: 'center', marginBottom: 20,
   },
@@ -101,6 +101,6 @@ const styles = StyleSheet.create({
   otpInputWrap: { marginTop: 8 },
   resendArea: { alignItems: 'center', marginTop: 20 },
   resendCountdown: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary },
-  resendCountdownTimer: { fontFamily: FontFamily.bodySemiBold, color: withOpacity(Colors.brandOrange, 0.75) },
-  resendLink: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandOrange },
+  resendCountdownTimer: { fontFamily: FontFamily.bodySemiBold, color: withOpacity(Colors.inkPrimary, 0.75) },
+  resendLink: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.inkPrimary },
 })

@@ -5,7 +5,7 @@ import { Colors, FontFamily, Radius, HOST_BADGE_IMAGES, withOpacity } from '@/co
 const TIERS = [
   { key: 'Rising', label: 'Rising', req: '2+ events hosted', text: Colors.accentGreen },
   { key: 'Established', label: 'Established', req: '10+ events hosted', text: Colors.brandOrange },
-  { key: 'Elite', label: 'Elite', req: '25+ events hosted', text: Colors.brandCoral },
+  { key: 'Elite', label: 'Elite', req: '25+ events hosted', text: Colors.inkPrimary },
   { key: 'Legend', label: 'Legend', req: '75+ events hosted', text: Colors.accentGold },
 ] as const
 

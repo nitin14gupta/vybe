@@ -36,7 +36,7 @@ export default function HotlistScreen() {
 
       {loading ? (
         <View style={[s.center, { paddingTop: headerHeight }]}>
-          <ActivityIndicator color={Colors.brandOrange} />
+          <ActivityIndicator color={Colors.inkSecondary} />
         </View>
       ) : events.length === 0 ? (
         <View style={[s.center, { paddingTop: headerHeight }]}>

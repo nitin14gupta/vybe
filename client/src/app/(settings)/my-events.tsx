@@ -39,9 +39,9 @@ export default function MyEventsScreen() {
             style={s.reviewsFooter}
             onPress={() => router.push(`/(events)/${item.id}/reviews` as any)}
           >
-            <Star size={15} color={Colors.brandOrange} strokeWidth={2} />
+            <Star size={15} color={Colors.inkPrimary} strokeWidth={2} />
             <Text style={s.reviewsFooterText}>View Reviews</Text>
-            <ChevronRight size={15} color={Colors.brandOrange} strokeWidth={2} />
+            <ChevronRight size={15} color={Colors.inkPrimary} strokeWidth={2} />
           </Pressable>
         ) : undefined
       }
@@ -53,7 +53,7 @@ export default function MyEventsScreen() {
       <AppHeader
         title="My Events"
         leftAction={<HeaderIconBtn onPress={() => router.back()}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
-        rightAction={<HeaderIconBtn onPress={() => router.push('/(events)/create' as any)}><Plus size={20} color={Colors.brandOrange} strokeWidth={2.5} /></HeaderIconBtn>}
+        rightAction={<HeaderIconBtn onPress={() => router.push('/(events)/create' as any)}><Plus size={20} color={Colors.inkPrimary} strokeWidth={2.5} /></HeaderIconBtn>}
       />
 
       <SwipeableTabs
@@ -112,7 +112,7 @@ const s = StyleSheet.create({
     gap: 6,
     paddingVertical: 12,
   },
-  reviewsFooterText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.brandOrange },
+  reviewsFooterText: { fontFamily: FontFamily.bodySemiBold, fontSize: 13, color: Colors.inkPrimary },
 
   viewToggle: { position: 'absolute', right: 16, bottom: 16 },
 })

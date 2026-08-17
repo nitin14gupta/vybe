@@ -105,7 +105,7 @@ export function CalendarDayPanel({
       ) : (
         <View style={s.emptyWrap}>
           <View style={s.emptyIconWrap}>
-            <CalendarHeart size={28} color={Colors.brandOrange} strokeWidth={1.6} />
+            <CalendarHeart size={28} color={Colors.inkPrimary} strokeWidth={1.6} />
           </View>
           <Text style={s.emptyTitle}>Got plans?</Text>
           <Text style={s.emptySub}>It seems not. Let's change that.</Text>
@@ -151,7 +151,7 @@ const s = StyleSheet.create({
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 6 },
   emptyIconWrap: {
     width: 64, height: 64, borderRadius: 32,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.12),
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 8,
   },

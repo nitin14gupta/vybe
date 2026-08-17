@@ -125,8 +125,8 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
   },
   errorBox: {
-    borderColor: Colors.brandCoral,
-    shadowColor: Colors.brandCoral,
+    borderColor: Colors.destructive,
+    shadowColor: Colors.destructive,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.15,
     shadowRadius: 3,

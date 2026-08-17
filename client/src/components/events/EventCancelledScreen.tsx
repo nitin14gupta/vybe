@@ -26,8 +26,8 @@ export function EventCancelledScreen({ event, isHost, onBack }: Props) {
         <Text style={styles.lockedBackText}>Back</Text>
       </Pressable>
       <View style={styles.lockedBody}>
-        <View style={[styles.lockedIconWrap, { backgroundColor: withOpacity(Colors.brandCoral, 0.12) }]}>
-          <XIcon size={40} color={Colors.brandCoral} strokeWidth={2} />
+        <View style={[styles.lockedIconWrap, { backgroundColor: withOpacity(Colors.destructive, 0.12) }]}>
+          <XIcon size={40} color={Colors.destructive} strokeWidth={2} />
         </View>
         <Text style={styles.lockedTitle}>Event Cancelled</Text>
         <Text style={styles.deletedBody} numberOfLines={1}>{event.title}</Text>
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
+    backgroundColor: withOpacity(Colors.destructive, 0.12),
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,

@@ -54,7 +54,7 @@ export function UserProfileCtaBar({
         </View>
       ) : isPending ? (
         <Pressable style={[s.ctaBtn, s.ctaBtnPending]} disabled>
-          <Flame size={18} color={Colors.brandOrange} fill="transparent" strokeWidth={1.8} />
+          <Flame size={18} color={Colors.inkSecondary} fill="transparent" strokeWidth={1.8} />
           <Text style={s.ctaBtnPendingText}>Vibe Sent</Text>
         </Pressable>
       ) : isCooldown && cooldownUntil ? (
@@ -129,7 +129,7 @@ const s = StyleSheet.create({
   ctaBtnPendingText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 16,
-    color: Colors.brandOrange,
+    color: Colors.inkSecondary,
   },
   ctaBtnFollowing: { borderColor: Colors.brandOrange },
   ctaBtnFollowingText: { color: Colors.brandOrange },

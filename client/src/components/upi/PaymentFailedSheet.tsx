@@ -70,7 +70,7 @@ function PaymentFailedCore({ message, onRetry, onBack }: Omit<Props, 'visible'>)
         <Animated.View style={iconStyle}>
           {isCancelled
             ? <AlertCircle size={52} color={Colors.accentGold} strokeWidth={1.5} />
-            : <XCircle size={52} color={Colors.brandCoral} strokeWidth={1.5} />
+            : <XCircle size={52} color={Colors.destructive} strokeWidth={1.5} />
           }
         </Animated.View>
 

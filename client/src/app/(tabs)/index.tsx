@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   seeAll: {
     fontFamily: FontFamily.bodyMedium,
     fontSize: 13,
-    color: Colors.brandOrange,
+    color: Colors.inkSecondary,
   },
 
   eventItem: { marginTop: 14 },
@@ -192,8 +192,8 @@ const styles = StyleSheet.create({
   emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary, textAlign: 'center' },
   retryBtn: {
     marginTop: 4, paddingHorizontal: 20, paddingVertical: 10,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
-    borderRadius: Radius.pill, borderWidth: 1, borderColor: Colors.brandOrange,
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.12),
+    borderRadius: Radius.pill, borderWidth: 1, borderColor: Colors.inkPrimary,
   },
-  retryText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.brandOrange },
+  retryText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.inkPrimary },
 })

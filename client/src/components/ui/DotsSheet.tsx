@@ -86,7 +86,7 @@ const s = StyleSheet.create({
     color: Colors.inkPrimary,
   },
   rowTextDestructive: {
-    color: Colors.brandCoral,
+    color: Colors.destructive,
     fontFamily: FontFamily.bodySemiBold,
   },
 })

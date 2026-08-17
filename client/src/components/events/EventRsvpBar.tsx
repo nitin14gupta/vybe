@@ -116,7 +116,7 @@ export function EventRsvpBar({
           ) : isPast && (isGoing || hasTicket) ? (
             event?.my_review_rating ? (
               <View style={styles.reviewedPill}>
-                <Star size={13} color={Colors.brandOrange} fill={Colors.brandOrange} strokeWidth={1.5} />
+                <Star size={13} color={Colors.accentGreen} fill={Colors.accentGreen} strokeWidth={1.5} />
                 <Text style={styles.reviewedPillText}>Reviewed ✓</Text>
               </View>
             ) : (
@@ -135,7 +135,7 @@ export function EventRsvpBar({
                 style={styles.ticketBtn}
                 onPress={() => router.push(`/(events)/${eventId}/ticket` as any)}
               >
-                <QrCode size={16} color={Colors.brandOrange} />
+                <QrCode size={16} color={Colors.inkPrimary} />
                 <Text style={styles.ticketBtnText}>Ticket</Text>
               </Pressable>
             </View>
@@ -145,7 +145,7 @@ export function EventRsvpBar({
             </View>
           ) : rsvpStatus === 'loading' ? (
             <View style={styles.waitlistBtn}>
-              <ActivityIndicator color={Colors.brandOrange} />
+              <ActivityIndicator color={Colors.inkSecondary} />
             </View>
           ) : isWaitlist && event.my_offer_expires_at ? (
             <Pressable style={styles.offerBtn} onPress={() => { hSuccess(); onRsvp() }}>
@@ -182,7 +182,7 @@ export function EventRsvpBar({
               <Text style={styles.waitlistActiveBtnText}>
                 On Waitlist{event.my_waitlist_position ? ` · #${event.my_waitlist_position}` : ''}
               </Text>
-              <ChevronRight size={14} color={Colors.brandOrange} strokeWidth={2} />
+              <ChevronRight size={14} color={Colors.inkPrimary} strokeWidth={2} />
             </Pressable>
           ) : shouldWaitlist && hoursUntil(event.date_time) < 2 ? (
             <View style={styles.eventFullBtn}>
@@ -227,8 +227,8 @@ const styles = StyleSheet.create({
   },
   stickyLeft: { flex: 1 },
   spotsAlert: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 2 },
-  spotsDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.brandCoral },
-  spotsText: { color: Colors.brandCoral, fontFamily: FontFamily.bodyMedium, fontSize: 12 },
+  spotsDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.inkPrimary },
+  spotsText: { color: Colors.inkPrimary, fontFamily: FontFamily.bodyMedium, fontSize: 12 },
   stickyPrice: { fontFamily: FontFamily.headingBold, fontSize: 22, color: Colors.inkPrimary },
 
   bookBtn: { borderRadius: 14, overflow: 'hidden' },
@@ -239,10 +239,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 18, height: 48,
     borderRadius: 24, borderWidth: 1,
-    borderColor: withOpacity(Colors.brandOrange, 0.3),
-    backgroundColor: withOpacity(Colors.brandOrange, 0.08),
+    borderColor: withOpacity(Colors.accentGreen, 0.3),
+    backgroundColor: withOpacity(Colors.accentGreen, 0.08),
   },
-  reviewedPillText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.brandOrange },
+  reviewedPillText: { fontFamily: FontFamily.bodySemiBold, fontSize: 14, color: Colors.accentGreen },
 
   goingBtn: {
     backgroundColor: Colors.accentGreen,
@@ -258,9 +258,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.1),
-    borderWidth: 1.5,
-    borderColor: withOpacity(Colors.brandOrange, 0.35),
+    backgroundColor: Colors.elevated,
+    borderWidth: 1,
+    borderColor: Colors.divider,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 999,
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   waitlistActiveBtnText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 14,
-    color: Colors.brandOrange,
+    color: Colors.inkPrimary,
   },
   waitlistBtn: {
     backgroundColor: Colors.elevated,
@@ -288,10 +288,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: Colors.brandOrange,
+    borderColor: Colors.inkPrimary,
     minWidth: 130,
   },
-  waitlistJoinText: { color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
+  waitlistJoinText: { color: Colors.inkPrimary, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
 
   offerBtn: { borderRadius: 16, overflow: 'hidden', minWidth: 150 },
   offerGradient: {
@@ -351,21 +351,21 @@ const styles = StyleSheet.create({
   },
 
   cancelledBadge: {
-    backgroundColor: withOpacity(Colors.brandCoral, 0.15),
+    backgroundColor: withOpacity(Colors.destructive, 0.15),
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: Colors.brandCoral,
+    borderColor: Colors.destructive,
   },
-  cancelledText: { color: Colors.brandCoral, fontFamily: FontFamily.bodySemiBold, fontSize: 14 },
+  cancelledText: { color: Colors.destructive, fontFamily: FontFamily.bodySemiBold, fontSize: 14 },
 
   ticketBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     paddingHorizontal: 14, paddingVertical: 14, borderRadius: 14,
-    borderWidth: 1, borderColor: Colors.brandOrange,
+    borderWidth: 1, borderColor: Colors.inkPrimary,
   },
-  ticketBtnText: { color: Colors.brandOrange, fontFamily: FontFamily.bodySemiBold, fontSize: 14 },
+  ticketBtnText: { color: Colors.inkPrimary, fontFamily: FontFamily.bodySemiBold, fontSize: 14 },
 
   hostBar: { flex: 1, gap: 10 },
   hostMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

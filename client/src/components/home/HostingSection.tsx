@@ -26,7 +26,7 @@ const HostingCard = memo(function HostingCard({ event, onPress, onManagePress }:
         onPress={() => onPress(event.id)}
         footer={
           <Pressable style={s.manageFooter} onPress={() => onManagePress(event.id)}>
-            <Users size={15} color={Colors.brandOrange} strokeWidth={2} />
+            <Users size={15} color={Colors.inkSecondary} strokeWidth={2} />
             <Text style={s.manageFooterText}>
               {d ? relativeDayLabel(d) : ''} · Manage
             </Text>

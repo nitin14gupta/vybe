@@ -28,7 +28,7 @@ export function WalletBalanceCard({ balance, loading }: { balance: number; loadi
       <Pressable style={s.infoCard} onPress={() => router.push('/(settings)/support' as any)}>
         <View style={s.infoRow}>
           <View style={s.infoIconWrap}>
-            <HeadphonesIcon size={15} color={Colors.brandOrange} strokeWidth={1.8} />
+            <HeadphonesIcon size={15} color={Colors.inkPrimary} strokeWidth={1.8} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={s.infoText}>Credits can only be used on Gorave events.</Text>
@@ -54,8 +54,8 @@ const s = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 12,
   },
   infoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  infoIconWrap: { width: 28, height: 28, borderRadius: 14, backgroundColor: withOpacity(Colors.brandOrange, 0.1), alignItems: 'center', justifyContent: 'center', marginTop: 1 },
+  infoIconWrap: { width: 28, height: 28, borderRadius: 14, backgroundColor: withOpacity(Colors.inkPrimary, 0.1), alignItems: 'center', justifyContent: 'center', marginTop: 1 },
   infoText: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, lineHeight: 19 },
   infoSub: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkDisabled, marginTop: 2 },
-  infoLink: { fontFamily: FontFamily.bodyMedium, color: Colors.brandOrange },
+  infoLink: { fontFamily: FontFamily.bodyMedium, color: Colors.inkPrimary },
 })

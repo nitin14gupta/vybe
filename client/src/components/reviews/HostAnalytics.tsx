@@ -17,9 +17,9 @@ const CARD_WIDTH = SCREEN_WIDTH - Spacing.screenPadding * 2 - 32 // minus card p
 
 function ratingColor(rating: number | null): string {
   if (rating == null) return Colors.inkDisabled
-  if (rating < LOW_THRESHOLD) return Colors.brandCoral
+  if (rating < LOW_THRESHOLD) return Colors.destructive
   if (rating >= HIGH_THRESHOLD) return Colors.accentGreen
-  return Colors.brandOrange
+  return Colors.accentGold
 }
 
 function formatEventType(type: string): string {
@@ -132,7 +132,7 @@ export function EventPerformanceSection({
       <Text style={a.sectionTitle}>Event Performance</Text>
       {/* {lowCount > 0 && (
         <View style={a.warningRow}>
-          <AlertTriangle size={14} color={Colors.brandCoral} strokeWidth={2} />
+          <AlertTriangle size={14} color={Colors.destructive} strokeWidth={2} />
           <Text style={a.warningText}>
             {lowCount} event{lowCount === 1 ? '' : 's'} rated below {LOW_THRESHOLD} — worth a look
           </Text>
@@ -145,9 +145,9 @@ export function EventPerformanceSection({
             {expanded ? 'Show fewer' : `Show all ${allRows.length} events`}
           </Text>
           {expanded ? (
-            <ChevronUp size={14} color={Colors.brandOrange} strokeWidth={2} />
+            <ChevronUp size={14} color={Colors.inkSecondary} strokeWidth={2} />
           ) : (
-            <ChevronDown size={14} color={Colors.brandOrange} strokeWidth={2} />
+            <ChevronDown size={14} color={Colors.inkSecondary} strokeWidth={2} />
           )}
         </Pressable>
       )}
@@ -199,7 +199,7 @@ const a = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: withOpacity(Colors.brandCoral, 0.1),
+    backgroundColor: withOpacity(Colors.destructive, 0.1),
     borderRadius: Radius.pill,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -208,7 +208,7 @@ const a = StyleSheet.create({
   warningText: {
     fontFamily: FontFamily.bodyMedium,
     fontSize: 12,
-    color: Colors.brandCoral,
+    color: Colors.destructive,
   },
   card: {
     backgroundColor: Colors.surface,
@@ -240,6 +240,6 @@ const a = StyleSheet.create({
   expandText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
-    color: Colors.brandOrange,
+    color: Colors.inkSecondary,
   },
 })

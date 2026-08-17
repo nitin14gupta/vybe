@@ -55,7 +55,7 @@ function DeletedAccountSheetCore({ deletedOn, onClose }: Omit<Props, 'visible'>)
     >
       <BottomSheetView style={s.content}>
         <View style={s.iconWrap}>
-          <AlertTriangle size={32} color={Colors.brandCoral} strokeWidth={1.8} />
+          <AlertTriangle size={32} color={Colors.destructive} strokeWidth={1.8} />
         </View>
 
         <Text style={s.title}>Account Deletion Requested</Text>
@@ -94,7 +94,7 @@ const s = StyleSheet.create({
 
   iconWrap: {
     width: 68, height: 68, borderRadius: 34,
-    backgroundColor: withOpacity(Colors.brandCoral, 0.12),
+    backgroundColor: withOpacity(Colors.destructive, 0.12),
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 4,
   },

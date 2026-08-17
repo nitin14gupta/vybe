@@ -16,8 +16,8 @@ function WelcomeStepBase() {
 
       <View style={s.rows}>
         <InfoRow
-          icon={<MapPin size={17} color={Colors.brandOrange} strokeWidth={2} />}
-          iconBg={withOpacity(Colors.brandOrange, 0.14)}
+          icon={<MapPin size={17} color={Colors.inkPrimary} strokeWidth={2} />}
+          iconBg={withOpacity(Colors.inkPrimary, 0.14)}
           title="Your events get discovered"
           sub="Automatically surfaces in Trending and nearby feeds the moment you publish."
         />

@@ -13,7 +13,7 @@ export function DeleteBlockedEvents({ upcomingEvents, onGoToEvents, onBack }: Pr
   return (
     <View style={styles.center}>
       <View style={styles.blockerIconWrap}>
-        <Users size={38} color={Colors.brandOrange} strokeWidth={1.8} />
+        <Users size={38} color={Colors.inkPrimary} strokeWidth={1.8} />
       </View>
       <Text style={styles.blockerTitle}>
         You have {upcomingEvents} upcoming hosted event{upcomingEvents > 1 ? 's' : ''}
@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.screenPadding, gap: 12 },
   blockerIconWrap: {
     width: 88, height: 88, borderRadius: 44,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.1),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.1),
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 8,
   },

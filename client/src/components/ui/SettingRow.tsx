@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     color: Colors.inkPrimary,
   },
   destructive: {
-    color: Colors.brandCoral,
+    color: Colors.destructive,
   },
   value: {
     fontFamily: FontFamily.bodyRegular,

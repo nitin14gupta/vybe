@@ -62,14 +62,14 @@ export default function EventMapScreen() {
       {/* Aurora glow — same subtle overlay as the events map, top plus both side edges */}
       <HomeGradientBackdrop opacity={0.28} height={insets.top + 110} />
       <LinearGradient
-        colors={[Colors.brandCoral, "transparent"]}
+        colors={[Colors.inkPrimary, "transparent"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={s.leftGlow}
         pointerEvents="none"
       />
       <LinearGradient
-        colors={[Colors.brandOrange, "transparent"]}
+        colors={[Colors.inkPrimary, "transparent"]}
         start={{ x: 1, y: 0 }}
         end={{ x: 0, y: 0 }}
         style={s.rightGlow}

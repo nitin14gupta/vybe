@@ -222,7 +222,7 @@ export default function NotificationsScreen() {
           ListFooterComponent={
             loadingMore ? (
               <View style={s.footerLoader}>
-                <ActivityIndicator color={Colors.brandOrange} size="small" />
+                <ActivityIndicator color={Colors.inkSecondary} size="small" />
               </View>
             ) : null
           }

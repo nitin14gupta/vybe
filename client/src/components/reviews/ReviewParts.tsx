@@ -187,7 +187,7 @@ const c = StyleSheet.create({
   distFill: {
     height: '100%',
     borderRadius: 3,
-    backgroundColor: Colors.brandOrange,
+    backgroundColor: Colors.inkPrimary,
   },
   distLabel: {
     fontFamily: FontFamily.bodyRegular,
@@ -210,7 +210,7 @@ const c = StyleSheet.create({
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   date: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkDisabled },
   subtitleRow: { marginTop: -4, alignSelf: 'flex-start' },
-  subtitle: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.brandOrange },
+  subtitle: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.inkSecondary },
   body: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, lineHeight: 21 },
 
   filterRow: {

@@ -152,6 +152,8 @@ class EventDetail(EventSummary):
     my_checked_in_at: Optional[str] = None
     avg_rating: Optional[float] = None
     review_count: int = 0
+    host_avg_rating: Optional[float] = None
+    host_review_count: int = 0
     my_rsvp_status: Optional[str] = None        # 'going' | 'waitlist' | 'cancelled' | None
     my_waitlist_position: Optional[int] = None  # position in queue (1-indexed), None if not on waitlist
     my_offer_expires_at: Optional[str] = None   # ISO string when promoted, else None
@@ -1011,6 +1013,14 @@ def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
                 (SELECT COUNT(*) FROM events he
                  WHERE he.host_id = u.id AND COALESCE(he.is_cancelled, FALSE) = FALSE
                 )::int AS host_hosted_events_count,
+                (SELECT ROUND(AVG(er.rating)::numeric, 1) FROM event_reviews er
+                 JOIN events he2 ON he2.id = er.event_id
+                 WHERE he2.host_id = u.id
+                ) AS host_avg_rating,
+                (SELECT COUNT(*) FROM event_reviews er2
+                 JOIN events he3 ON he3.id = er2.event_id
+                 WHERE he3.host_id = u.id
+                )::int AS host_review_count,
                 (SELECT COUNT(*) FROM event_attendees ea WHERE ea.event_id = e.id AND ea.status = 'going')::int AS attendee_count,
                 (SELECT COALESCE(json_agg(au.avatar_url), '[]'::json) FROM (
                     SELECT (SELECT p.url FROM user_photos p WHERE p.user_id = eav.user_id ORDER BY p.position LIMIT 1) AS avatar_url

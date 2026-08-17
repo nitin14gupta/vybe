@@ -11,8 +11,8 @@ export function BrandedRefreshControl({ refreshing, onRefresh, ...rest }: Props)
     <RefreshControl
       refreshing={refreshing}
       onRefresh={onRefresh}
-      tintColor={Colors.brandOrange}
-      colors={[Colors.brandOrange]}
+      tintColor={Colors.inkSecondary}
+      colors={[Colors.inkSecondary]}
       progressBackgroundColor={Colors.surface}
       {...rest}
     />

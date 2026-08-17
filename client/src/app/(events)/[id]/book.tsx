@@ -46,7 +46,7 @@ const pr = StyleSheet.create({
   label: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary },
   value: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.inkPrimary },
   totalLabel: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary },
-  totalValue: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.brandOrange },
+  totalValue: { fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.inkPrimary },
 })
 
 export default function BookScreen() {
@@ -149,7 +149,7 @@ export default function BookScreen() {
             />
           ) : (
             <LinearGradient colors={[Colors.surfaceMuted, Colors.background]} style={[s.bannerImg, { alignItems: 'center', justifyContent: 'center' }]}>
-              <Music2 size={52} color={withOpacity(Colors.brandOrange, 0.4)} strokeWidth={1.2} />
+              <Music2 size={52} color={withOpacity(Colors.inkPrimary, 0.4)} strokeWidth={1.2} />
             </LinearGradient>
           )}
           <LinearGradient
@@ -207,7 +207,7 @@ export default function BookScreen() {
             <View style={s.walletCard}>
               <View style={s.walletLeft}>
                 <View style={s.walletIconWrap}>
-                  <Wallet size={17} color={Colors.brandOrange} strokeWidth={1.8} />
+                  <Wallet size={17} color={Colors.inkPrimary} strokeWidth={1.8} />
                 </View>
                 <View>
                   <Text style={s.walletLabel}>Gorave Wallet</Text>
@@ -277,12 +277,12 @@ const s = StyleSheet.create({
   priceDivider: { height: StyleSheet.hairlineWidth, backgroundColor: Colors.divider },
   priceSep: { height: 1, backgroundColor: Colors.divider, marginTop: 2 },
 
-  freeTag: { backgroundColor: withOpacity(Colors.brandOrange, 0.08), borderRadius: Radius.card, borderWidth: 1, borderColor: withOpacity(Colors.brandOrange, 0.2), paddingVertical: 14, paddingHorizontal: Spacing.md, alignItems: 'center', marginBottom: Spacing.lg },
-  freeText: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.brandOrange },
+  freeTag: { backgroundColor: withOpacity(Colors.inkPrimary, 0.08), borderRadius: Radius.card, borderWidth: 1, borderColor: withOpacity(Colors.inkPrimary, 0.2), paddingVertical: 14, paddingHorizontal: Spacing.md, alignItems: 'center', marginBottom: Spacing.lg },
+  freeText: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.inkPrimary },
 
   walletCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.elevated, borderRadius: Radius.card, borderWidth: 1, borderColor: Colors.divider, paddingHorizontal: Spacing.md, paddingVertical: 12, marginBottom: Spacing.lg },
   walletLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  walletIconWrap: { width: 34, height: 34, borderRadius: 17, backgroundColor: withOpacity(Colors.brandOrange, 0.12), alignItems: 'center', justifyContent: 'center' },
+  walletIconWrap: { width: 34, height: 34, borderRadius: 17, backgroundColor: withOpacity(Colors.inkPrimary, 0.12), alignItems: 'center', justifyContent: 'center' },
   walletLabel: { fontFamily: FontFamily.bodyMedium, fontSize: 14, color: Colors.inkPrimary },
   walletSub: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary, marginTop: 1 },
 

@@ -12,7 +12,7 @@ export function DeleteWarningStep({ onContinue, onCancel }: Props) {
   return (
     <>
       <View style={styles.iconCircle}>
-        <AlertTriangle size={36} color={Colors.brandCoral} strokeWidth={1.8} />
+        <AlertTriangle size={36} color={Colors.destructive} strokeWidth={1.8} />
       </View>
       <Text style={styles.title}>Are you sure?</Text>
       <Text style={styles.body}>
@@ -35,7 +35,7 @@ export function DeleteWarningStep({ onContinue, onCancel }: Props) {
 const styles = StyleSheet.create({
   iconCircle: {
     width: 80, height: 80, borderRadius: 40,
-    backgroundColor: withOpacity(Colors.brandCoral, 0.1),
+    backgroundColor: withOpacity(Colors.destructive, 0.1),
     alignItems: 'center', justifyContent: 'center',
     alignSelf: 'center', marginBottom: 20,
   },
@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkDisabled,
     textAlign: 'center', lineHeight: 21,
   },
-  link: { color: Colors.brandOrange, fontFamily: FontFamily.bodyMedium },
+  link: { color: Colors.inkPrimary, fontFamily: FontFamily.bodyMedium },
   spacer: { height: 24 },
   secondaryBtn: { marginTop: 10 },
 })

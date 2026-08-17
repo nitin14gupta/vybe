@@ -183,7 +183,7 @@ function PayoutStepBase({
             )}
             {!checking && vpaError && (
               <View style={[s.vpaRow, s.vpaRowError]}>
-                <XCircle size={16} color={Colors.brandCoral} strokeWidth={2} />
+                <XCircle size={16} color={Colors.destructive} strokeWidth={2} />
                 <Text style={s.vpaRowErrorText}>Couldn't verify this UPI ID</Text>
               </View>
             )}
@@ -260,13 +260,13 @@ const s = StyleSheet.create({
   },
   vpaRowResolvedText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.accentGreen, flex: 1 },
   vpaRowError: {
-    backgroundColor: withOpacity(Colors.brandCoral, 0.1),
+    backgroundColor: withOpacity(Colors.destructive, 0.1),
     borderRadius: Radius.card,
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginTop: -2,
   },
-  vpaRowErrorText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.brandCoral, flex: 1 },
+  vpaRowErrorText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.destructive, flex: 1 },
   tipRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',

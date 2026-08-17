@@ -54,5 +54,5 @@ const s = StyleSheet.create({
   },
   bubbleTheirs: { backgroundColor: Colors.elevated, borderWidth: 1, borderColor: Colors.surfaceMuted, borderBottomLeftRadius: 4 },
   dots: { flexDirection: 'row', gap: 5 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.brandOrange },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.inkSecondary },
 })

@@ -175,7 +175,7 @@ export default function QrPaymentScreen() {
     return `${m}:${s.toString().padStart(2, '0')}`
   }
 
-  const timerColor = timeLeft < 30 ? Colors.brandCoral : timeLeft < 120 ? Colors.brandOrange : Colors.accentGreen
+  const timerColor = timeLeft < 30 ? Colors.destructive : timeLeft < 120 ? Colors.inkPrimary : Colors.accentGreen
 
   const handleManualCheck = async () => {
     if (verifying) return
@@ -223,7 +223,7 @@ export default function QrPaymentScreen() {
       {/* Header */}
       <View style={s.header}>
         <Pressable onPress={confirmBack} style={s.backBtn} hitSlop={8}>
-          <ArrowLeft size={22} color={Colors.brandOrange} strokeWidth={2} />
+          <ArrowLeft size={22} color={Colors.inkPrimary} strokeWidth={2} />
         </Pressable>
         <Text style={s.headerTitle}>Pay via QR Code</Text>
         <View style={{ width: 40 }} />

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Keyboard } from 'react-native'
+import { View, Text, StyleSheet, Platform, ScrollView, Keyboard } from 'react-native'
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { router } from 'expo-router'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 import { hTap, hSuccess } from '@/lib/haptics'

@@ -124,7 +124,7 @@ function ProfileMenuSheetCore({
       >
         <BottomSheetView style={s.content}>
           <Pressable style={s.row} onPress={openBlock}>
-            <Ban size={20} color={isBlocked ? Colors.brandOrange : Colors.inkPrimary} strokeWidth={1.8} />
+            <Ban size={20} color={isBlocked ? Colors.destructive : Colors.inkPrimary} strokeWidth={1.8} />
             <Text style={[s.rowText, isBlocked && s.rowTextOrange]}>{isBlocked ? 'Unblock User' : 'Block User'}</Text>
           </Pressable>
           <Pressable style={s.row} onPress={openReport}>
@@ -193,7 +193,7 @@ const s = StyleSheet.create({
   content: { paddingHorizontal: 8, paddingBottom: 36, paddingTop: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingVertical: 16, borderRadius: 12 },
   rowText: { fontFamily: FontFamily.bodyMedium, fontSize: 16, color: Colors.inkPrimary },
-  rowTextOrange: { color: Colors.brandOrange },
+  rowTextOrange: { color: Colors.destructive },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: withOpacity(Colors.inkPrimary, 0.1), marginHorizontal: 20, marginVertical: 4 },
   cancelRow: { alignItems: 'center', paddingVertical: 14 },
   cancelText: { fontFamily: FontFamily.bodyMedium, fontSize: 15, color: Colors.inkSecondary },

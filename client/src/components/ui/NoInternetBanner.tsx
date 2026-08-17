@@ -49,7 +49,7 @@ export function NoInternetBanner() {
         You&apos;re offline
       </Text>
       <Pressable style={s.retryBtn} onPress={onRetry} disabled={checking} hitSlop={8}>
-        <RefreshCw size={14} color={Colors.brandOrange} strokeWidth={2.2} />
+        <RefreshCw size={14} color={Colors.inkPrimary} strokeWidth={2.2} />
         <Text style={s.retryText}>{checking ? 'Checking…' : 'Retry'}</Text>
       </Pressable>
     </Animated.View>
@@ -97,11 +97,11 @@ const s = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 999,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.12),
   },
   retryText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 12,
-    color: Colors.brandOrange,
+    color: Colors.inkPrimary,
   },
 })

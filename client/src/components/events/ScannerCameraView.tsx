@@ -137,7 +137,7 @@ const s = StyleSheet.create({
     gap: 6,
   },
   resultSuccess: { backgroundColor: withOpacity(Colors.accentGreen, 0.9) },
-  resultWarning: { backgroundColor: withOpacity(Colors.brandOrange, 0.9) },
+  resultWarning: { backgroundColor: withOpacity(Colors.accentGold, 0.9) },
   resultError: { backgroundColor: withOpacity(Colors.destructive, 0.92) },
   resultText: { color: Colors.inkPrimary, fontFamily: FontFamily.bodyMedium, fontSize: 14 },
   scanningOverlay: {

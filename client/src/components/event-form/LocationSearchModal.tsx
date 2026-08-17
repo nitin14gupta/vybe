@@ -79,7 +79,7 @@ export function LocationSearchModal({
                 style={s.customRow}
                 onPress={() => onSelect({ place_id: 'custom', display_name: query.trim(), lat: null, lon: null })}
               >
-                <Search size={20} color={Colors.brandOrange} style={{ marginTop: 2, marginRight: 12 }} />
+                <Search size={20} color={Colors.inkPrimary} style={{ marginTop: 2, marginRight: 12 }} />
                 <View style={{ flex: 1 }}>
                   <Text style={s.customRowTitle} numberOfLines={2}>Use "{query.trim()}" as my address</Text>
                   <Text style={s.customRowSub}>Not in the list? Type it out, then drop the pin on the map yourself</Text>
@@ -134,7 +134,7 @@ const s = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: Colors.glassSurface,
   },
   customRowTitle: {
-    fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.brandOrange,
+    fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.inkPrimary,
     marginBottom: 4,
   },
   customRowSub: {

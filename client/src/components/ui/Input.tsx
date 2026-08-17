@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
   },
   errored: {
-    borderColor: Colors.brandCoral,
+    borderColor: Colors.destructive,
   },
   input: {
     flex: 1,
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   errorText: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 12,
-    color: Colors.brandCoral,
+    color: Colors.destructive,
     marginTop: 4,
   },
 })

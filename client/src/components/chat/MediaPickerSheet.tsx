@@ -39,7 +39,7 @@ export const MediaPickerSheet = forwardRef<BottomSheetModal, Props>(
           <View style={s.grid}>
             <Pressable style={s.tile} onPress={() => pick(onCamera)} android_ripple={{ color: withOpacity(Colors.inkPrimary, 0.06), borderless: false }}>
               <View style={s.iconWrap}>
-                <Camera size={26} color={Colors.brandOrange} strokeWidth={1.6} />
+                <Camera size={26} color={Colors.inkPrimary} strokeWidth={1.6} />
               </View>
               <Text style={s.tileLabel}>Camera</Text>
               <Text style={s.tileSub}>Photo</Text>
@@ -47,7 +47,7 @@ export const MediaPickerSheet = forwardRef<BottomSheetModal, Props>(
 
             <Pressable style={s.tile} onPress={() => pick(onLibrary)} android_ripple={{ color: withOpacity(Colors.inkPrimary, 0.06), borderless: false }}>
               <View style={s.iconWrap}>
-                <Images size={26} color={Colors.brandOrange} strokeWidth={1.6} />
+                <Images size={26} color={Colors.inkPrimary} strokeWidth={1.6} />
               </View>
               <Text style={s.tileLabel}>Photos</Text>
               <Text style={s.tileSub}>Select up to 12 from your library</Text>
@@ -94,7 +94,7 @@ const s = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.1),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.1),
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,

@@ -19,5 +19,5 @@ export function DeleteStepDots({ current, total }: Props) {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 6, justifyContent: 'center', marginBottom: 28 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.divider },
-  active: { width: 20, backgroundColor: Colors.brandCoral },
+  active: { width: 20, backgroundColor: Colors.brandOrange },
 })

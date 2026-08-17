@@ -15,7 +15,7 @@ export function DeleteConfirmStep({ typed, onTypedChange, deleting, onDelete, on
   return (
     <>
       <View style={[styles.iconCircle, styles.iconCircleRed]}>
-        <Trash2 size={36} color={Colors.brandCoral} strokeWidth={1.8} />
+        <Trash2 size={36} color={Colors.destructive} strokeWidth={1.8} />
       </View>
       <Text style={styles.title}>Final step</Text>
       <Text style={styles.body}>
@@ -54,11 +54,11 @@ export function DeleteConfirmStep({ typed, onTypedChange, deleting, onDelete, on
 const styles = StyleSheet.create({
   iconCircle: {
     width: 80, height: 80, borderRadius: 40,
-    backgroundColor: withOpacity(Colors.brandCoral, 0.1),
+    backgroundColor: withOpacity(Colors.destructive, 0.1),
     alignItems: 'center', justifyContent: 'center',
     alignSelf: 'center', marginBottom: 20,
   },
-  iconCircleRed: { backgroundColor: withOpacity(Colors.brandCoral, 0.15) },
+  iconCircleRed: { backgroundColor: withOpacity(Colors.destructive, 0.15) },
   title: {
     fontFamily: FontFamily.headingBold, fontSize: 26, letterSpacing: -0.5,
     color: Colors.inkPrimary, textAlign: 'center', marginBottom: 14,
@@ -67,18 +67,18 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.bodyRegular, fontSize: 15, color: Colors.inkSecondary,
     textAlign: 'center', lineHeight: 23, marginBottom: 8,
   },
-  deleteWord: { fontFamily: FontFamily.headingBold, color: Colors.brandCoral },
+  deleteWord: { fontFamily: FontFamily.headingBold, color: Colors.destructive },
   secondaryBtn: { marginTop: 10 },
 
   typeInput: {
     backgroundColor: Colors.surface, borderRadius: 14, borderWidth: 1,
-    borderColor: withOpacity(Colors.brandCoral, 0.4), paddingHorizontal: 16, paddingVertical: 14,
-    fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.brandCoral,
+    borderColor: withOpacity(Colors.destructive, 0.4), paddingHorizontal: 16, paddingVertical: 14,
+    fontFamily: FontFamily.headingBold, fontSize: 20, color: Colors.destructive,
     textAlign: 'center', letterSpacing: 4, marginBottom: 16, marginTop: 8,
   },
 
   finalDeleteBtn: { marginBottom: 4 },
   destructiveOutline: {
-    borderColor: withOpacity(Colors.brandCoral, 0.5),
+    borderColor: withOpacity(Colors.destructive, 0.5),
   },
 })

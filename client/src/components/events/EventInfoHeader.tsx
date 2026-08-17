@@ -22,7 +22,7 @@ export function EventInfoHeader({ event, onPressAddress }: Props) {
         <View style={styles.categoryChip}>
           {(() => {
             const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
-            return <TypeIcon size={12} color={Colors.brandOrange} strokeWidth={2} />
+            return <TypeIcon size={12} color={Colors.inkPrimary} strokeWidth={2} />
           })()}
           <Text style={styles.categoryChipText}>{event.event_type.replace('_', ' ')}</Text>
         </View>
@@ -39,7 +39,7 @@ export function EventInfoHeader({ event, onPressAddress }: Props) {
 
       <View style={styles.infoCard}>
         <View style={styles.infoRow}>
-          <Calendar size={16} color={Colors.brandOrange} />
+          <Calendar size={16} color={Colors.inkSecondary} />
           <Text style={styles.infoText}>{formatDateTime(event.date_time)}</Text>
         </View>
         {event.end_time && (
@@ -63,7 +63,7 @@ export function EventInfoHeader({ event, onPressAddress }: Props) {
                 showPill('Address copied', 'default')
               }}
             >
-              <MapPin size={16} color={Colors.brandOrange} />
+              <MapPin size={16} color={Colors.inkSecondary} />
               <Text style={styles.infoText}>{event.location_name}</Text>
               <ChevronRight size={16} color={Colors.inkDisabled} strokeWidth={1.8} />
             </Pressable>
@@ -87,13 +87,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.15),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.15),
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   categoryChipText: {
-    color: Colors.brandOrange,
+    color: Colors.inkPrimary,
     fontFamily: FontFamily.bodyMedium,
     fontSize: 12,
     textTransform: 'capitalize',
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   ageBadgeText: { color: Colors.inkSecondary, fontFamily: FontFamily.bodyMedium, fontSize: 12 },
 
   title: { fontFamily: FontFamily.headingBold, fontSize: 28, color: Colors.inkPrimary, lineHeight: 34, marginBottom: 4 },
-  daysAway: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.brandOrange, marginBottom: 20 },
+  daysAway: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.inkSecondary, marginBottom: 20 },
 
   infoCard: {
     backgroundColor: Colors.surface,
