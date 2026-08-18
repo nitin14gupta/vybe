@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { isEventPast } from '@/lib/dates'
 import type { EventSummary } from '@/api/apiService'
 
-const MAX = 3
+const MAX = 12
 
 interface RecentEventsStore {
   events: EventSummary[]

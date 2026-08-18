@@ -129,7 +129,8 @@
       "expo-web-browser",
       "@bacons/apple-targets",
       "expo-localization",
-      "expo-asset"
+      "expo-asset",
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true,
