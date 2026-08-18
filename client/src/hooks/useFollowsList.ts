@@ -70,6 +70,7 @@ export function useFollowsList(userId: string, type: 'followers' | 'following', 
     try {
       if (wasFollowing) await ApiService.unfollowUser(targetId)
       else await ApiService.followUser(targetId)
+      showPill(wasFollowing ? `Unfollowed ${user.name ?? 'them'}` : `Following ${user.name ?? 'them'}`, 'default')
     } catch {
       setAllUsers(prev => prev.map(u => u.id === targetId ? { ...u, is_following: wasFollowing } : u))
       showPill("Couldn't do that, try again", 'error')
@@ -79,14 +80,16 @@ export function useFollowsList(userId: string, type: 'followers' | 'following', 
   }, [allUsers, showPill])
 
   const removeFollower = useCallback(async (followerId: string) => {
+    const user = allUsers.find(u => u.id === followerId)
     setAllUsers(prev => prev.filter(u => u.id !== followerId))
     try {
       await ApiService.removeFollower(followerId)
+      showPill(`Removed ${user?.name ?? 'them'}`, 'default')
     } catch {
       showPill("Couldn't remove them, try again", 'error')
       load()
     }
-  }, [showPill, load])
+  }, [allUsers, showPill, load])
 
   const filtered = query.trim()
     ? allUsers.filter(u => {

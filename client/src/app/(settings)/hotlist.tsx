@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-nativ
 import { router, useFocusEffect } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ArrowLeft, Bookmark } from 'lucide-react-native'
-import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, PrimaryButton } from '@/components/ui'
+import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, PrimaryButton, BrandedRefreshControl } from '@/components/ui'
 import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 import ApiService, { type EventSummary } from '@/api/apiService'
 import { EventCard } from '@/components/events/EventCard'
@@ -15,6 +15,7 @@ export default function HotlistScreen() {
   const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
   const [events, setEvents] = useState<EventSummary[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -23,6 +24,12 @@ export default function HotlistScreen() {
     } catch {}
     finally { setLoading(false) }
   }, [])
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    await load()
+    setRefreshing(false)
+  }, [load])
 
   useFocusEffect(useCallback(() => { load() }, [load]))
 
@@ -52,6 +59,7 @@ export default function HotlistScreen() {
           contentContainerStyle={[s.list, { paddingTop: headerHeight + 8 }]}
           onScroll={onScroll}
           scrollEventThrottle={16}
+          refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
           renderItem={({ item }) => (
             <EventCard event={item} onPress={() => router.push(`/(events)/${item.id}` as any)} />
           )}

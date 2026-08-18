@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { hError } from '@/lib/haptics'
 import { useFocusEffect } from 'expo-router'
 import { ArrowLeft, ShieldOff } from 'lucide-react-native'
-import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn } from '@/components/ui'
+import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, BrandedRefreshControl } from '@/components/ui'
 import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 import ApiService, { BlockedUser } from '@/api/apiService'
 import { Colors, FontFamily, withOpacity } from '@/constants'
@@ -55,6 +55,7 @@ export default function BlockedUsersScreen() {
   const showPill = usePillStore(s => s.show)
   const [blocked, setBlocked] = useState<BlockedUser[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [confirmUser, setConfirmUser] = useState<BlockedUser | null>(null)
 
   const load = useCallback(async () => {
@@ -64,6 +65,12 @@ export default function BlockedUsersScreen() {
     } catch {}
     finally { setLoading(false) }
   }, [])
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    await load()
+    setRefreshing(false)
+  }, [load])
 
   useFocusEffect(useCallback(() => { load() }, [load]))
 
@@ -102,6 +109,7 @@ export default function BlockedUsersScreen() {
           contentContainerStyle={[s.list, { paddingTop: headerHeight + 8 }]}
           onScroll={onScroll}
           scrollEventThrottle={16}
+          refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
           renderItem={({ item }) => (
             <BlockedUserRow user={item} onUnblock={setConfirmUser} />
           )}

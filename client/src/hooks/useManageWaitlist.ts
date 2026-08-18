@@ -7,12 +7,14 @@ export function useManageWaitlist(id: string | undefined) {
 
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [loadError, setLoadError] = useState(false)
   const [admitting, setAdmitting] = useState(false)
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (isRefresh = false) => {
     if (!id) return
-    setLoading(true)
+    if (isRefresh) setRefreshing(true)
+    else setLoading(true)
     setLoadError(false)
     try {
       const res = await ApiService.getEventWaitlist(id)
@@ -22,6 +24,7 @@ export function useManageWaitlist(id: string | undefined) {
       showPill("Couldn't load waitlist", 'error')
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }, [id])
 
@@ -48,5 +51,5 @@ export function useManageWaitlist(id: string | undefined) {
   const pending = waitlist.filter(w => !w.offer_expires_at)
   const offered = waitlist.filter(w => w.offer_expires_at)
 
-  return { waitlist, loading, loadError, admitting, pending, offered, handleAdmit, reload: load }
+  return { waitlist, loading, refreshing, loadError, admitting, pending, offered, handleAdmit, reload: load }
 }

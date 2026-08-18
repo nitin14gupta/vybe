@@ -11,7 +11,7 @@ import { Flame, RefreshCw, Ghost, Search } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
-import { VibeInboxSheet, VibeIcebreakerModal, LogoMark, ProfileMenuSheet, PrimaryButton } from '@/components/ui'
+import { VibeInboxSheet, VibeIcebreakerModal, LogoMark, ProfileMenuSheet, PrimaryButton, BrandedRefreshControl } from '@/components/ui'
 import { ChatSearchModal } from '@/components/chat/ChatSearchModal'
 import { usePillStore } from '@/store/pillStore'
 import { useConversations } from '@/hooks/useConversations'
@@ -280,8 +280,7 @@ export default function ChatScreen() {
           showsVerticalScrollIndicator={false}
           onScroll={minimizeScroll}
           scrollEventThrottle={16}
-          onRefresh={handleRefresh}
-          refreshing={refreshing}
+          refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
           contentContainerStyle={s.listContent}
           ListHeaderComponent={null}
           onEndReachedThreshold={0.4}

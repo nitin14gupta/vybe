@@ -264,15 +264,23 @@ export function useChatScreen(convId: string) {
 
   const handleBlock = useCallback(async () => {
     if (!partnerId) return
-    try { await ApiService.blockUser(partnerId); setBlockStatus('i_blocked') }
+    try {
+      await ApiService.blockUser(partnerId)
+      setBlockStatus('i_blocked')
+      showPill(`Blocked ${partnerName ?? 'this person'}`, 'default')
+    }
     catch { showPill("Couldn't block this person", 'error') }
-  }, [partnerId, showPill])
+  }, [partnerId, partnerName, showPill])
 
   const handleUnblock = useCallback(async () => {
     if (!partnerId) return
-    try { await ApiService.unblockUser(partnerId); setBlockStatus('none') }
+    try {
+      await ApiService.unblockUser(partnerId)
+      setBlockStatus('none')
+      showPill(`Unblocked ${partnerName ?? 'this person'}`, 'default')
+    }
     catch { showPill("Couldn't unblock, try again", 'error') }
-  }, [partnerId, showPill])
+  }, [partnerId, partnerName, showPill])
 
   const handleDeleteChat = useCallback(async () => {
     try { await ApiService.deleteConversation(convId); router.back() }
@@ -280,7 +288,10 @@ export function useChatScreen(convId: string) {
   }, [convId, showPill])
 
   const handleReport = useCallback(async (reason: string) => {
-    try { if (partnerId) await ApiService.reportUser(partnerId, reason) }
+    try {
+      if (partnerId) await ApiService.reportUser(partnerId, reason)
+      showPill('Report submitted', 'success')
+    }
     catch { showPill('Report not sent, try again', 'error') }
   }, [partnerId, showPill])
 

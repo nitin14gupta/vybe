@@ -8,11 +8,13 @@ export function useAttendees(id: string | undefined) {
   const [all, setAll] = useState<EventAttendee[]>([])
   const [event, setEvent] = useState<EventDetail | null>(null)
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [loadError, setLoadError] = useState(false)
 
-  const load = useCallback(() => {
+  const load = useCallback((isRefresh = false) => {
     if (!id) return
-    setLoading(true)
+    if (isRefresh) setRefreshing(true)
+    else setLoading(true)
     setLoadError(false)
     Promise.all([
       ApiService.getEventAttendees(id),
@@ -23,7 +25,7 @@ export function useAttendees(id: string | undefined) {
         setEvent(eventRes)
       })
       .catch(() => setLoadError(true))
-      .finally(() => setLoading(false))
+      .finally(() => { setLoading(false); setRefreshing(false) })
   }, [id])
 
   useEffect(() => { load() }, [load])
@@ -50,5 +52,8 @@ export function useAttendees(id: string | undefined) {
     [all],
   )
 
-  return { loading, loadError, event, going, checkedIn, notArrived, waitlist, scannerStatus, reload: load }
+  return {
+    loading, refreshing, loadError, event, going, checkedIn, notArrived, waitlist, scannerStatus,
+    reload: load,
+  }
 }

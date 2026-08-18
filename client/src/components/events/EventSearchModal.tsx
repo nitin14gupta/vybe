@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { View, Text, StyleSheet, Modal, FlatList, ScrollView, Pressable } from 'react-native'
 import { router } from 'expo-router'
-import { X, Flame, ListFilter } from 'lucide-react-native'
+import { X, ListFilter } from 'lucide-react-native'
 import { hTap, hSelection } from '@/lib/haptics'
 import { Colors, FontFamily, FILTER_CHIPS, matchesChip } from '@/constants'
-import { Screen, SearchBar, EventListCard, EventListCardSkeleton } from '@/components/ui'
+import { Screen, SearchBar, EventListCard, EventListCardSkeleton, LogoMark } from '@/components/ui'
 import { useEventSearch } from '@/hooks/useEventSearch'
 import type { EventSummary } from '@/api/apiService'
 
@@ -113,7 +113,7 @@ export function EventSearchModal({ visible, onClose, nearbyEvents, lat, lng, nea
             </View>
           ) : searched && results.length === 0 ? (
             <View style={s.center}>
-              <Flame size={44} color={Colors.glassTextDisabled} strokeWidth={1.2} />
+              <LogoMark size={72} opacity={0.1} style={{ marginBottom: 4 }} />
               <Text style={s.emptyTitle}>No events found</Text>
               <Text style={s.emptySub}>Try a different name or location</Text>
             </View>
@@ -153,7 +153,9 @@ export function EventSearchModal({ visible, onClose, nearbyEvents, lat, lng, nea
             ListEmptyComponent={
               !hostedLoading && !nearbyLoading ? (
                 <View style={s.center}>
+                  <LogoMark size={72} opacity={0.1} style={{ marginBottom: 4 }} />
                   <Text style={s.emptyTitle}>No events nearby yet</Text>
+                  <Text style={s.emptySub}>Check back soon, or try a different city.</Text>
                 </View>
               ) : null
             }

@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { AlertCircle, ArrowLeft, QrCode, Users } from 'lucide-react-native'
 import { Colors, FontFamily, Spacing, Radius, withOpacity } from '@/constants'
-import { BrandedLoader, EmptyState } from '@/components/ui'
+import { BrandedLoader, EmptyState, BrandedRefreshControl } from '@/components/ui'
 import { AttendeeRow } from '@/components/events/AttendeeRow'
 import { AttendeeFilterPills, type AttendeeFilter } from '@/components/events/AttendeeFilterPills'
 import { useAttendees } from '@/hooks/useAttendees'
@@ -19,7 +19,7 @@ export default function AttendeesScreen() {
   const showPill = usePillStore(s => s.show)
   const [filter, setFilter] = useState<AttendeeFilter>('all')
 
-  const { loading, loadError, going, checkedIn, notArrived, waitlist, scannerStatus, reload } = useAttendees(id)
+  const { loading, refreshing, loadError, going, checkedIn, notArrived, waitlist, scannerStatus, reload } = useAttendees(id)
 
   const handleScannerPress = () => {
     if (scannerStatus === 'ended') {
@@ -119,6 +119,7 @@ export default function AttendeesScreen() {
           keyExtractor={item => item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+          refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={() => reload(true)} />}
           renderItem={({ item, index }) => {
             const pos = item.status === 'waitlist' ? index - going.length + 1 : undefined
             return <AttendeeRow item={item} position={pos} />

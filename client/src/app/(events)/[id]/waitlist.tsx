@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { AlertCircle, ArrowLeft, Users } from 'lucide-react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Colors, FontFamily } from '@/constants'
-import { BrandedLoader, EmptyState } from '@/components/ui'
+import { BrandedLoader, EmptyState, BrandedRefreshControl } from '@/components/ui'
 import { WaitlistEntryRow } from '@/components/events/WaitlistEntryRow'
 import { useManageWaitlist } from '@/hooks/useManageWaitlist'
 
@@ -13,7 +13,7 @@ export default function ManageWaitlistScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
 
-  const { waitlist, loading, loadError, admitting, pending, offered, handleAdmit, reload } = useManageWaitlist(id)
+  const { waitlist, loading, refreshing, loadError, admitting, pending, offered, handleAdmit, reload } = useManageWaitlist(id)
 
   return (
     <View style={[s.root, { paddingTop: insets.top }]}>
@@ -65,6 +65,7 @@ export default function ManageWaitlistScreen() {
             style={s.scroll}
             contentContainerStyle={[s.scrollContent, { paddingBottom: insets.bottom + 24 }]}
             showsVerticalScrollIndicator={false}
+            refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={() => reload(true)} />}
           >
             {offered.length > 0 && (
               <>

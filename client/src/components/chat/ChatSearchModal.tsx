@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { View, Text, StyleSheet, Modal, FlatList, Pressable } from 'react-native'
 import { Image } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { ArrowLeft, X, Users } from 'lucide-react-native'
+import { ArrowLeft, X } from 'lucide-react-native'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
-import { SearchBar } from '@/components/ui'
+import { SearchBar, LogoMark } from '@/components/ui'
 import { useChatSearchHistoryStore, type ChatSearchHistoryEntry } from '@/store/chatSearchHistoryStore'
 import { useChatShareTargets } from '@/hooks/useChatShareTargets'
 import type { Conversation } from '@/api/apiService'
@@ -151,8 +151,9 @@ export function ChatSearchModal({ visible, onClose, conversations, onSelectConve
             )}
             ListEmptyComponent={
               <View style={s.emptyWrap}>
-                <Users size={40} color={Colors.inkDisabled} strokeWidth={1.2} />
-                <Text style={s.emptyText}>No conversations match</Text>
+                <LogoMark size={72} opacity={0.1} style={{ marginBottom: 4 }} />
+                <Text style={s.emptyTitle}>No conversations match</Text>
+                <Text style={s.emptyText}>Try a different name or username.</Text>
               </View>
             }
           />
@@ -208,8 +209,9 @@ export function ChatSearchModal({ visible, onClose, conversations, onSelectConve
             ListEmptyComponent={
               history.length === 0 ? (
                 <View style={s.emptyWrap}>
-                  <Users size={40} color={Colors.inkDisabled} strokeWidth={1.2} />
-                  <Text style={s.emptyText}>Vibe with people to start chatting</Text>
+                  <LogoMark size={72} opacity={0.1} style={{ marginBottom: 4 }} />
+                  <Text style={s.emptyTitle}>No one to message yet</Text>
+                  <Text style={s.emptyText}>Vibe with people to start chatting with them.</Text>
                 </View>
               ) : null
             }
@@ -276,6 +278,7 @@ const s = StyleSheet.create({
   name: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.inkPrimary },
   username: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkDisabled },
   removeBtn: { padding: 4 },
-  emptyWrap: { alignItems: 'center', justifyContent: 'center', gap: 10, paddingTop: 80, paddingHorizontal: 32 },
+  emptyWrap: { alignItems: 'center', justifyContent: 'center', gap: 6, paddingTop: 80, paddingHorizontal: 32 },
+  emptyTitle: { fontFamily: FontFamily.headingBold, fontSize: 16, color: Colors.inkPrimary, marginTop: 4 },
   emptyText: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center' },
 })

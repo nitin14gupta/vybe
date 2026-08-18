@@ -10,12 +10,9 @@ import { hTap, hSuccess } from '@/lib/haptics'
 import { Colors, FontFamily, withOpacity } from '@/constants'
 import type { VibeRequest } from '@/api/apiService'
 
-// Flat shapes only, no background on the wrapper — AutoSkeletonView shimmers
-// each child by its own background color; a solid wrapper competes with
-// them and just reads as static.
 function RequestCardSkeleton() {
   return (
-    <View style={s.card}>
+    <View style={s.skCard}>
       <View style={[s.cardAvatar, sk.avatar]} />
       <View style={s.cardInfo}>
         <View style={[sk.line, { width: '50%', marginBottom: 6 }]} />
@@ -163,6 +160,7 @@ const s = StyleSheet.create({
   countBadge: { width: 22, height: 22, borderRadius: 11, backgroundColor: Colors.inkPrimary, alignItems: 'center', justifyContent: 'center' },
   countBadgeText: { fontFamily: FontFamily.bodySemiBold, fontSize: 11, color: Colors.background },
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.skeletonBase, borderRadius: 16, borderWidth: 1, borderColor: Colors.surfaceMuted, padding: 14, gap: 12 },
+  skCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, borderWidth: 1, borderColor: Colors.surfaceMuted, padding: 14, gap: 12 },
   cardActioned: { opacity: 0.55 },
   cardLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   cardAvatar: { width: 52, height: 52, borderRadius: 26 },

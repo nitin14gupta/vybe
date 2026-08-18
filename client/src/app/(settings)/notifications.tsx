@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import ApiService, { AppNotification } from '@/api/apiService'
 import { Colors, FontFamily } from '@/constants'
 import { notifEntityToTarget, targetToHref } from '@/lib/deepLink'
-import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn } from '@/components/ui'
+import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, BrandedRefreshControl } from '@/components/ui'
 import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 import { useAuthStore } from '@/store/auth'
 import { usePillStore } from '@/store/pillStore'
@@ -64,6 +64,7 @@ export default function NotificationsScreen() {
   const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
   const [notifs, setNotifs] = useState<AppNotification[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [loadError, setLoadError] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(false)
@@ -120,6 +121,12 @@ export default function NotificationsScreen() {
   }, [showPill, loadingMore, hasMore])
 
   useFocusEffect(useCallback(() => { loadInitial() }, [loadInitial]))
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    await loadInitial()
+    setRefreshing(false)
+  }, [loadInitial])
 
   const markRead = async (item: AppNotification) => {
     if (item.read_at) return
@@ -217,6 +224,7 @@ export default function NotificationsScreen() {
           onScroll={onScroll}
           scrollEventThrottle={16}
           stickySectionHeadersEnabled={false}
+          refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
           onEndReachedThreshold={0.4}
           onEndReached={loadMore}
           ListFooterComponent={

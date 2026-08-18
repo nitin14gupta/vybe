@@ -207,7 +207,8 @@ function ShareToChatSheetCore({
           {Header}
           <View style={st.emptyWrap}>
             <Users size={32} color={Colors.inkDisabled} strokeWidth={1.2} />
-            <Text style={st.emptyText}>Vibe with people to share here</Text>
+            <Text style={st.emptyTitle}>No one to share with yet</Text>
+            <Text style={st.emptyText}>Vibe with people to share here.</Text>
           </View>
         </BottomSheetView>
       ) : (
@@ -224,7 +225,13 @@ function ShareToChatSheetCore({
           renderItem={({ item }) => (
             <TargetTile conv={item} selected={selected.has(item.id)} onPress={() => toggle(item.id)} />
           )}
-          ListEmptyComponent={<Text style={st.emptyText}>No matches</Text>}
+          ListEmptyComponent={
+            <View style={st.emptyWrap}>
+              <Users size={32} color={Colors.inkDisabled} strokeWidth={1.2} />
+              <Text style={st.emptyTitle}>No matches</Text>
+              <Text style={st.emptyText}>Try a different name.</Text>
+            </View>
+          }
         />
       )}
     </BottomSheetModal>
@@ -260,7 +267,8 @@ const st = StyleSheet.create({
   skGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12 },
   skLine: { width: 48, height: 10, borderRadius: 5, backgroundColor: Colors.surfaceMuted },
 
-  emptyWrap: { alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 48 },
+  emptyWrap: { alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 48 },
+  emptyTitle: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.inkPrimary, marginTop: 4 },
   emptyText: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, textAlign: 'center' },
 
   loadingMoreRow: { paddingVertical: 12, alignItems: 'center' },
