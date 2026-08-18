@@ -7,6 +7,7 @@ from db.config import get_db
 from utils.push import send_push
 from routes.payments import PLATFORM_FEE_INR, HOST_COMMISSION_RATE
 from routes.users import compute_host_badges
+from middleware.rate_limit import enforce_rate_limit
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -1113,6 +1114,8 @@ def create_event(body: CreateEventBody, background_tasks: BackgroundTasks, curre
 
     # Check monthly free event limit
     uid = current_user["id"]
+    enforce_rate_limit(f"events:create:user:{uid}", max_events=10, window_seconds=86400,
+                        message="You're creating events too quickly, try again later.")
     with get_db() as (cur, _):
         cur.execute(
             """
@@ -2107,6 +2110,8 @@ def checkin_attendee(event_id: str, body: CheckinBody, background_tasks: Backgro
 @router.post("/{event_id}/report", status_code=201)
 def report_event(event_id: str, body: ReportEventBody, current_user: dict = Depends(get_current_user)):
     uid = current_user["id"]
+    enforce_rate_limit(f"events:report:user:{uid}", max_events=10, window_seconds=3600,
+                        message="You're reporting too quickly, try again later.")
     allowed = {"fake_scam", "inappropriate_content", "misleading_info", "spam", "dangerous_activity", "other"}
     if body.reason not in allowed:
         raise HTTPException(status_code=400, detail="Invalid reason")
@@ -2138,6 +2143,8 @@ def submit_review(event_id: str, body: ReviewBody, background_tasks: BackgroundT
         raise HTTPException(status_code=422, detail="Rating must be between 1 and 5")
 
     uid = current_user["id"]
+    enforce_rate_limit(f"events:review:user:{uid}", max_events=20, window_seconds=86400,
+                        message="You're submitting reviews too quickly, try again later.")
     with get_db() as (cur, conn):
         cur.execute("SELECT date_time FROM events WHERE id = %s", (event_id,))
         ev = cur.fetchone()

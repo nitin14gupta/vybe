@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from middleware.auth import get_current_user
 from db.config import get_db
+from middleware.rate_limit import enforce_rate_limit
 from routes.notifications import notify_vibe_accepted, notify_vibe_request
 from utils.push import send_push
 
@@ -27,6 +28,9 @@ def send_vibe(body: SendVibeRequest, background_tasks: BackgroundTasks, current_
 
     if sender_id == receiver_id:
         raise HTTPException(status_code=400, detail="Cannot vibe yourself")
+
+    enforce_rate_limit(f"vibes:send:user:{sender_id}", max_events=30, window_seconds=3600,
+                        message="You're sending vibes too quickly, try again later.")
 
     with get_db() as (cur, conn):
         cur.execute("SELECT COALESCE(is_deleted, FALSE) AS is_deleted FROM users WHERE id = %s::uuid", (receiver_id,))
