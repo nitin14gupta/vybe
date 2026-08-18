@@ -238,7 +238,7 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
               <Image
                 key={url + i}
                 source={{ uri: url }}
-                style={[s.stackAvatar, i > 0 && { marginLeft: -8 }, { zIndex: 3 - i }]}
+                style={[s.stackAvatar, i > 0 && { marginLeft: -8 }, { zIndex: i }]}
                 contentFit="cover"
                 cachePolicy="memory-disk"
                 priority="low"
@@ -246,7 +246,7 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
               />
             ))}
             {event.attendee_count > 3 && (
-              <View style={[s.stackAvatar, s.stackAvatarMore, { marginLeft: -8, zIndex: 0 }]}>
+              <View style={[s.stackAvatar, s.stackAvatarMore, { marginLeft: -8, zIndex: 3 }]}>
                 <Text style={s.stackAvatarMoreText}>+{event.attendee_count - 3}</Text>
               </View>
             )}

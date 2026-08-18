@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
-import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { View, Pressable, StyleSheet } from 'react-native'
 import { useFocusEffect } from 'expo-router'
 import { useRecentEventsStore } from '@/store/recentEventsStore'
-import { EventListCard } from '@/components/ui'
+import { EventListCard, ShimmerText } from '@/components/ui'
 import { hTap } from '@/lib/haptics'
 import { Colors, FontFamily } from '@/constants'
 
@@ -29,10 +29,10 @@ export function RecentlyViewedSection({ onEmptyChange }: Props) {
   return (
     <View style={s.wrap}>
       <View style={s.header}>
-        <Text style={s.title}>Recently Viewed</Text>
+        <ShimmerText style={s.title}>Recently Viewed</ShimmerText>
         {hasMore && (
           <Pressable onPress={() => { hTap(); setExpanded(v => !v) }} hitSlop={8}>
-            <Text style={s.seeAll}>{expanded ? 'Show less' : 'See all'}</Text>
+            <ShimmerText style={s.seeAll}>{expanded ? 'Show less' : 'See all'}</ShimmerText>
           </Pressable>
         )}
       </View>
