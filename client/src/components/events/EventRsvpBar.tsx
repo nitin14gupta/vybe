@@ -5,8 +5,8 @@ import { useRouter } from 'expo-router'
 import { ChevronRight, PartyPopper, QrCode, ScanLine, Star, Users } from 'lucide-react-native'
 import { Colors, FontFamily, withOpacity } from '@/constants'
 import { hSuccess, hTap } from '@/lib/haptics'
-import { PrimaryButton } from '@/components/ui'
-import { fmtCountdown, formatPrice, hoursUntil, type RsvpStatus } from './eventDetailUtils'
+import { PrimaryButton, TickingCountdown } from '@/components/ui'
+import { formatPrice, hoursUntil, type RsvpStatus } from './eventDetailUtils'
 import type { EventDetail } from '@/api/apiService'
 
 interface Props {
@@ -154,13 +154,13 @@ export function EventRsvpBar({
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
                 style={styles.offerGradient}
               >
-                <View style={styles.offerTitleRow}>
-                  <Text style={styles.offerTitle}>Spot Reserved!</Text>
-                  <PartyPopper size={13} color={Colors.inkPrimary} strokeWidth={2} />
-                </View>
-                <Text style={styles.offerTimer}>
-                  Confirm by {offerSecondsLeft != null ? fmtCountdown(offerSecondsLeft) : '...'}
-                </Text>
+                <PartyPopper size={14} color={Colors.inkPrimary} strokeWidth={2} />
+                <Text style={styles.offerTimerLabel}>Confirm by</Text>
+                {offerSecondsLeft != null ? (
+                  <TickingCountdown totalSeconds={offerSecondsLeft} digitColor={Colors.inkPrimary} fontSize={14} />
+                ) : (
+                  <Text style={styles.offerTimer}>...</Text>
+                )}
               </LinearGradient>
             </Pressable>
           ) : isWaitlist ? (
@@ -293,24 +293,25 @@ const styles = StyleSheet.create({
   },
   waitlistJoinText: { color: Colors.inkPrimary, fontFamily: FontFamily.bodySemiBold, fontSize: 15 },
 
-  offerBtn: { borderRadius: 16, overflow: 'hidden', minWidth: 150 },
+  offerBtn: { borderRadius: 14, overflow: 'hidden', minWidth: 150 },
   offerGradient: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
-  },
-  offerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  offerTitle: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 13,
-    color: Colors.inkPrimary,
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   offerTimer: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 16,
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 14,
     color: Colors.inkPrimary,
     letterSpacing: 0.5,
+  },
+  offerTimerLabel: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 14,
+    color: Colors.inkPrimary,
   },
   eventFullBtn: {
     backgroundColor: Colors.elevated,
