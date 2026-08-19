@@ -1,5 +1,7 @@
+import { useEffect, useRef } from 'react'
 import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native'
 import { Bookmark } from 'lucide-react-native'
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated'
 import { Colors } from '@/constants'
 import { useHotlistToggle } from '@/hooks/useHotlistToggle'
 
@@ -20,15 +22,32 @@ export function HotlistButton({
   size?: number
 }) {
   const { hotlisted, toggle } = useHotlistToggle(eventId, initial)
+  const scale = useSharedValue(1)
+  const mounted = useRef(false)
+
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true
+      return
+    }
+    scale.value = withSequence(
+      withTiming(1.15, { duration: 90, easing: Easing.out(Easing.quad) }),
+      withTiming(1, { duration: 130, easing: Easing.out(Easing.quad) })
+    )
+  }, [hotlisted])
+
+  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }))
 
   return (
     <Pressable style={[s.btn, style]} onPress={toggle} hitSlop={8}>
-      <Bookmark
-        size={size}
-        color={hotlisted ? Colors.brandOrange : Colors.inkPrimary}
-        fill={hotlisted ? Colors.brandOrange : 'transparent'}
-        strokeWidth={2}
-      />
+      <Animated.View style={animatedStyle}>
+        <Bookmark
+          size={size}
+          color={hotlisted ? Colors.brandOrange : Colors.inkPrimary}
+          fill={hotlisted ? Colors.brandOrange : 'transparent'}
+          strokeWidth={2}
+        />
+      </Animated.View>
     </Pressable>
   )
 }

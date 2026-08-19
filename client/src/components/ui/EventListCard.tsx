@@ -5,7 +5,7 @@ import { router } from 'expo-router'
 import { MapPin, ChevronRight, Calendar } from 'lucide-react-native'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { Colors, FontFamily, Radius, EVENT_ICONS, EVENT_ICON_FALLBACK, withOpacity } from '@/constants'
-import { formatEventDate } from '@/components/events/EventCard'
+import { formatEventDate, AttendeeAvatarStack } from '@/components/events/EventCard'
 import { HotlistButton } from '@/components/events/HotlistButton'
 import { isEventPast } from '@/lib/dates'
 import type { EventSummary } from '@/api/apiService'
@@ -81,6 +81,14 @@ function EventListCardBase({
             <Text style={s.loc} numberOfLines={1}>{event.location_name}</Text>
           </View>
         ) : null}
+        {event.attendee_count > 0 && (
+          <AttendeeAvatarStack
+            avatars={event.attendee_avatars}
+            count={event.attendee_count}
+            avatarSize={15}
+            textStyle={s.going}
+          />
+        )}
       </View>
 
       <View style={s.chevronWrap}>
@@ -168,6 +176,7 @@ const s = StyleSheet.create({
   time: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.inkSecondary },
   locRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   loc: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary, flexShrink: 1 },
+  going: { fontFamily: FontFamily.bodyRegular, fontSize: 10, color: Colors.inkDisabled, marginLeft: 4 },
 
   chevronWrap: {
     width: 30, height: 30, borderRadius: 15,

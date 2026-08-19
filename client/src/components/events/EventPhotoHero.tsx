@@ -1,12 +1,14 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Dimensions, FlatList, Pressable, StyleSheet, View } from 'react-native'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { ArrowLeft, Bookmark, Flag, MoreVertical, Share2 } from 'lucide-react-native'
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated'
 import { Colors, EVENT_ICONS, EVENT_ICON_FALLBACK, withOpacity } from '@/constants'
 import { hTap } from '@/lib/haptics'
 import { useHotlistToggle } from '@/hooks/useHotlistToggle'
 import { isEventPast } from '@/lib/dates'
+import { StepDots } from '@/components/ui/StepDots'
 import type { EventDetail } from '@/api/apiService'
 
 const { width: W } = Dimensions.get('window')
@@ -53,11 +55,7 @@ export function EventPhotoHero({ event, isHost, topInset, onBack, onShare, onOpt
             )}
           />
           {coverPhotos.length > 1 && (
-            <View style={styles.photoDots}>
-              {coverPhotos.map((_, i) => (
-                <View key={i} style={[styles.photoDot, i === photoIdx && styles.photoDotActive]} />
-              ))}
-            </View>
+            <StepDots step={photoIdx + 1} total={coverPhotos.length} variant="overlay" />
           )}
         </>
       ) : (
@@ -134,15 +132,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  photoDots: {
-    position: 'absolute',
-    bottom: 12,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  photoDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: withOpacity(Colors.inkPrimary, 0.4) },
-  photoDotActive: { backgroundColor: Colors.inkPrimary, width: 18 },
 })

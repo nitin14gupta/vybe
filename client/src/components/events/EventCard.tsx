@@ -1,7 +1,8 @@
-import { Fragment, memo, useState, type ReactNode } from 'react'
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native'
+import { Fragment, memo, useEffect, useState, type ReactNode } from 'react'
+import { Pressable, StyleSheet, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Image } from 'expo-image'
+import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated'
 import { MapPin, Flame } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
@@ -12,6 +13,84 @@ import { useAuthStore } from '@/store/auth'
 import { HotlistButton } from './HotlistButton'
 import { EventQuickPeekSheet } from './EventQuickPeekSheet'
 import type { EventSummary } from '@/api/apiService'
+
+const StaggerIn = memo(function StaggerIn({ index, style, children }: { index: number; style?: StyleProp<ViewStyle>; children: ReactNode }) {
+  const opacity = useSharedValue(0)
+  const scale = useSharedValue(0.6)
+
+  useEffect(() => {
+    opacity.value = withDelay(index * 35, withTiming(1, { duration: 220 }))
+    scale.value = withDelay(index * 35, withSpring(1, { damping: 14, stiffness: 260 }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value, transform: [{ scale: scale.value }] }))
+
+  return <Animated.View style={[style, animatedStyle]}>{children}</Animated.View>
+})
+
+// Stacked avatars (up to 3) + "+N" overflow badge + "{count} going" label,
+// each staggering in on mount. Shared by EventCard's grid layout and
+// EventListCard's compact row so both list modes show the same social proof.
+export function AttendeeAvatarStack({
+  avatars,
+  count,
+  avatarSize = 18,
+  style,
+  textStyle,
+}: {
+  avatars: string[] | undefined
+  count: number
+  avatarSize?: number
+  style?: StyleProp<ViewStyle>
+  textStyle?: StyleProp<TextStyle>
+}) {
+  const avatarStyle = { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }
+  const overlap = -(avatarSize * 0.44)
+
+  return (
+    <View style={[aas.row, style]}>
+      {avatars?.slice(0, 3).map((url, i) => (
+        <StaggerIn key={url + i} index={i} style={[i > 0 && { marginLeft: overlap }, { zIndex: i }]}>
+          <Image
+            source={{ uri: url }}
+            style={[aas.avatar, avatarStyle]}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            priority="low"
+            transition={150}
+          />
+        </StaggerIn>
+      ))}
+      {count > 3 && (
+        <StaggerIn index={3} style={{ marginLeft: overlap, zIndex: 3 }}>
+          <View style={[aas.avatar, avatarStyle, aas.avatarMore]}>
+            <Text style={aas.avatarMoreText}>+{count - 3}</Text>
+          </View>
+        </StaggerIn>
+      )}
+      <Text style={[aas.going, textStyle]}>{count} going</Text>
+    </View>
+  )
+}
+
+const aas = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center' },
+  avatar: {
+    borderWidth: 1.5, borderColor: Colors.surface,
+    backgroundColor: Colors.surfaceMuted,
+  },
+  avatarMore: {
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.elevated,
+  },
+  avatarMoreText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 8,
+    color: Colors.inkSecondary,
+  },
+  going: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, marginLeft: 4 },
+})
 
 export function HostPill({
   name,
@@ -233,25 +312,7 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
           {event.distance_km != null && (
             <Text style={s.dist}>{event.distance_km} km</Text>
           )}
-          <View style={s.attendeesRow}>
-            {event.attendee_avatars?.slice(0, 3).map((url, i) => (
-              <Image
-                key={url + i}
-                source={{ uri: url }}
-                style={[s.stackAvatar, i > 0 && { marginLeft: -8 }, { zIndex: i }]}
-                contentFit="cover"
-                cachePolicy="memory-disk"
-                priority="low"
-                transition={150}
-              />
-            ))}
-            {event.attendee_count > 3 && (
-              <View style={[s.stackAvatar, s.stackAvatarMore, { marginLeft: -8, zIndex: 3 }]}>
-                <Text style={s.stackAvatarMoreText}>+{event.attendee_count - 3}</Text>
-              </View>
-            )}
-            <Text style={s.attendees}>{event.attendee_count} going</Text>
-          </View>
+          <AttendeeAvatarStack avatars={event.attendee_avatars} count={event.attendee_count} />
         </View>
       </View>
 
@@ -394,22 +455,6 @@ const s = StyleSheet.create({
   eventType: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.inkSecondary, textTransform: 'capitalize' },
   location: { fontFamily: FontFamily.bodyRegular, fontSize: 12, color: Colors.inkSecondary },
   dist: { fontFamily: FontFamily.bodyMedium, fontSize: 12, color: Colors.inkDisabled },
-  attendees: { fontFamily: FontFamily.bodyRegular, fontSize: 11, color: Colors.inkDisabled, marginLeft: 4 },
-  attendeesRow: { flexDirection: 'row', alignItems: 'center' },
-  stackAvatar: {
-    width: 18, height: 18, borderRadius: 9,
-    borderWidth: 1.5, borderColor: Colors.surface,
-    backgroundColor: Colors.surfaceMuted,
-  },
-  stackAvatarMore: {
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: Colors.elevated,
-  },
-  stackAvatarMoreText: {
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 8,
-    color: Colors.inkSecondary,
-  },
 
   spotsBar: {
     flexDirection: 'row', alignItems: 'center', gap: 6,

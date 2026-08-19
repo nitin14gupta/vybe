@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { View, Text, Pressable, FlatList, Dimensions, StyleSheet } from "react-native";
 import { Image as ExpoImage } from "expo-image";
-import { Colors, FontFamily, withOpacity } from '@/constants';
+import { Colors, FontFamily } from '@/constants';
+import { StepDots } from '@/components/ui/StepDots';
 
 const { width: W } = Dimensions.get("window");
 
@@ -52,11 +53,7 @@ export function ProfilePhotoCarousel({ photos, name, onOpenPhoto }: Props) {
         )}
       />
       {photos.length > 1 && (
-        <View style={s.photoDots}>
-          {photos.map((_, i) => (
-            <View key={i} style={[s.photoDot, i === photoIdx && s.photoDotActive]} />
-          ))}
-        </View>
+        <StepDots step={photoIdx + 1} total={photos.length} variant="overlay" />
       )}
     </View>
   );
@@ -75,18 +72,4 @@ const s = StyleSheet.create({
     fontSize: 96,
     color: Colors.inkSecondary,
   },
-  photoDots: {
-    position: "absolute",
-    bottom: 12,
-    flexDirection: "row",
-    alignSelf: "center",
-    gap: 6,
-  },
-  photoDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: withOpacity(Colors.inkPrimary, 0.4),
-  },
-  photoDotActive: { backgroundColor: Colors.inkPrimary, width: 16 },
 });
