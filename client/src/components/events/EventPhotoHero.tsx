@@ -30,6 +30,20 @@ export function EventPhotoHero({ event, isHost, topInset, onBack, onShare, onOpt
   const { hotlisted, toggle: toggleHotlist } = useHotlistToggle(event.id, event.is_hotlisted)
   const eventIsPast = isEventPast(event)
 
+  const bookmarkScale = useSharedValue(1)
+  const bookmarkMounted = useRef(false)
+  useEffect(() => {
+    if (!bookmarkMounted.current) {
+      bookmarkMounted.current = true
+      return
+    }
+    bookmarkScale.value = withSequence(
+      withTiming(1.15, { duration: 90, easing: Easing.out(Easing.quad) }),
+      withTiming(1, { duration: 130, easing: Easing.out(Easing.quad) })
+    )
+  }, [hotlisted])
+  const bookmarkStyle = useAnimatedStyle(() => ({ transform: [{ scale: bookmarkScale.value }] }))
+
   return (
     <View style={styles.hero}>
       {coverPhotos.length > 0 ? (
@@ -85,12 +99,14 @@ export function EventPhotoHero({ event, isHost, topInset, onBack, onShare, onOpt
         <View style={{ flexDirection: 'row', gap: 4 }}>
           {!eventIsPast && (
             <Pressable style={styles.heroIconBtn} onPress={toggleHotlist} hitSlop={10}>
-              <Bookmark
-                size={20}
-                color={hotlisted ? Colors.brandOrange : Colors.inkPrimary}
-                fill={hotlisted ? Colors.brandOrange : 'transparent'}
-                strokeWidth={2}
-              />
+              <Animated.View style={bookmarkStyle}>
+                <Bookmark
+                  size={20}
+                  color={hotlisted ? Colors.brandOrange : Colors.inkPrimary}
+                  fill={hotlisted ? Colors.brandOrange : 'transparent'}
+                  strokeWidth={2}
+                />
+              </Animated.View>
             </Pressable>
           )}
           <Pressable style={styles.heroIconBtn} onPress={() => { hTap(); onShare() }} hitSlop={10}>
