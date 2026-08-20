@@ -22,17 +22,8 @@ export interface AddContactInput {
   source?: 'manual' | 'device'
 }
 
-// Module-scoped, not per-hook-instance — so if the home screen's promo card
-// and the Safety Hub both mount around the same time on a cold app start,
-// they share one in-flight GET instead of firing a duplicate each.
 let inFlightLoad: Promise<void> | null = null
 
-// CRUD + optimistic add/remove for the Safety Center's emergency contacts.
-// State lives in useSafetyStore (a plain in-memory cache, not persisted to
-// disk) so every screen reading it — Safety Hub, the home promo card —
-// shares one fetch-once-per-app-session copy that mutates in place on
-// add/remove, instead of each screen re-fetching on its own. Same shape as
-// useHotlistToggle/useHotlistStore.
 export function useEmergencyContacts() {
   const showPill = usePillStore(s => s.show)
   const contacts = useSafetyStore(s => s.contacts)

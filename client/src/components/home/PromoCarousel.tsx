@@ -138,10 +138,39 @@ const CARDS: PromoCardData[] = [
   },
 ]
 
+// Only shown to users with zero emergency contacts set up — disappears the
+// moment they add one, and reappears if they remove their last one, since
+// it reads from the same live useSafetyStore cache as the Safety Hub.
+const SAFETY_CARD: PromoCardData = {
+  key: 'safety',
+  bg: '#DCEDE7',
+  title: 'Stay protected',
+  subtitle: 'Add an emergency contact for SOS alerts',
+  cta: 'Set up safety',
+  onPress: () => { hTap(); router.push('/(safety)' as any) },
+  graphic: (
+    <View style={s.bleedImageWrap}>
+      <Image
+        source={SAFETY_GORAVE_IMG}
+        style={s.bleedImage}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        transition={150}
+      />
+    </View>
+  ),
+}
+
 export function PromoCarousel() {
+  const hasEmergencyContacts = useHasEmergencyContacts()
+  const cards = useMemo(
+    () => (hasEmergencyContacts ? CARDS : [SAFETY_CARD, ...CARDS]),
+    [hasEmergencyContacts],
+  )
+
   return (
     <FlatList
-      data={CARDS}
+      data={cards}
       horizontal
       keyExtractor={c => c.key}
       showsHorizontalScrollIndicator={false}
