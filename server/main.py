@@ -19,6 +19,7 @@ from routes.devices import router as devices_router
 from routes.wallet import router as wallet_router
 from routes.payments import router as payments_router
 from routes.misc import router as misc_router
+from routes.safety import router as safety_router
 from routes.wellknown import router as wellknown_router
 from routes.admin_auth import router as admin_auth_router
 from routes.admin_users import router as admin_users_router
@@ -163,6 +164,7 @@ app.include_router(devices_router)
 app.include_router(wallet_router)
 app.include_router(payments_router)
 app.include_router(misc_router)
+app.include_router(safety_router)
 app.include_router(wellknown_router)
 app.include_router(admin_auth_router)
 app.include_router(admin_users_router)

@@ -78,6 +78,18 @@ CREATE TABLE IF NOT EXISTS public.device_tokens (
   CONSTRAINT device_tokens_user_id_key UNIQUE (user_id)
 );
 
+CREATE TABLE IF NOT EXISTS public.emergency_contacts (
+  id uuid DEFAULT gen_random_uuid() NOT NULL,
+  user_id uuid NOT NULL,
+  name text NOT NULL,
+  phone text NOT NULL,
+  emoji text,
+  source text DEFAULT 'manual'::text NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT emergency_contacts_pkey PRIMARY KEY (id),
+  CONSTRAINT emergency_contacts_unique UNIQUE (user_id, phone)
+);
+
 CREATE TABLE IF NOT EXISTS public.event_attendees (
   id uuid DEFAULT gen_random_uuid() NOT NULL,
   event_id uuid NOT NULL,

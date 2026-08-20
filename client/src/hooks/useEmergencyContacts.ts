@@ -1,0 +1,76 @@
+import { useCallback, useState } from 'react'
+import ApiService from '@/api/apiService'
+import { hTap, hError } from '@/lib/haptics'
+import { usePillStore } from '@/store/pillStore'
+import { useSafetyStore } from '@/store/safetyStore'
+import type { EmergencyContact } from '@/types/api'
+
+// Mirrors server/routes/safety.py's MAX_EMERGENCY_CONTACTS — keep in sync.
+export const MAX_EMERGENCY_CONTACTS = 5
+
+export interface AddContactInput {
+  name: string
+  phone: string
+  emoji?: string | null
+  source?: 'manual' | 'device'
+}
+
+// CRUD + optimistic add/remove for the Safety Center's emergency contacts.
+// State lives in useSafetyStore so the Safety Hub can show an up-to-date
+// count without a separate fetch — same shape as useHotlistToggle.
+export function useEmergencyContacts() {
+  const showPill = usePillStore(s => s.show)
+  const contacts = useSafetyStore(s => s.contacts)
+  const loaded = useSafetyStore(s => s.loaded)
+  const setContacts = useSafetyStore(s => s.setContacts)
+  const addContactToStore = useSafetyStore(s => s.addContact)
+  const removeContactFromStore = useSafetyStore(s => s.removeContact)
+  const [loading, setLoading] = useState(false)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const data = await ApiService.getEmergencyContacts()
+      setContacts(data)
+    } catch {
+      showPill("Couldn't load emergency contacts", 'error')
+    } finally {
+      setLoading(false)
+    }
+  }, [setContacts, showPill])
+
+  const addContact = useCallback(async (input: AddContactInput): Promise<EmergencyContact | null> => {
+    try {
+      const created = await ApiService.addEmergencyContact(input)
+      addContactToStore(created)
+      hTap()
+      showPill('Emergency contact added')
+      return created
+    } catch (e: any) {
+      hError()
+      showPill(e?.message ?? "Couldn't add contact, try again", 'error')
+      return null
+    }
+  }, [addContactToStore, showPill])
+
+  const removeContact = useCallback(async (contact: EmergencyContact) => {
+    removeContactFromStore(contact.id)
+    try {
+      await ApiService.removeEmergencyContact(contact.id)
+      showPill(`Removed ${contact.name}`)
+    } catch {
+      addContactToStore(contact)
+      showPill("Couldn't remove contact, try again", 'error')
+    }
+  }, [addContactToStore, removeContactFromStore, showPill])
+
+  return {
+    contacts,
+    loading: loading && !loaded,
+    loaded,
+    load,
+    addContact,
+    removeContact,
+    maxReached: contacts.length >= MAX_EMERGENCY_CONTACTS,
+  }
+}

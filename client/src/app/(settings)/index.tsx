@@ -1,33 +1,44 @@
-import { View, Text, StyleSheet, ScrollView, Linking } from 'react-native'
+import { View, StyleSheet, ScrollView, Linking } from 'react-native'
 import { router } from 'expo-router'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
-  User, Bell, BellRing, HelpCircle, MessageSquare,
+  ArrowLeft, User, Bell, BellRing, HelpCircle, MessageSquare,
   Info, LogOut, Calendar, Ticket, Wallet, HeadphonesIcon,
   Trash2, CalendarHeart, Landmark, Sparkles, Star, Bookmark,
+  ShieldCheck,
 } from 'lucide-react-native'
-import { Screen, BackButton, ConfirmSheet, BrandingFooter } from '@/components/ui'
+import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, ConfirmSheet, BrandingFooter } from '@/components/ui'
 import { SettingsMenuSection } from '@/components/settings/SettingsMenuSection'
 import { useSettings } from '@/hooks/useSettings'
 import { useGoBack } from '@/hooks/useGoBack'
+import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 import { useLogoutConfirm } from '@/hooks/useLogoutConfirm'
-import { Colors, FontFamily, Spacing, RATE_APP_URL } from '@/constants'
+import { Colors, Spacing, RATE_APP_URL } from '@/constants'
 
 const iconColor = Colors.inkSecondary
 
 export default function SettingsScreen() {
   const { appVersion } = useSettings()
   const goBack = useGoBack()
+  const { hideProgress, onScroll } = useHeaderScroll()
+  const insets = useSafeAreaInsets()
+  const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
   const { visible: logoutConfirm, show: showLogout, confirm: confirmLogout, dismiss: dismissLogout } = useLogoutConfirm()
 
   return (
-    <Screen>
-      <View style={styles.header}>
-        <BackButton onPress={goBack} />
-        <Text style={styles.title}>Settings</Text>
-        <View style={styles.headerEnd} />
-      </View>
+    <View style={styles.root}>
+      <AppHeader
+        title="Settings"
+        hideProgress={hideProgress}
+        leftAction={<HeaderIconBtn onPress={goBack}><ArrowLeft size={18} color={Colors.inkPrimary} strokeWidth={2} /></HeaderIconBtn>}
+      />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={[styles.content, { paddingTop: headerHeight + 8 }]}
+      >
         <SettingsMenuSection
           title="ACCOUNT"
           items={[
@@ -47,6 +58,13 @@ export default function SettingsScreen() {
             { icon: <CalendarHeart size={18} color={iconColor} strokeWidth={1.5} />, label: 'Calendar', onPress: () => router.push('/(settings)/calendar' as any) },
             { icon: <Wallet size={18} color={iconColor} strokeWidth={1.5} />, label: 'Gorave Wallet', onPress: () => router.push('/(settings)/wallet' as any) },
             { icon: <Landmark size={18} color={iconColor} strokeWidth={1.5} />, label: 'Payout Details', onPress: () => router.push('/(settings)/payout-details' as any) },
+          ]}
+        />
+
+        <SettingsMenuSection
+          title="SAFETY"
+          items={[
+            { icon: <ShieldCheck size={18} color={iconColor} strokeWidth={1.5} />, label: 'Gorave Safety', onPress: () => router.push('/(settings)/safety' as any) },
           ]}
         />
 
@@ -94,25 +112,12 @@ export default function SettingsScreen() {
         onConfirm={confirmLogout}
         onClose={dismissLogout}
       />
-    </Screen>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingRight: Spacing.screenPadding,
-    paddingBottom: 8,
-  },
-  title: {
-    flex: 1,
-    fontFamily: FontFamily.headingBold,
-    fontSize: 18,
-    color: Colors.inkPrimary,
-    textAlign: 'center',
-  },
-  headerEnd: { width: 40 },
+  root: { flex: 1, backgroundColor: Colors.background },
   content: {
     paddingHorizontal: Spacing.screenPadding,
     paddingBottom: 40,

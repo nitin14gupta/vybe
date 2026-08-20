@@ -35,6 +35,7 @@ import type {
   WalletTransaction,
   PaymentOrderResponse,
   BlockedUser,
+  EmergencyContact,
   AppNotification,
   NotificationPrefs,
 } from '@/types/api'
@@ -75,6 +76,7 @@ export type {
   WalletTransaction,
   PaymentOrderResponse,
   BlockedUser,
+  EmergencyContact,
   AppNotification,
   NotificationPrefs,
 } from '@/types/api'
@@ -524,6 +526,21 @@ class ApiService {
 
   static async getBlockedUsers(): Promise<BlockedUser[]> {
     return this.get<BlockedUser[]>(ENDPOINTS.BLOCKED_LIST)
+  }
+
+  // ── Safety ─────────────────────────────────────────────────────────────────
+
+  static async getEmergencyContacts(): Promise<EmergencyContact[]> {
+    return this.get<EmergencyContact[]>(ENDPOINTS.EMERGENCY_CONTACTS)
+  }
+
+  static async addEmergencyContact(contact: { name: string; phone: string; emoji?: string | null; source?: 'manual' | 'device' }): Promise<EmergencyContact> {
+    return this.post<EmergencyContact>(ENDPOINTS.EMERGENCY_CONTACTS, contact)
+  }
+
+  static async removeEmergencyContact(contactId: string): Promise<void> {
+    const endpoint = ENDPOINTS.EMERGENCY_CONTACT.replace(':id', contactId)
+    await this.delete<{ ok: boolean }>(endpoint)
   }
 
   static async reportUser(userId: string, reason: string): Promise<void> {

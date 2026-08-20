@@ -2,7 +2,7 @@ import { Fragment, memo, useEffect, useState, type ReactNode } from 'react'
 import { Pressable, StyleSheet, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Image } from 'expo-image'
-import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated'
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated'
 import { MapPin, Flame } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
@@ -20,7 +20,7 @@ const StaggerIn = memo(function StaggerIn({ index, style, children }: { index: n
 
   useEffect(() => {
     opacity.value = withDelay(index * 35, withTiming(1, { duration: 220 }))
-    scale.value = withDelay(index * 35, withSpring(1, { damping: 14, stiffness: 260 }))
+    scale.value = withDelay(index * 35, withTiming(1, { duration: 220, easing: Easing.out(Easing.cubic) }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

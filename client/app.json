@@ -18,6 +18,7 @@
         "NSCameraUsageDescription": "Gorave uses your camera to scan QR tickets at event check-in.",
         "NSPhotoLibraryUsageDescription": "Gorave uses your photo library so you can choose profile and event photos.",
         "NSLocationWhenInUseUsageDescription": "Gorave uses your location to show nearby events and how far they are from you.",
+        "NSContactsUsageDescription": "Gorave accesses your contacts so you can pick emergency contacts for the Safety Center.",
         "LSApplicationQueriesSchemes": [
           "tez",
           "phonepe",
@@ -59,7 +60,8 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.READ_CONTACTS"
       ]
     },
     "web": {
@@ -117,6 +119,12 @@
       "react-native-auto-skeleton",
       "expo-sharing",
       [
+        "expo-contacts",
+        {
+          "contactsPermission": "Gorave accesses your contacts so you can pick emergency contacts for the Safety Center."
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "android": {
@@ -137,7 +145,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "apiUrl": "https://gorave.uilora.com",
+      "apiUrl": "http://192.168.0.105:8000",
       "router": {},
       "eas": {
         "build": {

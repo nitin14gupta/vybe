@@ -367,6 +367,15 @@ export interface BlockedUser {
   created_at: string
 }
 
+export interface EmergencyContact {
+  id: string
+  name: string
+  phone: string
+  emoji: string | null
+  source: 'manual' | 'device'
+  created_at: string | null
+}
+
 export interface AppNotification {
   id: string
   type: string
