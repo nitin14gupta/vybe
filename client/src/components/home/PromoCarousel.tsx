@@ -1,8 +1,9 @@
-import { ReactNode } from 'react'
+import { ReactNode, useMemo } from 'react'
 import { View, Text, StyleSheet, Pressable, FlatList, Dimensions, Linking } from 'react-native'
 import { Image } from 'expo-image'
 import { router } from 'expo-router'
 import { hTap } from '@/lib/haptics'
+import { useHasEmergencyContacts } from '@/hooks/useEmergencyContacts'
 import { FontFamily, SOCIAL_LINKS, Colors } from '@/constants'
 
 const { width: SCREEN_W } = Dimensions.get('window')
@@ -12,6 +13,9 @@ const CARD_GAP = 12
 const INSTAGRAM_GORAVE_IMG = require('../../../assets/promo/instagramXgorave.png')
 const CALENDAR_GORAVE_IMG = require('../../../assets/promo/calenderXgorave.png')
 const HOST_GORAVE_IMG = require('../../../assets/promo/hostXgorave.png')
+// TODO: swap for a dedicated safety-promo graphic — reusing the Instagram
+// card's image as a placeholder until one's provided.
+const SAFETY_GORAVE_IMG = INSTAGRAM_GORAVE_IMG
 
 interface PromoCardData {
   key: string

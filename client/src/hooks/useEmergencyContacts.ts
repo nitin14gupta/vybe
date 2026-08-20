@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import ApiService from '@/api/apiService'
 import { hTap, hError } from '@/lib/haptics'
 import { usePillStore } from '@/store/pillStore'
@@ -22,9 +22,17 @@ export interface AddContactInput {
   source?: 'manual' | 'device'
 }
 
+// Module-scoped, not per-hook-instance — so if the home screen's promo card
+// and the Safety Hub both mount around the same time on a cold app start,
+// they share one in-flight GET instead of firing a duplicate each.
+let inFlightLoad: Promise<void> | null = null
+
 // CRUD + optimistic add/remove for the Safety Center's emergency contacts.
-// State lives in useSafetyStore so the Safety Hub can show an up-to-date
-// count without a separate fetch — same shape as useHotlistToggle.
+// State lives in useSafetyStore (a plain in-memory cache, not persisted to
+// disk) so every screen reading it — Safety Hub, the home promo card —
+// shares one fetch-once-per-app-session copy that mutates in place on
+// add/remove, instead of each screen re-fetching on its own. Same shape as
+// useHotlistToggle/useHotlistStore.
 export function useEmergencyContacts() {
   const showPill = usePillStore(s => s.show)
   const contacts = useSafetyStore(s => s.contacts)
@@ -35,15 +43,20 @@ export function useEmergencyContacts() {
   const [loading, setLoading] = useState(false)
 
   const load = useCallback(async () => {
+    if (inFlightLoad) return inFlightLoad
     setLoading(true)
-    try {
-      const data = await ApiService.getEmergencyContacts()
-      setContacts(data)
-    } catch {
-      showPill("Couldn't load emergency contacts", 'error')
-    } finally {
-      setLoading(false)
-    }
+    inFlightLoad = (async () => {
+      try {
+        const data = await ApiService.getEmergencyContacts()
+        setContacts(data)
+      } catch {
+        showPill("Couldn't load emergency contacts", 'error')
+      } finally {
+        setLoading(false)
+        inFlightLoad = null
+      }
+    })()
+    return inFlightLoad
   }, [setContacts, showPill])
 
   const addContact = useCallback(async (input: AddContactInput): Promise<EmergencyContact | null> => {
@@ -86,4 +99,16 @@ export function useEmergencyContacts() {
     removeContact,
     maxReached: contacts.length >= MAX_EMERGENCY_CONTACTS,
   }
+}
+
+export function useHasEmergencyContacts(): boolean {
+  const contacts = useSafetyStore(s => s.contacts)
+  const loaded = useSafetyStore(s => s.loaded)
+  const { load } = useEmergencyContacts()
+
+  useEffect(() => {
+    if (!loaded) load()
+  }, [loaded, load])
+
+  return contacts.length > 0
 }
