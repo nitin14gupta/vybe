@@ -37,10 +37,15 @@ def add_emergency_contact(body: EmergencyContactCreate, current_user: dict = Dep
         if cur.fetchone()["n"] >= MAX_EMERGENCY_CONTACTS:
             raise HTTPException(status_code=400, detail=f"You can add up to {MAX_EMERGENCY_CONTACTS} emergency contacts")
         cur.execute(
+            "SELECT id FROM emergency_contacts WHERE user_id = %s::uuid AND phone = %s",
+            (uid, body.phone),
+        )
+        if cur.fetchone():
+            raise HTTPException(status_code=400, detail="This number is already an emergency contact")
+        cur.execute(
             """
             INSERT INTO emergency_contacts (user_id, name, phone, emoji, source)
             VALUES (%s::uuid, %s, %s, %s, %s)
-            ON CONFLICT (user_id, phone) DO UPDATE SET name = EXCLUDED.name, emoji = EXCLUDED.emoji
             RETURNING id::text, name, phone, emoji, source, created_at::text
             """,
             (uid, body.name, body.phone, body.emoji, body.source),

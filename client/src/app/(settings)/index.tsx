@@ -64,7 +64,7 @@ export default function SettingsScreen() {
         <SettingsMenuSection
           title="SAFETY"
           items={[
-            { icon: <ShieldCheck size={18} color={iconColor} strokeWidth={1.5} />, label: 'Gorave Safety', onPress: () => router.push('/(settings)/safety' as any) },
+            { icon: <ShieldCheck size={18} color={iconColor} strokeWidth={1.5} />, label: 'Gorave Safety', onPress: () => router.push('/(safety)' as any) },
           ]}
         />
 

@@ -8,6 +8,13 @@ import type { EmergencyContact } from '@/types/api'
 // Mirrors server/routes/safety.py's MAX_EMERGENCY_CONTACTS — keep in sync.
 export const MAX_EMERGENCY_CONTACTS = 5
 
+// Compares by the last 10 digits so "+919876543210", "919876543210" and
+// "9876543210" (device contacts and manual entry don't always agree on a
+// country-code prefix) are all recognized as the same number.
+export function normalizePhone(phone: string): string {
+  return phone.replace(/\D/g, '').slice(-10)
+}
+
 export interface AddContactInput {
   name: string
   phone: string
@@ -40,6 +47,12 @@ export function useEmergencyContacts() {
   }, [setContacts, showPill])
 
   const addContact = useCallback(async (input: AddContactInput): Promise<EmergencyContact | null> => {
+    const target = normalizePhone(input.phone)
+    if (contacts.some(c => normalizePhone(c.phone) === target)) {
+      hError()
+      showPill('This number is already an emergency contact', 'error')
+      return null
+    }
     try {
       const created = await ApiService.addEmergencyContact(input)
       addContactToStore(created)
@@ -51,7 +64,7 @@ export function useEmergencyContacts() {
       showPill(e?.message ?? "Couldn't add contact, try again", 'error')
       return null
     }
-  }, [addContactToStore, showPill])
+  }, [contacts, addContactToStore, showPill])
 
   const removeContact = useCallback(async (contact: EmergencyContact) => {
     removeContactFromStore(contact.id)

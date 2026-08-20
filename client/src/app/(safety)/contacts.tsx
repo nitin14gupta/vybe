@@ -22,7 +22,7 @@ export default function EmergencyContactsScreen() {
 
   const goAddContact = () => {
     hTap()
-    router.push('/(settings)/safety-contacts-choose' as any)
+    router.push('/(safety)/contacts-choose' as any)
   }
 
   return (
@@ -46,6 +46,7 @@ export default function EmergencyContactsScreen() {
             ctaLabel="Add Contact"
             ctaIcon={<UserPlus size={17} color={Colors.background} strokeWidth={2.2} />}
             onCtaPress={goAddContact}
+            staticIcon
           />
         </View>
       ) : (

@@ -18,7 +18,11 @@
         "NSCameraUsageDescription": "Gorave uses your camera to scan QR tickets at event check-in.",
         "NSPhotoLibraryUsageDescription": "Gorave uses your photo library so you can choose profile and event photos.",
         "NSLocationWhenInUseUsageDescription": "Gorave uses your location to show nearby events and how far they are from you.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Gorave keeps sharing your live location with your emergency contacts while an SOS alert is active, even if you switch apps.",
         "NSContactsUsageDescription": "Gorave accesses your contacts so you can pick emergency contacts for the Safety Center.",
+        "UIBackgroundModes": [
+          "location"
+        ],
         "LSApplicationQueriesSchemes": [
           "tez",
           "phonepe",
@@ -61,7 +65,11 @@
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
-        "android.permission.READ_CONTACTS"
+        "android.permission.READ_CONTACTS",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
       ]
     },
     "web": {
@@ -124,6 +132,15 @@
           "contactsPermission": "Gorave accesses your contacts so you can pick emergency contacts for the Safety Center."
         }
       ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Gorave keeps sharing your live location with your emergency contacts while an SOS alert is active, even if you switch apps.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      "expo-task-manager",
       [
         "expo-build-properties",
         {

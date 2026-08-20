@@ -50,7 +50,7 @@ export default function SafetyHubScreen() {
               icon: <Users size={18} color={iconColor} strokeWidth={1.5} />,
               label: 'Emergency Contacts',
               value: contacts.length ? `${contacts.length}/${MAX_EMERGENCY_CONTACTS}` : 'Add contacts',
-              onPress: () => router.push('/(settings)/safety-contacts' as any),
+              onPress: () => router.push('/(safety)/contacts' as any),
             },
           ]}
         />
