@@ -187,6 +187,7 @@ class UserResponse(BaseModel):
     host_badges: List[str] = []
     profile_complete: bool = False
     is_host_onboarding_finished: bool = False
+    safety_agreement_accepted_at: Optional[str] = None
     voice_url: Optional[str] = None
     photos: List[PhotoResponse] = []
     vibers_count: int = 0

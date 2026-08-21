@@ -32,6 +32,7 @@ _USER_SELECT = """
         COALESCE(u.badges, ARRAY[]::text[]) AS badges,
         u.profile_complete,
         u.is_host_onboarding_finished,
+        u.safety_agreement_accepted_at::text,
         u.voice_url,
         u.lat,
         u.lng,
@@ -438,6 +439,24 @@ def heartbeat(current_user: dict = Depends(get_current_user)):
         cur.execute("UPDATE users SET last_seen_at = NOW() WHERE id = %s::uuid", (current_user["id"],))
         conn.commit()
     return {"message": "ok"}
+
+
+@router.post("/safety-agreement/accept", response_model=UserResponse)
+def accept_safety_agreement(current_user: dict = Depends(get_current_user)):
+    """One-time community safety agreement, gating an attendee's first RSVP
+    and a host's first published event. Recorded with a timestamp (not just
+    a boolean) so there's a real, auditable record of when a given user
+    agreed — this exists for genuine dispute/harassment cases, not just UX."""
+    with get_db() as (cur, conn):
+        cur.execute(
+            "UPDATE users SET safety_agreement_accepted_at = COALESCE(safety_agreement_accepted_at, NOW()) WHERE id = %s::uuid",
+            (current_user["id"],),
+        )
+        conn.commit()
+        user = _fetch_user(cur, current_user["id"], current_user["id"])
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
 
 
 @router.get("/me", response_model=UserResponse)

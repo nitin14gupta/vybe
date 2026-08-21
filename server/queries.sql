@@ -358,6 +358,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   last_reengagement_sent_at timestamp with time zone,
   birthday_reminder_stage integer DEFAULT 0 NOT NULL,
   birthday_reminder_year integer,
+  safety_agreement_accepted_at timestamp with time zone,
   CONSTRAINT users_pkey PRIMARY KEY (id),
   CONSTRAINT users_phone_key UNIQUE (phone),
   CONSTRAINT users_username_key UNIQUE (username)

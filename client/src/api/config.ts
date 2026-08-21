@@ -23,6 +23,7 @@ export const ENDPOINTS = {
   UPDATE_LIVE_LOCATION: '/users/location/live',
   GET_ME: '/users/me',
   HEARTBEAT: '/users/heartbeat',
+  ACCEPT_SAFETY_AGREEMENT: '/users/safety-agreement/accept',
 
   // Upload
   UPLOAD_PHOTO: '/upload/photo',

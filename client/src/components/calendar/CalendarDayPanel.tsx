@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native'
 import { ChevronLeft, ChevronRight, CalendarHeart, TriangleAlert } from 'lucide-react-native'
 import { PrimaryButton, OutlineButton, EventListCard, EventListCardSkeleton } from '@/components/ui'
 import type { DayEvents } from '@/hooks/useCalendarEvents'
+import { isEventActive } from '@/lib/dates'
 import { Colors, FontFamily, Spacing, Radius, withOpacity } from '@/constants'
 import { hTap } from '@/lib/haptics'
 
@@ -73,7 +74,7 @@ export function CalendarDayPanel({
             <View style={s.section}>
               <Text style={s.sectionLabel}>GOING</Text>
               <View style={s.cardsCol}>
-                {dayJoined.map(e => <EventListCard key={e.id} event={e} />)}
+                {dayJoined.map(e => <EventListCard key={e.id} event={e} showSos={isEventActive(e)} />)}
               </View>
             </View>
           )}

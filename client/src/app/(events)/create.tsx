@@ -18,6 +18,7 @@ import ApiService from '@/api/apiService'
 import { useEventDateTimePickers } from '@/hooks/useEventDateTimePickers'
 import { usePillStore } from '@/store/pillStore'
 import { useProfile } from '@/hooks/useProfile'
+import { useSafetyAgreementGate } from '@/components/safety/useSafetyAgreementGate'
 
 const STEPS = [
   { title: 'The Basics', sub: 'Tell people what your event is about' },
@@ -39,6 +40,7 @@ export default function CreateScreen() {
   const showPill = usePillStore(s => s.show)
   const [freeSlots, setFreeSlots] = useState<{ used: number; limit: number; resets_on: string } | null>(null)
   const { profile, loading: profileLoading } = useProfile()
+  const { runGated, sheet: safetyAgreementSheet } = useSafetyAgreementGate()
 
   useEffect(() => {
     ApiService.getFreeSlots().then(setFreeSlots).catch(() => { })
@@ -73,19 +75,13 @@ export default function CreateScreen() {
 
   const MIN_FEEDBACK_MS = 320
 
-  const handleNext = async () => {
-    if (!validateStep()) return
+  // Publishing (not any earlier step) is the host's actual commit action —
+  // gated behind the Community Safety Agreement the same way an attendee's
+  // first RSVP is (see useSafetyAgreementGate). Split out so runGated can
+  // hold it until the agreement is accepted, then fire it exactly once.
+  const doPublish = async () => {
     setNextLoading(true)
     try {
-      if (step < 5) {
-        // Location for step 3's map pin is fetched by LocationPickerMap itself
-        // once it mounts — doing it here too used to double up the GPS fetch
-        // (permission + fix + reverse-geocode, twice) and blocked this step
-        // transition on a slow/cold GPS fix. Just advance immediately.
-        await new Promise(resolve => setTimeout(resolve, MIN_FEEDBACK_MS))
-        setStep(s => (s + 1) as any)
-        return
-      }
       const [result] = await Promise.all([
         submit(),
         new Promise(resolve => setTimeout(resolve, MIN_FEEDBACK_MS)),
@@ -99,6 +95,22 @@ export default function CreateScreen() {
     } finally {
       setNextLoading(false)
     }
+  }
+
+  const handleNext = async () => {
+    if (!validateStep()) return
+    if (step < 5) {
+      setNextLoading(true)
+      // Location for step 3's map pin is fetched by LocationPickerMap itself
+      // once it mounts — doing it here too used to double up the GPS fetch
+      // (permission + fix + reverse-geocode, twice) and blocked this step
+      // transition on a slow/cold GPS fix. Just advance immediately.
+      await new Promise(resolve => setTimeout(resolve, MIN_FEEDBACK_MS))
+      setStep(s => (s + 1) as any)
+      setNextLoading(false)
+      return
+    }
+    runGated(doPublish)
   }
 
   const back = () => { if (step > 1) setStep((step - 1) as any) }
@@ -203,6 +215,8 @@ export default function CreateScreen() {
         form={form}
         onClose={() => setPreviewOpen(false)}
       />
+
+      {safetyAgreementSheet}
     </Screen>
   )
 }

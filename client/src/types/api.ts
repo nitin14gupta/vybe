@@ -22,6 +22,7 @@ export interface UserResponse {
   host_badges: string[]
   profile_complete: boolean
   is_host_onboarding_finished: boolean
+  safety_agreement_accepted_at: string | null
   photos: PhotoResponse[]
   name_changed_at: string | null
   last_seen_at: string | null

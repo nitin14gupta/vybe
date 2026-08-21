@@ -398,6 +398,10 @@ class ApiService {
     return this.get<ProfileResponse>(ENDPOINTS.GET_ME)
   }
 
+  static async acceptSafetyAgreement(): Promise<ProfileResponse> {
+    return this.post<ProfileResponse>(ENDPOINTS.ACCEPT_SAFETY_AGREEMENT, {})
+  }
+
   static async getProfile(userId: string): Promise<ProfileResponse> {
     const endpoint = ENDPOINTS.GET_PROFILE.replace(':id', userId)
     return this.get<ProfileResponse>(endpoint)

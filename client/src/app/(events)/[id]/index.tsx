@@ -16,6 +16,7 @@ import { EventHostCard } from '@/components/events/EventHostCard'
 import { EventGuestListPreview } from '@/components/events/EventGuestListPreview'
 import { EventDetailsSection } from '@/components/events/EventDetailsSection'
 import { EventSafetySection } from '@/components/events/EventSafetySection'
+import { useSafetyAgreementGate } from '@/components/safety/useSafetyAgreementGate'
 import { EventRsvpBar } from '@/components/events/EventRsvpBar'
 import { EventCancelledScreen } from '@/components/events/EventCancelledScreen'
 import { EventLockedScreen } from '@/components/events/EventLockedScreen'
@@ -27,6 +28,7 @@ export default function EventDetailScreen() {
   const insets = useSafeAreaInsets()
   const goBack = useGoBack()
   const d = useEventDetail(id)
+  const { runGated, sheet: safetyAgreementSheet } = useSafetyAgreementGate()
 
   if (d.loading) {
     return (
@@ -117,8 +119,8 @@ export default function EventDetailScreen() {
         offerSecondsLeft={d.offerSecondsLeft}
         bottomInset={insets.bottom}
         onScanner={d.handleScanner}
-        onRsvp={d.handleRsvp}
-        onJoinWaitlist={d.handleJoinWaitlist}
+        onRsvp={() => runGated(d.handleRsvp)}
+        onJoinWaitlist={() => runGated(d.handleJoinWaitlist)}
       />
 
       <EventOptionsSheet
@@ -175,6 +177,8 @@ export default function EventDetailScreen() {
         hostName={event.host_name}
         hostAvatarUrl={event.host_avatar}
       />
+
+      {safetyAgreementSheet}
     </View>
   )
 }
