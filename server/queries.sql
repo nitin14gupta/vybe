@@ -359,6 +359,8 @@ CREATE TABLE IF NOT EXISTS public.users (
   birthday_reminder_stage integer DEFAULT 0 NOT NULL,
   birthday_reminder_year integer,
   safety_agreement_accepted_at timestamp with time zone,
+  host_agreement_accepted_at timestamp with time zone,
+  host_agreement_signature_url text,
   CONSTRAINT users_pkey PRIMARY KEY (id),
   CONSTRAINT users_phone_key UNIQUE (phone),
   CONSTRAINT users_username_key UNIQUE (username)

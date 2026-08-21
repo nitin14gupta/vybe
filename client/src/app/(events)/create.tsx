@@ -18,7 +18,6 @@ import ApiService from '@/api/apiService'
 import { useEventDateTimePickers } from '@/hooks/useEventDateTimePickers'
 import { usePillStore } from '@/store/pillStore'
 import { useProfile } from '@/hooks/useProfile'
-import { useSafetyAgreementGate } from '@/components/safety/useSafetyAgreementGate'
 
 const STEPS = [
   { title: 'The Basics', sub: 'Tell people what your event is about' },
@@ -40,25 +39,25 @@ export default function CreateScreen() {
   const showPill = usePillStore(s => s.show)
   const [freeSlots, setFreeSlots] = useState<{ used: number; limit: number; resets_on: string } | null>(null)
   const { profile, loading: profileLoading } = useProfile()
-  const { runGated, sheet: safetyAgreementSheet } = useSafetyAgreementGate()
 
   useEffect(() => {
     ApiService.getFreeSlots().then(setFreeSlots).catch(() => { })
   }, [])
 
   useEffect(() => {
-    if (!profileLoading && profile && !profile.is_host_onboarding_finished) {
+    if (profileLoading || !profile) return
+    if (!profile.is_host_onboarding_finished) {
       router.replace('/(host-onboarding)' as any)
+    } else if (!profile.host_agreement_accepted_at) {
+      router.replace('/(host-onboarding)/agreement' as any)
     }
   }, [profileLoading, profile])
 
-  // Publish can fail after the final step (upload/network); surface it as a
-  // pill since there's no dedicated step to show inline error text on.
   useEffect(() => {
     if (submitError) showPill(submitError, 'error')
   }, [submitError])
 
-  if (profileLoading || !profile || !profile.is_host_onboarding_finished) {
+  if (profileLoading || !profile || !profile.is_host_onboarding_finished || !profile.host_agreement_accepted_at) {
     return (
       <Screen style={{ alignItems: 'center', justifyContent: 'center' }}>
         <BrandedLoader />
@@ -75,10 +74,6 @@ export default function CreateScreen() {
 
   const MIN_FEEDBACK_MS = 320
 
-  // Publishing (not any earlier step) is the host's actual commit action —
-  // gated behind the Community Safety Agreement the same way an attendee's
-  // first RSVP is (see useSafetyAgreementGate). Split out so runGated can
-  // hold it until the agreement is accepted, then fire it exactly once.
   const doPublish = async () => {
     setNextLoading(true)
     try {
@@ -110,7 +105,7 @@ export default function CreateScreen() {
       setNextLoading(false)
       return
     }
-    runGated(doPublish)
+    doPublish()
   }
 
   const back = () => { if (step > 1) setStep((step - 1) as any) }
@@ -215,8 +210,6 @@ export default function CreateScreen() {
         form={form}
         onClose={() => setPreviewOpen(false)}
       />
-
-      {safetyAgreementSheet}
     </Screen>
   )
 }

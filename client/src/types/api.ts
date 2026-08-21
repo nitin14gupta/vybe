@@ -23,6 +23,8 @@ export interface UserResponse {
   profile_complete: boolean
   is_host_onboarding_finished: boolean
   safety_agreement_accepted_at: string | null
+  host_agreement_accepted_at: string | null
+  host_agreement_signature_url: string | null
   photos: PhotoResponse[]
   name_changed_at: string | null
   last_seen_at: string | null

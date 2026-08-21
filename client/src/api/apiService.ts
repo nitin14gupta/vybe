@@ -402,6 +402,10 @@ class ApiService {
     return this.post<ProfileResponse>(ENDPOINTS.ACCEPT_SAFETY_AGREEMENT, {})
   }
 
+  static async acceptHostAgreement(signatureUrl: string): Promise<ProfileResponse> {
+    return this.post<ProfileResponse>(ENDPOINTS.ACCEPT_HOST_AGREEMENT, { signature_url: signatureUrl })
+  }
+
   static async getProfile(userId: string): Promise<ProfileResponse> {
     const endpoint = ENDPOINTS.GET_PROFILE.replace(':id', userId)
     return this.get<ProfileResponse>(endpoint)
@@ -890,6 +894,25 @@ class ApiService {
     if (res.status === 401) {
       token = await this.refreshAccessToken()
       res = await this.fsUpload(url, uri, mime, token, { position: String(position) })
+    }
+
+    if (res.status < 200 || res.status >= 300) {
+      throw this.parseUploadError(res.status, res.body)
+    }
+    try {
+      return JSON.parse(res.body).url
+    } catch {
+      throw new Error('Invalid server response')
+    }
+  }
+
+  static async uploadSignature(uri: string): Promise<string> {
+    const url = `${API_BASE_URL}${ENDPOINTS.UPLOAD_SIGNATURE}`
+    let token = useAuthStore.getState().accessToken
+    let res = await this.fsUpload(url, uri, 'image/png', token)
+    if (res.status === 401) {
+      token = await this.refreshAccessToken()
+      res = await this.fsUpload(url, uri, 'image/png', token)
     }
 
     if (res.status < 200 || res.status >= 300) {

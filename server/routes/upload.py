@@ -144,6 +144,43 @@ async def upload_event_photo(
     return {"url": result["url"]}
 
 
+@router.post("/signature")
+async def upload_signature(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """Upload a host's drawn signature for the Host Agreement (see
+    /users/host-agreement/accept). No face check, no crop — just the raw
+    drawing, converted to webp for storage size."""
+    print(f"\n[UPLOAD] signature — user={current_user['id']} "
+          f"content_type={file.content_type!r} filename={file.filename!r}", flush=True)
+
+    if not _is_image(file):
+        raise HTTPException(status_code=400, detail=f"Unsupported image type: {file.content_type}")
+
+    raw = await _read_capped(file, RAW_IMAGE_UPLOAD_CAP, "Signature is too large")
+    if len(raw) == 0:
+        raise HTTPException(status_code=400, detail="Empty file received")
+    try:
+        contents = convert_to_webp(raw)
+    except ImageConversionError as e:
+        raise HTTPException(status_code=400, detail="Could not process this signature — try signing again") from e
+    if len(contents) > MAX_PHOTO_SIZE:
+        raise HTTPException(status_code=400, detail="Signature is too large")
+
+    try:
+        result = r2_client.upload_file(
+            io.BytesIO(contents),
+            "signature.webp",
+            folder=f"users/{current_user['id']}/signature",
+        )
+    except Exception as e:
+        print(f"[UPLOAD] R2 error: {e!r}", flush=True)
+        raise HTTPException(status_code=500, detail="Storage upload failed, please try again")
+
+    return {"url": result["url"]}
+
+
 @router.post("/voice")
 async def upload_voice(
     file: UploadFile = File(...),

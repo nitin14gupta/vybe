@@ -6,7 +6,7 @@ from typing import Optional
 import uuid as uuid_lib
 from schemas.user import (
     ProfileCreate, ProfileUpdate, LocationUpdate, LivePingUpdate, InterestsUpdate,
-    PayoutDetailsCreate, UserResponse, ProfileResponse, DEFAULT_BADGES,
+    PayoutDetailsCreate, UserResponse, ProfileResponse, HostAgreementAccept, DEFAULT_BADGES,
 )
 from middleware.auth import get_current_user
 from db.config import get_db
@@ -33,6 +33,8 @@ _USER_SELECT = """
         u.profile_complete,
         u.is_host_onboarding_finished,
         u.safety_agreement_accepted_at::text,
+        u.host_agreement_accepted_at::text,
+        u.host_agreement_signature_url,
         u.voice_url,
         u.lat,
         u.lng,
@@ -451,6 +453,31 @@ def accept_safety_agreement(current_user: dict = Depends(get_current_user)):
         cur.execute(
             "UPDATE users SET safety_agreement_accepted_at = COALESCE(safety_agreement_accepted_at, NOW()) WHERE id = %s::uuid",
             (current_user["id"],),
+        )
+        conn.commit()
+        user = _fetch_user(cur, current_user["id"], current_user["id"])
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
+@router.post("/host-agreement/accept", response_model=UserResponse)
+def accept_host_agreement(body: HostAgreementAccept, current_user: dict = Depends(get_current_user)):
+    """One-time Host Agreement, gated in the host-onboarding flow (both for
+    a brand-new host and for an existing host who onboarded before this
+    existed — see (host-onboarding)/agreement.tsx). Stores the drawn
+    signature's URL alongside the acceptance timestamp — this is the actual
+    accountability record for hosts, distinct from the lighter attendee-side
+    safety_agreement checkbox."""
+    with get_db() as (cur, conn):
+        cur.execute(
+            """
+            UPDATE users SET
+                host_agreement_accepted_at = COALESCE(host_agreement_accepted_at, NOW()),
+                host_agreement_signature_url = %s
+            WHERE id = %s::uuid
+            """,
+            (body.signature_url, current_user["id"]),
         )
         conn.commit()
         user = _fetch_user(cur, current_user["id"], current_user["id"])

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { View, Text, StyleSheet, Platform, ScrollView, Keyboard } from 'react-native'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { router } from 'expo-router'
@@ -10,8 +10,10 @@ import {
   WelcomeStep,
   BadgesStep,
   WhatToExpectStep,
+  HostAgreementStep,
   PayoutStep,
   DuplicatePayoutSheet,
+  type HostAgreementStepHandle,
 } from '@/components/host-onboarding'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
@@ -19,11 +21,12 @@ import { setCached } from '@/lib/queryCache'
 import { useVpaValidation } from '@/hooks/useVpaValidation'
 import { useIfscLookup } from '@/hooks/useIfscLookup'
 
-const TOTAL_STEPS = 4
+const TOTAL_STEPS = 5
+const AGREEMENT_STEP = 4
 const FINISHING_DELAY_MS = 900
 const ACCOUNT_NUMBER_REGEX = /^\d{9,18}$/
 
-const STEP_CTA = ['Get started', 'Continue', "Understood, let's go", 'Save & Finish']
+const STEP_CTA = ['Get started', 'Continue', "Understood, let's go", 'Sign & Continue', 'Save & Finish']
 
 export default function HostOnboardingScreen() {
   const showPill = usePillStore(s => s.show)
@@ -43,6 +46,13 @@ export default function HostOnboardingScreen() {
   const [finishing, setFinishing] = useState(false)
   const [keyboardVisible, setKeyboardVisible] = useState(false)
   const [duplicateError, setDuplicateError] = useState<string | null>(null)
+
+  // Host Agreement step state — same reasoning as payout above: its submit
+  // action (capture signature → upload → accept) drives advancing past this
+  // step, so the orchestrator owns it rather than the presentational step.
+  const agreementRef = useRef<HostAgreementStepHandle>(null)
+  const [hasSignature, setHasSignature] = useState(false)
+  const [agreementSaving, setAgreementSaving] = useState(false)
 
   useEffect(() => {
     const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow'
@@ -110,7 +120,32 @@ export default function HostOnboardingScreen() {
     }
   }
 
+  const handleAgreementContinue = async () => {
+    if (!hasSignature || agreementSaving) return
+    setAgreementSaving(true)
+    try {
+      const localUri = await agreementRef.current?.capture()
+      if (!localUri) {
+        showPill('Please sign to continue', 'error')
+        return
+      }
+      const signatureUrl = await ApiService.uploadSignature(localUri)
+      const updatedProfile = await ApiService.acceptHostAgreement(signatureUrl)
+      setCached('profile:me', updatedProfile)
+      hTap()
+      setStep(s => s + 1)
+    } catch (err: any) {
+      showPill(err?.message ?? 'Could not save your signature. Try again.', 'error')
+    } finally {
+      setAgreementSaving(false)
+    }
+  }
+
   const handleContinue = () => {
+    if (step === AGREEMENT_STEP) {
+      handleAgreementContinue()
+      return
+    }
     if (step < TOTAL_STEPS) {
       hTap()
       setStep(s => s + 1)
@@ -130,14 +165,21 @@ export default function HostOnboardingScreen() {
   }
 
   const isPayoutStep = step === TOTAL_STEPS
-  const continueDisabled = isPayoutStep && !canSubmit
+  const isAgreementStep = step === AGREEMENT_STEP
+  // Both need real scroll room (long text / a signature canvas) instead of
+  // the earlier steps' vertically-centered single screen.
+  const needsScroll = isAgreementStep || isPayoutStep
+  const continueDisabled = (isPayoutStep && !canSubmit) || (isAgreementStep && !hasSignature)
 
   const body = (
     <Animated.View key={step} entering={FadeInDown.duration(350).springify()} style={styles.stepContent}>
       {step === 1 && <WelcomeStep />}
       {step === 2 && <BadgesStep />}
       {step === 3 && <WhatToExpectStep />}
-      {step === 4 && (
+      {step === AGREEMENT_STEP && (
+        <HostAgreementStep ref={agreementRef} onSignedChange={setHasSignature} />
+      )}
+      {step === 5 && (
         <PayoutStep
           activeTab={activeTab}
           onTabChange={tab => setActiveTab(tab as 'UPI' | 'Bank Account')}
@@ -165,7 +207,7 @@ export default function HostOnboardingScreen() {
 
   return (
     <Screen>
-      {isPayoutStep ? (
+      {needsScroll ? (
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <ScrollView
             contentContainerStyle={styles.scrollContent}
@@ -177,9 +219,14 @@ export default function HostOnboardingScreen() {
 
           {!keyboardVisible && <StepDots step={step} total={TOTAL_STEPS} />}
           <View style={styles.footer}>
-            <OutlineButton label="Back" onPress={handleBack} style={styles.backBtn} disabled={saving} />
+            <OutlineButton label="Back" onPress={handleBack} style={styles.backBtn} disabled={saving || agreementSaving} />
             <View style={styles.nextBtn}>
-              <PrimaryButton label={STEP_CTA[step - 1]} onPress={handleContinue} loading={saving} disabled={continueDisabled} />
+              <PrimaryButton
+                label={STEP_CTA[step - 1]}
+                onPress={handleContinue}
+                loading={isPayoutStep ? saving : agreementSaving}
+                disabled={continueDisabled}
+              />
             </View>
           </View>
         </KeyboardAvoidingView>

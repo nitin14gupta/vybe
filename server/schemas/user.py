@@ -72,6 +72,10 @@ class LivePingUpdate(BaseModel):
     lng: float
 
 
+class HostAgreementAccept(BaseModel):
+    signature_url: str
+
+
 class InterestsUpdate(BaseModel):
     interests: List[str]
 
@@ -188,6 +192,8 @@ class UserResponse(BaseModel):
     profile_complete: bool = False
     is_host_onboarding_finished: bool = False
     safety_agreement_accepted_at: Optional[str] = None
+    host_agreement_accepted_at: Optional[str] = None
+    host_agreement_signature_url: Optional[str] = None
     voice_url: Optional[str] = None
     photos: List[PhotoResponse] = []
     vibers_count: int = 0

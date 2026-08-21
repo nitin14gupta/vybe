@@ -24,10 +24,12 @@ export const ENDPOINTS = {
   GET_ME: '/users/me',
   HEARTBEAT: '/users/heartbeat',
   ACCEPT_SAFETY_AGREEMENT: '/users/safety-agreement/accept',
+  ACCEPT_HOST_AGREEMENT: '/users/host-agreement/accept',
 
   // Upload
   UPLOAD_PHOTO: '/upload/photo',
   UPLOAD_EVENT_PHOTO: '/upload/event-photo',
+  UPLOAD_SIGNATURE: '/upload/signature',
   SWAP_PHOTOS: '/upload/photo/swap',
   REORDER_PHOTOS: '/upload/photo/reorder',
   DELETE_PHOTO: '/upload/photo/{id}',
