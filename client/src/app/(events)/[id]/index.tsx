@@ -15,6 +15,7 @@ import { EventInfoHeader } from '@/components/events/EventInfoHeader'
 import { EventHostCard } from '@/components/events/EventHostCard'
 import { EventGuestListPreview } from '@/components/events/EventGuestListPreview'
 import { EventDetailsSection } from '@/components/events/EventDetailsSection'
+import { EventSafetySection } from '@/components/events/EventSafetySection'
 import { EventRsvpBar } from '@/components/events/EventRsvpBar'
 import { EventCancelledScreen } from '@/components/events/EventCancelledScreen'
 import { EventLockedScreen } from '@/components/events/EventLockedScreen'
@@ -94,6 +95,8 @@ export default function EventDetailScreen() {
           />
 
           <EventDetailsSection event={event} eventId={id ?? ''} />
+
+          <EventSafetySection event={event} />
         </ScrollView>
       </View>
 

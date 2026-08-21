@@ -82,6 +82,7 @@ export const ENDPOINTS = {
   // Safety
   EMERGENCY_CONTACTS: '/safety/emergency-contacts',
   EMERGENCY_CONTACT: '/safety/emergency-contacts/:id',
+  SOS: '/safety/sos',
 
   // Message actions
   MESSAGE_REPORT: '/chat/messages/:id/report',

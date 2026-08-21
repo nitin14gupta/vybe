@@ -543,6 +543,10 @@ class ApiService {
     await this.delete<{ ok: boolean }>(endpoint)
   }
 
+  static async triggerSos(payload: { event_id?: string; lat: number; lng: number }): Promise<{ ok: boolean; alerted: number }> {
+    return this.post<{ ok: boolean; alerted: number }>(ENDPOINTS.SOS, payload)
+  }
+
   static async reportUser(userId: string, reason: string): Promise<void> {
     const endpoint = ENDPOINTS.REPORT_USER.replace(':id', userId)
     await this.post<{ ok: boolean }>(endpoint, { reason })

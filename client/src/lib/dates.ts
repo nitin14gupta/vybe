@@ -12,3 +12,10 @@ export function isEventPast(event: { date_time: string; end_time?: string | null
   const end = event.end_time ? parseServerDate(event.end_time) : null
   return end ? end < now : true
 }
+
+export function isEventActive(event: { date_time: string; end_time?: string | null }): boolean {
+  const start = parseServerDate(event.date_time)
+  if (!start) return false
+  if (start > new Date()) return false // hasn't started yet
+  return !isEventPast(event)
+}

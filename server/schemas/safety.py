@@ -43,3 +43,14 @@ class EmergencyContactResponse(BaseModel):
     emoji: Optional[str] = None
     source: str
     created_at: Optional[str] = None
+
+
+class SosRequest(BaseModel):
+    event_id: Optional[str] = None
+    lat: float
+    lng: float
+
+
+class SosResponse(BaseModel):
+    ok: bool
+    alerted: int

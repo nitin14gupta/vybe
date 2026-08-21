@@ -10,6 +10,7 @@ import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, CreateEventSheet, Empt
 import { HomeGradientBackdrop } from '@/components/home/HomeGradientBackdrop'
 import { NotificationPopBadge } from '@/components/home/NotificationPopBadge'
 import { TemplateFan } from '@/components/home/TemplateFan'
+import { ActiveEventsSection } from '@/components/home/ActiveEventsSection'
 import { MyEventsSection } from '@/components/home/MyEventsSection'
 import { RecentlyViewedSection } from '@/components/home/RecentlyViewedSection'
 import { PromoCarousel } from '@/components/home/PromoCarousel'
@@ -104,6 +105,7 @@ export default function HomeScreen() {
           onPress={() => { hTap(); setCreateOpen(true) }}
         />
 
+        <ActiveEventsSection />
         <MyEventsSection onEmptyChange={setMyEventsEmpty} />
         <RecentlyViewedSection onEmptyChange={setRecentEmpty} />
         <PromoCarousel />

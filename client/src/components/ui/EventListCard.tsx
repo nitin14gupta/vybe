@@ -7,6 +7,7 @@ import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { Colors, FontFamily, Radius, EVENT_ICONS, EVENT_ICON_FALLBACK, withOpacity } from '@/constants'
 import { formatEventDate, AttendeeAvatarStack } from '@/components/events/EventCard'
 import { HotlistButton } from '@/components/events/HotlistButton'
+import { SosButton } from '@/components/events/SosButton'
 import { isEventPast } from '@/lib/dates'
 import type { EventSummary } from '@/api/apiService'
 
@@ -20,12 +21,15 @@ function EventListCardBase({
   event,
   onPress,
   showHotlist = true,
+  showSos = false,
   priority = 'normal',
 }: {
   event: EventSummary
   onPress?: () => void
   /** Set false to hide the save/hotlist toggle — e.g. Recently Viewed. */
   showHotlist?: boolean
+  /** Only pass true for an event that's actually happening right now (isEventActive) — e.g. the calendar's GOING rows. */
+  showSos?: boolean
   priority?: ImageProps['priority']
 }) {
   const cover = event.cover_photos?.[0]?.url
@@ -96,9 +100,15 @@ function EventListCardBase({
       </View>
     </Pressable>
 
-    {/* Sibling of the row's own Pressable above, not nested inside it. */}
+    {/* Siblings of the row's own Pressable above, not nested inside it —
+        same reasoning as HostPill in EventCard.tsx: a nested touchable
+        breaks both the tap and the child's own background rendering on
+        Android. */}
     {showHotlist && !isEventPast(event) && (
       <HotlistButton eventId={event.id} initial={event.is_hotlisted} style={s.hotlistBtn} size={13} />
+    )}
+    {showSos && !isEventPast(event) && (
+      <SosButton eventId={event.id} style={s.sosBtn} />
     )}
     </View>
   )
@@ -138,6 +148,9 @@ const s = StyleSheet.create({
   hotlistBtn: {
     position: 'absolute', top: 17, left: 105,
     width: 22, height: 22, borderRadius: 11,
+  },
+  sosBtn: {
+    position: 'absolute', top: 16, left: 102,
   },
   row: {
     flexDirection: 'row',
