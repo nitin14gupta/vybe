@@ -1,12 +1,13 @@
-import { useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { View, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
 import { AppHeader, HeaderIconBtn, PrimaryButton, KeyboardAvoidingWrapper } from '@/components/ui'
-import { HostAgreementStep, type HostAgreementStepHandle } from '@/components/host-onboarding'
+import { HostAgreementStep } from '@/components/host-onboarding'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
+import { useSignatureCaptureStore } from '@/store/signatureCaptureStore'
 import { setCached } from '@/lib/queryCache'
 import { Colors, Spacing } from '@/constants'
 
@@ -18,22 +19,26 @@ import { Colors, Spacing } from '@/constants'
 // permanently grandfathered out of signing it.
 export default function HostAgreementCatchUpScreen() {
   const showPill = usePillStore(s => s.show)
-  const agreementRef = useRef<HostAgreementStepHandle>(null)
-  const [hasSignature, setHasSignature] = useState(false)
+  const setStoredSignatureUri = useSignatureCaptureStore(s => s.setUri)
+  const [signatureUri, setSignatureUri] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
+  // Reset the captured-signature store on entry so a signature left over
+  // from a previous, abandoned visit to this flow doesn't show as already
+  // signed.
+  useEffect(() => {
+    setStoredSignatureUri(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const handleContinue = async () => {
-    if (!hasSignature || saving) return
+    if (!signatureUri || saving) return
     setSaving(true)
     try {
-      const localUri = await agreementRef.current?.capture()
-      if (!localUri) {
-        showPill('Please sign to continue', 'error')
-        return
-      }
-      const signatureUrl = await ApiService.uploadSignature(localUri)
+      const signatureUrl = await ApiService.uploadSignature(signatureUri)
       const updatedProfile = await ApiService.acceptHostAgreement(signatureUrl)
       setCached('profile:me', updatedProfile)
+      setStoredSignatureUri(null)
       hTap()
       router.replace('/(events)/create')
     } catch (err: any) {
@@ -52,12 +57,12 @@ export default function HostAgreementCatchUpScreen() {
 
       <KeyboardAvoidingWrapper>
         <View style={s.content}>
-          <HostAgreementStep ref={agreementRef} onSignedChange={setHasSignature} />
+          <HostAgreementStep onSignatureChange={setSignatureUri} />
         </View>
       </KeyboardAvoidingWrapper>
 
       <View style={s.footer}>
-        <PrimaryButton label="Sign & Continue" onPress={handleContinue} disabled={!hasSignature} loading={saving} />
+        <PrimaryButton label="Sign & Continue" onPress={handleContinue} disabled={!signatureUri} loading={saving} />
       </View>
     </View>
   )

@@ -3,21 +3,13 @@ import { router, Stack } from 'expo-router'
 import { X } from 'lucide-react-native'
 import { Colors, FontFamily } from '@/constants'
 
-export default function HostOnboardingLayout() {
+export default function StackedButtonDemoLayout() {
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: Colors.background },
-        animation: 'slide_from_right',
-      }}
-    >
-      <Stack.Screen name="index" />
-      <Stack.Screen name="agreement" />
+    <Stack>
+      <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen
-        name="signature-sheet"
+        name="sheet"
         options={{
-          headerShown: true,
           title: 'Add Signature',
           headerStyle: { backgroundColor: Colors.surface },
           headerTintColor: Colors.inkPrimary,

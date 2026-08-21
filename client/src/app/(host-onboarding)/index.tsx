@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, Platform, ScrollView, Keyboard } from 'react-native'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { router } from 'expo-router'
@@ -13,10 +13,10 @@ import {
   HostAgreementStep,
   PayoutStep,
   DuplicatePayoutSheet,
-  type HostAgreementStepHandle,
 } from '@/components/host-onboarding'
 import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
+import { useSignatureCaptureStore } from '@/store/signatureCaptureStore'
 import { setCached } from '@/lib/queryCache'
 import { useVpaValidation } from '@/hooks/useVpaValidation'
 import { useIfscLookup } from '@/hooks/useIfscLookup'
@@ -48,11 +48,21 @@ export default function HostOnboardingScreen() {
   const [duplicateError, setDuplicateError] = useState<string | null>(null)
 
   // Host Agreement step state — same reasoning as payout above: its submit
-  // action (capture signature → upload → accept) drives advancing past this
-  // step, so the orchestrator owns it rather than the presentational step.
-  const agreementRef = useRef<HostAgreementStepHandle>(null)
-  const [hasSignature, setHasSignature] = useState(false)
+  // action (upload the already-captured signature → accept) drives
+  // advancing past this step, so the orchestrator owns it rather than the
+  // presentational step. The signature itself is captured inside the
+  // signature-sheet route at "Confirm Signature" time, not here.
+  const [signatureUri, setSignatureUri] = useState<string | null>(null)
   const [agreementSaving, setAgreementSaving] = useState(false)
+  const setStoredSignatureUri = useSignatureCaptureStore(s => s.setUri)
+
+  // Reset the captured-signature store on entry so a signature left over
+  // from a previous, abandoned visit to this flow doesn't show as already
+  // signed.
+  useEffect(() => {
+    setStoredSignatureUri(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow'
@@ -121,17 +131,13 @@ export default function HostOnboardingScreen() {
   }
 
   const handleAgreementContinue = async () => {
-    if (!hasSignature || agreementSaving) return
+    if (!signatureUri || agreementSaving) return
     setAgreementSaving(true)
     try {
-      const localUri = await agreementRef.current?.capture()
-      if (!localUri) {
-        showPill('Please sign to continue', 'error')
-        return
-      }
-      const signatureUrl = await ApiService.uploadSignature(localUri)
+      const signatureUrl = await ApiService.uploadSignature(signatureUri)
       const updatedProfile = await ApiService.acceptHostAgreement(signatureUrl)
       setCached('profile:me', updatedProfile)
+      setStoredSignatureUri(null)
       hTap()
       setStep(s => s + 1)
     } catch (err: any) {
@@ -169,7 +175,7 @@ export default function HostOnboardingScreen() {
   // Both need real scroll room (long text / a signature canvas) instead of
   // the earlier steps' vertically-centered single screen.
   const needsScroll = isAgreementStep || isPayoutStep
-  const continueDisabled = (isPayoutStep && !canSubmit) || (isAgreementStep && !hasSignature)
+  const continueDisabled = (isPayoutStep && !canSubmit) || (isAgreementStep && !signatureUri)
 
   const body = (
     <Animated.View key={step} entering={FadeInDown.duration(350).springify()} style={styles.stepContent}>
@@ -177,7 +183,7 @@ export default function HostOnboardingScreen() {
       {step === 2 && <BadgesStep />}
       {step === 3 && <WhatToExpectStep />}
       {step === AGREEMENT_STEP && (
-        <HostAgreementStep ref={agreementRef} onSignedChange={setHasSignature} />
+        <HostAgreementStep onSignatureChange={setSignatureUri} />
       )}
       {step === 5 && (
         <PayoutStep

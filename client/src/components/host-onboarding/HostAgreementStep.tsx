@@ -1,10 +1,11 @@
-import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
-import { View, Text, Pressable, StyleSheet } from 'react-native'
-import DrawPad, { type DrawPadHandle } from 'expo-drawpad'
-import { captureRef } from 'react-native-view-shot'
-import { RotateCcw } from 'lucide-react-native'
+import { useEffect } from 'react'
+import { View, Text, Pressable, StyleSheet, useWindowDimensions } from 'react-native'
+import { Image } from 'expo-image'
+import { router } from 'expo-router'
+import { PenLine, Check } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
-import { Colors, FontFamily, withOpacity } from '@/constants'
+import { useSignatureCaptureStore } from '@/store/signatureCaptureStore'
+import { Colors, FontFamily } from '@/constants'
 
 const SECTIONS: { title: string; body: string }[] = [
   {
@@ -29,85 +30,50 @@ const SECTIONS: { title: string; body: string }[] = [
   },
 ]
 
-export interface HostAgreementStepHandle {
-  /** Captures the drawn signature as a local PNG file URI, or null if nothing's been drawn. */
-  capture(): Promise<string | null>
-}
-
 interface Props {
-  onSignedChange?: (signed: boolean) => void
+  onSignatureChange?: (uri: string | null) => void
 }
 
-// The signature is captured (not the individual stroke paths) via
-// react-native-view-shot on the canvas's own View — same technique
-// useImageShare already uses for flyer capture — so what gets uploaded is
-// pixel-identical to what the host actually saw and drew.
-export const HostAgreementStep = forwardRef<HostAgreementStepHandle, Props>(
-  function HostAgreementStep({ onSignedChange }, ref) {
-    const padRef = useRef<DrawPadHandle>(null)
-    const canvasRef = useRef<View>(null)
-    const [hasDrawn, setHasDrawn] = useState(false)
+export function HostAgreementStep({ onSignatureChange }: Props) {
+  const signatureUri = useSignatureCaptureStore(s => s.uri)
+  const { height: winHeight } = useWindowDimensions()
 
-    useImperativeHandle(ref, () => ({
-      async capture() {
-        if (!hasDrawn || !canvasRef.current) return null
-        try {
-          return await captureRef(canvasRef, { format: 'png', quality: 1, result: 'tmpfile' })
-        } catch {
-          return null
-        }
-      },
-    }), [hasDrawn])
+  useEffect(() => {
+    onSignatureChange?.(signatureUri)
+  }, [signatureUri])
 
-    const handleClear = () => {
-      hTap()
-      padRef.current?.erase()
-      setHasDrawn(false)
-      onSignedChange?.(false)
-    }
+  const openSheet = () => { hTap(); router.push('/(host-onboarding)/signature-sheet') }
 
-    return (
-      <View style={s.content}>
-        <Text style={s.title}>Host Agreement</Text>
-        <Text style={s.subtitle}>A few extra responsibilities come with hosting — please read and sign below.</Text>
+  return (
+    <View style={s.content}>
+      <Text style={s.title}>Host Agreement</Text>
+      <Text style={s.subtitle}>A few extra responsibilities come with hosting — please read and sign below.</Text>
 
-        <View style={s.sections}>
-          {SECTIONS.map(section => (
-            <View key={section.title} style={s.section}>
-              <Text style={s.sectionTitle}>{section.title}</Text>
-              <Text style={s.sectionBody}>{section.body}</Text>
-            </View>
-          ))}
-        </View>
-
-        <Text style={s.signLabel}>Sign below to agree</Text>
-        <View style={s.canvasWrap}>
-          {/* collapsable={false} — Android strips a plain View from the
-              native tree during capture without it, leaving a blank
-              screenshot (same note as useImageShare.ts). */}
-          <View ref={canvasRef} style={s.canvas} collapsable={false}>
-            <DrawPad
-              ref={padRef}
-              stroke="#181818"
-              strokeWidth={2.5}
-              onDrawStart={() => {
-                setHasDrawn(true)
-                onSignedChange?.(true)
-              }}
-            />
+      <View style={s.sections}>
+        {SECTIONS.map(section => (
+          <View key={section.title} style={s.section}>
+            <Text style={s.sectionTitle}>{section.title}</Text>
+            <Text style={s.sectionBody}>{section.body}</Text>
           </View>
-          {!hasDrawn && (
-            <Text style={s.canvasHint} pointerEvents="none">Sign here</Text>
-          )}
-        </View>
-        <Pressable style={s.clearBtn} onPress={handleClear} hitSlop={8}>
-          <RotateCcw size={13} color={Colors.inkSecondary} strokeWidth={2} />
-          <Text style={s.clearText}>Clear</Text>
-        </Pressable>
+        ))}
       </View>
-    )
-  },
-)
+
+      {signatureUri ? (
+        <Pressable style={[s.signedBox, { height: winHeight * 0.45 }]} onPress={openSheet}>
+          <Image source={{ uri: signatureUri }} style={s.signaturePreview} contentFit="contain" />
+          <View style={s.signedBadge}>
+            <Check size={12} color={Colors.background} strokeWidth={3} />
+          </View>
+        </Pressable>
+      ) : (
+        <Pressable style={s.signButton} onPress={openSheet}>
+          <PenLine size={18} color={Colors.background} strokeWidth={1.8} />
+          <Text style={s.signButtonText}>Sign</Text>
+        </Pressable>
+      )}
+    </View>
+  )
+}
 
 const s = StyleSheet.create({
   content: { alignItems: 'center' },
@@ -131,28 +97,24 @@ const s = StyleSheet.create({
   section: { gap: 3 },
   sectionTitle: { fontFamily: FontFamily.bodySemiBold, fontSize: 14.5, color: Colors.inkPrimary },
   sectionBody: { fontFamily: FontFamily.bodyRegular, fontSize: 13, color: Colors.inkSecondary, lineHeight: 18.5 },
-  signLabel: {
-    fontFamily: FontFamily.bodyMedium, fontSize: 11, letterSpacing: 0.6,
-    color: Colors.inkSecondary, textTransform: 'uppercase',
-    alignSelf: 'flex-start', marginBottom: 8,
+  signButton: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    width: '100%', height: 50,
+    backgroundColor: Colors.inkPrimary,
+    borderRadius: 25,
+    borderCurve: 'continuous',
   },
-  canvasWrap: { width: '100%' },
-  canvas: {
-    width: '100%', height: 160,
-    backgroundColor: '#FAFAF8',
+  signButtonText: { fontFamily: FontFamily.bodySemiBold, fontSize: 15, color: Colors.background },
+  signedBox: {
+    width: '100%',
     borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: withOpacity(Colors.inkPrimary, 0.12),
     overflow: 'hidden',
   },
-  canvasHint: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    textAlign: 'center', textAlignVertical: 'center',
-    fontFamily: FontFamily.bodyRegular, fontSize: 14, color: '#B8B4AC',
+  signaturePreview: { width: '100%', height: '100%' },
+  signedBadge: {
+    position: 'absolute', top: 14, right: 14,
+    width: 20, height: 20, borderRadius: 10,
+    backgroundColor: Colors.accentGreen,
+    alignItems: 'center', justifyContent: 'center',
   },
-  clearBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    alignSelf: 'flex-end', marginTop: 10, paddingVertical: 4,
-  },
-  clearText: { fontFamily: FontFamily.bodyMedium, fontSize: 13, color: Colors.inkSecondary },
 })
