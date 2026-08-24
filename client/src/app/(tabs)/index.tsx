@@ -6,7 +6,7 @@ import Animated from 'react-native-reanimated'
 import { useFocusEffect, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Heart, PartyPopper, Search } from 'lucide-react-native'
-import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, CreateEventSheet, EmptyState, PrimaryButton } from '@/components/ui'
+import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, EmptyState, PrimaryButton } from '@/components/ui'
 import { HomeGradientBackdrop } from '@/components/home/HomeGradientBackdrop'
 import { NotificationPopBadge } from '@/components/home/NotificationPopBadge'
 import { TemplateFan } from '@/components/home/TemplateFan'
@@ -28,7 +28,6 @@ import { Colors, ComponentSize, FontFamily, Radius, withOpacity } from '@/consta
 export default function HomeScreen() {
   const { profile } = useProfile()
   const { syncUnreadCount, hydrate: hydrateNotifStore } = useNotifStore()
-  const [createOpen, setCreateOpen] = useState(false)
   const lastBackRef = useRef(0)
   const showPill = usePillStore(s => s.show)
   const { hideProgress, scrollHandler } = useHeaderAndTabBarScroll()
@@ -97,12 +96,12 @@ export default function HomeScreen() {
         onScroll={scrollHandler}
         scrollEventThrottle={16}
       >
-        <TemplateFan onCreatePress={() => { hTap(); setCreateOpen(true) }} />
+        <TemplateFan onCreatePress={() => { hTap(); router.push('/(events)/create' as any) }} />
         <PrimaryButton
           label="Create event"
           size="small"
           style={styles.createBtn}
-          onPress={() => { hTap(); setCreateOpen(true) }}
+          onPress={() => { hTap(); router.push('/(events)/create' as any) }}
         />
 
         <ActiveEventsSection />
@@ -121,12 +120,6 @@ export default function HomeScreen() {
           />
         )}
       </Animated.ScrollView>
-
-      <CreateEventSheet
-        visible={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onCreateEvent={() => router.push('/(events)/create' as any)}
-      />
     </View>
   )
 }

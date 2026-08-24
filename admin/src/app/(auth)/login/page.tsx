@@ -67,7 +67,7 @@ export default function LoginPage() {
             <SketchInput
               type="email"
               autoComplete="email"
-              placeholder="you@gorave.com"
+              placeholder="you@gorave.in"
               error={errors.email?.message}
               {...register('email')}
             />

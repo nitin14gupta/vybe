@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { router } from 'expo-router'
 import { ArrowLeft, ListFilter } from 'lucide-react-native'
-import { AppHeader, HeaderIconBtn, CreateEventSheet } from '@/components/ui'
+import { AppHeader, HeaderIconBtn } from '@/components/ui'
 // import { EventSearchModal } from '@/components/events/EventSearchModal'
 import { CalendarMonthGrid } from '@/components/calendar/CalendarMonthGrid'
 import { CalendarDayPanel } from '@/components/calendar/CalendarDayPanel'
@@ -25,7 +25,6 @@ export default function CalendarScreen() {
   const [visibleMonth, setVisibleMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1))
   const [selectedDate, setSelectedDate] = useState(today)
   // const [searchOpen, setSearchOpen] = useState(false)
-  const [createOpen, setCreateOpen] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
   const [filters, setFilters] = useState<CalendarFilters>(DEFAULT_CALENDAR_FILTERS)
   const [toastVisible, setToastVisible] = useState(false)
@@ -129,16 +128,11 @@ export default function CalendarScreen() {
         dayEvents={dayEvents}
         onShiftDay={shiftDay}
         onRetry={reloadDay}
-        onCreateEvent={() => { setCreateOpen(true) }}
+        onCreateEvent={() => router.push('/(events)/create' as any)}
         onBrowseEvents={() => router.push('/(tabs)/events' as any)}
       />
 
       {/* <EventSearchModal visible={searchOpen} onClose={() => setSearchOpen(false)} nearbyEvents={[]} /> */}
-      <CreateEventSheet
-        visible={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onCreateEvent={() => router.push('/(events)/create' as any)}
-      />
       <CalendarFilterSheet
         visible={filterOpen}
         filters={filters}

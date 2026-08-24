@@ -6,6 +6,7 @@ import { ConfirmSheet } from '@/components/ui/ConfirmSheet'
 import { SafetyMenuRow } from '@/components/safety/SafetyMenuRow'
 import { useSos } from '@/hooks/useSos'
 import { useHasEmergencyContacts } from '@/hooks/useEmergencyContacts'
+import { useLocationStore } from '@/store/locationStore'
 import { hTap } from '@/lib/haptics'
 import { Colors } from '@/constants'
 
@@ -17,8 +18,12 @@ function useSosFlow(eventId: string) {
 
   const open = () => {
     hTap()
-    if (hasEmergencyContacts) setSosOpen(true)
-    else setSetupOpen(true)
+    if (hasEmergencyContacts) {
+      useLocationStore.getState()._start()
+      setSosOpen(true)
+    } else {
+      setSetupOpen(true)
+    }
   }
 
   const sheets = (

@@ -33,22 +33,10 @@ from routes.admin_audit_log import router as admin_audit_log_router
 from utils.account_purge import purge_expired_deleted_accounts
 
 # Comma-separated list of extra origins allowed to call this API — the admin
-# web panel's dev/prod origin(s), e.g. "http://localhost:3000,https://admin.gorave.com"
+# web panel's dev/prod origin(s), e.g. "http://localhost:3000,https://admin.gorave.in"
 ADMIN_ORIGINS = [o.strip() for o in os.getenv("ADMIN_ORIGINS", "").split(",") if o.strip()]
 
 PURGE_INTERVAL_SECONDS = 24 * 60 * 60
-
-# ── Cross-instance scheduler locking ────────────────────────────────────────
-# Every loop below runs inside THIS process, started fresh by every replica
-# of the API (same pattern the pre-existing purge loop already used). With
-# one instance that's harmless; the moment this runs as 2+ processes/replicas
-# (standard for any real deployment), each one fires its own copy of every
-# job on the same schedule — every user gets every notification once per
-# replica. A Redis SET-NX-EX lock (same primitive already used for rate
-# limiting/chat presence elsewhere in this codebase) makes only one replica
-# actually do the work per interval; the rest just no-op. Degrades to
-# "everyone runs it" only if Redis itself is unreachable — safe for local/
-# single-instance dev, since there's nothing to race against.
 _scheduler_redis = None
 
 

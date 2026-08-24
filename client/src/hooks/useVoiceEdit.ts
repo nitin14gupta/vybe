@@ -29,11 +29,6 @@ export function useVoiceEdit(existingUrl?: string | null) {
   const playing = playerStatus.playing
 
   useEffect(() => {
-    AudioModule.requestRecordingPermissionsAsync()
-    setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true })
-  }, [])
-
-  useEffect(() => {
     if (isRecording && seconds >= MAX_SECONDS) stopRecording()
   }, [seconds, isRecording])
 
@@ -63,6 +58,7 @@ export function useVoiceEdit(existingUrl?: string | null) {
         )
         return
       }
+      await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true })
 
       setRecorded(false)
       setLocalUri(null)

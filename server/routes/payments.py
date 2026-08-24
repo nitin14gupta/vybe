@@ -192,7 +192,7 @@ def create_order(body: CreateOrderBody, current_user: dict = Depends(get_current
         "wallet_amount": wallet_use,
         "event_title": ev["title"],
         "contact": contact,
-        "email": f"pay_{uid[:8]}@gorave.com",
+        "email": f"pay_{uid[:8]}@gorave.in",
     }
 
 

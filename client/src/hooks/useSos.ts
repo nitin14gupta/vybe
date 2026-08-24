@@ -2,10 +2,14 @@ import { useState } from 'react'
 import ApiService from '@/api/apiService'
 import { hError, hSuccess } from '@/lib/haptics'
 import { usePillStore } from '@/store/pillStore'
-import { useLiveLocation } from '@/hooks/useLiveLocation'
+import { useLocationStore } from '@/store/locationStore'
 
 export function useSos(eventId?: string) {
-  const { lat, lng } = useLiveLocation()
+  // Reads whatever the shared location watch already has — does NOT start
+  // it. The watch (and its permission prompt) is only kicked off when the
+  // user actually opens the SOS sheet, see SosButton's useSosFlow.
+  const lat = useLocationStore((s) => s.lat)
+  const lng = useLocationStore((s) => s.lng)
   const showPill = usePillStore(s => s.show)
   const [sending, setSending] = useState(false)
 

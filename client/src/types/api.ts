@@ -359,7 +359,7 @@ export interface PaymentOrderResponse {
   wallet_amount: number
   event_title?: string
   contact?: string   // user's phone e.g. "+919876543210"
-  email?: string     // synthetic pay_<uid>@gorave.com
+  email?: string     // synthetic pay_<uid>@gorave.in
 }
 
 export interface BlockedUser {

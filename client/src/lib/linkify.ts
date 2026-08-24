@@ -1,6 +1,6 @@
 // Matches a message whose entire (trimmed) content is a single link — with or
-// without an explicit http(s):// scheme, so "uilora.com" links just like
-// "https://uilora.com" does (matches Instagram/WhatsApp's own behavior).
+// without an explicit http(s):// scheme, so "gorave.in" links just like
+// "https://gorave.in" does (matches Instagram/WhatsApp's own behavior).
 // Deliberately conservative: only when that's literally the whole message,
 // not a sentence with a URL somewhere inside it.
 const URL_PATTERN =

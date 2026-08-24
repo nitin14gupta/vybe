@@ -3,7 +3,7 @@ import { APP_SCHEME } from '@/api/config'
 
 // Canonical "where a link/notification points" — the single source of truth
 // consumed by push-notification taps, in-app notification-row taps, and
-// externally-opened links (gorave:// now, https://link.uilora.com/... later).
+// externally-opened links (gorave:// now, https://link.gorave.in/... later).
 export type DeepLinkTarget =
   | { screen: 'event'; id: string }
   | { screen: 'ticket'; id: string }
@@ -14,9 +14,6 @@ export type DeepLinkTarget =
   | { screen: 'notifications' }
   | { screen: 'createEvent' }
 
-// `currentUserId` lets a "profile" target route to the own-profile tab
-// (`(tabs)/profile`) instead of the other-user viewer screen (`(profile)/[id]`)
-// when the link/notification points at yourself.
 export function targetToHref(t: DeepLinkTarget, currentUserId?: string | null): string {
   switch (t.screen) {
     case 'event': return `/(events)/${t.id}`
@@ -81,7 +78,7 @@ export function buildEventShareUrl(eventId: string): string {
 }
 
 // Parses an externally-opened URL (gorave://event/123, and later
-// https://link.uilora.com/event/123 — same path shape, different scheme/host)
+// https://link.gorave.in/event/123 — same path shape, different scheme/host)
 // into a canonical target.
 export function parseIncomingUrl(url: string): DeepLinkTarget | null {
   let path: string | null

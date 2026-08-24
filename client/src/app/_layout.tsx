@@ -97,8 +97,8 @@ export default function RootLayout() {
   const appReady = (fontsLoaded || fontError) && authReady
 
   useEffect(() => {
-    SplashScreen.hideAsync()
-  }, [])
+    if (appReady) SplashScreen.hideAsync()
+  }, [appReady])
 
   return (
     <GestureHandlerRootView style={styles.root}>

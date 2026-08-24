@@ -22,7 +22,7 @@ import { EventSearchModal } from "@/components/events/EventSearchModal";
 import { EventPreviewStrip, PreviewCard } from "@/components/events/EventPreviewStrip";
 import { MapFloatingHeader, ListModeHeader, ViewModeTogglePill, FilterChipsRow, LIST_HEADER_CONTENT_HEIGHT } from "@/components/events/EventsScreenHeader";
 import { MapErrorOverlay, MapEmptyOverlay, ListErrorState, ListEmptyState } from "@/components/events/EventsStateViews";
-import { LocationWarning, CreateEventSheet, EventListCard, EventListCardSkeleton, ViewModeToggle, BrandedRefreshControl } from "@/components/ui";
+import { LocationWarning, EventListCard, EventListCardSkeleton, ViewModeToggle, BrandedRefreshControl } from "@/components/ui";
 import { usePermissionSheetStore } from "@/store/permissionSheetStore";
 import { useEventViewModeStore } from "@/store/eventViewModeStore";
 import { useExpandTabBarOnFocus } from "@/hooks/useExpandTabBarOnFocus";
@@ -58,7 +58,6 @@ export default function EventsScreen() {
   const cardViewMode = useEventViewModeStore((s) => s.mode);
   const setCardViewMode = useEventViewModeStore((s) => s.setMode);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
   const previewListRef = useRef<FlatList>(null);
   const loadMoreList = useCallback(() => {
     setListCount((c) => (c < events.length ? c + LIST_PAGE : c));
@@ -195,7 +194,7 @@ export default function EventsScreen() {
           paddingTop={insets.top + 6}
           togglePill={togglePill}
           onSearch={() => setSearchModalOpen(true)}
-          onCreate={() => setCreateOpen(true)}
+          onCreate={goToCreate}
         />
 
         <EventSearchModal
@@ -205,12 +204,6 @@ export default function EventsScreen() {
           lat={userLat}
           lng={userLng}
           nearbyLoading={loading}
-        />
-
-        <CreateEventSheet
-          visible={createOpen}
-          onClose={() => setCreateOpen(false)}
-          onCreateEvent={goToCreate}
         />
 
         {hasError && <MapErrorOverlay onRetry={reload} />}
@@ -243,7 +236,7 @@ export default function EventsScreen() {
         paddingTop={insets.top + 6}
         togglePill={togglePill}
         onSearch={() => setSearchModalOpen(true)}
-        onCreate={() => setCreateOpen(true)}
+        onCreate={goToCreate}
         hideProgress={hideProgress}
       />
 
@@ -254,12 +247,6 @@ export default function EventsScreen() {
         lat={userLat}
         lng={userLng}
         nearbyLoading={loading}
-      />
-
-      <CreateEventSheet
-        visible={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onCreateEvent={goToCreate}
       />
 
       <LocationWarning />

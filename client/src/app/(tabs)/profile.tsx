@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { hTap } from '@/lib/haptics'
 import { Pencil, Plus, Settings, Share } from 'lucide-react-native'
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio'
-import { AppHeader, APP_HEADER_BAR_HEIGHT, CreateEventSheet, HeaderIconBtn, BrandedLoader, BrandedRefreshControl, PrimaryButton } from '@/components/ui'
+import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, BrandedLoader, BrandedRefreshControl, PrimaryButton } from '@/components/ui'
 import { ProfileAvatarHeader } from '@/components/profile/ProfileAvatarHeader'
 import { ProfileStatsRow } from '@/components/profile/ProfileStatsRow'
 import { ProfileBioVoiceCard } from '@/components/profile/ProfileBioVoiceCard'
@@ -31,7 +31,6 @@ export default function ProfileScreen() {
   const { profile, loading, error, refresh } = useProfile()
   const { viewingMedia, openMedia, closeMedia } = useImageViewer()
   const [refreshing, setRefreshing] = useState(false)
-  const [createOpen, setCreateOpen] = useState(false)
   const { hideProgress, scrollHandler } = useHeaderAndTabBarScroll()
   useExpandTabBarOnFocus()
   const insets = useSafeAreaInsets()
@@ -110,7 +109,7 @@ export default function ProfileScreen() {
         title="Profile"
         hideProgress={hideProgress}
         leftAction={
-          <HeaderIconBtn onPress={() => { hTap(); setCreateOpen(true) }}>
+          <HeaderIconBtn onPress={() => { hTap(); router.push('/(events)/create' as any) }}>
             <Plus size={20} color={Colors.inkSecondary} strokeWidth={1.8} />
           </HeaderIconBtn>
         }
@@ -119,12 +118,6 @@ export default function ProfileScreen() {
             <Settings size={18} color={Colors.inkSecondary} strokeWidth={1.5} />
           </HeaderIconBtn>
         }
-      />
-
-      <CreateEventSheet
-        visible={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onCreateEvent={() => router.push('/(events)/create' as any)}
       />
 
       <Animated.ScrollView

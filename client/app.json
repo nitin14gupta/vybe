@@ -12,7 +12,7 @@
       "appleTeamId": "PUT_APPLE_ID",
       "supportsTablet": false,
       "associatedDomains": [
-        "applinks:link.uilora.com"
+        "applinks:link.gorave.in"
       ],
       "infoPlist": {
         "NSCameraUsageDescription": "Gorave uses your camera to scan QR tickets at event check-in.",
@@ -46,7 +46,7 @@
           "data": [
             {
               "scheme": "https",
-              "host": "link.uilora.com"
+              "host": "link.gorave.in"
             }
           ],
           "category": [
@@ -82,16 +82,16 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#010100",
+          "backgroundColor": "#111111",
           "image": "./assets/splash-icon.png",
-          "imageWidth": 200,
+          "imageWidth": 76,
           "android": {
             "image": "./assets/splash-icon.png",
-            "imageWidth": 200
+            "imageWidth": 76
           },
           "ios": {
             "image": "./assets/splash-icon.png",
-            "imageWidth": 200
+            "imageWidth": 76
           }
         }
       ],
@@ -162,7 +162,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "apiUrl": "http://192.168.0.103:8000",
+      "apiUrl": "http://192.168.0.104:8000",
       "router": {},
       "eas": {
         "build": {
