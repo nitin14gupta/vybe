@@ -300,10 +300,12 @@ def notify_checked_in(cur, user_id: str, event_id: str, event_title: str):
 
 
 def notify_follow_rsvp(cur, follower_id: str, actor_id: str, actor_name: str, event_id: str, event_title: str):
+    """Fired only to followers who are ALSO already going to event_id — see
+    callers in routes/events.py and routes/payments.py."""
     _insert_notification(
         cur, follower_id, "follow_rsvp",
-        title=f"{actor_name} is going to {event_title}",
-        body="Someone you follow just RSVPed — check it out.",
+        title=f"{actor_name} is going to {event_title} too",
+        body="Someone you follow just joined an event you're already going to.",
         actor_id=actor_id,
         entity_id=event_id,
         entity_type="event",

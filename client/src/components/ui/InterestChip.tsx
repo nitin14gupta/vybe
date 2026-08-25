@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   selected: {
-    backgroundColor: withOpacity(Colors.brandOrange, 0.15),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.12),
   },
   unselected: {
     backgroundColor: Colors.elevated,
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.divider,
   },
   borderedSelected: {
-    borderColor: Colors.brandOrange,
+    borderColor: Colors.inkPrimary,
   },
   emoji: {
     fontSize: 15,
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   selectedText: {
-    color: Colors.brandOrange,
+    color: Colors.inkPrimary,
   },
   unselectedText: {
     color: Colors.inkSecondary,

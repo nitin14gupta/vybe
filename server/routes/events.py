@@ -342,7 +342,9 @@ def list_events(
                 SELECT (SELECT p.url FROM user_photos p WHERE p.user_id = eav.user_id ORDER BY p.position LIMIT 1) AS avatar_url
                 FROM event_attendees eav
                 WHERE eav.event_id = e.id AND eav.status = 'going'
-                ORDER BY eav.joined_at ASC LIMIT 3
+                ORDER BY EXISTS(
+                    SELECT 1 FROM follows fo WHERE fo.follower_id = %s::uuid AND fo.following_id = eav.user_id
+                ) DESC, eav.joined_at ASC LIMIT 3
             ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars,
             {relationship_select}
         FROM events e
@@ -351,7 +353,7 @@ def list_events(
         ORDER BY {order_sql}
         LIMIT %s
     """
-    params = relationship_params + filter_params + order_params + [limit]
+    params = [viewer_id] + relationship_params + filter_params + order_params + [limit]
 
     with get_db() as (cur, _):
         cur.execute(sql, params)
@@ -395,7 +397,9 @@ def get_hosted_events(current_user: dict = Depends(get_current_user)):
                     SELECT (SELECT p.url FROM user_photos p WHERE p.user_id = eav.user_id ORDER BY p.position LIMIT 1) AS avatar_url
                     FROM event_attendees eav
                     WHERE eav.event_id = e.id AND eav.status = 'going'
-                    ORDER BY eav.joined_at ASC LIMIT 3
+                    ORDER BY EXISTS(
+                        SELECT 1 FROM follows fo WHERE fo.follower_id = %s::uuid AND fo.following_id = eav.user_id
+                    ) DESC, eav.joined_at ASC LIMIT 3
                 ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars,
                 EXISTS(SELECT 1 FROM event_hotlist h WHERE h.user_id = %s::uuid AND h.event_id = e.id) AS is_hotlisted
             FROM events e
@@ -403,7 +407,7 @@ def get_hosted_events(current_user: dict = Depends(get_current_user)):
             WHERE e.host_id = %s::uuid
             ORDER BY e.date_time DESC
             """,
-            (uid, uid),
+            (uid, uid, uid),
         )
         rows = cur.fetchall()
     result = []
@@ -519,7 +523,9 @@ def get_joined_events(current_user: dict = Depends(get_current_user)):
                     SELECT (SELECT p.url FROM user_photos p WHERE p.user_id = eav.user_id ORDER BY p.position LIMIT 1) AS avatar_url
                     FROM event_attendees eav
                     WHERE eav.event_id = e.id AND eav.status = 'going'
-                    ORDER BY eav.joined_at ASC LIMIT 3
+                    ORDER BY EXISTS(
+                        SELECT 1 FROM follows fo WHERE fo.follower_id = %s::uuid AND fo.following_id = eav.user_id
+                    ) DESC, eav.joined_at ASC LIMIT 3
                 ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars,
                 EXISTS(SELECT 1 FROM event_hotlist h WHERE h.user_id = %s::uuid AND h.event_id = e.id) AS is_hotlisted
             FROM events e
@@ -527,7 +533,7 @@ def get_joined_events(current_user: dict = Depends(get_current_user)):
             JOIN event_attendees ea ON ea.event_id = e.id AND ea.user_id = %s::uuid AND ea.status = 'going'
             ORDER BY e.date_time DESC
             """,
-            (uid, uid),
+            (uid, uid, uid),
         )
         rows = cur.fetchall()
     result = []
@@ -1027,7 +1033,9 @@ def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
                     SELECT (SELECT p.url FROM user_photos p WHERE p.user_id = eav.user_id ORDER BY p.position LIMIT 1) AS avatar_url
                     FROM event_attendees eav
                     WHERE eav.event_id = e.id AND eav.status = 'going'
-                    ORDER BY eav.joined_at ASC LIMIT 3
+                    ORDER BY EXISTS(
+                        SELECT 1 FROM follows fo WHERE fo.follower_id = %s::uuid AND fo.following_id = eav.user_id
+                    ) DESC, eav.joined_at ASC LIMIT 3
                 ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars,
                 NULL::int AS distance_km,
                 going_ea.ticket_token AS my_ticket_token,
@@ -1067,7 +1075,7 @@ def get_event(event_id: str, current_user: dict = Depends(get_current_user)):
             LEFT JOIN event_attendees going_ea ON going_ea.event_id = e.id AND going_ea.user_id = %s::uuid AND going_ea.status = 'going'
             WHERE e.id = %s
             """,
-            (uid, uid, uid, uid, uid, uid, event_id),
+            (uid, uid, uid, uid, uid, uid, uid, event_id),
         )
         row = cur.fetchone()
 
@@ -1594,16 +1602,28 @@ def rsvp_event(event_id: str, body: RsvpBody, background_tasks: BackgroundTasks,
                                 {"type": "event", "event_id": event_id}, cover_url, category="hosting",
                             )
 
-                    # Social proof to the RSVPing user's followers — same
-                    # "notify everyone who might care" precedent as
-                    # notify_followers_event_created on event creation.
+                    # Notify followers who are ALSO already going to this same
+                    # event — "someone you follow is going to this event you
+                    # joined too" is a co-attendance signal, not a generic
+                    # "they RSVPed somewhere" nudge, so it's scoped to people
+                    # who already have skin in this specific event.
                     from routes.notifications import notify_follow_rsvp
-                    cur.execute("SELECT follower_id::text FROM follows WHERE following_id = %s::uuid", (uid,))
+                    cur.execute(
+                        """
+                        SELECT f.follower_id::text FROM follows f
+                        WHERE f.following_id = %s::uuid
+                          AND EXISTS(
+                              SELECT 1 FROM event_attendees ea
+                              WHERE ea.event_id = %s AND ea.user_id = f.follower_id AND ea.status = 'going'
+                          )
+                        """,
+                        (uid, event_id),
+                    )
                     for f in cur.fetchall():
                         notify_follow_rsvp(cur, f["follower_id"], uid, attendee_name, event_id, ev_row["title"])
                         background_tasks.add_task(
-                            send_push, f["follower_id"], f"{attendee_name} is going to {ev_row['title']}",
-                            "Someone you follow just RSVPed — check it out.",
+                            send_push, f["follower_id"], f"{attendee_name} is going to {ev_row['title']} too",
+                            "Someone you follow just joined an event you're already going to.",
                             {"type": "event", "event_id": event_id}, cover_url, category="social",
                         )
 
@@ -1994,7 +2014,7 @@ def get_guests(event_id: str, current_user: dict = Depends(get_current_user)):
             FROM event_attendees ea
             JOIN users u ON u.id = ea.user_id
             WHERE ea.event_id = %s AND ea.status = 'going'
-            ORDER BY ea.joined_at ASC
+            ORDER BY is_following DESC, ea.joined_at ASC
             LIMIT 200
             """,
             (current_user["id"], event_id),

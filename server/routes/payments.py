@@ -38,12 +38,22 @@ def _notify_paid_rsvp_extras(cur, uid: str, buyer_name: str, event_id: str, ev_t
     from routes.notifications import notify_follow_rsvp, notify_host_low_capacity
     from utils.push import send_push as _send_push
 
-    cur.execute("SELECT follower_id::text FROM follows WHERE following_id = %s::uuid", (uid,))
+    cur.execute(
+        """
+        SELECT f.follower_id::text FROM follows f
+        WHERE f.following_id = %s::uuid
+          AND EXISTS(
+              SELECT 1 FROM event_attendees ea
+              WHERE ea.event_id = %s AND ea.user_id = f.follower_id AND ea.status = 'going'
+          )
+        """,
+        (uid, event_id),
+    )
     for f in cur.fetchall():
         notify_follow_rsvp(cur, f["follower_id"], uid, buyer_name, event_id, ev_title)
         try:
-            _send_push(f["follower_id"], f"{buyer_name} is going to {ev_title}",
-                       "Someone you follow just RSVPed — check it out.",
+            _send_push(f["follower_id"], f"{buyer_name} is going to {ev_title} too",
+                       "Someone you follow just joined an event you're already going to.",
                        {"type": "event", "event_id": event_id}, image_url=cover_url, category="social")
         except Exception:
             pass

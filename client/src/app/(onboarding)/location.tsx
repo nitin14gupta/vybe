@@ -58,7 +58,7 @@ export default function LocationScreen() {
           ListHeaderComponent={
             <Pressable onPress={() => { hTap(); detectLocation() }} style={styles.detectRow}>
               <View style={styles.detectIcon}>
-                <MapPin size={20} color={Colors.brandOrange} strokeWidth={2} />
+                <MapPin size={20} color={Colors.inkPrimary} strokeWidth={2} />
               </View>
               <Text style={styles.detectText}>
                 {detecting ? 'Detecting…' : 'Use my current location'}
@@ -68,13 +68,11 @@ export default function LocationScreen() {
           renderItem={({ item: c }) => (
             <Pressable onPress={() => { hSelection(); selectCity(c.name) }} style={styles.cityRow}>
               <View>
-                <Text style={[styles.cityName, selectedCity === c.name && styles.cityNameSelected]}>
-                  {c.name}
-                </Text>
+                <Text style={styles.cityName}>{c.name}</Text>
                 <Text style={styles.cityState}>{c.state}</Text>
               </View>
               {selectedCity === c.name && (
-                <Check size={20} color={Colors.brandOrange} strokeWidth={2.5} />
+                <Check size={20} color={Colors.inkPrimary} strokeWidth={2.5} />
               )}
             </Pressable>
           )}
@@ -152,14 +150,14 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: Radius.card,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.08),
     alignItems: 'center',
     justifyContent: 'center',
   },
   detectText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 15,
-    color: Colors.brandOrange,
+    color: Colors.inkPrimary,
   },
   cityRow: {
     flexDirection: 'row',
@@ -174,7 +172,6 @@ const styles = StyleSheet.create({
     color: Colors.inkPrimary,
     marginBottom: 2,
   },
-  cityNameSelected: { color: Colors.brandOrange },
   cityState: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 12,

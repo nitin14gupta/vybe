@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   maxHint: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 12,
-    color: Colors.accentGold,
+    color: Colors.accentGreen,
     marginTop: 6,
   },
   listLoader: { flex: 1, alignItems: 'center', justifyContent: 'center' },

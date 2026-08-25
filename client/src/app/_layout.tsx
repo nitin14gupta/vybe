@@ -57,6 +57,7 @@ function RootNavigator() {
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useVibeFonts()
   const [authReady, setAuthReady] = useState(false)
+  const [fontsSettled, setFontsSettled] = useState(false)
   const { setAuth } = useAuthStore()
   useNotificationSetup()
   useDeepLinkRouter()
@@ -94,7 +95,13 @@ export default function RootLayout() {
     bootstrap()
   }, [])
 
-  const appReady = (fontsLoaded || fontError) && authReady
+  useEffect(() => {
+    if (!fontsLoaded && !fontError) return
+    const timer = setTimeout(() => setFontsSettled(true), 150)
+    return () => clearTimeout(timer)
+  }, [fontsLoaded, fontError])
+
+  const appReady = fontsSettled && authReady
 
   useEffect(() => {
     if (appReady) SplashScreen.hideAsync()
