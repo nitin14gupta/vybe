@@ -1,11 +1,12 @@
-import { memo, useCallback, useState } from 'react'
+import { forwardRef, memo, useCallback, useImperativeHandle, useRef, useState } from 'react'
 import { View, Text, StyleSheet, FlatList } from 'react-native'
 import { router, useFocusEffect } from 'expo-router'
 import ApiService, { type EventSummary } from '@/api/apiService'
+import { getOrFetch, invalidate } from '@/lib/queryCache'
 import { EventCard } from '@/components/events/EventCard'
 import { SosButton } from '@/components/events/SosButton'
 import { parseServerDate, isEventActive } from '@/lib/dates'
-import { Colors, FontFamily, withOpacity } from '@/constants'
+import { CacheKeys, Colors, FontFamily, withOpacity } from '@/constants'
 
 const CARD_WIDTH = 240
 
@@ -24,25 +25,44 @@ const ActiveEventCard = memo(function ActiveEventCard({ event }: { event: EventS
   )
 })
 
-// Events the user has joined that are happening right this moment (between
-// start and end time) — separate from "You're Going" (upcoming) below it.
-// Surfaces the SOS action directly on the card, since this is exactly the
-// moment it'd actually be used.
-export function ActiveEventsSection({ onEmptyChange }: { onEmptyChange?: (empty: boolean) => void }) {
-  const [events, setEvents] = useState<EventSummary[]>([])
+export interface ActiveEventsSectionHandle {
+  /** Force a fresh fetch, bypassing the cache — used by pull-to-refresh. */
+  refresh: () => Promise<void>
+}
 
-  useFocusEffect(useCallback(() => {
-    let active = true
-    ApiService.getMyJoinedEvents()
+interface Props {
+  onEmptyChange?: (empty: boolean) => void
+}
+
+export const ActiveEventsSection = forwardRef<ActiveEventsSectionHandle, Props>(function ActiveEventsSection(
+  { onEmptyChange },
+  ref,
+) {
+  const [events, setEvents] = useState<EventSummary[]>([])
+  const mountedRef = useRef(true)
+
+  const load = useCallback((force: boolean) => {
+    const fetch = () =>
+      getOrFetch(CacheKeys.homeJoinedEvents, () => ApiService.getMyJoinedEvents(), { ttlMs: 5 * 60_000, persist: false })
+    return (force ? invalidate(CacheKeys.homeJoinedEvents).then(fetch) : fetch())
       .then(data => {
-        if (!active) return
+        if (!mountedRef.current) return
         const sorted = activeSorted(data)
         setEvents(sorted)
         onEmptyChange?.(sorted.length === 0)
       })
       .catch(() => {})
-    return () => { active = false }
-  }, [onEmptyChange]))
+  }, [onEmptyChange])
+
+  useImperativeHandle(ref, () => ({
+    refresh: () => load(true),
+  }), [load])
+
+  useFocusEffect(useCallback(() => {
+    mountedRef.current = true
+    load(false)
+    return () => { mountedRef.current = false }
+  }, [load]))
 
   if (events.length === 0) return null
 
@@ -62,7 +82,7 @@ export function ActiveEventsSection({ onEmptyChange }: { onEmptyChange?: (empty:
       />
     </View>
   )
-}
+})
 
 const s = StyleSheet.create({
   wrap: { gap: 10 },

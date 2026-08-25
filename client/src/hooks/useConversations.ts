@@ -4,9 +4,10 @@ import ApiService, { Conversation, VibeRequest } from '@/api/apiService'
 import { useChatUnreadStore } from '@/store/chatUnreadStore'
 import { useInboxSocket } from '@/hooks/useInboxSocket'
 import { peekCached, setCached } from '@/lib/queryCache'
+import { CacheKeys } from '@/constants'
 
 const PAGE_SIZE = 20
-const CACHE_KEY = 'chat:conversations'
+const CACHE_KEY = CacheKeys.chatConversations
 
 interface CachedConversations {
   active: Conversation[]

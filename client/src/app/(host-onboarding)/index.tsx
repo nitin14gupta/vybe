@@ -5,7 +5,7 @@ import { router } from 'expo-router'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 import { hTap, hSuccess } from '@/lib/haptics'
 import { OutlineButton, PrimaryButton, Screen, BrandedLoader, StepDots } from '@/components/ui'
-import { Colors, FontFamily, Spacing } from '@/constants'
+import { CacheKeys, Colors, FontFamily, Spacing } from '@/constants'
 import {
   WelcomeStep,
   BadgesStep,
@@ -115,7 +115,7 @@ export default function HostOnboardingScreen() {
               bank_name: bankInfo!.bank,
             },
       )
-      setCached('profile:me', updatedProfile)
+      setCached(CacheKeys.profile(), updatedProfile)
       hSuccess()
       setSaving(false)
       setFinishing(true)
@@ -136,7 +136,7 @@ export default function HostOnboardingScreen() {
     try {
       const signatureUrl = await ApiService.uploadSignature(signatureUri)
       const updatedProfile = await ApiService.acceptHostAgreement(signatureUrl)
-      setCached('profile:me', updatedProfile)
+      setCached(CacheKeys.profile(), updatedProfile)
       setStoredSignatureUri(null)
       hTap()
       setStep(s => s + 1)

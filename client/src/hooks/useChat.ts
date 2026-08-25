@@ -3,12 +3,11 @@ import { AppState } from 'react-native'
 import ApiService, { Message } from '@/api/apiService'
 import { useAuthStore } from '@/store/auth'
 import { peekCached, setCached } from '@/lib/queryCache'
+import { CacheKeys } from '@/constants'
 import { usePillStore } from '@/store/pillStore'
 import { useChatUnreadStore } from '@/store/chatUnreadStore'
 
-function messagesCacheKey(conversationId: string) {
-  return `chat:messages:${conversationId}`
-}
+const messagesCacheKey = CacheKeys.chatMessages
 
 export function useChat(conversationId: string) {
   const [initialCache] = useState(() => peekCached<Message[]>(messagesCacheKey(conversationId)))

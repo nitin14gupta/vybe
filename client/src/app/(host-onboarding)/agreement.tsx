@@ -9,7 +9,7 @@ import ApiService from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { useSignatureCaptureStore } from '@/store/signatureCaptureStore'
 import { setCached } from '@/lib/queryCache'
-import { Colors, Spacing } from '@/constants'
+import { CacheKeys, Colors, Spacing } from '@/constants'
 
 // Catch-up screen for hosts who finished onboarding before the Host
 // Agreement existed — create.tsx redirects here whenever
@@ -37,7 +37,7 @@ export default function HostAgreementCatchUpScreen() {
     try {
       const signatureUrl = await ApiService.uploadSignature(signatureUri)
       const updatedProfile = await ApiService.acceptHostAgreement(signatureUrl)
-      setCached('profile:me', updatedProfile)
+      setCached(CacheKeys.profile(), updatedProfile)
       setStoredSignatureUri(null)
       hTap()
       router.replace('/(events)/create')

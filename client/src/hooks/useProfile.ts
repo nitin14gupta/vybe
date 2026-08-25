@@ -3,6 +3,7 @@ import { useFocusEffect } from 'expo-router'
 import { getMe, getProfile, followUser, unfollowUser } from '@/api/user'
 import type { ProfileResponse } from '@/api/user'
 import { peekCached, setCached } from '@/lib/queryCache'
+import { CacheKeys } from '@/constants'
 import { usePillStore } from '@/store/pillStore'
 
 // "Own profile" barely changes between one tab visit and the next, so
@@ -10,9 +11,7 @@ import { usePillStore } from '@/store/pillStore'
 // single time you tap the Profile tab is wasted wait. Stale-while-revalidate:
 // paint whatever we last knew instantly, still refetch every focus like
 // before, just don't blank the screen to do it.
-function cacheKey(userId?: string) {
-  return userId ? `profile:${userId}` : 'profile:me'
-}
+const cacheKey = CacheKeys.profile
 
 // Two separate useProfile() instances exist for the same "me" profile — the
 // tab-bar layout (avatar) and the Profile screen itself — and both refetch on

@@ -16,7 +16,7 @@ import { ArrowLeft, PartyPopper, Share2 } from 'lucide-react-native'
 import ViewShot, { type ViewShotRef } from 'react-native-view-shot'
 import { Asset as MediaAsset, requestPermissionsAsync as requestMediaPermissionsAsync } from 'expo-media-library'
 import { hTap, hSuccess } from '@/lib/haptics'
-import { Colors, FontFamily, Spacing, withOpacity } from '@/constants'
+import { CacheKeys, Colors, FontFamily, Spacing, withOpacity } from '@/constants'
 import ApiService, { type TicketInfo } from '@/api/apiService'
 import { usePillStore } from '@/store/pillStore'
 import { getOrFetch, peekCached } from '@/lib/queryCache'
@@ -60,8 +60,8 @@ export default function TicketScreen() {
   const goBack = useGoBack()
   const showPill = usePillStore(s => s.show)
 
-  const [ticket, setTicket] = useState<TicketInfo | null>(() => id ? peekCached<TicketInfo>(`ticket:v2:${id}`) : null)
-  const [loading, setLoading] = useState(() => !(id && peekCached<TicketInfo>(`ticket:v2:${id}`)))
+  const [ticket, setTicket] = useState<TicketInfo | null>(() => id ? peekCached<TicketInfo>(CacheKeys.ticket(id)) : null)
+  const [loading, setLoading] = useState(() => !(id && peekCached<TicketInfo>(CacheKeys.ticket(id))))
   const [loadError, setLoadError] = useState(false)
   const [coverUrl, setCoverUrl] = useState('')
   const cardRef = useRef<ViewShotRef>(null)
@@ -72,7 +72,7 @@ export default function TicketScreen() {
     if (!id) return
     setLoading(true)
     setLoadError(false)
-    getOrFetch(`ticket:v2:${id}`, () => ApiService.getMyTicket(id), {
+    getOrFetch(CacheKeys.ticket(id), () => ApiService.getMyTicket(id), {
       ttlMs: t => {
         const d = parseTs(t.date_time)
         return d ? Math.max(d.getTime() - Date.now(), 0) : 60_000
@@ -95,7 +95,7 @@ export default function TicketScreen() {
     // Cover photo only — this screen never touches live fields (RSVP status,
     // spots left), just cosmetic display for the share card, so it's as safe
     // to cache-until-event-ends as the ticket itself.
-    getOrFetch(`event-cover:${id}`, () => ApiService.getEvent(id), {
+    getOrFetch(CacheKeys.eventCover(id), () => ApiService.getEvent(id), {
       ttlMs: ev => {
         const d = parseTs(ev.date_time)
         return d ? Math.max(d.getTime() - Date.now(), 0) : 60_000

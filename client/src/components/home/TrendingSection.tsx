@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useState } from 'react'
+import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { View, Text, StyleSheet, FlatList, type ListRenderItemInfo } from 'react-native'
 import { router } from 'expo-router'
 import ApiService, { type EventSummary } from '@/api/apiService'
@@ -24,6 +24,11 @@ const TrendingCard = memo(function TrendingCard({ event, onPress }: {
   )
 })
 
+export interface TrendingSectionHandle {
+  /** Force a fresh fetch — used by pull-to-refresh. */
+  refresh: () => Promise<void>
+}
+
 interface Props {
   /** Reports whether this section has nothing to show, once its fetch
    * resolves — the home screen combines this with the other two sections'
@@ -37,48 +42,55 @@ interface Props {
 // The API has no offset/page param, so we over-fetch once (FETCH_LIMIT) and
 // reveal more of the already-sorted batch as the user scrolls — simple lazy
 // loading without a second network round-trip per page.
-export function TrendingSection({ onEmptyChange }: Props) {
+export const TrendingSection = forwardRef<TrendingSectionHandle, Props>(function TrendingSection(
+  { onEmptyChange },
+  ref,
+) {
   const { profile } = useProfile()
   const [allEvents, setAllEvents] = useState<EventSummary[]>([])
   const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT)
+  const mountedRef = useRef(true)
 
-  useEffect(() => {
-    let active = true
-
-    const loadTrending = (lat: number, lng: number) => {
+  const load = useCallback((): Promise<void> => {
+    const loadTrending = (lat: number, lng: number) =>
       ApiService.getEvents({ lat, lng, radius_km: 40, limit: FETCH_LIMIT })
         .then(result => {
-          if (!active) return
+          if (!mountedRef.current) return
           const sorted = [...result].sort((a, b) => b.attendee_count - a.attendee_count)
           setAllEvents(sorted)
           setVisibleCount(INITIAL_COUNT)
           onEmptyChange?.(sorted.length === 0)
         })
         .catch(() => {})
-    }
 
     const { lat, lng, city } = profile ?? {}
     // 0,0 isn't a real location — it's what a manually-picked city used to
     // save before city coordinates existed. Treat it the same as "unset".
     const hasRealCoords = lat != null && lng != null && (lat !== 0 || lng !== 0)
-    if (hasRealCoords) { loadTrending(lat!, lng!); return () => { active = false } }
-    if (!city) return () => { active = false }
+    if (hasRealCoords) return loadTrending(lat!, lng!)
+    if (!city) return Promise.resolve()
 
     // Self-heal: this profile has a city name but no real coordinates behind
     // it — look up the city's known lat/lng and backfill the profile so this
     // repair only has to happen once.
-    ApiService.getCities()
+    return ApiService.getCities()
       .then(cities => {
-        if (!active) return
+        if (!mountedRef.current) return
         const match = cities.find(c => c.name === city)
         if (!match) return
         ApiService.setLocation(city, match.lat, match.lng).catch(() => {})
-        loadTrending(match.lat, match.lng)
+        return loadTrending(match.lat, match.lng)
       })
       .catch(() => {})
+  }, [profile?.lat, profile?.lng, profile?.city, onEmptyChange])
 
-    return () => { active = false }
-  }, [profile?.lat, profile?.lng, profile?.city])
+  useImperativeHandle(ref, () => ({ refresh: load }), [load])
+
+  useEffect(() => {
+    mountedRef.current = true
+    load()
+    return () => { mountedRef.current = false }
+  }, [load])
 
   const handleCardPress = useCallback((id: string) => {
     router.push(`/(events)/${id}` as any)
@@ -118,7 +130,7 @@ export function TrendingSection({ onEmptyChange }: Props) {
       />
     </View>
   )
-}
+})
 
 const s = StyleSheet.create({
   wrap: { gap: 10 },

@@ -6,15 +6,15 @@ import Animated from 'react-native-reanimated'
 import { useFocusEffect, router } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Heart, PartyPopper, Search } from 'lucide-react-native'
-import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, EmptyState, PrimaryButton } from '@/components/ui'
+import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, EmptyState, PrimaryButton, BrandedRefreshControl } from '@/components/ui'
 import { HomeGradientBackdrop } from '@/components/home/HomeGradientBackdrop'
 import { NotificationPopBadge } from '@/components/home/NotificationPopBadge'
 import { TemplateFan } from '@/components/home/TemplateFan'
-import { ActiveEventsSection } from '@/components/home/ActiveEventsSection'
-import { MyEventsSection } from '@/components/home/MyEventsSection'
+import { ActiveEventsSection, type ActiveEventsSectionHandle } from '@/components/home/ActiveEventsSection'
+import { MyEventsSection, type MyEventsSectionHandle } from '@/components/home/MyEventsSection'
 import { RecentlyViewedSection } from '@/components/home/RecentlyViewedSection'
 import { PromoCarousel } from '@/components/home/PromoCarousel'
-import { TrendingSection } from '@/components/home/TrendingSection'
+import { TrendingSection, type TrendingSectionHandle } from '@/components/home/TrendingSection'
 import { useEvents } from '@/hooks/useEvents'
 import { useProfile } from '@/hooks/useProfile'
 import { useHeaderAndTabBarScroll } from '@/hooks/useHeaderAndTabBarScroll'
@@ -39,6 +39,24 @@ export default function HomeScreen() {
   const [recentEmpty, setRecentEmpty] = useState<boolean | null>(null)
   const [trendingEmpty, setTrendingEmpty] = useState<boolean | null>(null)
   const allEmpty = myEventsEmpty === true && recentEmpty === true && trendingEmpty === true
+
+  const [refreshing, setRefreshing] = useState(false)
+  const activeEventsRef = useRef<ActiveEventsSectionHandle>(null)
+  const myEventsRef = useRef<MyEventsSectionHandle>(null)
+  const trendingRef = useRef<TrendingSectionHandle>(null)
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    try {
+      await Promise.all([
+        activeEventsRef.current?.refresh(),
+        myEventsRef.current?.refresh(),
+        trendingRef.current?.refresh(),
+      ])
+    } finally {
+      setRefreshing(false)
+    }
+  }, [])
 
   useFocusEffect(
     useCallback(() => {
@@ -95,6 +113,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
+        refreshControl={<BrandedRefreshControl refreshing={refreshing} onRefresh={handleRefresh} progressViewOffset={headerHeight} />}
       >
         <TemplateFan onCreatePress={() => { hTap(); router.push('/(events)/create' as any) }} />
         <PrimaryButton
@@ -104,11 +123,11 @@ export default function HomeScreen() {
           onPress={() => { hTap(); router.push('/(events)/create' as any) }}
         />
 
-        <ActiveEventsSection />
-        <MyEventsSection onEmptyChange={setMyEventsEmpty} />
+        <ActiveEventsSection ref={activeEventsRef} />
+        <MyEventsSection ref={myEventsRef} onEmptyChange={setMyEventsEmpty} />
         <RecentlyViewedSection onEmptyChange={setRecentEmpty} />
         <PromoCarousel />
-        <TrendingSection onEmptyChange={setTrendingEmpty} />
+        <TrendingSection ref={trendingRef} onEmptyChange={setTrendingEmpty} />
 
         {allEmpty && (
           <EmptyState
