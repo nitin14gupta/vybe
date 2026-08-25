@@ -46,8 +46,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   selected: {
-    backgroundColor: withOpacity(Colors.brandOrange, 0.12),
-    borderColor: Colors.brandOrange,
+    backgroundColor: withOpacity(Colors.inkPrimary, 0.12),
+    borderColor: Colors.inkPrimary,
   },
   unselected: {
     backgroundColor: Colors.elevated,
@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   selectedText: {
-    color: Colors.brandOrange,
+    color: Colors.inkPrimary,
   },
   unselectedText: {
     color: Colors.inkSecondary,

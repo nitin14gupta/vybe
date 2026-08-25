@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
 import { Lock, Cake } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
-import { PrimaryButton, OutlineButton, Screen, LogoMark } from '@/components/ui'
+import { PrimaryButton, OutlineButton, Screen } from '@/components/ui'
 import { Colors, FontFamily, Spacing } from '@/constants'
 
 export default function AgeGateScreen() {
@@ -28,7 +28,6 @@ export default function AgeGateScreen() {
 
   return (
     <Screen style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 }}>
-      <LogoMark size={30} opacity={0.9} style={{ marginBottom: 24 }} />
       <View style={styles.emoji}>
         <Cake size={64} color={Colors.brandOrange} strokeWidth={1.5} />
       </View>

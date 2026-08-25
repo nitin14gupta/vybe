@@ -8,9 +8,7 @@ import Animated, {
   withDelay,
   withSpring,
 } from 'react-native-reanimated'
-import { Check, Flame } from 'lucide-react-native'
-import { CannonConfetti } from 'react-native-fast-confetti'
-import { PrimaryButton, Screen } from '@/components/ui'
+import { ConfettiRain, PrimaryButton, Screen, LogoMark } from '@/components/ui'
 import { useOnboardingStore } from '@/store/onboarding'
 import { useAuthStore } from '@/store/auth'
 import { Colors, FontFamily, withOpacity } from '@/constants'
@@ -23,11 +21,10 @@ export default function CompleteScreen() {
   const fadeIn = useSharedValue(0)
 
   useEffect(() => {
-    scale.value  = withDelay(200, withSpring(1, { damping: 12, stiffness: 140 }))
+    // A gentle settle, not a bouncy overshoot — high damping keeps it from
+    // wobbling past its final size.
+    scale.value  = withDelay(200, withSpring(1, { damping: 18, stiffness: 120, overshootClamping: true }))
     fadeIn.value = withDelay(400, withTiming(1, { duration: 500 }))
-
-    const timer = setTimeout(navigate, 5000)
-    return () => clearTimeout(timer)
   }, [])
 
   const navigate = () => {
@@ -50,42 +47,24 @@ export default function CompleteScreen() {
 
   return (
     <Screen style={styles.root}>
-      {/* Cannon confetti from both bottom corners */}
-      <CannonConfetti
-        autoplay
-        gravity={3}
-        colors={[Colors.brandOrange, Colors.brandCoral, Colors.accentGold, Colors.accentGreen, Colors.inkPrimary, Colors.brandOrange]}
-      >
-        <CannonConfetti.Origin position="bottom-left" count={160} initialSpeed={3.2}>
-          <CannonConfetti.Flake size={11} radius={6} />
-          <CannonConfetti.Flake width={8} height={15} radius={3} />
-          <CannonConfetti.Flake size={8} />
-        </CannonConfetti.Origin>
-        <CannonConfetti.Origin position="bottom-right" count={160} initialSpeed={3.2}>
-          <CannonConfetti.Flake size={11} radius={6} />
-          <CannonConfetti.Flake width={8} height={15} />
-          <CannonConfetti.Flake size={8} radius={8} />
-        </CannonConfetti.Origin>
-      </CannonConfetti>
+      <ConfettiRain />
 
       {/* Content */}
       <View style={styles.content}>
-        <Animated.View style={[styles.checkCircle, circleStyle]}>
-          <Check size={44} color={Colors.brandOrange} strokeWidth={2.5} />
+        <Animated.View style={[styles.logoGlow, circleStyle]}>
+          <View style={styles.logoCircle}>
+            <LogoMark size={48} />
+          </View>
         </Animated.View>
 
         <Animated.View style={[styles.textBlock, contentStyle]}>
-          <View style={styles.titleRow}>
-            <Text style={styles.title}>You're all set,{'\n'}{firstName}!</Text>
-            <Flame size={26} color={Colors.brandOrange} strokeWidth={2} />
-          </View>
+          <Text style={styles.title}>You're all set,{'\n'}{firstName}!</Text>
           <Text style={styles.subtitle}>
             Start discovering events and people near you.
           </Text>
           <View style={styles.btnWrap}>
-            <PrimaryButton label="Explore GORAVE" onPress={navigate} />
+            <PrimaryButton label="Explore Gorave" onPress={navigate} />
           </View>
-          <Text style={styles.auto}>Taking you in automatically…</Text>
         </Animated.View>
       </View>
     </Screen>
@@ -104,7 +83,21 @@ const styles = StyleSheet.create({
     zIndex: 1,
     width: '100%',
   },
-  checkCircle: {
+  logoGlow: {
+    width: 108,
+    height: 108,
+    borderRadius: 54,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 32,
+    backgroundColor: withOpacity(Colors.brandOrange, 0.10),
+    shadowColor: Colors.brandOrange,
+    shadowOpacity: 0.35,
+    shadowRadius: 28,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 10,
+  },
+  logoCircle: {
     width: 92,
     height: 92,
     borderRadius: 46,
@@ -113,10 +106,8 @@ const styles = StyleSheet.create({
     borderColor: withOpacity(Colors.brandOrange, 0.3),
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 32,
   },
   textBlock: { alignItems: 'center', width: '100%' },
-  titleRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: 8, marginBottom: 14 },
   title: {
     fontFamily: FontFamily.displayExtraBold,
     fontSize: 30,
@@ -124,6 +115,7 @@ const styles = StyleSheet.create({
     color: Colors.inkPrimary,
     lineHeight: 36,
     textAlign: 'center',
+    marginBottom: 14,
   },
   subtitle: {
     fontFamily: FontFamily.bodyRegular,
@@ -134,11 +126,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   btnWrap: { width: '100%' },
-  auto: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 12,
-    color: Colors.inkDisabled,
-    marginTop: 18,
-    textAlign: 'center',
-  },
 })

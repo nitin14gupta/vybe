@@ -55,11 +55,6 @@ export function useVoice() {
   }, [metering, isRecording])
 
   useEffect(() => {
-    AudioModule.requestRecordingPermissionsAsync()
-    setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true })
-  }, [])
-
-  useEffect(() => {
     if (isRecording && recordingSeconds >= MAX_SECONDS) stopRecording()
   }, [recordingSeconds, isRecording])
 
@@ -90,6 +85,7 @@ export function useVoice() {
         )
         return
       }
+      await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true })
 
       setRecorded(false)
       store.setField('voiceUri', '')

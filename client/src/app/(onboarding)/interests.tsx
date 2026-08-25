@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native'
 import { router } from 'expo-router'
-import { OutlineButton, StepDots, InterestChip, PrimaryButton, Screen, LogoMark } from '@/components/ui'
+import { OutlineButton, StepDots, InterestChip, PrimaryButton, Screen } from '@/components/ui'
 import { useInterests } from '@/hooks/useInterests'
 import { Colors, FontFamily, Spacing } from '@/constants'
 
@@ -9,8 +9,6 @@ export default function InterestsScreen() {
 
   return (
     <Screen>
-      <LogoMark size={40} style={styles.logo} />
-
       <View style={styles.header}>
         <Text style={styles.title}>What are you into?</Text>
         <Text style={styles.subtitle}>
@@ -73,7 +71,6 @@ export default function InterestsScreen() {
 }
 
 const styles = StyleSheet.create({
-  logo: { alignSelf: 'center', marginBottom: 12 },
   header: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 12 },
   title: {
     fontFamily: FontFamily.headingBold,

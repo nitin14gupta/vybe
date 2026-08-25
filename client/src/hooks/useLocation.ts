@@ -43,7 +43,8 @@ export function useLocation() {
   const runDetect = async (cityList: CityResponse[]) => {
     setDetecting(true)
     try {
-      const { coords } = await Location.getCurrentPositionAsync({})
+      const cached = await Location.getLastKnownPositionAsync()
+      const { coords } = cached ?? await Location.getCurrentPositionAsync({})
       store.setField('lat', coords.latitude)
       store.setField('lng', coords.longitude)
 

@@ -1,20 +1,10 @@
-import { useEffect } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
 import { hHeavy, hTap } from '@/lib/haptics'
 import { Play, Pause } from 'lucide-react-native'
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withSequence,
-  withTiming,
-  cancelAnimation,
-} from 'react-native-reanimated'
-import { OutlineButton, StepDots, PrimaryButton, TextLinkButton, Screen, RecordingWave, PlaybackWave, Orb, LogoMark } from '@/components/ui'
+import { OutlineButton, StepDots, PrimaryButton, TextLinkButton, Screen, Orb, RecordingWave, PlaybackWave } from '@/components/ui'
 import { useVoice } from '@/hooks/useVoice'
 import { Colors, FontFamily, Spacing, Radius, withOpacity } from '@/constants'
-
 
 export default function VoiceScreen() {
   const {
@@ -33,95 +23,52 @@ export default function VoiceScreen() {
     intensity,
   } = useVoice()
 
-  const ripple = useSharedValue(1)
-
-  useEffect(() => {
-    if (isRecording) {
-      ripple.value = withRepeat(
-        withSequence(
-          withTiming(1.3, { duration: 700 }),
-          withTiming(1, { duration: 700 }),
-        ),
-        -1,
-      )
-    } else {
-      cancelAnimation(ripple)
-      ripple.value = withTiming(1)
-    }
-  }, [isRecording])
-
-  const rippleStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: ripple.value }],
-    opacity: isRecording ? 0.4 : 0,
-  }))
-
   const fmt = (s: number) => `0:${String(Math.max(0, s)).padStart(2, '0')}`
 
   return (
     <Screen>
-      <LogoMark size={40} style={styles.logo} />
-
-      <View style={styles.header}>
-        <Text style={styles.title}>Record your voice intro</Text>
-        <Text style={styles.subtitle}>30 seconds. Let people hear the real you.</Text>
-      </View>
-
       <View style={styles.center}>
-        <View style={styles.recordWrap}>
-          <Pressable
-            onPress={() => { hHeavy(); tapRecord() }}
-            style={{ width: 280, height: 280, alignItems: 'center', justifyContent: 'center' }}
-          >
-            <Orb
-              width={280}
-              height={280}
-              intensity={intensity}
-              hue={280}
-              hueByIntensity
-              autoRotate
-              isActive={isRecording}
-            />
-            {!isRecording && !recorded && (
-              <Text style={styles.orbLabel} pointerEvents="none">Tap to record</Text>
-            )}
-          </Pressable>
+        <Pressable onPress={() => { hHeavy(); tapRecord() }}>
+          <Orb width={270} height={270} intensity={intensity} isActive={isRecording} />
+        </Pressable>
+
+        <View style={styles.chip}>
+          <Text style={styles.chipText}>Voice intro</Text>
         </View>
 
-        <Text style={[styles.timer, !isRecording && styles.timerMuted]}>
-          {fmt(recordingSeconds)}{' '}
-          <Text style={styles.timerMax}>/ 0:30</Text>
-        </Text>
+        <Text style={styles.heading}>Let people hear{'\n'}the real you</Text>
 
-        <View style={{ opacity: isRecording ? 1 : 0 }}>
-          <RecordingWave isActive={isRecording} />
+        <View style={styles.stateZone}>
+          {isRecording ? (
+            <>
+              <Text style={styles.timer}>
+                {fmt(recordingSeconds)} <Text style={styles.timerMax}>/ 0:30</Text>
+              </Text>
+              <RecordingWave isActive={isRecording} />
+            </>
+          ) : recorded ? (
+            <>
+              <View style={styles.playback}>
+                <Pressable onPress={() => { hTap(); handlePlayPause() }} style={styles.playBtn}>
+                  {playing
+                    ? <Pause size={17} color={Colors.background} strokeWidth={2} />
+                    : <Play size={17} color={Colors.background} strokeWidth={2} />
+                  }
+                </Pressable>
+                <PlaybackWave isActive={playing} compact />
+                <Text style={styles.playbackTime}>
+                  {fmt(playbackCurrent)}
+                  <Text style={styles.playbackDuration}> / {fmt(playbackTotal)}</Text>
+                </Text>
+              </View>
+              <Pressable onPress={() => { hTap(); handleRetake() }}>
+                <Text style={styles.retakeBtn}>Retake</Text>
+              </Pressable>
+            </>
+          ) : (
+            <Text style={styles.hint}>Tap the orb to start recording · 30s max</Text>
+          )}
         </View>
-
-        {recorded && !isRecording && (
-          <View style={styles.playback}>
-            <Pressable onPress={() => { hTap(); handlePlayPause() }} style={styles.playBtn}>
-              {playing
-                ? <Pause size={18} color={Colors.background} strokeWidth={2} />
-                : <Play size={18} color={Colors.background} strokeWidth={2} />
-              }
-            </Pressable>
-            <PlaybackWave isActive={playing} compact />
-            {/* current position / total duration */}
-            <Text style={styles.playbackTime}>
-              {fmt(playbackCurrent)}
-              <Text style={styles.playbackDuration}> / {fmt(playbackTotal)}</Text>
-            </Text>
-          </View>
-        )}
-
-        {recorded && !isRecording && (
-          <Pressable onPress={() => { hTap(); handleRetake() }}>
-            <Text style={styles.retakeBtn}>Retake</Text>
-          </Pressable>
-        )}
-
-        {!isRecording && !recorded && (
-          <Text style={styles.hint}>Tap the orb to start recording</Text>
-        )}
       </View>
 
       <StepDots step={3} />
@@ -141,63 +88,61 @@ export default function VoiceScreen() {
 }
 
 const styles = StyleSheet.create({
-  logo: { alignSelf: 'center', marginBottom: 12 },
-  header: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 12 },
-  title: {
-    fontFamily: FontFamily.headingBold,
-    fontSize: 24,
-    letterSpacing: -0.24,
-    color: Colors.inkPrimary,
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 13,
-    color: Colors.inkSecondary,
-  },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 32,
+    gap: 18,
   },
-  recordWrap: {
-    position: 'relative',
+  chip: {
+    backgroundColor: Colors.elevated,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: withOpacity(Colors.inkPrimary, 0.08),
+  },
+  chipText: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 13,
+    color: Colors.inkSecondary,
+  },
+  heading: {
+    fontFamily: FontFamily.headingBold,
+    fontSize: 30,
+    lineHeight: 37,
+    letterSpacing: -0.45,
+    color: Colors.inkPrimary,
+    textAlign: 'center',
+  },
+  stateZone: {
+    height: 150,
+    alignSelf: 'stretch',
     alignItems: 'center',
     justifyContent: 'center',
-    width: 280,
-    height: 280,
+    gap: 10,
   },
   timer: {
     fontFamily: FontFamily.headingBold,
-    fontSize: 28,
+    fontSize: 24,
     color: Colors.inkPrimary,
   },
-  timerMuted: { color: Colors.inkSecondary },
   timerMax: {
     fontFamily: FontFamily.bodyRegular,
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.inkSecondary,
   },
-  orbLabel: {
-    position: 'absolute',
-    fontFamily: FontFamily.bodySemiBold,
-    fontSize: 15,
-    color: Colors.inkPrimary,
-    textShadowColor: withOpacity(Colors.background, 0.45),
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
+  hint: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 13,
+    color: Colors.inkDisabled,
+    textAlign: 'center',
   },
   playback: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-  },
-  playbackDuration: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 11,
-    color: Colors.inkDisabled,
+    gap: 14,
   },
   playBtn: {
     width: 40,
@@ -208,20 +153,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   playbackTime: {
+    fontFamily: FontFamily.bodySemiBold,
+    fontSize: 13,
+    color: Colors.inkPrimary,
+  },
+  playbackDuration: {
     fontFamily: FontFamily.bodyRegular,
     fontSize: 12,
     color: Colors.inkSecondary,
   },
   retakeBtn: {
-    fontFamily: FontFamily.bodyRegular,
+    fontFamily: FontFamily.bodySemiBold,
     fontSize: 13,
     color: Colors.inkSecondary,
-  },
-  hint: {
-    fontFamily: FontFamily.bodyRegular,
-    fontSize: 13,
-    color: Colors.inkDisabled,
-    textAlign: 'center',
   },
   footer: {
     flexDirection: 'row',

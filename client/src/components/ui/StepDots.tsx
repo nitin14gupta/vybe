@@ -18,11 +18,15 @@ const Dot = memo(function Dot({
   isDone,
   delay,
   overlay,
+  fillColor,
+  emptyColor,
 }: {
   isActive: boolean
   isDone: boolean
   delay: number
   overlay: boolean
+  fillColor: string
+  emptyColor: string
 }) {
   const width = useSharedValue(DOT_SIZE)
   const filled = useSharedValue((overlay ? isActive : isDone || isActive) ? 1 : 0)
@@ -34,7 +38,7 @@ const Dot = memo(function Dot({
 
   const style = useAnimatedStyle(() => ({
     width: width.value,
-    backgroundColor: filled.value > 0.5 ? Colors.inkPrimary : overlay ? OVERLAY_INACTIVE_COLOR : Colors.divider,
+    backgroundColor: filled.value > 0.5 ? fillColor : emptyColor,
   }))
 
   return <Animated.View style={[s.dot, style]} />
@@ -45,15 +49,19 @@ interface StepDotsProps {
   total?: number
   /** 'overlay' renders compact dots (no screen padding) for use atop photo carousels; only the active dot fills. */
   variant?: 'default' | 'overlay'
+  /** Dark dots for light-background screens (the theme colors are dark-canvas white). */
+  onLight?: boolean
   style?: ViewStyle
 }
 
-function StepDotsBase({ step, total = 5, variant = 'default', style }: StepDotsProps) {
+function StepDotsBase({ step, total = 5, variant = 'default', onLight = false, style }: StepDotsProps) {
   const overlay = variant === 'overlay'
+  const fillColor = onLight ? '#16181D' : Colors.inkPrimary
+  const emptyColor = onLight ? 'rgba(0,0,0,0.14)' : overlay ? OVERLAY_INACTIVE_COLOR : Colors.divider
   return (
     <Animated.View entering={FadeIn.duration(350)} style={[s.row, overlay && s.rowOverlay, style]}>
       {Array.from({ length: total }).map((_, i) => (
-        <Dot key={i} isActive={i + 1 === step} isDone={i + 1 < step} delay={i * 60} overlay={overlay} />
+        <Dot key={i} isActive={i + 1 === step} isDone={i + 1 < step} delay={i * 60} overlay={overlay} fillColor={fillColor} emptyColor={emptyColor} />
       ))}
     </Animated.View>
   )

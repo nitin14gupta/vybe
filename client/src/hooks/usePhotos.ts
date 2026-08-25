@@ -37,6 +37,11 @@ export function usePhotos() {
   const itemsRef = useRef(items)
   itemsRef.current = items
 
+  // In-flight upload promises, keyed by slot id — lets handleNext await
+  // whatever's still uploading in the background instead of kicking off a
+  // second round of uploads for photos that started as soon as they were picked.
+  const uploadsRef = useRef(new Map<string, Promise<string | null>>())
+
   // Request permission on enter so the picker opens instantly on first tap
   useEffect(() => {
     ImagePicker.requestMediaLibraryPermissionsAsync()
@@ -48,6 +53,29 @@ export function usePhotos() {
     setItems(prev => prev.map(item => (item.id === id ? { ...item, ...patch } : item)))
 
   const replaceIndexRef = useRef<number | null>(null)
+
+  // Starts (or restarts) the real background upload for a slot — the local
+  // uri shows immediately (cache state) while this resolves.
+  const startUpload = (id: string, uri: string, index: number): Promise<string | null> => {
+    updateItem(id, { state: 'uploading' })
+    const p = uploadPhoto(uri, index)
+      .then(url => {
+        // Slot ids get reused when photos are removed/reshuffled — only
+        // apply this result if the slot still holds the photo we uploaded.
+        if (itemsRef.current.find(i => i.id === id)?.uri === uri) {
+          updateItem(id, { state: url ? 'done' : 'error', serverUrl: url ?? null })
+        }
+        return url ?? null
+      })
+      .catch(() => {
+        if (itemsRef.current.find(i => i.id === id)?.uri === uri) {
+          updateItem(id, { state: 'error' })
+        }
+        return null
+      })
+    uploadsRef.current.set(id, p)
+    return p
+  }
 
   const onSlotPress = (id: string) => {
     const current = itemsRef.current
@@ -135,7 +163,8 @@ export function usePhotos() {
       if (i < targetIndices.length) {
         const targetIdx = targetIndices[i]
         const id = `photo-${targetIdx}`
-        updateItem(id, { uri: media.uri, state: 'done', serverUrl: null })
+        updateItem(id, { uri: media.uri, state: 'uploading', serverUrl: null })
+        startUpload(id, media.uri, targetIdx)
       }
     })
   }
@@ -166,16 +195,9 @@ export function usePhotos() {
     const item = currentItems[index]
     if (!item?.uri || item.state !== 'error') return
 
-    updateItem(id, { state: 'uploading' })
-    try {
-      const url = await uploadPhoto(item.uri, index)
-      updateItem(id, { state: url ? 'done' : 'error', serverUrl: url ?? null })
-      if (url) showPill('Photo uploaded', 'default')
-      else showPill('Upload failed, try again', 'error')
-    } catch (e: any) {
-      updateItem(id, { state: 'error' })
-      showPill(e?.message || 'Upload failed, try again', 'error')
-    }
+    const url = await startUpload(id, item.uri, index)
+    if (url) showPill('Photo uploaded', 'default')
+    else showPill('Upload failed, try again', 'error')
   }
 
   const removePhoto = (id: string) => {
@@ -200,45 +222,31 @@ export function usePhotos() {
 
   const handleNext = async () => {
     if (!hasAnyPhoto) return
+
+    const withUri = itemsRef.current.filter(i => i.uri !== null)
+    if (withUri.some(i => i.state === 'error')) {
+      showPill('Fix the failed photo upload before continuing', 'error')
+      return
+    }
+
     setNextLoading(true)
-
     try {
-      // Mark all slots with a URI as uploading
-      setItems(prev => prev.map(item => item.uri ? { ...item, state: 'uploading' } : item))
+      // Most photos already finished uploading in the background as soon as
+      // they were picked — this just waits out whatever's still in flight,
+      // it doesn't re-upload anything.
+      const pending = withUri
+        .filter(i => i.state === 'uploading')
+        .map(i => uploadsRef.current.get(i.id))
+        .filter((p): p is Promise<string | null> => !!p)
+      await Promise.allSettled(pending)
 
-      const compactedItems = itemsRef.current.filter(i => i.uri !== null)
-
-      const uploads = await Promise.allSettled(
-        compactedItems.map((item, index) => uploadPhoto(item.uri!, index))
-      )
-
-      let failed = false
-      setItems(prev => {
-        let uploadIndex = 0
-        return prev.map(item => {
-          if (!item.uri) return item
-          const res = uploads[uploadIndex++]
-          if (res.status === 'fulfilled' && res.value !== null) {
-            return { ...item, state: 'done', serverUrl: res.value }
-          } else if (res.status === 'rejected') {
-            failed = true
-            return { ...item, state: 'error' }
-          }
-          return item
-        })
-      })
-
-      if (failed) {
+      const finalItems = itemsRef.current.filter(i => i.uri !== null)
+      if (finalItems.some(i => i.state !== 'done' || !i.serverUrl)) {
         showPill('Some photos failed to upload', 'error')
         return
       }
 
-      // All good, navigate
-      const urls = uploads
-        .filter(r => r.status === 'fulfilled' && r.value !== null)
-        .map(r => (r as PromiseFulfilledResult<string>).value)
-
-      store.setField('photoUris', urls)
+      store.setField('photoUris', finalItems.map(i => i.serverUrl!))
       router.push('/(onboarding)/voice')
     } catch (e: any) {
       showPill(e.message || 'Upload failed', 'error')
