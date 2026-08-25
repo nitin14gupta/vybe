@@ -1,0 +1,40 @@
+diff --git a/node_modules/expo-drawpad/dist/index.js b/node_modules/expo-drawpad/dist/index.js
+index 471dae4..a01a200 100644
+--- a/node_modules/expo-drawpad/dist/index.js
++++ b/node_modules/expo-drawpad/dist/index.js
+@@ -64,7 +64,14 @@ const DrawPad = forwardRef(({ strokeWidth = 3.5, stroke = "grey", pathLength: _p
+             setPaths((prev) => {
+                 const updatedPaths = [...prev, pathValue];
+                 setTimeout(() => {
+-                    currentPath.value = "";
++                    // Only clear if a new stroke hasn't already started (and
++                    // begun appending "Q ..." segments) since this one ended —
++                    // otherwise this wipes the new stroke's leading "M",
++                    // leaving an invalid path that crashes the native SVG
++                    // parser on fast consecutive strokes (e.g. signing quickly).
++                    if (currentPath.value === pathValue) {
++                        currentPath.value = "";
++                    }
+                 }, 0);
+                 return updatedPaths;
+             });
+diff --git a/node_modules/expo-drawpad/src/index.tsx b/node_modules/expo-drawpad/src/index.tsx
+index 5f958cb..db9e433 100644
+--- a/node_modules/expo-drawpad/src/index.tsx
++++ b/node_modules/expo-drawpad/src/index.tsx
+@@ -145,7 +145,14 @@ const DrawPad = forwardRef<DrawPadHandle, DrawPadProps>(
+         setPaths((prev) => {
+           const updatedPaths = [...prev, pathValue];
+           setTimeout(() => {
+-            currentPath.value = "";
++            // Only clear if a new stroke hasn't already started (and begun
++            // appending "Q ..." segments) since this one ended — otherwise
++            // this wipes the new stroke's leading "M", leaving an invalid
++            // path that crashes the native SVG parser on fast consecutive
++            // strokes (e.g. signing quickly).
++            if (currentPath.value === pathValue) {
++              currentPath.value = "";
++            }
+           }, 0);
+           return updatedPaths;
+         });

@@ -1,5 +1,14 @@
 import type { CreateEventForm } from '@/hooks/useCreateEvent'
 
+// Rough India bounding box — Gorave only operates in India, so a pin dropped
+// outside it (map panned/dragged too far) shouldn't be publishable.
+const INDIA_BOUNDS = { minLat: 6.0, maxLat: 37.6, minLng: 68.0, maxLng: 97.5 }
+
+export function isWithinIndia(lat: number, lng: number): boolean {
+  return lat >= INDIA_BOUNDS.minLat && lat <= INDIA_BOUNDS.maxLat &&
+    lng >= INDIA_BOUNDS.minLng && lng <= INDIA_BOUNDS.maxLng
+}
+
 export interface StepValidationResult {
   errors: Record<string, string>
   pillMessage: string | null
@@ -44,6 +53,12 @@ export function validateCreateEventStep(
   }
   if (step === 3) {
     if (!form.locationName.trim()) flag('locationName', 'Location is required', 'Please add a venue or address')
+    else if (
+      form.locationLat != null && form.locationLng != null &&
+      !isWithinIndia(form.locationLat, form.locationLng)
+    ) {
+      flag('locationName', 'Pin must be inside India', 'Move the map pin to a location inside India')
+    }
   }
   if (step === 4) {
     const slotsExhausted = freeSlotsUsed >= 2

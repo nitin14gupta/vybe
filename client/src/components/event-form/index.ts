@@ -5,7 +5,7 @@ export { Step4Pricing } from './Step4Pricing'
 export { Step5Photos } from './Step5Photos'
 export { EventPreviewOverlay } from './EventPreviewOverlay'
 export { CreateEventHeader } from './CreateEventHeader'
-export { validateCreateEventStep } from './validateCreateEventStep'
+export { validateCreateEventStep, isWithinIndia } from './validateCreateEventStep'
 export { ef, EVENT_TYPES, AGE_OPTIONS, fmt, fmtTime } from './styles'
 
 export * from './LocationSearchModal'

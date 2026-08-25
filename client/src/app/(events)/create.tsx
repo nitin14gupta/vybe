@@ -12,7 +12,7 @@ import {
   OutlineButton,
   Screen,
 } from '@/components/ui'
-import { Step1Basics, Step2When, Step3Where, Step4Pricing, Step5Photos, EventPreviewOverlay, CreateEventHeader, validateCreateEventStep } from '@/components/event-form'
+import { Step1Basics, Step2When, Step3Where, Step4Pricing, Step5Photos, EventPreviewOverlay, CreateEventHeader, validateCreateEventStep, isWithinIndia } from '@/components/event-form'
 import { useCreateEvent } from '@/hooks/useCreateEvent'
 import ApiService from '@/api/apiService'
 import { useEventDateTimePickers } from '@/hooks/useEventDateTimePickers'
@@ -56,6 +56,25 @@ export default function CreateScreen() {
   useEffect(() => {
     if (submitError) showPill(submitError, 'error')
   }, [submitError])
+
+  const pinOutsideIndia =
+    form.locationLat != null && form.locationLng != null &&
+    !isWithinIndia(form.locationLat, form.locationLng)
+
+  // Surface the inline error the moment the pin lands outside India, not
+  // only after the user presses a now-disabled Continue button.
+  useEffect(() => {
+    setErrors(prev => {
+      if (pinOutsideIndia) {
+        return prev.locationName ? prev : { ...prev, locationName: 'Pin must be inside India' }
+      }
+      if (prev.locationName === 'Pin must be inside India') {
+        const { locationName, ...rest } = prev
+        return rest
+      }
+      return prev
+    })
+  }, [pinOutsideIndia])
 
   if (profileLoading || !profile || !profile.is_host_onboarding_finished || !profile.host_agreement_accepted_at) {
     return (
@@ -131,7 +150,7 @@ export default function CreateScreen() {
             <PrimaryButton
               label="Continue"
               onPress={handleNext}
-              disabled={nextLoading}
+              disabled={nextLoading || pinOutsideIndia}
               loading={nextLoading}
             />
           </View>
