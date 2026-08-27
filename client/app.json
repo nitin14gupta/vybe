@@ -155,14 +155,22 @@
       "@bacons/apple-targets",
       "expo-localization",
       "expo-asset",
-      "expo-image"
+      "expo-image",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "react-native",
+          "organization": "syncella-enterprises-privat-b1"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
     "extra": {
-      "apiUrl": "http://192.168.0.103:8000",
+      "apiUrl": "http://192.168.0.102:8000",
       "router": {},
       "eas": {
         "build": {

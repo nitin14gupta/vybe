@@ -1,6 +1,7 @@
 import '../../global.css'
 import { useEffect, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { Platform, StyleSheet, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { enableScreens, enableFreeze } from 'react-native-screens'
 
 enableScreens(true)
@@ -53,12 +54,16 @@ function RootNavigator() {
 }
 
 // ── Root layout — bootstraps stored session before rendering ─────────────────
+const BUTTON_NAV_INSET_THRESHOLD = 30
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useVibeFonts()
   const [authReady, setAuthReady] = useState(false)
   const [fontsSettled, setFontsSettled] = useState(false)
   const { setAuth } = useAuthStore()
+  const insets = useSafeAreaInsets()
+  const isButtonNav = Platform.OS === 'android' && insets.bottom > BUTTON_NAV_INSET_THRESHOLD
+  const globalBottomReserve = isButtonNav ? insets.bottom : 0
   useNotificationSetup()
   useDeepLinkRouter()
   useNetworkStatus()
@@ -112,7 +117,9 @@ export default function RootLayout() {
       <KeyboardProvider>
         <BottomSheetModalProvider>
           <StatusBar style="light" />
-          <RootNavigator />
+          <View style={{ flex: 1, paddingBottom: globalBottomReserve }}>
+            <RootNavigator />
+          </View>
           <PillOverlay />
           <PermissionSheetOverlay />
           <AccountLockedOverlay />
