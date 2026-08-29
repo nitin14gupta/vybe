@@ -48,3 +48,5 @@ GoogleService-Info.plist
 *firebase-adminsdk*.json
 
 .env.local
+
+.env.local

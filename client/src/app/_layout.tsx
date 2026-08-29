@@ -3,6 +3,18 @@ import { useEffect, useState } from 'react'
 import { Platform, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { enableScreens, enableFreeze } from 'react-native-screens'
+import * as Sentry from '@sentry/react-native'
+
+// Expo Router has no single "App.js" for the wizard to auto-patch, so this
+// is done by hand — must run as early as possible, before anything else.
+Sentry.init({
+  dsn: 'https://89d091adfd12c2f4d1361b564877ffdc@o4511983185494016.ingest.de.sentry.io/4511983187853392',
+  sendDefaultPii: true,
+  enableLogs: true,
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+})
 
 enableScreens(true)
 enableFreeze(true)
@@ -56,7 +68,7 @@ function RootNavigator() {
 // ── Root layout — bootstraps stored session before rendering ─────────────────
 const BUTTON_NAV_INSET_THRESHOLD = 30
 
-export default function RootLayout() {
+function RootLayout() {
   const [fontsLoaded, fontError] = useVibeFonts()
   const [authReady, setAuthReady] = useState(false)
   const [fontsSettled, setFontsSettled] = useState(false)
@@ -115,22 +127,22 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={styles.root}>
       <KeyboardProvider>
-        <BottomSheetModalProvider>
-          <StatusBar style="light" />
-          <View style={{ flex: 1, paddingBottom: globalBottomReserve }}>
+        <View style={{ flex: 1, paddingBottom: globalBottomReserve }}>
+          <BottomSheetModalProvider>
+            <StatusBar style="light" />
             <RootNavigator />
-          </View>
-          <PillOverlay />
-          <PermissionSheetOverlay />
-          <AccountLockedOverlay />
-          <NoInternetBanner />
-          <MaintenanceOverlay />
-          {!appReady && (
-            <View style={StyleSheet.absoluteFill}>
-              <AppSplashScreen />
-            </View>
-          )}
-        </BottomSheetModalProvider>
+            <PillOverlay />
+            <PermissionSheetOverlay />
+            <AccountLockedOverlay />
+            <NoInternetBanner />
+            <MaintenanceOverlay />
+            {!appReady && (
+              <View style={StyleSheet.absoluteFill}>
+                <AppSplashScreen />
+              </View>
+            )}
+          </BottomSheetModalProvider>
+        </View>
       </KeyboardProvider>
     </GestureHandlerRootView>
   )
@@ -139,3 +151,5 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
 })
+
+export default Sentry.wrap(RootLayout)
