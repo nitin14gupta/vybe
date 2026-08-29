@@ -149,13 +149,6 @@
           }
         }
       ],
-      [
-        "expo-navigation-bar",
-        {
-          "enforceContrast": false,
-          "style": "dark"
-        }
-      ],
       "./plugins/withUcropColors",
       "./plugins/withUpiQueries",
       "expo-web-browser",
