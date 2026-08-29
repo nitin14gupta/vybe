@@ -19,9 +19,7 @@ interface Props {
   exploreLabel?: string
 }
 
-// Shared by the real onboarding finish screen ((onboarding)/complete.tsx) and
-// its settings-only preview ((settings)/complete-preview.tsx) — one place to
-// tweak the design instead of two screens drifting apart.
+// The onboarding finish screen shown at (onboarding)/complete.tsx.
 export function OnboardingCompleteView({ name, onExplore, exploreLabel = 'Explore Gorave' }: Props) {
   const scale  = useSharedValue(0)
   const fadeIn = useSharedValue(0)
@@ -46,55 +44,61 @@ export function OnboardingCompleteView({ name, onExplore, exploreLabel = 'Explor
   const firstName = name.split(' ')[0] || 'there'
 
   return (
-    <Screen style={styles.root}>
+    <View style={styles.rootWrap}>
       <GlowLinesBackground />
 
-      <View style={styles.content}>
-        <View style={styles.hero}>
-          <View style={[styles.pill, styles.pillPeople]}>
-            <Users size={14} color={pillIconColor} strokeWidth={2} />
-            <Text style={styles.pillText}>People</Text>
-          </View>
-          <View style={[styles.pill, styles.pillEvents]}>
-            <Calendar size={14} color={pillIconColor} strokeWidth={2} />
-            <Text style={styles.pillText}>Events</Text>
-          </View>
-          <View style={[styles.pill, styles.pillNearby]}>
-            <MapPin size={14} color={pillIconColor} strokeWidth={2} />
-            <Text style={styles.pillText}>Nearby</Text>
-          </View>
-          <View style={[styles.pill, styles.pillExperiences]}>
-            <Ticket size={14} color={pillIconColor} strokeWidth={2} />
-            <Text style={styles.pillText}>Experiences</Text>
+      <Screen style={styles.root} transparent>
+        <View style={styles.content}>
+          <View style={styles.hero}>
+            <View style={[styles.pill, styles.pillPeople]}>
+              <Users size={14} color={pillIconColor} strokeWidth={2} />
+              <Text style={styles.pillText}>People</Text>
+            </View>
+            <View style={[styles.pill, styles.pillEvents]}>
+              <Calendar size={14} color={pillIconColor} strokeWidth={2} />
+              <Text style={styles.pillText}>Events</Text>
+            </View>
+            <View style={[styles.pill, styles.pillNearby]}>
+              <MapPin size={14} color={pillIconColor} strokeWidth={2} />
+              <Text style={styles.pillText}>Nearby</Text>
+            </View>
+            <View style={[styles.pill, styles.pillExperiences]}>
+              <Ticket size={14} color={pillIconColor} strokeWidth={2} />
+              <Text style={styles.pillText}>Experiences</Text>
+            </View>
+
+            <Animated.View style={[styles.logoGlow, circleStyle]}>
+              <View style={styles.logoCircle}>
+                <LogoMark size={48} />
+              </View>
+            </Animated.View>
           </View>
 
-          <Animated.View style={[styles.logoGlow, circleStyle]}>
-            <View style={styles.logoCircle}>
-              <LogoMark size={48} />
+          <Animated.View style={[styles.textBlock, contentStyle]}>
+            <Text style={styles.title}>You're all set,{'\n'}{firstName}!</Text>
+            <Text style={styles.subtitle}>
+              Start discovering events and people near you.
+            </Text>
+            <View style={styles.btnWrap}>
+              <PrimaryButton label={exploreLabel} onPress={onExplore} />
             </View>
           </Animated.View>
         </View>
-
-        <Animated.View style={[styles.textBlock, contentStyle]}>
-          <Text style={styles.title}>You're all set,{'\n'}{firstName}!</Text>
-          <Text style={styles.subtitle}>
-            Start discovering events and people near you.
-          </Text>
-          <View style={styles.btnWrap}>
-            <PrimaryButton label={exploreLabel} onPress={onExplore} />
-          </View>
-        </Animated.View>
-      </View>
-    </Screen>
+      </Screen>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
+  rootWrap: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    overflow: 'hidden',
+  },
   root: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 28,
-    overflow: 'hidden',
   },
   content: {
     alignItems: 'center',
@@ -121,7 +125,7 @@ const styles = StyleSheet.create({
     borderRadius: 46,
     backgroundColor: Colors.background,
     borderWidth: 2,
-    borderColor: Colors.inkPrimary,
+    borderColor: Colors.divider,
     alignItems: 'center',
     justifyContent: 'center',
   },
