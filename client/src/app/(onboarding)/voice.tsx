@@ -66,7 +66,7 @@ export default function VoiceScreen() {
               </Pressable>
             </>
           ) : (
-            <Text style={styles.hint}>Tap the orb to start recording · 30s max</Text>
+            <Text style={styles.hint}>Tap the orb to start recording · 3-30s</Text>
           )}
         </View>
       </View>

@@ -8,6 +8,7 @@ import { uploadVoice } from '@/api/user'
 import { usePermissionSheetStore } from '@/store/permissionSheetStore'
 
 const MAX_SECONDS = 30
+const MIN_SECONDS = 3
 
 export function useVoiceEdit(existingUrl?: string | null) {
   const [localUri, setLocalUri] = useState<string | null>(null)
@@ -33,10 +34,17 @@ export function useVoiceEdit(existingUrl?: string | null) {
   }, [seconds, isRecording])
 
   const stopRecording = async () => {
+    const durationSeconds = seconds
     try {
       await audioRecorder.stop()
       const uri = audioRecorder.uri
       if (uri) {
+        if (durationSeconds < MIN_SECONDS) {
+          setLocalUri(null)
+          setSaveError(`Recording too short — hold for at least ${MIN_SECONDS} seconds`)
+          if (existingUrl) player.replace({ uri: existingUrl })
+          return
+        }
         setLocalUri(uri)
         player.replace({ uri })
         setRecorded(true)

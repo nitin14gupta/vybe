@@ -2,14 +2,14 @@ import { View, Text, StyleSheet, Pressable, Dimensions, ScrollView } from 'react
 import { router } from 'expo-router'
 import { OutlineButton, StepDots, PrimaryButton, Screen, PhotoSlot } from '@/components/ui'
 import { MediaPreviewModal } from '@/components/chat/MediaPreviewModal'
-import { usePhotos } from '@/hooks/usePhotos'
+import { usePhotos, MIN_PHOTOS } from '@/hooks/usePhotos'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
 
 export default function PhotosScreen() {
   const {
     items,
     nextLoading,
-    hasAnyPhoto,
+    hasMinPhotos,
     onSlotPress,
     removePhoto,
     handleNext,
@@ -25,7 +25,7 @@ export default function PhotosScreen() {
     <Screen>
       <View style={styles.header}>
         <Text style={styles.title}>Add your photos</Text>
-        <Text style={styles.subtitle}>Add at least 1 photo</Text>
+        <Text style={styles.subtitle}>Add at least {MIN_PHOTOS} photos</Text>
       </View>
 
       <ScrollView
@@ -52,7 +52,7 @@ export default function PhotosScreen() {
           <PrimaryButton
             label="Next →"
             onPress={handleNext}
-            disabled={!hasAnyPhoto}
+            disabled={!hasMinPhotos}
             loading={nextLoading}
           />
         </View>

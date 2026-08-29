@@ -16,6 +16,7 @@ import { useOnboardingStore } from '@/store/onboarding'
 import { usePermissionSheetStore } from '@/store/permissionSheetStore'
 
 const MAX_SECONDS = 30
+const MIN_SECONDS = 3
 
 export function useVoice() {
   const store = useOnboardingStore()
@@ -59,10 +60,16 @@ export function useVoice() {
   }, [recordingSeconds, isRecording])
 
   const stopRecording = async () => {
+    const durationSeconds = recordingSeconds
     try {
       await audioRecorder.stop()
       const uri = audioRecorder.uri
       if (uri) {
+        if (durationSeconds < MIN_SECONDS) {
+          store.setField('voiceUri', '')
+          showPill(`Recording too short — hold for at least ${MIN_SECONDS} seconds`, 'error')
+          return
+        }
         store.setField('voiceUri', uri)
         player.replace({ uri })
         setRecorded(true)

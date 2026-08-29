@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, Screen, PhotoSlot, PrimaryButton } from '@/components/ui'
 import { ArrowLeft } from 'lucide-react-native'
 import { MediaPreviewModal } from '@/components/chat/MediaPreviewModal'
-import { useEditPhotos } from '@/hooks/useEditPhotos'
+import { useEditPhotos, MIN_PHOTOS } from '@/hooks/useEditPhotos'
 import { useHeaderScroll } from '@/hooks/useHeaderScroll'
 import { Colors, FontFamily, Spacing } from '@/constants'
 
@@ -47,7 +47,7 @@ export default function EditPhotosScreen() {
         scrollEventThrottle={16}
       >
         <Text style={styles.hintText}>
-          Your first photo is your main profile picture. You can add up to 6 photos. Tap a photo to remove it.
+          Your first photo is your main profile picture. Add at least {MIN_PHOTOS} photos, up to 6. Tap a photo to remove it.
         </Text>
 
         <View style={styles.grid}>

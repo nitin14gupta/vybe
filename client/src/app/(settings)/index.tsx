@@ -5,7 +5,7 @@ import {
   ArrowLeft, User, Bell, BellRing, HelpCircle, MessageSquare,
   Info, LogOut, Calendar, Ticket, Wallet, HeadphonesIcon,
   Trash2, CalendarHeart, Landmark, Sparkles, Star, Bookmark,
-  ShieldCheck,
+  ShieldCheck, PartyPopper,
 } from 'lucide-react-native'
 import { AppHeader, APP_HEADER_BAR_HEIGHT, HeaderIconBtn, ConfirmSheet, BrandingFooter } from '@/components/ui'
 import { SettingsMenuSection } from '@/components/settings/SettingsMenuSection'
@@ -82,6 +82,7 @@ export default function SettingsScreen() {
           items={[
             { icon: <Info size={18} color={iconColor} strokeWidth={1.5} />, label: 'About Gorave', value: `v${appVersion}`, onPress: () => router.push('/(settings)/about') },
             { icon: <Sparkles size={18} color={iconColor} strokeWidth={1.5} />, label: 'Background', onPress: () => router.push('/(settings)/background' as any) },
+            { icon: <PartyPopper size={18} color={iconColor} strokeWidth={1.5} />, label: 'Onboarding Complete Preview', onPress: () => router.push('/(settings)/complete-preview' as any) },
             { icon: <Star size={18} color={iconColor} strokeWidth={1.5} />, label: 'Rate Gorave', onPress: () => Linking.openURL(RATE_APP_URL) },
           ]}
         />

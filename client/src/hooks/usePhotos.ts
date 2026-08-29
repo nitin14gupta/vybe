@@ -17,6 +17,7 @@ export interface PhotoItem {
 }
 
 export const PHOTO_SLOTS = 6
+export const MIN_PHOTOS = 2
 
 export function usePhotos() {
   const store = useOnboardingStore()
@@ -47,7 +48,8 @@ export function usePhotos() {
     ImagePicker.requestMediaLibraryPermissionsAsync()
   }, [])
 
-  const hasAnyPhoto = items.some(item => !!item.uri)
+  const photoCount = items.filter(item => !!item.uri).length
+  const hasMinPhotos = photoCount >= MIN_PHOTOS
 
   const updateItem = (id: string, patch: Partial<PhotoItem>) =>
     setItems(prev => prev.map(item => (item.id === id ? { ...item, ...patch } : item)))
@@ -221,7 +223,10 @@ export function usePhotos() {
   }
 
   const handleNext = async () => {
-    if (!hasAnyPhoto) return
+    if (!hasMinPhotos) {
+      showPill(`Add at least ${MIN_PHOTOS} photos to continue`, 'error')
+      return
+    }
 
     const withUri = itemsRef.current.filter(i => i.uri !== null)
     if (withUri.some(i => i.state === 'error')) {
@@ -258,7 +263,8 @@ export function usePhotos() {
   return {
     items,
     nextLoading,
-    hasAnyPhoto,
+    hasMinPhotos,
+    photoCount,
     onSlotPress,
     retryUpload,
     removePhoto,

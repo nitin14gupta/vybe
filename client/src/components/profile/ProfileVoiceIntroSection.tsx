@@ -1,3 +1,4 @@
+import { ReactNode } from 'react'
 import { View, Text, StyleSheet, Pressable } from 'react-native'
 import { Mic, Square, RotateCcw } from 'lucide-react-native'
 import { RecordingWave, PlaybackWave, VoicePlayButton } from '@/components/ui'
@@ -13,8 +14,10 @@ export function ProfileVoiceIntroSection({ voice, hasExistingVoice }: Props) {
   const { isRecording, seconds, playbackSeconds, recorded, saveError, playing, tapRecord, handlePlayPause, handleRetake } = voice
   const fmt = (s: number) => `${s}s`
 
+  let content: ReactNode
+
   if (isRecording) {
-    return (
+    content = (
       <View style={styles.box}>
         <Pressable onPress={tapRecord} style={styles.stopBtn}>
           <Square size={18} color={Colors.background} strokeWidth={2.5} fill={Colors.background} />
@@ -25,28 +28,21 @@ export function ProfileVoiceIntroSection({ voice, hasExistingVoice }: Props) {
         <Text style={styles.timer}>{fmt(seconds)} / 30s</Text>
       </View>
     )
-  }
-
-  if (recorded) {
-    return (
-      <View style={{ gap: 6 }}>
-        {saveError ? <Text style={styles.error}>{saveError}</Text> : null}
-        <View style={styles.box}>
-          <VoicePlayButton playing={playing} onPress={handlePlayPause} />
-          <View style={styles.waveWrap}>
-            <PlaybackWave isActive={playing} compact />
-          </View>
-          <Text style={styles.timer}>{fmt(playbackSeconds)}</Text>
-          <Pressable onPress={handleRetake} style={styles.retakeBtn} hitSlop={8}>
-            <RotateCcw size={14} color={Colors.inkSecondary} strokeWidth={2} />
-          </Pressable>
+  } else if (recorded) {
+    content = (
+      <View style={styles.box}>
+        <VoicePlayButton playing={playing} onPress={handlePlayPause} />
+        <View style={styles.waveWrap}>
+          <PlaybackWave isActive={playing} compact />
         </View>
+        <Text style={styles.timer}>{fmt(playbackSeconds)}</Text>
+        <Pressable onPress={handleRetake} style={styles.retakeBtn} hitSlop={8}>
+          <RotateCcw size={14} color={Colors.inkSecondary} strokeWidth={2} />
+        </Pressable>
       </View>
     )
-  }
-
-  if (hasExistingVoice) {
-    return (
+  } else if (hasExistingVoice) {
+    content = (
       <View style={{ gap: 8 }}>
         <View style={styles.box}>
           <VoicePlayButton playing={playing} onPress={handlePlayPause} />
@@ -61,17 +57,24 @@ export function ProfileVoiceIntroSection({ voice, hasExistingVoice }: Props) {
         </Pressable>
       </View>
     )
+  } else {
+    content = (
+      <View style={styles.box}>
+        <Pressable onPress={tapRecord} style={styles.micBtn}>
+          <Mic size={22} color={Colors.inkPrimary} strokeWidth={2} />
+        </Pressable>
+        <View style={styles.textCol}>
+          <Text style={styles.title}>Record voice intro</Text>
+          <Text style={styles.sub}>Up to 30 seconds</Text>
+        </View>
+      </View>
+    )
   }
 
   return (
-    <View style={styles.box}>
-      <Pressable onPress={tapRecord} style={styles.micBtn}>
-        <Mic size={22} color={Colors.inkPrimary} strokeWidth={2} />
-      </Pressable>
-      <View style={styles.textCol}>
-        <Text style={styles.title}>Record voice intro</Text>
-        <Text style={styles.sub}>Up to 30 seconds</Text>
-      </View>
+    <View style={{ gap: 6 }}>
+      {saveError ? <Text style={styles.error}>{saveError}</Text> : null}
+      {content}
     </View>
   )
 }

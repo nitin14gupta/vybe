@@ -18,6 +18,7 @@ export interface PhotoItem {
 }
 
 export const PHOTO_SLOTS = 6
+export const MIN_PHOTOS = 2
 
 export function useEditPhotos() {
   const showPill = usePillStore.getState().show
@@ -217,6 +218,10 @@ export function useEditPhotos() {
   }
 
   const handleSave = async () => {
+    if (validPhotoCount < MIN_PHOTOS) {
+      showPill(`Add at least ${MIN_PHOTOS} photos to continue`, 'error')
+      return
+    }
     setSaving(true)
 
     try {
@@ -268,13 +273,16 @@ export function useEditPhotos() {
   })
 
   const validPhotoCount = items.filter(i => !!i.uri).length
-  const canSave = hasChanges && validPhotoCount > 0 && !saving
+  const hasMinPhotos = validPhotoCount >= MIN_PHOTOS
+  const canSave = hasChanges && hasMinPhotos && !saving
 
   return {
     loading,
     saving,
     items,
     canSave,
+    hasMinPhotos,
+    validPhotoCount,
     onSlotPress,
     removePhoto,
     handleSave,

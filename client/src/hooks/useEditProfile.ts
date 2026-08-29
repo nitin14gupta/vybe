@@ -5,6 +5,9 @@ import { useOnboardingStore } from '@/store/onboarding'
 import { usePillStore } from '@/store/pillStore'
 import type { ProfileResponse } from '@/api/user'
 
+const MIN_NAME_LENGTH = 2
+const MIN_BIO_LENGTH = 10
+
 interface OriginalState {
   name: string
   username: string
@@ -86,8 +89,12 @@ export function useEditProfile() {
   }, [])
 
   const handleSave = async () => {
-    if (!name.trim()) {
-      showPill('Name cannot be empty', 'error')
+    if (name.trim().length < MIN_NAME_LENGTH) {
+      showPill(`Name must be at least ${MIN_NAME_LENGTH} characters`, 'error')
+      return
+    }
+    if (bio.trim().length < MIN_BIO_LENGTH) {
+      showPill(`Bio must be at least ${MIN_BIO_LENGTH} characters`, 'error')
       return
     }
     setSaving(true)

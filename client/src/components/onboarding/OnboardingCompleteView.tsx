@@ -7,8 +7,11 @@ import Animated, {
   withDelay,
   withSpring,
 } from 'react-native-reanimated'
-import { ConfettiRain, PrimaryButton, Screen, LogoMark } from '@/components/ui'
-import { Colors, FontFamily, withOpacity } from '@/constants'
+import { Users, Calendar, MapPin, Ticket } from 'lucide-react-native'
+import { PrimaryButton, Screen, LogoMark, GlowLinesBackground } from '@/components/ui'
+import { Colors, FontFamily, Radius, withOpacity } from '@/constants'
+
+const pillIconColor = Colors.inkPrimary
 
 interface Props {
   name: string
@@ -44,14 +47,33 @@ export function OnboardingCompleteView({ name, onExplore, exploreLabel = 'Explor
 
   return (
     <Screen style={styles.root}>
-      <ConfettiRain />
+      <GlowLinesBackground />
 
       <View style={styles.content}>
-        <Animated.View style={[styles.logoGlow, circleStyle]}>
-          <View style={styles.logoCircle}>
-            <LogoMark size={48} />
+        <View style={styles.hero}>
+          <View style={[styles.pill, styles.pillPeople]}>
+            <Users size={14} color={pillIconColor} strokeWidth={2} />
+            <Text style={styles.pillText}>People</Text>
           </View>
-        </Animated.View>
+          <View style={[styles.pill, styles.pillEvents]}>
+            <Calendar size={14} color={pillIconColor} strokeWidth={2} />
+            <Text style={styles.pillText}>Events</Text>
+          </View>
+          <View style={[styles.pill, styles.pillNearby]}>
+            <MapPin size={14} color={pillIconColor} strokeWidth={2} />
+            <Text style={styles.pillText}>Nearby</Text>
+          </View>
+          <View style={[styles.pill, styles.pillExperiences]}>
+            <Ticket size={14} color={pillIconColor} strokeWidth={2} />
+            <Text style={styles.pillText}>Experiences</Text>
+          </View>
+
+          <Animated.View style={[styles.logoGlow, circleStyle]}>
+            <View style={styles.logoCircle}>
+              <LogoMark size={48} />
+            </View>
+          </Animated.View>
+        </View>
 
         <Animated.View style={[styles.textBlock, contentStyle]}>
           <Text style={styles.title}>You're all set,{'\n'}{firstName}!</Text>
@@ -79,30 +101,51 @@ const styles = StyleSheet.create({
     zIndex: 1,
     width: '100%',
   },
+  hero: {
+    width: '100%',
+    height: 240,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
   logoGlow: {
     width: 108,
     height: 108,
     borderRadius: 54,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 32,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.10),
-    shadowColor: Colors.brandOrange,
-    shadowOpacity: 0.35,
-    shadowRadius: 28,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 10,
   },
   logoCircle: {
     width: 92,
     height: 92,
     borderRadius: 46,
-    backgroundColor: withOpacity(Colors.brandOrange, 0.13),
+    backgroundColor: Colors.background,
     borderWidth: 2,
-    borderColor: withOpacity(Colors.brandOrange, 0.3),
+    borderColor: Colors.inkPrimary,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  pill: {
+    position: 'absolute',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: Radius.pill,
+    backgroundColor: withOpacity(Colors.white, 0.06),
+    borderWidth: 1,
+    borderColor: withOpacity(Colors.white, 0.1),
+  },
+  pillText: {
+    fontFamily: FontFamily.bodyMedium,
+    fontSize: 12,
+    color: Colors.inkPrimary,
+  },
+  pillPeople: { top: 0, left: 0 },
+  pillEvents: { top: 44, right: 0 },
+  pillNearby: { bottom: 44, left: 0 },
+  pillExperiences: { bottom: 0, right: 0 },
   textBlock: { alignItems: 'center', width: '100%' },
   title: {
     fontFamily: FontFamily.displayExtraBold,

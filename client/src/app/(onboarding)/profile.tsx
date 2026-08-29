@@ -12,6 +12,8 @@ import { CalendarDays } from 'lucide-react-native'
 
 const MIN_DOB_DATE = new Date(new Date().setFullYear(new Date().getFullYear() - 100))
 const MAX_DOB_DATE = new Date(new Date().setFullYear(new Date().getFullYear() - 18))
+const MIN_NAME_LENGTH = 2
+const MIN_BIO_LENGTH = 10
 
 export default function ProfileScreen() {
   const store = useOnboardingStore()
@@ -25,7 +27,7 @@ export default function ProfileScreen() {
     return () => sub.remove()
   }, []))
 
-  const canProceed = !!store.name.trim() && store.dob.replace(/\D/g, '').length === 8 && !!store.gender && !dobError && !!store.bio?.trim()
+  const canProceed = store.name.trim().length >= MIN_NAME_LENGTH && store.dob.replace(/\D/g, '').length === 8 && !!store.gender && !dobError && (store.bio?.trim().length ?? 0) >= MIN_BIO_LENGTH
 
   const validateDOB = (dob: string): string => {
     const digits = dob.replace(/\D/g, '')
@@ -76,11 +78,11 @@ export default function ProfileScreen() {
   }
 
   const handleNext = async () => {
-    if (!store.name.trim()) { showPill('Enter your full name', 'error'); return }
+    if (store.name.trim().length < MIN_NAME_LENGTH) { showPill(`Name must be at least ${MIN_NAME_LENGTH} characters`, 'error'); return }
     const dobErr = validateDOB(store.dob)
     if (dobErr) { setDobError(dobErr); showPill(dobErr, 'error'); return }
     if (!store.gender) { showPill('Select your gender', 'error'); return }
-    if (!store.bio?.trim()) { showPill('Add a short bio to continue', 'error'); return }
+    if ((store.bio?.trim().length ?? 0) < MIN_BIO_LENGTH) { showPill(`Bio must be at least ${MIN_BIO_LENGTH} characters`, 'error'); return }
     setLoading(true)
     try {
       await createProfile({
