@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, Pressable, Animated } from 'react-native'
+import ReanimatedView, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ReactNode } from 'react'
 import { Colors, FontFamily } from '@/constants'
@@ -61,6 +62,8 @@ export function AppHeader({ showLogo = false, title, leftAction, rightAction, tr
   )
 }
 
+const AnimatedPressable = ReanimatedView.createAnimatedComponent(Pressable)
+
 export function HeaderIconBtn({
   children,
   onPress,
@@ -68,14 +71,19 @@ export function HeaderIconBtn({
   children: ReactNode
   onPress?: () => void
 }) {
+  const pressScale = useSharedValue(1)
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale.value }] }))
+
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={onPress}
       hitSlop={10}
-      style={styles.iconBtn}
+      style={[styles.iconBtn, pressStyle]}
+      onPressIn={() => { pressScale.value = withSpring(0.9, { duration: 120 }) }}
+      onPressOut={() => { pressScale.value = withSpring(1, { duration: 120 }) }}
     >
       {children}
-    </Pressable>
+    </AnimatedPressable>
   )
 }
 

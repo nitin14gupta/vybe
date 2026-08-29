@@ -1,5 +1,6 @@
 import { memo } from 'react'
 import { Pressable, Text, StyleSheet } from 'react-native'
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import { hSelection } from '@/lib/haptics'
 import { Colors, FontFamily, Radius, withOpacity } from '@/constants'
 
@@ -11,22 +12,30 @@ interface Props {
   bordered?: boolean
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+
 function InterestChipBase({ label, emoji, selected, bordered, onPress }: Props) {
+  const pressScale = useSharedValue(1)
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale.value }] }))
+
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={() => { hSelection(); onPress() }}
+      onPressIn={() => { pressScale.value = withSpring(0.95, { duration: 120 }) }}
+      onPressOut={() => { pressScale.value = withSpring(1, { duration: 120 }) }}
       style={[
         styles.chip,
         selected ? styles.selected : styles.unselected,
         bordered && styles.bordered,
         bordered && selected && styles.borderedSelected,
+        pressStyle,
       ]}
     >
       <Text style={styles.emoji}>{emoji}</Text>
       <Text style={[styles.label, selected ? styles.selectedText : styles.unselectedText]}>
         {label}
       </Text>
-    </Pressable>
+    </AnimatedPressable>
   )
 }
 

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Platform, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { enableScreens, enableFreeze } from 'react-native-screens'
+import * as NavigationBar from 'expo-navigation-bar'
 import * as Sentry from '@sentry/react-native'
 
 // Expo Router has no single "App.js" for the wizard to auto-patch, so this
@@ -80,6 +81,11 @@ function RootLayout() {
   useDeepLinkRouter()
   useNetworkStatus()
   usePresenceHeartbeat()
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return
+    NavigationBar.setStyle('dark')
+  }, [])
 
   useEffect(() => {
     async function bootstrap() {

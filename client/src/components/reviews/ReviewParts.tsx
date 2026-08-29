@@ -1,5 +1,6 @@
 import React, { memo, useEffect, useMemo, useRef } from 'react'
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import ReanimatedView, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import { Image } from 'expo-image'
 import { Star } from 'lucide-react-native'
 import { router } from 'expo-router'
@@ -64,6 +65,24 @@ export function RatingDistribution({ distribution, total }: { distribution: Reco
   )
 }
 
+const AnimatedPressable = ReanimatedView.createAnimatedComponent(Pressable)
+
+function FilterChip({ active, onPress, children }: { active: boolean; onPress: () => void; children: React.ReactNode }) {
+  const pressScale = useSharedValue(1)
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale.value }] }))
+
+  return (
+    <AnimatedPressable
+      style={[c.filterChip, active && c.filterChipActive, pressStyle]}
+      onPress={onPress}
+      onPressIn={() => { pressScale.value = withSpring(0.95, { duration: 120 }) }}
+      onPressOut={() => { pressScale.value = withSpring(1, { duration: 120 }) }}
+    >
+      {children}
+    </AnimatedPressable>
+  )
+}
+
 export function RatingFilterRow({
   activeRating,
   onSelect,
@@ -75,26 +94,19 @@ export function RatingFilterRow({
 }) {
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={c.filterRow}>
-      <Pressable
-        style={[c.filterChip, activeRating === null && c.filterChipActive]}
-        onPress={() => onSelect(null)}
-      >
+      <FilterChip active={activeRating === null} onPress={() => onSelect(null)}>
         <Text style={[c.filterChipText, activeRating === null && c.filterChipTextActive]}>All ratings</Text>
-      </Pressable>
+      </FilterChip>
       {[5, 4, 3, 2, 1].map(n => {
         const isActive = activeRating === n
         const count = distribution?.[String(n)]
         return (
-          <Pressable
-            key={n}
-            style={[c.filterChip, isActive && c.filterChipActive]}
-            onPress={() => onSelect(n)}
-          >
+          <FilterChip key={n} active={isActive} onPress={() => onSelect(n)}>
             <Star size={12} color={isActive ? Colors.background : Colors.brandOrange} fill={isActive ? Colors.background : Colors.brandOrange} strokeWidth={0} />
             <Text style={[c.filterChipText, isActive && c.filterChipTextActive]}>
               {n}{count != null ? ` (${count})` : ''}
             </Text>
-          </Pressable>
+          </FilterChip>
         )
       })}
     </ScrollView>
@@ -129,9 +141,20 @@ export const ReviewCard = memo(function ReviewCard({
     if (eventId) router.push(`/(events)/${eventId}` as any)
   }
 
+  const topPressScale = useSharedValue(1)
+  const topPressStyle = useAnimatedStyle(() => ({ transform: [{ scale: topPressScale.value }] }))
+  const subtitlePressScale = useSharedValue(1)
+  const subtitlePressStyle = useAnimatedStyle(() => ({ transform: [{ scale: subtitlePressScale.value }] }))
+
   return (
     <View style={c.card}>
-      <Pressable style={c.cardTop} onPress={goToReviewer} hitSlop={4}>
+      <AnimatedPressable
+        style={[c.cardTop, topPressStyle]}
+        onPress={goToReviewer}
+        hitSlop={4}
+        onPressIn={() => { topPressScale.value = withSpring(0.985, { duration: 120 }) }}
+        onPressOut={() => { topPressScale.value = withSpring(1, { duration: 120 }) }}
+      >
         <View style={c.avatar}>
           {item.reviewer_avatar ? (
             <Image
@@ -153,11 +176,18 @@ export const ReviewCard = memo(function ReviewCard({
             {dateStr ? <Text style={c.date}>{dateStr}</Text> : null}
           </View>
         </View>
-      </Pressable>
+      </AnimatedPressable>
       {subtitle ? (
-        <Pressable onPress={goToEvent} hitSlop={4} disabled={!eventId} style={c.subtitleRow}>
+        <AnimatedPressable
+          onPress={goToEvent}
+          hitSlop={4}
+          disabled={!eventId}
+          style={[c.subtitleRow, subtitlePressStyle]}
+          onPressIn={() => { if (eventId) subtitlePressScale.value = withSpring(0.95, { duration: 120 }) }}
+          onPressOut={() => { subtitlePressScale.value = withSpring(1, { duration: 120 }) }}
+        >
           <Text style={c.subtitle} numberOfLines={1}>{subtitle}</Text>
-        </Pressable>
+        </AnimatedPressable>
       ) : null}
       {item.body ? <Text style={c.body}>{item.body}</Text> : null}
     </View>

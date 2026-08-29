@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import { Colors, FontFamily, Spacing, Radius, withOpacity } from '@/constants'
 
 export type AttendeeFilter = 'all' | 'checked_in' | 'not_arrived'
@@ -7,6 +8,28 @@ const PILL_LABELS: Record<AttendeeFilter, string> = {
   all: 'All',
   checked_in: 'Checked In',
   not_arrived: 'Not Arrived',
+}
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+
+function FilterPill({ label, count, active, onPress }: { label: string; count: number; active: boolean; onPress: () => void }) {
+  const pressScale = useSharedValue(1)
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale.value }] }))
+
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      android_ripple={null}
+      style={[p.pill, active && p.pillActive, pressStyle]}
+      onPressIn={() => { pressScale.value = withSpring(0.95, { duration: 120 }) }}
+      onPressOut={() => { pressScale.value = withSpring(1, { duration: 120 }) }}
+    >
+      <Text style={[p.label, active && p.labelActive]}>{label}</Text>
+      <View style={[p.badge, active && p.badgeActive]}>
+        <Text style={[p.badgeNum, active && p.badgeNumActive]}>{count}</Text>
+      </View>
+    </AnimatedPressable>
+  )
 }
 
 export function AttendeeFilterPills({
@@ -20,26 +43,15 @@ export function AttendeeFilterPills({
 }) {
   return (
     <View style={p.wrap}>
-      {(Object.keys(PILL_LABELS) as AttendeeFilter[]).map(f => {
-        const isActive = f === active
-        return (
-          <Pressable
-            key={f}
-            onPress={() => onChange(f)}
-            android_ripple={null}
-            style={[p.pill, isActive && p.pillActive]}
-          >
-            <Text style={[p.label, isActive && p.labelActive]}>
-              {PILL_LABELS[f]}
-            </Text>
-            <View style={[p.badge, isActive && p.badgeActive]}>
-              <Text style={[p.badgeNum, isActive && p.badgeNumActive]}>
-                {counts[f]}
-              </Text>
-            </View>
-          </Pressable>
-        )
-      })}
+      {(Object.keys(PILL_LABELS) as AttendeeFilter[]).map(f => (
+        <FilterPill
+          key={f}
+          label={PILL_LABELS[f]}
+          count={counts[f]}
+          active={f === active}
+          onPress={() => onChange(f)}
+        />
+      ))}
     </View>
   )
 }

@@ -1,5 +1,6 @@
 import { ReactNode } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import { ChevronRight } from 'lucide-react-native'
 import { hTap, hError } from '@/lib/haptics'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
@@ -13,15 +14,25 @@ interface Props {
   showSeparator?: boolean
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+
 export function SettingRow({ icon, label, value, onPress, destructive, showSeparator = true }: Props) {
+  const pressScale = useSharedValue(1)
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale.value }] }))
+
   return (
     <>
-      <Pressable onPress={() => { destructive ? hError() : hTap(); onPress() }} style={styles.row}>
+      <AnimatedPressable
+        onPress={() => { destructive ? hError() : hTap(); onPress() }}
+        onPressIn={() => { pressScale.value = withSpring(0.985, { duration: 120 }) }}
+        onPressOut={() => { pressScale.value = withSpring(1, { duration: 120 }) }}
+        style={[styles.row, pressStyle]}
+      >
         <View style={styles.iconWrap}>{icon}</View>
         <Text style={[styles.label, destructive && styles.destructive]}>{label}</Text>
         {value ? <Text style={styles.value}>{value}</Text> : null}
         {!destructive && <ChevronRight size={18} color={Colors.inkDisabled} strokeWidth={1.5} />}
-      </Pressable>
+      </AnimatedPressable>
       {showSeparator && <View style={styles.sep} />}
     </>
   )

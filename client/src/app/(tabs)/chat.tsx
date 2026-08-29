@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, Pressable,
   ActivityIndicator,
 } from 'react-native'
-import Animated from 'react-native-reanimated'
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import { useMinimizeOnScroll } from 'expo-glass-tabs'
 import { Image } from 'expo-image'
 import { router } from 'expo-router'
@@ -59,6 +59,8 @@ function formatLastMessage(conv: Conversation, currentUserId: string | null): st
 
 // ── Conversation row ──────────────────────────────────────────────────────────
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+
 const ConvRow = memo(function ConvRow({ conv, onPress, onLongPress, onAvatarPress, currentUserId }: {
   conv: Conversation; onPress: () => void; onLongPress: () => void; onAvatarPress: () => void; currentUserId: string | null
 }) {
@@ -66,9 +68,26 @@ const ConvRow = memo(function ConvRow({ conv, onPress, onLongPress, onAvatarPres
   const isDeleted  = conv.partner_is_deleted
   const displayName = conv.partner_name ?? 'User'
 
+  const rowScale = useSharedValue(1)
+  const rowPressStyle = useAnimatedStyle(() => ({ transform: [{ scale: rowScale.value }] }))
+  const avatarScale = useSharedValue(1)
+  const avatarPressStyle = useAnimatedStyle(() => ({ transform: [{ scale: avatarScale.value }] }))
+
   return (
-    <Pressable onPress={onPress} onLongPress={onLongPress} style={[s.convRow, isLocked && s.convRowLocked]}>
-      <Pressable onPress={onAvatarPress} hitSlop={4} style={s.convAvatarWrap}>
+    <AnimatedPressable
+      onPress={onPress}
+      onLongPress={onLongPress}
+      style={[s.convRow, isLocked && s.convRowLocked, rowPressStyle]}
+      onPressIn={() => { rowScale.value = withSpring(0.985, { duration: 120 }) }}
+      onPressOut={() => { rowScale.value = withSpring(1, { duration: 120 }) }}
+    >
+      <AnimatedPressable
+        onPress={onAvatarPress}
+        hitSlop={4}
+        style={[s.convAvatarWrap, avatarPressStyle]}
+        onPressIn={() => { avatarScale.value = withSpring(0.92, { duration: 120 }) }}
+        onPressOut={() => { avatarScale.value = withSpring(1, { duration: 120 }) }}
+      >
         {isDeleted ? (
           <View style={[s.convAvatar, s.convAvatarDeleted]}>
             <Ghost size={20} color={Colors.inkDisabled} strokeWidth={1.5} />
@@ -87,7 +106,7 @@ const ConvRow = memo(function ConvRow({ conv, onPress, onLongPress, onAvatarPres
           </View>
         )}
         {!isDeleted && isRecentlyActive(conv.partner_last_seen_at) && <View style={s.convOnlineDot} />}
-      </Pressable>
+      </AnimatedPressable>
 
       <View style={s.convBody}>
         <View style={s.convTopRow}>
@@ -112,7 +131,7 @@ const ConvRow = memo(function ConvRow({ conv, onPress, onLongPress, onAvatarPres
           )}
         </View>
       </View>
-    </Pressable>
+    </AnimatedPressable>
   )
 })
 
@@ -231,6 +250,11 @@ export default function ChatScreen() {
 
   const isTargetBlocked = !!menuTarget && (blockedIds.has(menuTarget.partner_id) || menuTarget.block_status === 'i_blocked')
 
+  const inboxScale = useSharedValue(1)
+  const inboxPressStyle = useAnimatedStyle(() => ({ transform: [{ scale: inboxScale.value }] }))
+  const searchBarScale = useSharedValue(1)
+  const searchBarPressStyle = useAnimatedStyle(() => ({ transform: [{ scale: searchBarScale.value }] }))
+
   return (
     <View style={[s.root, { paddingTop: insets.top + 4 }]}>
       {/* Header */}
@@ -238,7 +262,12 @@ export default function ChatScreen() {
         <View style={s.headerTop}>
           <Text style={s.title}>Messages</Text>
           {/* Vibe inbox badge button */}
-          <Pressable style={s.inboxBtn} onPress={() => { hTap(); setInboxOpen(true) }}>
+          <AnimatedPressable
+            style={[s.inboxBtn, inboxPressStyle]}
+            onPress={() => { hTap(); setInboxOpen(true) }}
+            onPressIn={() => { inboxScale.value = withSpring(0.9, { duration: 120 }) }}
+            onPressOut={() => { inboxScale.value = withSpring(1, { duration: 120 }) }}
+          >
             <Flame size={22} color={Colors.inkPrimary} fill={Colors.inkPrimary} />
             {pendingVibes.length > 0 && (
               <View style={s.inboxBadge}>
@@ -247,12 +276,17 @@ export default function ChatScreen() {
                 </Text>
               </View>
             )}
-          </Pressable>
+          </AnimatedPressable>
         </View>
-        <Pressable style={s.searchBar} onPress={() => { hTap(); setSearchOpen(true) }}>
+        <AnimatedPressable
+          style={[s.searchBar, searchBarPressStyle]}
+          onPress={() => { hTap(); setSearchOpen(true) }}
+          onPressIn={() => { searchBarScale.value = withSpring(0.98, { duration: 120 }) }}
+          onPressOut={() => { searchBarScale.value = withSpring(1, { duration: 120 }) }}
+        >
           <Search size={16} color={Colors.glassTextDisabled} strokeWidth={1.8} />
           <Text style={s.searchBarText}>Search conversations...</Text>
-        </Pressable>
+        </AnimatedPressable>
       </View>
 
       {loading ? (

@@ -1,5 +1,6 @@
 import React, { useRef } from 'react'
 import { View, Text, StyleSheet, Pressable, Animated } from 'react-native'
+import ReanimatedView, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import { Swipeable } from 'react-native-gesture-handler'
 import { Image } from 'expo-image'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
@@ -30,6 +31,8 @@ const ACTION_ICON: Record<string, any> = {
   message: MessageCircle,
 }
 
+const AnimatedPressable = ReanimatedView.createAnimatedComponent(Pressable)
+
 const TYPE_FALLBACK: Record<string, { Icon: any; bg: string; color: string }> = {
   host_onboarding_complete: { Icon: PartyPopper, bg: withOpacity(Colors.accentGold, 0.16), color: Colors.accentGold },
   report_submitted: { Icon: ShieldCheck, bg: withOpacity(Colors.inkPrimary, 0.16), color: Colors.inkPrimary },
@@ -48,6 +51,8 @@ export const NotificationRow = React.memo(function NotificationRow({ item, onPre
   const isPrimary = item.action === 'send_vibe' || item.action === 'message'
   const fallback = TYPE_FALLBACK[item.type]
   const swipeableRef = useRef<Swipeable>(null)
+  const pressScale = useSharedValue(1)
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale.value }] }))
 
   // Direct swipe, no reveal-then-tap step — swiping past the threshold
   // dismisses immediately (onSwipeableOpen), same gesture as the action.
@@ -74,7 +79,12 @@ export const NotificationRow = React.memo(function NotificationRow({ item, onPre
       onSwipeableOpen={() => { hMedium(); onDismiss() }}
     >
     <View style={s.row}>
-      <Pressable style={s.rowMain} onPress={() => { hTap(); onPress() }}>
+      <AnimatedPressable
+        style={[s.rowMain, pressStyle]}
+        onPress={() => { hTap(); onPress() }}
+        onPressIn={() => { pressScale.value = withSpring(0.985, { duration: 120 }) }}
+        onPressOut={() => { pressScale.value = withSpring(1, { duration: 120 }) }}
+      >
         <View style={s.avatarWrap}>
           {item.cover_photo ? (
             <Image
@@ -109,7 +119,7 @@ export const NotificationRow = React.memo(function NotificationRow({ item, onPre
           {item.body ? <Text style={s.body}>{item.body}</Text> : null}
           <Text style={s.time}>{timeAgo(item.created_at)}</Text>
         </View>
-      </Pressable>
+      </AnimatedPressable>
 
       {item.action && item.action_label && ActionIcon ? (
         <View style={s.actionBtnWrap}>

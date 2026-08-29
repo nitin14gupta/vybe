@@ -1,5 +1,6 @@
 import React from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import { Colors, FontFamily, withOpacity } from '@/constants'
 import { hTap } from '@/lib/haptics'
 
@@ -29,48 +30,71 @@ function toItems(tabs: string[] | TabSwitcherItem[]): TabSwitcherItem[] {
     : (tabs as TabSwitcherItem[])
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+
+function TabButton({ item, isActive, isUnderline, fill, onPress }: {
+  item: TabSwitcherItem
+  isActive: boolean
+  isUnderline: boolean
+  fill: boolean
+  onPress: () => void
+}) {
+  const pressScale = useSharedValue(1)
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale.value }] }))
+
+  return (
+    <AnimatedPressable
+      style={[
+        isUnderline ? s.tabUnderline : s.tab,
+        !fill && s.tabAuto,
+        isActive && (isUnderline ? s.tabUnderlineActive : s.tabActive),
+        pressStyle,
+      ]}
+      onPress={onPress}
+      onPressIn={() => { pressScale.value = withSpring(0.95, { duration: 120 }) }}
+      onPressOut={() => { pressScale.value = withSpring(1, { duration: 120 }) }}
+    >
+      {item.icon?.(isActive)}
+      {item.count != null ? (
+        <Text style={[
+          isUnderline ? s.tabTextUnderline : s.tabText,
+          isActive && (isUnderline ? s.tabTextUnderlineActive : s.tabTextActive),
+        ]}>
+          <Text style={s.tabCount}>{item.count} </Text>
+          {item.label}
+        </Text>
+      ) : (
+        <Text style={[
+          isUnderline ? s.tabTextUnderline : s.tabText,
+          isActive && (isUnderline ? s.tabTextUnderlineActive : s.tabTextActive),
+        ]}>
+          {item.label}
+        </Text>
+      )}
+    </AnimatedPressable>
+  )
+}
+
 export function TabSwitcher({ tabs, activeTab, onChange, variant = 'pill', fill = true }: TabSwitcherProps) {
   const items = toItems(tabs)
   const isUnderline = variant === 'underline'
   return (
     <View style={[isUnderline ? s.containerUnderline : s.container, !fill && s.containerAuto]}>
-      {items.map(item => {
-        const isActive = activeTab === item.key
-        return (
-          <Pressable
-            key={item.key}
-            style={[
-              isUnderline ? s.tabUnderline : s.tab,
-              !fill && s.tabAuto,
-              isActive && (isUnderline ? s.tabUnderlineActive : s.tabActive),
-            ]}
-            onPress={() => {
-              if (!isActive) {
-                hTap()
-                onChange(item.key)
-              }
-            }}
-          >
-            {item.icon?.(isActive)}
-            {item.count != null ? (
-              <Text style={[
-                isUnderline ? s.tabTextUnderline : s.tabText,
-                isActive && (isUnderline ? s.tabTextUnderlineActive : s.tabTextActive),
-              ]}>
-                <Text style={s.tabCount}>{item.count} </Text>
-                {item.label}
-              </Text>
-            ) : (
-              <Text style={[
-                isUnderline ? s.tabTextUnderline : s.tabText,
-                isActive && (isUnderline ? s.tabTextUnderlineActive : s.tabTextActive),
-              ]}>
-                {item.label}
-              </Text>
-            )}
-          </Pressable>
-        )
-      })}
+      {items.map(item => (
+        <TabButton
+          key={item.key}
+          item={item}
+          isActive={activeTab === item.key}
+          isUnderline={isUnderline}
+          fill={fill}
+          onPress={() => {
+            if (activeTab !== item.key) {
+              hTap()
+              onChange(item.key)
+            }
+          }}
+        />
+      ))}
     </View>
   )
 }

@@ -1,13 +1,24 @@
 import React, { memo } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import { Image } from 'expo-image'
 import { Colors, FontFamily } from '@/constants'
 import type { DiscoverUser } from '@/api/apiService'
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+
 export const SearchResultRow = memo(function SearchResultRow({ user, onTap }: { user: DiscoverUser; onTap: () => void }) {
   const avatar = user.photos[0]?.url
+  const pressScale = useSharedValue(1)
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale.value }] }))
+
   return (
-    <Pressable style={s.row} onPress={onTap}>
+    <AnimatedPressable
+      style={[s.row, pressStyle]}
+      onPress={onTap}
+      onPressIn={() => { pressScale.value = withSpring(0.985, { duration: 120 }) }}
+      onPressOut={() => { pressScale.value = withSpring(1, { duration: 120 }) }}
+    >
       {avatar ? (
         <Image source={{ uri: avatar }} style={s.avatar} cachePolicy="memory-disk" priority="low" transition={150} />
       ) : (
@@ -21,7 +32,7 @@ export const SearchResultRow = memo(function SearchResultRow({ user, onTap }: { 
           <Text style={s.username} numberOfLines={1}>@{user.username}</Text>
         ) : null}
       </View>
-    </Pressable>
+    </AnimatedPressable>
   )
 })
 

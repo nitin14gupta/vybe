@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native'
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import { router } from 'expo-router'
 import { Siren } from 'lucide-react-native'
 import { ConfirmSheet } from '@/components/ui/ConfirmSheet'
@@ -51,14 +52,25 @@ function useSosFlow(eventId: string) {
   return { open, sheets }
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+
 // Compact icon-only trigger — a thumb-corner badge on list/card rows.
 export function SosButton({ eventId, size = 13, style }: { eventId: string; size?: number; style?: StyleProp<ViewStyle> }) {
   const { open, sheets } = useSosFlow(eventId)
+  const pressScale = useSharedValue(1)
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale.value }] }))
+
   return (
     <>
-      <Pressable style={[s.badge, style]} onPress={open} hitSlop={6}>
+      <AnimatedPressable
+        style={[s.badge, style, pressStyle]}
+        onPress={open}
+        hitSlop={6}
+        onPressIn={() => { pressScale.value = withSpring(0.9, { duration: 120 }) }}
+        onPressOut={() => { pressScale.value = withSpring(1, { duration: 120 }) }}
+      >
         <Siren size={size} color={Colors.destructive} strokeWidth={2.4} />
-      </Pressable>
+      </AnimatedPressable>
       {sheets}
     </>
   )

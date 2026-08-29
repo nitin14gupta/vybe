@@ -1,8 +1,11 @@
 import { memo, type ReactNode } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import { ChevronRight } from 'lucide-react-native'
 import { hTap } from '@/lib/haptics'
 import { Colors, FontFamily, Spacing } from '@/constants'
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 
 // Icon + title + one-line subtitle + chevron — richer than the plain
 // label/value SettingRow, so a row can show live state (contact names) in
@@ -20,16 +23,24 @@ export const SafetyMenuRow = memo(function SafetyMenuRow({
   onPress: () => void
   showSeparator?: boolean
 }) {
+  const pressScale = useSharedValue(1)
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale.value }] }))
+
   return (
     <>
-      <Pressable style={s.row} onPress={() => { hTap(); onPress() }}>
+      <AnimatedPressable
+        style={[s.row, pressStyle]}
+        onPress={() => { hTap(); onPress() }}
+        onPressIn={() => { pressScale.value = withSpring(0.985, { duration: 120 }) }}
+        onPressOut={() => { pressScale.value = withSpring(1, { duration: 120 }) }}
+      >
         <View style={s.iconWrap}>{icon}</View>
         <View style={s.textWrap}>
           <Text style={s.title}>{title}</Text>
           {subtitle ? <Text style={s.subtitle} numberOfLines={1}>{subtitle}</Text> : null}
         </View>
         <ChevronRight size={18} color={Colors.inkDisabled} strokeWidth={1.5} />
-      </Pressable>
+      </AnimatedPressable>
       {showSeparator && <View style={s.sep} />}
     </>
   )
