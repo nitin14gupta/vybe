@@ -1,5 +1,6 @@
 import { memo } from 'react'
 import { Pressable, View, Text, StyleSheet } from 'react-native'
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import { Image, type ImageProps } from 'expo-image'
 import { router } from 'expo-router'
 import { MapPin, ChevronRight, Calendar } from 'lucide-react-native'
@@ -16,6 +17,8 @@ function formatPrice(price: number, isFree: boolean) {
   if (price >= 1000) return '₹' + (price / 1000).toFixed(price % 1000 === 0 ? 0 : 1) + 'k'
   return '₹' + price
 }
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 
 function EventListCardBase({
   event,
@@ -35,9 +38,18 @@ function EventListCardBase({
   const cover = event.cover_photos?.[0]?.url
   const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
 
+  // Tiny tactile press feedback — same spring EventCard's grid cards use.
+  const pressScale = useSharedValue(1)
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale.value }] }))
+
   return (
     <View style={s.rowWrap}>
-    <Pressable style={s.row} onPress={onPress ?? (() => router.push(`/(events)/${event.id}` as any))}>
+    <AnimatedPressable
+      style={[s.row, pressStyle]}
+      onPress={onPress ?? (() => router.push(`/(events)/${event.id}` as any))}
+      onPressIn={() => { pressScale.value = withSpring(0.985, { duration: 120 }) }}
+      onPressOut={() => { pressScale.value = withSpring(1, { duration: 120 }) }}
+    >
       <View style={s.thumb}>
         {cover ? (
           <Image
@@ -98,7 +110,7 @@ function EventListCardBase({
       <View style={s.chevronWrap}>
         <ChevronRight size={16} color={Colors.inkSecondary} strokeWidth={2.2} />
       </View>
-    </Pressable>
+    </AnimatedPressable>
 
     {/* Siblings of the row's own Pressable above, not nested inside it —
         same reasoning as HostPill in EventCard.tsx: a nested touchable

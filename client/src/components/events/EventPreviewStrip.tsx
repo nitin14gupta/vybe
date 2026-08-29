@@ -1,5 +1,6 @@
 import React from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -13,6 +14,8 @@ import { isEventPast } from "@/lib/dates";
 
 const CARD_W = 268;
 const CARD_MARGIN = 10;
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 // ── Preview card (map mode bottom strip) ────────────────────────────────────
 
@@ -31,11 +34,16 @@ function PreviewCardBase({
   const myId = useAuthStore(state => state.userId);
   const canOpenHost = !!event.host_id && event.host_name && !event.host_is_deleted;
 
+  const pressScale = useSharedValue(1);
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale.value }] }));
+
   return (
     <View style={styles.previewCardWrap}>
-    <Pressable
-      style={[styles.previewCard, active && styles.previewCardActive]}
+    <AnimatedPressable
+      style={[styles.previewCard, active && styles.previewCardActive, pressStyle]}
       onPress={onPress}
+      onPressIn={() => { pressScale.value = withSpring(0.97, { duration: 120 }); }}
+      onPressOut={() => { pressScale.value = withSpring(1, { duration: 120 }); }}
     >
       <View style={styles.previewImageWrap}>
         {cover ? (
@@ -74,7 +82,7 @@ function PreviewCardBase({
           <Text style={styles.previewDist}>{event.distance_km} km away</Text>
         )}
       </View>
-    </Pressable>
+    </AnimatedPressable>
 
     {/* Siblings of the card's own Pressable above, not nested inside it. */}
     {!isEventPast(event) && (
@@ -101,11 +109,19 @@ export const PreviewCard = React.memo(PreviewCardBase);
 
 // "N more events" tail card in preview strip
 export function MoreCard({ count, onPress }: { count: number; onPress: () => void }) {
+  const pressScale = useSharedValue(1);
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale.value }] }));
+
   return (
-    <Pressable style={styles.moreCard} onPress={onPress}>
+    <AnimatedPressable
+      style={[styles.moreCard, pressStyle]}
+      onPress={onPress}
+      onPressIn={() => { pressScale.value = withSpring(0.97, { duration: 120 }); }}
+      onPressOut={() => { pressScale.value = withSpring(1, { duration: 120 }); }}
+    >
       <Text style={styles.moreCount}>+{count}</Text>
       <Text style={styles.moreLabel}>more{"\n"}events</Text>
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 

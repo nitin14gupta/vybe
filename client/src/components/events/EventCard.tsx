@@ -2,7 +2,7 @@ import { Fragment, memo, useEffect, useState, type ReactNode } from 'react'
 import { Pressable, StyleSheet, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Image } from 'expo-image'
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated'
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated'
 import { MapPin, Flame } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
@@ -13,6 +13,8 @@ import { useAuthStore } from '@/store/auth'
 import { HotlistButton } from './HotlistButton'
 import { EventQuickPeekSheet } from './EventQuickPeekSheet'
 import type { EventSummary } from '@/api/apiService'
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 
 const StaggerIn = memo(function StaggerIn({ index, style, children }: { index: number; style?: StyleProp<ViewStyle>; children: ReactNode }) {
   const opacity = useSharedValue(0)
@@ -220,14 +222,21 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
   // own dates, so it's safe even where callers don't pass `isPast`.
   const eventIsPast = isPast || isEventPast(event)
 
+  // Tiny tactile press feedback — same spring the app's buttons already use,
+  // just a gentler target scale since a card is a much bigger tap target.
+  const pressScale = useSharedValue(1)
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale.value }] }))
+
   return (
     <Fragment>
     <View style={isPast && s.cardPast}>
-    <Pressable
-      style={s.card}
+    <AnimatedPressable
+      style={[s.card, pressStyle]}
       onPress={onPress}
       onLongPress={() => { hSelection(); setPeekOpen(true) }}
       delayLongPress={350}
+      onPressIn={() => { pressScale.value = withSpring(0.985, { duration: 120 }) }}
+      onPressOut={() => { pressScale.value = withSpring(1, { duration: 120 }) }}
     >
       {/* 16:9 cover image */}
       <View style={s.imageWrap}>
@@ -324,7 +333,7 @@ export const EventCard = memo(function EventCard({ event, onPress, showHost, isP
       )}
 
       {footer}
-    </Pressable>
+    </AnimatedPressable>
 
     {/* True siblings of the card's Pressable above, not descendants — see
         the comment on the wrapper View. */}
