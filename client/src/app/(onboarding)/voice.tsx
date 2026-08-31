@@ -2,7 +2,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
 import { hHeavy, hTap } from '@/lib/haptics'
 import { Play, Pause } from 'lucide-react-native'
-import { OutlineButton, StepDots, PrimaryButton, TextLinkButton, Screen, Orb, RecordingWave, PlaybackWave } from '@/components/ui'
+import { OutlineButton, StepDots, PrimaryButton, TextLinkButton, Screen, Orb, RecordingWave, PlaybackWave, GlowLinesBackground } from '@/components/ui'
 import { useVoice } from '@/hooks/useVoice'
 import { Colors, FontFamily, Spacing, Radius, withOpacity } from '@/constants'
 
@@ -26,7 +26,9 @@ export default function VoiceScreen() {
   const fmt = (s: number) => `0:${String(Math.max(0, s)).padStart(2, '0')}`
 
   return (
-    <Screen>
+    <View style={styles.rootWrap}>
+      <GlowLinesBackground />
+      <Screen transparent>
       <View style={styles.center}>
         <Pressable onPress={() => { hHeavy(); tapRecord() }}>
           <Orb width={270} height={270} intensity={intensity} isActive={isRecording} />
@@ -83,11 +85,13 @@ export default function VoiceScreen() {
           )}
         </View>
       </View>
-    </Screen>
+      </Screen>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
+  rootWrap: { flex: 1, backgroundColor: Colors.background },
   center: {
     flex: 1,
     alignItems: 'center',

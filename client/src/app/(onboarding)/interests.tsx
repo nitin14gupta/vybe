@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native'
 import { router } from 'expo-router'
-import { OutlineButton, StepDots, InterestChip, PrimaryButton, Screen } from '@/components/ui'
+import { OutlineButton, StepDots, InterestChip, PrimaryButton, Screen, GlowLinesBackground } from '@/components/ui'
 import { useInterests } from '@/hooks/useInterests'
 import { Colors, FontFamily, Spacing } from '@/constants'
 
@@ -8,7 +8,9 @@ export default function InterestsScreen() {
   const { availableInterests, loadingList, selected, atMax, canProceed, remaining, loading, toggle, handleNext } = useInterests()
 
   return (
-    <Screen>
+    <View style={styles.rootWrap}>
+      <GlowLinesBackground />
+      <Screen transparent>
       <View style={styles.header}>
         <Text style={styles.title}>What are you into?</Text>
         <Text style={styles.subtitle}>
@@ -66,11 +68,13 @@ export default function InterestsScreen() {
           </View>
         </View>
       </View>
-    </Screen>
+      </Screen>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
+  rootWrap: { flex: 1, backgroundColor: Colors.background },
   header: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 12 },
   title: {
     fontFamily: FontFamily.headingBold,

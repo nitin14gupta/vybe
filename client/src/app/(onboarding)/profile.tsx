@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react'
 import { View, Text, StyleSheet, TextInput, Pressable, BackHandler } from 'react-native'
 import { router } from 'expo-router'
 import { useFocusEffect } from 'expo-router'
-import { Input, GenderSelector, StepDots, PrimaryButton, Screen, KeyboardAvoidingWrapper, DateTimePickerSheet, useDateTimePicker, BioInput } from '@/components/ui'
+import { Input, GenderSelector, StepDots, PrimaryButton, Screen, KeyboardAvoidingWrapper, DateTimePickerSheet, useDateTimePicker, BioInput, GlowLinesBackground } from '@/components/ui'
 import { useOnboardingStore } from '@/store/onboarding'
 import { createProfile } from '@/api/user'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
@@ -101,7 +101,9 @@ export default function ProfileScreen() {
   }
 
   return (
-    <Screen>
+    <View style={styles.rootWrap}>
+      <GlowLinesBackground />
+      <Screen transparent>
       <View style={styles.header}>
         <Text style={styles.title}>Let's set up your profile</Text>
         <Text style={styles.subtitle}>Tell us a little about yourself</Text>
@@ -164,11 +166,13 @@ export default function ProfileScreen() {
         onConfirm={(date) => { datePicker.confirm(date); handlePickedDate(date) }}
         onDismiss={datePicker.dismiss}
       />
-    </Screen>
+      </Screen>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
+  rootWrap: { flex: 1, backgroundColor: Colors.background },
   header: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 12 },
   title: {
     fontFamily: FontFamily.headingBold,

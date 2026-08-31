@@ -3,7 +3,7 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { router } from 'expo-router'
 import { hTap, hSelection } from '@/lib/haptics'
 import { Search, MapPin, Check } from 'lucide-react-native'
-import { OutlineButton, StepDots, Input, PrimaryButton, Screen } from '@/components/ui'
+import { OutlineButton, StepDots, Input, PrimaryButton, Screen, GlowLinesBackground } from '@/components/ui'
 import { useLocation } from '@/hooks/useLocation'
 import { Colors, FontFamily, Spacing, Radius, withOpacity } from '@/constants'
 
@@ -24,7 +24,9 @@ export default function LocationScreen() {
   } = useLocation()
 
   return (
-    <Screen>
+    <View style={styles.rootWrap}>
+      <GlowLinesBackground />
+      <Screen transparent>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -112,11 +114,13 @@ export default function LocationScreen() {
         </View>
       </KeyboardAvoidingView>
 
-    </Screen>
+      </Screen>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
+  rootWrap: { flex: 1, backgroundColor: Colors.background },
   flex: { flex: 1 },
   header: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 12 },
   title: {

@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Pressable, Dimensions, ScrollView } from 'react-native'
 import { router } from 'expo-router'
-import { OutlineButton, StepDots, PrimaryButton, Screen, PhotoSlot } from '@/components/ui'
+import { OutlineButton, StepDots, PrimaryButton, Screen, PhotoSlot, GlowLinesBackground } from '@/components/ui'
 import { MediaPreviewModal } from '@/components/chat/MediaPreviewModal'
 import { usePhotos, MIN_PHOTOS } from '@/hooks/usePhotos'
 import { Colors, FontFamily, Spacing, Radius } from '@/constants'
@@ -22,7 +22,9 @@ export default function PhotosScreen() {
   } = usePhotos()
 
   return (
-    <Screen>
+    <View style={styles.rootWrap}>
+      <GlowLinesBackground />
+      <Screen transparent>
       <View style={styles.header}>
         <Text style={styles.title}>Add your photos</Text>
         <Text style={styles.subtitle}>Add at least {MIN_PHOTOS} photos</Text>
@@ -67,11 +69,13 @@ export default function PhotosScreen() {
         actionLabel="Add"
         titleLabel="Ready to add?"
       />
-    </Screen>
+      </Screen>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
+  rootWrap: { flex: 1, backgroundColor: Colors.background },
   header: { paddingHorizontal: Spacing.screenPadding, paddingBottom: 12 },
   title: {
     fontFamily: FontFamily.headingBold,

@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   slot: {
     width: ITEM_SIZE,
     height: ITEM_SIZE,
-    backgroundColor: withOpacity(Colors.inkPrimary, 0.03),
+    backgroundColor: Colors.surfaceMuted,
     borderRadius: Radius.card,
     borderWidth: 1.5,
     borderColor: withOpacity(Colors.inkPrimary, 0.1),
