@@ -2,28 +2,28 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useQuery } from '@tanstack/react-query'
 import { ShieldAlert } from 'lucide-react'
-import { apiClient } from '@/lib/apiClient'
-import { Card } from '@/components/ui/Card'
+import {
+  useUserReportsQuery, useEventReportsQuery, useMessageReportsQuery, useBlocksQuery, useAdminActivityQuery,
+} from '@/hooks/useReports'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/Table'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
 import { Badge } from '@/components/ui/Badge'
-import { Pagination } from '@/components/ui/Pagination'
-import { Skeleton } from '@/components/ui/Skeleton'
-import { EmptyState } from '@/components/ui/EmptyState'
+import { ListShell } from '@/components/ui/ListShell'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { formatDate } from '@/lib/formatters'
-import type { UserReportItem, EventReportItem, MessageReportItem, BlockItem } from '@/types/reports'
-import type { AuditLogItem } from '@/types/audit'
-import type { PaginatedResponse } from '@/types/feedback'
+import { ACTION_LABELS, targetHref } from '@/lib/auditLog'
 
 const PAGE_SIZE = 20
 
 export default function SafetyPage() {
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader title="Safety" subtitle="Reports and blocks across the platform, for moderation review." />
+      <PageHeader
+        breadcrumb={[{ label: 'Dashboard', href: '/' }, { label: 'Safety' }]}
+        title="Safety"
+        subtitle="Reports and blocks across the platform, for moderation review."
+      />
 
       <Tabs defaultValue="users">
         <TabsList>
@@ -44,58 +44,13 @@ export default function SafetyPage() {
   )
 }
 
-function usePaginatedReports<T>(key: string, path: string, page: number) {
-  return useQuery({
-    queryKey: [key, page],
-    queryFn: () => apiClient.get<PaginatedResponse<T>>(`${path}?page=${page}&page_size=${PAGE_SIZE}`),
-  })
-}
-
-function TableShell({
-  isLoading,
-  empty,
-  emptyLabel,
-  total,
-  page,
-  pageSize,
-  onPageChange,
-  children,
-}: {
-  isLoading: boolean
-  empty: boolean
-  emptyLabel: string
-  total: number
-  page: number
-  pageSize: number
-  onPageChange: (p: number) => void
-  children: React.ReactNode
-}) {
-  if (isLoading) {
-    return (
-      <div className="flex flex-col gap-2">
-        {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-      </div>
-    )
-  }
-  if (empty) {
-    return <EmptyState icon={ShieldAlert} label={emptyLabel} />
-  }
-  return (
-    <Card className="p-0">
-      <div className="p-4">
-        {children}
-        {total > 0 && <Pagination page={page} pageSize={pageSize} total={total} onPageChange={onPageChange} />}
-      </div>
-    </Card>
-  )
-}
-
 function UserReportsTab() {
   const [page, setPage] = useState(1)
-  const { data, isLoading } = usePaginatedReports<UserReportItem>('admin-reports-users', '/admin/reports/users', page)
+  const { data, isLoading } = useUserReportsQuery(page)
 
   return (
-    <TableShell
+    <ListShell
+      emptyIcon={ShieldAlert}
       isLoading={isLoading}
       empty={!isLoading && data?.items.length === 0}
       emptyLabel="No user reports"
@@ -111,12 +66,12 @@ function UserReportsTab() {
             <TR key={r.id}>
               <TD>
                 <Link href={`/users/${r.reported_id}`} className="hover:underline">
-                  {r.reported_name ?? 'Unnamed'}<span className="block text-xs text-zinc-400">{r.reported_phone}</span>
+                  {r.reported_name ?? 'Unnamed'}<span className="block text-xs text-ink-secondary">{r.reported_phone}</span>
                 </Link>
               </TD>
               <TD>
                 <Link href={`/users/${r.reporter_id}`} className="hover:underline">
-                  {r.reporter_name ?? 'Unnamed'}<span className="block text-xs text-zinc-400">{r.reporter_phone}</span>
+                  {r.reporter_name ?? 'Unnamed'}<span className="block text-xs text-ink-secondary">{r.reporter_phone}</span>
                 </Link>
               </TD>
               <TD className="capitalize">{r.reason.replace(/_/g, ' ')}</TD>
@@ -125,16 +80,17 @@ function UserReportsTab() {
           ))}
         </TBody>
       </Table>
-    </TableShell>
+    </ListShell>
   )
 }
 
 function EventReportsTab() {
   const [page, setPage] = useState(1)
-  const { data, isLoading } = usePaginatedReports<EventReportItem>('admin-reports-events', '/admin/reports/events', page)
+  const { data, isLoading } = useEventReportsQuery(page)
 
   return (
-    <TableShell
+    <ListShell
+      emptyIcon={ShieldAlert}
       isLoading={isLoading}
       empty={!isLoading && data?.items.length === 0}
       emptyLabel="No event reports"
@@ -156,7 +112,7 @@ function EventReportsTab() {
               </TD>
               <TD>
                 <Link href={`/users/${r.reporter_id}`} className="hover:underline">
-                  {r.reporter_name ?? 'Unnamed'}<span className="block text-xs text-zinc-400">{r.reporter_phone}</span>
+                  {r.reporter_name ?? 'Unnamed'}<span className="block text-xs text-ink-secondary">{r.reporter_phone}</span>
                 </Link>
               </TD>
               <TD className="capitalize">{r.reason.replace(/_/g, ' ')}</TD>
@@ -166,16 +122,17 @@ function EventReportsTab() {
           ))}
         </TBody>
       </Table>
-    </TableShell>
+    </ListShell>
   )
 }
 
 function MessageReportsTab() {
   const [page, setPage] = useState(1)
-  const { data, isLoading } = usePaginatedReports<MessageReportItem>('admin-reports-messages', '/admin/reports/messages', page)
+  const { data, isLoading } = useMessageReportsQuery(page)
 
   return (
-    <TableShell
+    <ListShell
+      emptyIcon={ShieldAlert}
       isLoading={isLoading}
       empty={!isLoading && data?.items.length === 0}
       emptyLabel="No message reports"
@@ -199,7 +156,7 @@ function MessageReportsTab() {
               </TD>
               <TD>
                 <Link href={`/users/${r.reporter_id}`} className="hover:underline">
-                  {r.reporter_name ?? 'Unnamed'}<span className="block text-xs text-zinc-400">{r.reporter_phone}</span>
+                  {r.reporter_name ?? 'Unnamed'}<span className="block text-xs text-ink-secondary">{r.reporter_phone}</span>
                 </Link>
               </TD>
               <TD className="capitalize">{r.reason.replace(/_/g, ' ')}</TD>
@@ -208,30 +165,17 @@ function MessageReportsTab() {
           ))}
         </TBody>
       </Table>
-    </TableShell>
+    </ListShell>
   )
-}
-
-const ACTION_LABELS: Record<string, string> = {
-  lock_user: 'Locked user',
-  unlock_user: 'Unlocked user',
-  force_cancel_event: 'Force-cancelled event',
-  update_support_status: 'Updated ticket status',
-}
-
-function targetHref(targetType: string, targetId: string | null): string | null {
-  if (!targetId) return null
-  if (targetType === 'user') return `/users/${targetId}`
-  if (targetType === 'event') return `/events/${targetId}`
-  return null
 }
 
 function AdminActivityTab() {
   const [page, setPage] = useState(1)
-  const { data, isLoading } = usePaginatedReports<AuditLogItem>('admin-audit-log', '/admin/audit-log', page)
+  const { data, isLoading } = useAdminActivityQuery(page)
 
   return (
-    <TableShell
+    <ListShell
+      emptyIcon={ShieldAlert}
       isLoading={isLoading}
       empty={!isLoading && data?.items.length === 0}
       emptyLabel="No admin activity yet"
@@ -262,16 +206,17 @@ function AdminActivityTab() {
           })}
         </TBody>
       </Table>
-    </TableShell>
+    </ListShell>
   )
 }
 
 function BlocksTab() {
   const [page, setPage] = useState(1)
-  const { data, isLoading } = usePaginatedReports<BlockItem>('admin-reports-blocks', '/admin/reports/blocks', page)
+  const { data, isLoading } = useBlocksQuery(page)
 
   return (
-    <TableShell
+    <ListShell
+      emptyIcon={ShieldAlert}
       isLoading={isLoading}
       empty={!isLoading && data?.items.length === 0}
       emptyLabel="No blocks"
@@ -287,12 +232,12 @@ function BlocksTab() {
             <TR key={b.id}>
               <TD>
                 <Link href={`/users/${b.blocker_id}`} className="hover:underline">
-                  {b.blocker_name ?? 'Unnamed'}<span className="block text-xs text-zinc-400">{b.blocker_phone}</span>
+                  {b.blocker_name ?? 'Unnamed'}<span className="block text-xs text-ink-secondary">{b.blocker_phone}</span>
                 </Link>
               </TD>
               <TD>
                 <Link href={`/users/${b.blocked_id}`} className="hover:underline">
-                  {b.blocked_name ?? 'Unnamed'}<span className="block text-xs text-zinc-400">{b.blocked_phone}</span>
+                  {b.blocked_name ?? 'Unnamed'}<span className="block text-xs text-ink-secondary">{b.blocked_phone}</span>
                 </Link>
               </TD>
               <TD>{formatDate(b.created_at)}</TD>
@@ -300,6 +245,6 @@ function BlocksTab() {
           ))}
         </TBody>
       </Table>
-    </TableShell>
+    </ListShell>
   )
 }

@@ -8,7 +8,9 @@ import { z } from 'zod'
 import { Lock } from 'lucide-react'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
 import { useToast } from '@/hooks/useToast'
-import { SketchCard, SketchTape, SketchInput, SketchButton } from '@/components/ui/sketch/Sketch'
+import { Card } from '@/components/ui/Card'
+import { Input } from '@/components/ui/Input'
+import { Button } from '@/components/ui/Button'
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -42,55 +44,52 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="bg-paper flex min-h-screen flex-1 items-center justify-center px-4 py-12">
-      <SketchCard rotate className="w-full max-w-sm p-8 pt-10">
-        <SketchTape />
-
+    <div className="flex min-h-screen flex-1 items-center justify-center bg-background px-4 py-12">
+      <Card className="w-full max-w-sm p-8 pt-10">
         <div className="mb-8 flex flex-col items-center gap-3">
-          <div
-            className="flex h-14 w-14 items-center justify-center border-2 border-zinc-900 bg-amber-300 text-zinc-900"
-            style={{ borderRadius: '50% 45% 55% 50% / 50% 55% 45% 50%' }}
-          >
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-gradient text-ink-on-accent glow-shadow-brand">
             <Lock className="h-6 w-6" />
           </div>
           <div className="text-center">
-            <h1 className="font-sketch text-3xl font-bold text-zinc-900 underline decoration-emerald-400 decoration-wavy decoration-2 underline-offset-4">
-              Gorave Admin
-            </h1>
-            <p className="font-sketch mt-2 text-base text-zinc-500">Sign in to keep things running</p>
+            <h1 className="font-display text-2xl font-bold text-ink-primary">Gorave Admin</h1>
+            <p className="mt-2 font-sans text-sm text-ink-secondary">Sign in to keep things running</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
           <div>
-            <label className="font-sketch mb-1.5 block text-base text-zinc-700">Email</label>
-            <SketchInput
+            <label className="mb-1.5 block font-sans text-xs font-semibold uppercase tracking-wide text-ink-secondary">
+              Email
+            </label>
+            <Input
               type="email"
               autoComplete="email"
               placeholder="you@gorave.in"
-              error={errors.email?.message}
+              aria-invalid={!!errors.email}
               {...register('email')}
             />
-            {errors.email && <p className="font-sketch mt-1 text-sm text-red-600">{errors.email.message}</p>}
+            {errors.email && <p className="mt-1 text-sm text-destructive">{errors.email.message}</p>}
           </div>
 
           <div>
-            <label className="font-sketch mb-1.5 block text-base text-zinc-700">Password</label>
-            <SketchInput
+            <label className="mb-1.5 block font-sans text-xs font-semibold uppercase tracking-wide text-ink-secondary">
+              Password
+            </label>
+            <Input
               type="password"
               autoComplete="current-password"
               placeholder="••••••••"
-              error={errors.password?.message}
+              aria-invalid={!!errors.password}
               {...register('password')}
             />
-            {errors.password && <p className="font-sketch mt-1 text-sm text-red-600">{errors.password.message}</p>}
+            {errors.password && <p className="mt-1 text-sm text-destructive">{errors.password.message}</p>}
           </div>
 
-          <SketchButton type="submit" loading={submitting} className="mt-2">
+          <Button type="submit" size="lg" loading={submitting} className="mt-2 w-full">
             Sign in
-          </SketchButton>
+          </Button>
         </form>
-      </SketchCard>
+      </Card>
     </div>
   )
 }

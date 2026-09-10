@@ -1,19 +1,23 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import Link from 'next/link'
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, Cell, XAxis, YAxis,
   CartesianGrid, Tooltip, Legend, LabelList,
 } from 'recharts'
-import { Users, CalendarDays, CalendarClock, CalendarCheck, Wallet, MessageSquare, Lock, Ban } from 'lucide-react'
+import {
+  Users, CalendarDays, CalendarClock, CalendarCheck, Wallet, MessageSquare, Lock, Ban, Activity, ArrowRight,
+} from 'lucide-react'
 import { StatCard } from '@/components/ui/StatCard'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Skeleton } from '@/components/ui/Skeleton'
-import { apiClient } from '@/lib/apiClient'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
+import { useDashboardQuery } from '@/hooks/useDashboard'
+import { useAdminActivityQuery } from '@/hooks/useReports'
 import { chartColors, STATUS_COLOR } from '@/lib/chartColors'
-import { formatInr } from '@/lib/formatters'
-import type { DashboardResponse } from '@/types/dashboard'
+import { formatInr, formatRelative } from '@/lib/formatters'
+import { ACTION_LABELS, targetHref } from '@/lib/auditLog'
 
 function formatDayTick(day: string) {
   const d = new Date(day)
@@ -22,25 +26,20 @@ function formatDayTick(day: string) {
 
 export default function DashboardPage() {
   const { admin } = useAdminAuth()
-  const c = chartColors(false)
-
-  const { data, isLoading } = useQuery({
-    queryKey: ['admin-dashboard'],
-    queryFn: () => apiClient.get<DashboardResponse>('/admin/dashboard'),
-  })
+  const c = chartColors()
+  const { data, isLoading } = useDashboardQuery()
+  const { data: activity, isLoading: activityLoading } = useAdminActivityQuery(1)
 
   const stats = data?.stats
+  const recentActivity = activity?.items.slice(0, 6) ?? []
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-sketch text-3xl font-bold text-zinc-900 underline decoration-emerald-400 decoration-wavy decoration-2 underline-offset-4">
-          Welcome{admin?.name ? `, ${admin.name}` : ''}
-        </h1>
-        <p className="font-sketch mt-1 text-base text-zinc-500">
-          Here&apos;s a snapshot of what&apos;s happening on Gorave.
-        </p>
-      </div>
+      <PageHeader
+        breadcrumb={[{ label: 'Dashboard' }]}
+        title={`Welcome${admin?.name ? `, ${admin.name}` : ''}`}
+        subtitle="Here's a snapshot of what's happening on Gorave."
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total users" value={stats ? stats.total_users.toLocaleString() : '—'} icon={Users} />
@@ -69,7 +68,7 @@ export default function DashboardPage() {
                   />
                   <YAxis allowDecimals={false} tick={{ fill: c.muted, fontSize: 12 }} axisLine={false} tickLine={false} />
                   <Tooltip
-                    contentStyle={{ background: c.surface, border: '2px solid #18181b', borderRadius: 10, fontSize: 13, fontFamily: 'var(--font-architects-daughter)' }}
+                    contentStyle={{ background: c.surface, border: '1px solid #2A2A2A', borderRadius: 10, fontSize: 13, fontFamily: 'var(--font-satoshi)' }}
                     labelFormatter={(label) => formatDayTick(String(label))}
                     labelStyle={{ color: c.textSecondary }}
                   />
@@ -103,8 +102,8 @@ export default function DashboardPage() {
                     tickFormatter={(v: string) => v.replace(/_/g, ' ')}
                   />
                   <Tooltip
-                    cursor={{ fill: 'rgba(251,191,36,0.18)' }}
-                    contentStyle={{ background: c.surface, border: '2px solid #18181b', borderRadius: 10, fontSize: 13, fontFamily: 'var(--font-architects-daughter)' }}
+                    cursor={{ fill: 'rgba(255,107,53,0.12)' }}
+                    contentStyle={{ background: c.surface, border: '1px solid #2A2A2A', borderRadius: 10, fontSize: 13, fontFamily: 'var(--font-satoshi)' }}
                     labelStyle={{ color: c.textSecondary }}
                     formatter={(value) => [value, 'Events']}
                   />
@@ -135,7 +134,7 @@ export default function DashboardPage() {
                     tickFormatter={(v: number) => `₹${v}`}
                   />
                   <Tooltip
-                    contentStyle={{ background: c.surface, border: '2px solid #18181b', borderRadius: 10, fontSize: 13, fontFamily: 'var(--font-architects-daughter)' }}
+                    contentStyle={{ background: c.surface, border: '1px solid #2A2A2A', borderRadius: 10, fontSize: 13, fontFamily: 'var(--font-satoshi)' }}
                     labelFormatter={(label) => formatDayTick(String(label))}
                     labelStyle={{ color: c.textSecondary }}
                     formatter={(value) => [`₹${Number(value).toLocaleString()}`, undefined]}
@@ -168,8 +167,8 @@ export default function DashboardPage() {
                     tickFormatter={(v: string) => v[0].toUpperCase() + v.slice(1)}
                   />
                   <Tooltip
-                    cursor={{ fill: 'rgba(251,191,36,0.18)' }}
-                    contentStyle={{ background: c.surface, border: '2px solid #18181b', borderRadius: 10, fontSize: 13, fontFamily: 'var(--font-architects-daughter)' }}
+                    cursor={{ fill: 'rgba(255,107,53,0.12)' }}
+                    contentStyle={{ background: c.surface, border: '1px solid #2A2A2A', borderRadius: 10, fontSize: 13, fontFamily: 'var(--font-satoshi)' }}
                     labelStyle={{ color: c.textSecondary }}
                     formatter={(value) => [value, 'Tickets']}
                   />
@@ -185,6 +184,47 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-4 w-4" /> Recent activity
+          </CardTitle>
+          <Link href="/safety" className="flex items-center gap-1 text-xs font-semibold text-ink-secondary hover:text-ink-primary">
+            View all <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </CardHeader>
+        <CardContent>
+          {activityLoading ? (
+            <div className="flex flex-col gap-2">
+              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+            </div>
+          ) : recentActivity.length === 0 ? (
+            <p className="text-sm text-ink-secondary">No admin activity yet</p>
+          ) : (
+            <div className="flex flex-col divide-y divide-divider">
+              {recentActivity.map((a) => {
+                const href = targetHref(a.target_type, a.target_id)
+                const label = ACTION_LABELS[a.action] ?? a.action
+                return (
+                  <div key={a.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+                    <div>
+                      <span className="text-ink-primary">{a.admin_name ?? a.admin_email}</span>
+                      <span className="text-ink-secondary"> — </span>
+                      {href ? (
+                        <Link href={href} className="text-ink-primary hover:underline">{label}</Link>
+                      ) : (
+                        <span className="text-ink-primary">{label}</span>
+                      )}
+                    </div>
+                    <span className="shrink-0 text-xs text-ink-secondary">{formatRelative(a.created_at)}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

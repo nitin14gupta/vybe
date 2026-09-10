@@ -14,7 +14,7 @@ export function Pagination({ page, pageSize, total, onPageChange }: PaginationPr
   const to = Math.min(page * pageSize, total)
 
   return (
-    <div className="font-sketch flex items-center justify-between px-1 py-3 text-base text-zinc-500">
+    <div className="flex items-center justify-between px-1 py-3 font-sans text-sm text-ink-secondary">
       <span>
         {from}–{to} of {total}
       </span>

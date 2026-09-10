@@ -1,15 +1,14 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { CheckCircle2, XCircle, Info, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { useToastStore } from '@/store/toastStore'
 import { cn } from '@/lib/utils'
 
-const ICONS = { default: Info, success: CheckCircle2, error: XCircle }
-const STYLES = {
-  default: 'bg-white text-zinc-900',
-  success: 'bg-emerald-200 text-emerald-900',
-  error: 'bg-red-200 text-red-900',
+const BADGE_STYLES = {
+  default: 'bg-surface-muted',
+  success: 'bg-offer-green/20',
+  error: 'bg-destructive/20',
 }
 
 export function ToastOverlay() {
@@ -17,32 +16,31 @@ export function ToastOverlay() {
   const dismiss = useToastStore((s) => s.dismiss)
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-4 z-[100] flex flex-col items-center gap-2 px-4">
-      <AnimatePresence>
-        {toasts.map((toast) => {
-          const Icon = ICONS[toast.type]
-          return (
-            <motion.div
-              key={toast.id}
-              initial={{ opacity: 0, y: -16, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -16, scale: 0.95 }}
-              className={cn(
-                'font-sketch pointer-events-auto flex max-w-md items-center gap-2 rounded-full border-2 border-zinc-900 px-4 py-2.5 text-sm font-bold shadow-[3px_3px_0px_0px_#18181b]',
-                STYLES[toast.type],
-              )}
+    <div className="pointer-events-none fixed inset-0 z-[100] flex flex-col items-end justify-end gap-2 p-6">
+      <AnimatePresence mode="popLayout">
+        {toasts.map((toast) => (
+          <motion.div
+            key={toast.id}
+            layout
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ type: 'spring', duration: 0.35, bounce: 0.2 }}
+            className="pointer-events-auto flex w-fit max-w-sm items-center gap-3 rounded-full bg-[rgba(38,38,38,0.92)] py-2 pl-2 pr-4 glow-shadow backdrop-blur-md"
+          >
+            <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full', BADGE_STYLES[toast.type])}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icon.png" alt="" className="h-4 w-4" />
+            </span>
+            <span className="flex-1 font-sans text-sm font-medium text-ink-primary">{toast.message}</span>
+            <button
+              onClick={() => dismiss(toast.id)}
+              className="shrink-0 rounded-full p-0.5 text-ink-secondary opacity-70 hover:opacity-100"
             >
-              <Icon className="h-4 w-4 shrink-0" />
-              <span>{toast.message}</span>
-              <button
-                onClick={() => dismiss(toast.id)}
-                className="ml-1 rounded-full p-0.5 opacity-70 hover:opacity-100"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </motion.div>
-          )
-        })}
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </motion.div>
+        ))}
       </AnimatePresence>
     </div>
   )

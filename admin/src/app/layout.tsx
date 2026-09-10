@@ -1,24 +1,8 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Architects_Daughter } from "next/font/google";
 import "./globals.css";
+import { cabinetGrotesk, satoshi } from "@/lib/fonts";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { ToastOverlay } from "@/components/ui/ToastOverlay";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const architectsDaughter = Architects_Daughter({
-  variable: "--font-architects-daughter",
-  weight: "400",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Gorave Admin",
@@ -33,9 +17,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${architectsDaughter.variable} h-full antialiased`}
+      className={`${cabinetGrotesk.variable} ${satoshi.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col bg-background text-ink-primary">
         <QueryProvider>
           {children}
           <ToastOverlay />

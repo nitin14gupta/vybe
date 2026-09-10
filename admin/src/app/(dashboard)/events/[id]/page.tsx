@@ -2,12 +2,11 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useParams, useRouter } from 'next/navigation'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useParams } from 'next/navigation'
 import {
-  ArrowLeft, MapPin, Calendar, Users, Ban, Star, ShieldAlert, Clock,
+  MapPin, Calendar, Users, Ban, Star, ShieldAlert, Clock,
 } from 'lucide-react'
-import { apiClient } from '@/lib/apiClient'
+import { useEventQuery, useCancelEventMutation } from '@/hooks/useEvents'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -17,33 +16,27 @@ import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/Table'
 import { ImageSlider } from '@/components/ui/ImageSlider'
 import { ImageModal } from '@/components/ui/ImageModal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { DetailStatsRow, DetailStat } from '@/components/ui/DetailStats'
 import { formatDate, formatInr } from '@/lib/formatters'
 import { useToast } from '@/hooks/useToast'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
-import type { EventDetailResponse } from '@/types/event'
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const router = useRouter()
-  const queryClient = useQueryClient()
   const toast = useToast()
   const { admin } = useAdminAuth()
   const isSuperAdmin = admin?.role === 'super_admin'
   const [cancelOpen, setCancelOpen] = useState(false)
   const [galleryOpen, setGalleryOpen] = useState(false)
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['admin-event', id],
-    queryFn: () => apiClient.get<EventDetailResponse>(`/admin/events/${id}`),
-    enabled: !!id,
-  })
+  const { data, isLoading } = useEventQuery(id)
+  const cancelMutation = useCancelEventMutation(id)
 
   const handleCancel = async () => {
     try {
-      await apiClient.post(`/admin/events/${id}/cancel`)
+      await cancelMutation.mutateAsync()
       toast.success('Event cancelled and attendees refunded')
-      queryClient.invalidateQueries({ queryKey: ['admin-event', id] })
-      queryClient.invalidateQueries({ queryKey: ['admin-events'] })
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to cancel event')
     }
@@ -64,12 +57,18 @@ export default function EventDetailPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <button
-        onClick={() => router.push('/events')}
-        className="flex w-fit items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to Events
-      </button>
+      <PageHeader
+        breadcrumb={[{ label: 'Dashboard', href: '/' }, { label: 'Events', href: '/events' }, { label: event.title }]}
+        title={event.title}
+        subtitle={`${formatDate(event.date_time)}${event.location_name ? ` · ${event.location_name}` : ''}`}
+        actions={
+          !event.is_cancelled && isSuperAdmin ? (
+            <Button variant="destructive" onClick={() => setCancelOpen(true)}>
+              <Ban className="h-4 w-4" /> Force-cancel event
+            </Button>
+          ) : undefined
+        }
+      />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-1">
@@ -84,8 +83,7 @@ export default function EventDetailPage() {
         <Card className="lg:col-span-2">
           <CardContent className="flex h-full flex-col justify-between gap-4">
             <div>
-              <div className="mb-1 flex flex-wrap items-center gap-2">
-                <h1 className="text-lg font-semibold text-zinc-900">{event.title}</h1>
+              <div className="mb-2 flex flex-wrap items-center gap-2">
                 {event.is_cancelled ? (
                   <Badge variant="danger">Cancelled</Badge>
                 ) : (() => {
@@ -98,44 +96,36 @@ export default function EventDetailPage() {
                 })()}
                 <Badge variant="neutral" className="capitalize">{event.event_type}</Badge>
               </div>
-              <p className="flex items-center gap-1.5 text-sm text-zinc-500">
+              <p className="flex items-center gap-1.5 text-sm text-ink-secondary">
                 <Calendar className="h-4 w-4" /> {formatDate(event.date_time)}
                 {event.end_time && ` → ${formatDate(event.end_time)}`}
               </p>
               {event.location_name && (
-                <p className="mt-1 flex items-center gap-1.5 text-sm text-zinc-500">
+                <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-secondary">
                   <MapPin className="h-4 w-4" /> {event.location_name}
                 </p>
               )}
-              <p className="mt-1 text-sm text-zinc-500">
+              <p className="mt-1 text-sm text-ink-secondary">
                 Hosted by{' '}
-                <Link href={`/users/${event.host_id}`} className="font-medium text-orange-600 hover:underline">
+                <Link href={`/users/${event.host_id}`} className="font-medium text-brand-orange hover:underline">
                   {event.host_name ?? 'Unknown'}
                 </Link>
                 {' · '}{event.host_phone}
               </p>
               {event.description && (
-                <p className="mt-3 whitespace-pre-line text-sm text-zinc-600">{event.description}</p>
+                <p className="mt-3 whitespace-pre-line text-sm text-ink-secondary">{event.description}</p>
               )}
             </div>
-
-            {!event.is_cancelled && isSuperAdmin && (
-              <div>
-                <Button variant="destructive" onClick={() => setCancelOpen(true)}>
-                  <Ban className="h-4 w-4" /> Force-cancel event
-                </Button>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MiniStat label="Attendees" value={`${data.attendees.length}/${event.capacity}`} icon={Users} />
-        <MiniStat label="Waitlist" value={String(data.waitlist.length)} icon={Clock} />
-        <MiniStat label="Avg rating" value={event.avg_rating ? `${event.avg_rating} ★` : '—'} icon={Star} />
-        <MiniStat label="Reports" value={String(data.reports.length)} icon={ShieldAlert} />
-      </div>
+      <DetailStatsRow>
+        <DetailStat label="Attendees" value={`${data.attendees.length}/${event.capacity}`} icon={Users} />
+        <DetailStat label="Waitlist" value={String(data.waitlist.length)} icon={Clock} />
+        <DetailStat label="Avg rating" value={event.avg_rating ? `${event.avg_rating} ★` : '—'} icon={Star} />
+        <DetailStat label="Reports" value={String(data.reports.length)} icon={ShieldAlert} />
+      </DetailStatsRow>
 
       <Card>
         <CardHeader><CardTitle>Pricing</CardTitle></CardHeader>
@@ -199,7 +189,7 @@ export default function EventDetailPage() {
 
         <TabsContent value="reviews">
           <div className="flex flex-col gap-3">
-            {data.reviews.length === 0 && <p className="text-sm text-zinc-400">No reviews yet</p>}
+            {data.reviews.length === 0 && <p className="text-sm text-ink-secondary">No reviews yet</p>}
             {data.reviews.map((r) => (
               <Card key={r.id}>
                 <CardContent>
@@ -207,8 +197,8 @@ export default function EventDetailPage() {
                     <Link href={`/users/${r.user_id}`} className="font-medium hover:underline">{r.name ?? 'Unnamed'}</Link>
                     <Badge variant="warning">{r.rating} ★</Badge>
                   </div>
-                  {r.body && <p className="text-sm text-zinc-600">{r.body}</p>}
-                  <p className="mt-1 text-xs text-zinc-400">{formatDate(r.created_at)}</p>
+                  {r.body && <p className="text-sm text-ink-secondary">{r.body}</p>}
+                  <p className="mt-1 text-xs text-ink-secondary">{formatDate(r.created_at)}</p>
                 </CardContent>
               </Card>
             ))}
@@ -249,25 +239,11 @@ export default function EventDetailPage() {
   )
 }
 
-function MiniStat({ label, value, icon: Icon }: { label: string; value: string; icon: typeof Users }) {
-  return (
-    <Card className="flex items-center gap-3 p-4">
-      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
-        <Icon className="h-4 w-4" />
-      </div>
-      <div>
-        <p className="text-xs text-zinc-500">{label}</p>
-        <p className="font-semibold text-zinc-900">{value}</p>
-      </div>
-    </Card>
-  )
-}
-
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs text-zinc-400">{label}</p>
-      <p className="font-medium text-zinc-900">{value}</p>
+      <p className="text-xs text-ink-secondary">{label}</p>
+      <p className="font-medium text-ink-primary">{value}</p>
     </div>
   )
 }

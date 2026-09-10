@@ -1,33 +1,103 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-sketch: var(--font-architects-daughter);
+  /* Surfaces */
+  --color-background: #111111;
+  --color-surface: #1A1A1A;
+  --color-elevated: #222222;
+  --color-surface-muted: #2A2A2A;
+  --color-sheet: #141414;
+  --color-deep-background: #0D0D0D;
+  --color-near-black: #0A0A0A;
+
+  /* Brand (reserved for primary CTA / logo / active nav / active chip ONLY) */
+  --color-brand-orange: #FF6B35;
+  --color-brand-coral: #FF3864;
+
+  /* Accents */
+  --color-accent-gold: #FFB830;
+  --color-accent-green: #00C48C;
+  --color-online-green: #4CAF50;
+  --color-destructive: #E5484D;
+  --color-notification-red: #FF3040;
+  --color-offer-green: #00C896;
+  --color-map-radar-blue: #9FC4FF;
+
+  /* Ink / text */
+  --color-ink-primary: #F5F0EB;
+  --color-ink-secondary: #A09890;
+  --color-ink-disabled: #4A4540;
+  --color-ink-on-accent: #111111;
+
+  /* Structure */
+  --color-divider: #2A2A2A;
+  --color-gray-border: #333333;
+  --color-skeleton-base: #1E1E1E;
+  --color-skeleton-highlight: #2E2E2E;
+
+  /* Glass (over modals, dropdowns, overlays) */
+  --color-glass-surface: rgba(255, 255, 255, 0.1);
+  --color-glass-surface-active: rgba(255, 255, 255, 0.25);
+  --color-glass-border: rgba(255, 255, 255, 0.2);
+  --color-glass-border-thick: rgba(255, 255, 255, 0.3);
+  --color-glass-text-secondary: rgba(255, 255, 255, 0.7);
+  --color-glass-text-disabled: rgba(255, 255, 255, 0.5);
+  --color-glass-overlay: rgba(0, 0, 0, 0.6);
+
+  /* Fonts */
+  --font-sans: var(--font-satoshi), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-cabinet), ui-sans-serif, system-ui, sans-serif;
+
+  /* Radius (pill uses Tailwind's built-in rounded-full = 9999px) */
+  --radius-input: 12px;
+  --radius-input-lg: 14px;
+  --radius-card: 16px;
+  --radius-modal: 28px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --gradient-brand: linear-gradient(135deg, var(--color-brand-orange) 0%, var(--color-brand-coral) 100%);
+}
+
+@utility bg-brand-gradient {
+  background-image: var(--gradient-brand);
+}
+
+@utility glow-shadow {
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.35), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+@utility glow-shadow-brand {
+  box-shadow: 0 4px 20px 0 rgba(255, 107, 53, 0.35);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-ink-primary);
+  font-family: var(--font-sans);
 }
 
-.bg-paper {
-  background-color: #fdfbf5;
-  background-image: radial-gradient(#00000014 1px, transparent 1px);
-  background-size: 22px 22px;
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gray-border) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--color-gray-border);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-ink-secondary);
 }

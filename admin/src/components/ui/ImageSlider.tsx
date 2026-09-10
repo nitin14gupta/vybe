@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight, ImageOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { WOBBLE_CARD } from '@/lib/sketch'
 
 interface ImageSliderProps {
   photos: { url: string; position: number }[]
@@ -21,11 +20,10 @@ export function ImageSlider({ photos, aspect = '16:9', className, onImageClick }
     return (
       <div
         className={cn(
-          'flex items-center justify-center border-2 border-dashed border-zinc-300 bg-zinc-50 text-zinc-400',
+          'flex items-center justify-center rounded-card border border-dashed border-divider bg-surface text-ink-secondary',
           aspect === '1:1' ? 'aspect-square' : 'aspect-video',
           className,
         )}
-        style={{ borderRadius: WOBBLE_CARD }}
       >
         <ImageOff className="h-8 w-8" />
       </div>
@@ -38,8 +36,7 @@ export function ImageSlider({ photos, aspect = '16:9', className, onImageClick }
 
   return (
     <div
-      className={cn('relative overflow-hidden border-2 border-zinc-900', aspect === '1:1' ? 'aspect-square' : 'aspect-video', className)}
-      style={{ borderRadius: WOBBLE_CARD }}
+      className={cn('relative overflow-hidden rounded-card border border-divider', aspect === '1:1' ? 'aspect-square' : 'aspect-video', className)}
     >
       <div
         className={cn('flex h-full transition-transform duration-300 ease-out', onImageClick && 'cursor-pointer')}

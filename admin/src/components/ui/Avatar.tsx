@@ -14,7 +14,7 @@ export function Avatar({ src, name, size = 36, className }: AvatarProps) {
   return (
     <div
       className={cn(
-        'flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-zinc-900 bg-amber-200 text-zinc-900',
+        'flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-divider bg-surface-muted text-ink-primary',
         className,
       )}
       style={{ width: size, height: size }}
@@ -23,7 +23,7 @@ export function Avatar({ src, name, size = 36, className }: AvatarProps) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt={name ?? 'avatar'} className="h-full w-full object-cover" />
       ) : initial ? (
-        <span className="font-sketch text-sm font-bold">{initial}</span>
+        <span className="font-sans text-sm font-bold">{initial}</span>
       ) : (
         <User className="h-4 w-4" />
       )}

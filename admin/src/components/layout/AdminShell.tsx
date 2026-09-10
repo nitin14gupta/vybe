@@ -20,14 +20,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   if (!hasHydrated || !isAuthenticated) {
     return (
-      <div className="bg-paper flex h-screen items-center justify-center">
+      <div className="bg-background flex h-screen items-center justify-center">
         <BrandedLoader />
       </div>
     )
   }
 
   return (
-    <div className="bg-paper flex h-screen overflow-hidden">
+    <div className="bg-background flex h-screen overflow-hidden">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />

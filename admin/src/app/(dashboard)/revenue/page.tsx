@@ -2,25 +2,24 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useQuery } from '@tanstack/react-query'
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts'
-import { Search, TrendingUp, Wallet, Landmark, Trophy, Users as UsersIcon, Star } from 'lucide-react'
-import { apiClient } from '@/lib/apiClient'
+import { Search, TrendingUp, Wallet, Landmark, Trophy, Users as UsersIcon, Star, Banknote } from 'lucide-react'
+import {
+  useRevenueStatsQuery, useRevenueByDayQuery, useRevenueHostsQuery, useRevenueLeaderboardQuery,
+} from '@/hooks/useRevenue'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { StatCard } from '@/components/ui/StatCard'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/Table'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
 import { Badge } from '@/components/ui/Badge'
-import { Pagination } from '@/components/ui/Pagination'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { Input } from '@/components/ui/Input'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { ListShell } from '@/components/ui/ListShell'
 import { chartColors } from '@/lib/chartColors'
 import { formatInr } from '@/lib/formatters'
-import type { RevenueStats, RevenueByDay, HostPayoutItem, LeaderboardResponse } from '@/types/revenue'
-import type { PaginatedResponse } from '@/types/feedback'
 
 const PAGE_SIZE = 20
 
@@ -31,7 +30,11 @@ function formatDayTick(day: string) {
 export default function RevenuePage() {
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader title="Revenue" subtitle="What Gorave actually earns, what hosts are owed, and who's driving it." />
+      <PageHeader
+        breadcrumb={[{ label: 'Dashboard', href: '/' }, { label: 'Revenue' }]}
+        title="Revenue"
+        subtitle="What Gorave actually earns, what hosts are owed, and who's driving it."
+      />
 
       <Tabs defaultValue="overview">
         <TabsList>
@@ -49,16 +52,9 @@ export default function RevenuePage() {
 }
 
 function OverviewTab() {
-  const c = chartColors(false)
-
-  const { data: stats } = useQuery({
-    queryKey: ['admin-revenue-stats'],
-    queryFn: () => apiClient.get<RevenueStats>('/admin/revenue/stats'),
-  })
-  const { data: byDay, isLoading } = useQuery({
-    queryKey: ['admin-revenue-by-day'],
-    queryFn: () => apiClient.get<RevenueByDay[]>('/admin/revenue/by-day'),
-  })
+  const c = chartColors()
+  const { data: stats } = useRevenueStatsQuery()
+  const { data: byDay, isLoading } = useRevenueByDayQuery()
 
   return (
     <div className="flex flex-col gap-4">
@@ -86,7 +82,7 @@ function OverviewTab() {
                   tickFormatter={(v: number) => `₹${v}`}
                 />
                 <Tooltip
-                  contentStyle={{ background: c.surface, border: '2px solid #18181b', borderRadius: 10, fontSize: 13, fontFamily: 'var(--font-architects-daughter)' }}
+                  contentStyle={{ background: c.surface, border: '1px solid #2A2A2A', borderRadius: 10, fontSize: 13, fontFamily: 'var(--font-satoshi)' }}
                   labelFormatter={(label) => formatDayTick(String(label))}
                   labelStyle={{ color: c.textSecondary }}
                   formatter={(value) => [`₹${Number(value).toLocaleString()}`, undefined]}
@@ -107,22 +103,15 @@ function PayoutsTab() {
   const [q, setQ] = useState('')
   const [page, setPage] = useState(1)
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['admin-revenue-hosts', q, page],
-    queryFn: () => {
-      const params = new URLSearchParams({ page: String(page), page_size: String(PAGE_SIZE) })
-      if (q) params.set('q', q)
-      return apiClient.get<PaginatedResponse<HostPayoutItem>>(`/admin/revenue/hosts?${params}`)
-    },
-  })
+  const { data, isLoading } = useRevenueHostsQuery({ q, page, pageSize: PAGE_SIZE })
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-xs text-zinc-400">
+      <p className="text-xs text-ink-secondary">
         Net payable = gross ticket revenue minus Gorave&apos;s commission, across non-cancelled paid events. No automated payout system exists yet — use this to settle hosts manually.
       </p>
       <div className="relative max-w-sm">
-        <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-ink-secondary" />
         <Input
           value={q}
           onChange={(e) => { setQ(e.target.value); setPage(1) }}
@@ -131,62 +120,57 @@ function PayoutsTab() {
         />
       </div>
 
-      <Card className="p-0">
-        {isLoading ? (
-          <div className="flex flex-col gap-2 p-4">
-            {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-          </div>
-        ) : (
-          <div className="p-4">
-            <Table>
-              <THead>
-                <TR>
-                  <TH>Host</TH>
-                  <TH>Paid events</TH>
-                  <TH>Gross revenue</TH>
-                  <TH>Commission</TH>
-                  <TH>Net payable</TH>
-                  <TH>Payout details</TH>
-                </TR>
-              </THead>
-              <TBody>
-                {data?.items.map((h) => (
-                  <TR key={h.host_id}>
-                    <TD>
-                      <Link href={`/users/${h.host_id}`} className="hover:underline">
-                        {h.host_name ?? 'Unnamed'}<span className="block text-xs text-zinc-400">{h.host_phone}</span>
-                      </Link>
-                    </TD>
-                    <TD>{h.paid_events_count}</TD>
-                    <TD>{formatInr(h.gross_ticket_revenue)}</TD>
-                    <TD className="text-red-600">-{formatInr(h.commission_taken)}</TD>
-                    <TD className="font-semibold text-emerald-600">{formatInr(h.net_payable)}</TD>
-                    <TD>
-                      {h.has_payout_details ? (
-                        <Badge variant="success" className="capitalize">{h.payout_method ?? 'on file'}</Badge>
-                      ) : (
-                        <Badge variant="warning">Missing</Badge>
-                      )}
-                    </TD>
-                  </TR>
-                ))}
-              </TBody>
-            </Table>
-            {data && data.total > 0 && (
-              <Pagination page={data.page} pageSize={data.page_size} total={data.total} onPageChange={setPage} />
-            )}
-          </div>
-        )}
-      </Card>
+      <ListShell
+        emptyIcon={Banknote}
+        isLoading={isLoading}
+        empty={!isLoading && data?.items.length === 0}
+        emptyLabel="No hosts match this search"
+        total={data?.total ?? 0}
+        page={data?.page ?? 1}
+        pageSize={data?.page_size ?? PAGE_SIZE}
+        onPageChange={setPage}
+      >
+        <Table>
+          <THead>
+            <TR>
+              <TH>Host</TH>
+              <TH>Paid events</TH>
+              <TH>Gross revenue</TH>
+              <TH>Commission</TH>
+              <TH>Net payable</TH>
+              <TH>Payout details</TH>
+            </TR>
+          </THead>
+          <TBody>
+            {data?.items.map((h) => (
+              <TR key={h.host_id}>
+                <TD>
+                  <Link href={`/users/${h.host_id}`} className="hover:underline">
+                    {h.host_name ?? 'Unnamed'}<span className="block text-xs text-ink-secondary">{h.host_phone}</span>
+                  </Link>
+                </TD>
+                <TD>{h.paid_events_count}</TD>
+                <TD>{formatInr(h.gross_ticket_revenue)}</TD>
+                <TD className="text-destructive">-{formatInr(h.commission_taken)}</TD>
+                <TD className="font-semibold text-offer-green">{formatInr(h.net_payable)}</TD>
+                <TD>
+                  {h.has_payout_details ? (
+                    <Badge variant="success" className="capitalize">{h.payout_method ?? 'on file'}</Badge>
+                  ) : (
+                    <Badge variant="warning">Missing</Badge>
+                  )}
+                </TD>
+              </TR>
+            ))}
+          </TBody>
+        </Table>
+      </ListShell>
     </div>
   )
 }
 
 function LeaderboardTab() {
-  const { data, isLoading } = useQuery({
-    queryKey: ['admin-revenue-leaderboard'],
-    queryFn: () => apiClient.get<LeaderboardResponse>('/admin/revenue/leaderboard'),
-  })
+  const { data, isLoading } = useRevenueLeaderboardQuery()
 
   if (isLoading || !data) {
     return (
@@ -209,16 +193,16 @@ function LeaderboardTab() {
               {data.top_hosts.map((h, i) => (
                 <TR key={h.host_id}>
                   <TD>
-                    <span className="mr-2 text-zinc-400">#{i + 1}</span>
+                    <span className="mr-2 text-ink-secondary">#{i + 1}</span>
                     <Link href={`/users/${h.host_id}`} className="hover:underline">{h.host_name ?? 'Unnamed'}</Link>
                   </TD>
                   <TD>{h.paid_events_count}</TD>
                   <TD>{formatInr(h.gross_ticket_revenue)}</TD>
-                  <TD className="font-semibold text-emerald-600">{formatInr(h.net_payable)}</TD>
+                  <TD className="font-semibold text-offer-green">{formatInr(h.net_payable)}</TD>
                 </TR>
               ))}
               {data.top_hosts.length === 0 && (
-                <TR><TD colSpan={4} className="text-center text-zinc-400">No paid ticket sales yet</TD></TR>
+                <TR><TD colSpan={4} className="text-center text-ink-secondary">No paid ticket sales yet</TD></TR>
               )}
             </TBody>
           </Table>
@@ -241,7 +225,7 @@ function LeaderboardTab() {
                 </TR>
               ))}
               {data.top_events_by_attendance.length === 0 && (
-                <TR><TD colSpan={3} className="text-center text-zinc-400">No attendees yet</TD></TR>
+                <TR><TD colSpan={3} className="text-center text-ink-secondary">No attendees yet</TD></TR>
               )}
             </TBody>
           </Table>
@@ -260,11 +244,11 @@ function LeaderboardTab() {
                 <TR key={e.id}>
                   <TD><Link href={`/events/${e.id}`} className="hover:underline">{e.title}</Link></TD>
                   <TD>{e.host_name ?? 'Unknown'}</TD>
-                  <TD>{e.avg_rating} ★ <span className="text-xs text-zinc-400">({e.review_count})</span></TD>
+                  <TD>{e.avg_rating} ★ <span className="text-xs text-ink-secondary">({e.review_count})</span></TD>
                 </TR>
               ))}
               {data.top_events_by_rating.length === 0 && (
-                <TR><TD colSpan={3} className="text-center text-zinc-400">No reviews yet</TD></TR>
+                <TR><TD colSpan={3} className="text-center text-ink-secondary">No reviews yet</TD></TR>
               )}
             </TBody>
           </Table>

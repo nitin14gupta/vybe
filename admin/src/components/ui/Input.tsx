@@ -1,16 +1,17 @@
 import { forwardRef, type InputHTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'
-import { WOBBLE_CONTROL } from '@/lib/sketch'
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
-  ({ className, style, ...props }, ref) => (
+  ({ className, ...props }, ref) => (
     <input
       ref={ref}
       className={cn(
-        'font-sketch w-full border-2 border-zinc-900 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition-all placeholder:text-zinc-400 focus:-translate-y-0.5 focus:shadow-[3px_3px_0px_0px_#18181b]',
+        'h-[52px] w-full rounded-input border-[1.5px] border-divider bg-elevated px-4 font-sans text-sm text-ink-primary outline-none transition-all placeholder:text-ink-secondary',
+        'focus:border-ink-secondary focus:shadow-[0_0_0_3px_rgba(245,240,235,0.08)]',
+        'aria-invalid:border-destructive',
+        'disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
-      style={{ borderRadius: WOBBLE_CONTROL, ...style }}
       {...props}
     />
   ),

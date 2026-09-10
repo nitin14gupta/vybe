@@ -1,10 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Lock, Unlock, Mic, ShieldAlert, Wallet, CalendarDays, MessageSquare, Heart, Banknote } from 'lucide-react'
-import { apiClient } from '@/lib/apiClient'
+import { useParams } from 'next/navigation'
+import { Lock, Unlock, Mic, ShieldAlert, Wallet, CalendarDays, MessageSquare, Heart, Banknote, Clock } from 'lucide-react'
+import { useUserQuery, useUserPayoutQuery, useLockUserMutation, useUnlockUserMutation } from '@/hooks/useUsers'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Avatar } from '@/components/ui/Avatar'
 import { HostBadge } from '@/components/ui/HostBadge'
@@ -15,38 +14,29 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/Table'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { ImageModal } from '@/components/ui/ImageModal'
-import { IconChip } from '@/components/ui/IconChip'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { DetailStatsRow, DetailStat } from '@/components/ui/DetailStats'
 import { formatDate, formatInr, formatRelative } from '@/lib/formatters'
 import { useToast } from '@/hooks/useToast'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
-import type { UserDetail, PayoutDetails } from '@/types/user'
+import type { UserDetail } from '@/types/user'
 
 export default function UserDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const router = useRouter()
-  const queryClient = useQueryClient()
   const toast = useToast()
   const { admin } = useAdminAuth()
   const isSuperAdmin = admin?.role === 'super_admin'
   const [lockDialogOpen, setLockDialogOpen] = useState(false)
   const [unlockDialogOpen, setUnlockDialogOpen] = useState(false)
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['admin-user', id],
-    queryFn: () => apiClient.get<UserDetail>(`/admin/users/${id}`),
-    enabled: !!id,
-  })
-
-  const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ['admin-user', id] })
-    queryClient.invalidateQueries({ queryKey: ['admin-users'] })
-  }
+  const { data, isLoading } = useUserQuery(id)
+  const lockMutation = useLockUserMutation(id)
+  const unlockMutation = useUnlockUserMutation(id)
 
   const handleLock = async (reason?: string) => {
     try {
-      await apiClient.patch(`/admin/users/${id}/lock`, { reason })
+      await lockMutation.mutateAsync(reason)
       toast.success('User locked')
-      invalidate()
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to lock user')
     }
@@ -54,9 +44,8 @@ export default function UserDetailPage() {
 
   const handleUnlock = async () => {
     try {
-      await apiClient.patch(`/admin/users/${id}/unlock`)
+      await unlockMutation.mutateAsync()
       toast.success('User unlocked')
-      invalidate()
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to unlock user')
     }
@@ -76,50 +65,12 @@ export default function UserDetailPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <button
-        onClick={() => router.push('/users')}
-        className="font-sketch flex w-fit items-center gap-1.5 text-base text-zinc-500 hover:text-zinc-900"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to Users
-      </button>
-
-      <Card>
-        <CardContent className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-4">
-            <Avatar src={data.photos[0]?.url} name={user.name} size={56} />
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-sketch text-xl font-bold text-zinc-900">
-                  {user.name ?? 'Unnamed'}
-                </h1>
-                <HostBadge tier={user.host_badges[0]} size={24} />
-                {user.is_locked ? (
-                  <Badge variant="danger">Locked</Badge>
-                ) : user.is_deleted ? (
-                  <Badge variant="neutral">Deleted</Badge>
-                ) : (
-                  <Badge variant="success">Active</Badge>
-                )}
-              </div>
-              <p className="text-sm text-zinc-500">
-                {user.username ? `@${user.username} · ` : ''}
-                {user.country_code}{user.phone} · {user.city ?? 'No city set'}
-              </p>
-              {user.is_locked && user.locked_reason && (
-                <p className="mt-1 text-xs text-red-600">
-                  Locked {formatDate(user.locked_at)} — {user.locked_reason}
-                </p>
-              )}
-              {user.is_deleted && (
-                <p className="mt-1 text-xs text-zinc-500">
-                  Requested deletion {formatDate(user.deleted_at)}
-                  {user.purge_at && <> — permanently erased {formatRelative(user.purge_at)} (on {formatDate(user.purge_at)})</>}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {isSuperAdmin && (
+      <PageHeader
+        breadcrumb={[{ label: 'Dashboard', href: '/' }, { label: 'Users', href: '/users' }, { label: user.name ?? 'Unnamed' }]}
+        title={user.name ?? 'Unnamed'}
+        subtitle={`${user.username ? `@${user.username} · ` : ''}${user.country_code}${user.phone} · ${user.city ?? 'No city set'}`}
+        actions={
+          isSuperAdmin ? (
             user.is_locked ? (
               <Button variant="outline" onClick={() => setUnlockDialogOpen(true)}>
                 <Unlock className="h-4 w-4" /> Unlock account
@@ -129,9 +80,45 @@ export default function UserDetailPage() {
                 <Lock className="h-4 w-4" /> Lock account
               </Button>
             )
-          )}
+          ) : undefined
+        }
+      />
+
+      <Card>
+        <CardContent className="flex items-center gap-4">
+          <Avatar src={data.photos[0]?.url} name={user.name} size={56} />
+          <div>
+            <div className="flex items-center gap-2">
+              <HostBadge tier={user.host_badges[0]} size={20} />
+              {user.is_locked ? (
+                <Badge variant="danger">Locked</Badge>
+              ) : user.is_deleted ? (
+                <Badge variant="neutral">Deleted</Badge>
+              ) : (
+                <Badge variant="success">Active</Badge>
+              )}
+            </div>
+            {user.is_locked && user.locked_reason && (
+              <p className="mt-1 text-xs text-destructive">
+                Locked {formatDate(user.locked_at)} — {user.locked_reason}
+              </p>
+            )}
+            {user.is_deleted && (
+              <p className="mt-1 text-xs text-ink-secondary">
+                Requested deletion {formatDate(user.deleted_at)}
+                {user.purge_at && <> — permanently erased {formatRelative(user.purge_at)} (on {formatDate(user.purge_at)})</>}
+              </p>
+            )}
+          </div>
         </CardContent>
       </Card>
+
+      <DetailStatsRow>
+        <DetailStat label="Wallet balance" value={formatInr(user.wallet_balance)} icon={Wallet} />
+        <DetailStat label="Hosted events" value={String(data.hosted_events.length)} icon={CalendarDays} />
+        <DetailStat label="Reports received" value={String(data.reports_received.length)} icon={ShieldAlert} />
+        <DetailStat label="Member since" value={formatRelative(user.created_at)} icon={Clock} />
+      </DetailStatsRow>
 
       <Tabs defaultValue="profile">
         <TabsList>
@@ -158,7 +145,7 @@ export default function UserDetailPage() {
             <PayoutTab userId={id} isHostOnboarded={user.is_host_onboarding_finished} />
           ) : (
             <Card>
-              <CardContent className="py-8 text-center text-sm text-zinc-500">
+              <CardContent className="py-8 text-center text-sm text-ink-secondary">
                 Only super admins can view decrypted payout details.
               </CardContent>
             </Card>
@@ -232,7 +219,7 @@ function ProfileTab({ data }: { data: UserDetail }) {
           {user.voice_url ? (
             <audio controls src={user.voice_url} className="w-full" />
           ) : (
-            <p className="text-sm text-zinc-400">No voice intro recorded</p>
+            <p className="text-sm text-ink-secondary">No voice intro recorded</p>
           )}
         </CardContent>
       </Card>
@@ -243,7 +230,7 @@ function ProfileTab({ data }: { data: UserDetail }) {
         </CardHeader>
         <CardContent>
           {photos.length === 0 ? (
-            <p className="text-sm text-zinc-400">No photos uploaded</p>
+            <p className="text-sm text-ink-secondary">No photos uploaded</p>
           ) : (
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
               {photos.map((p, i) => (
@@ -342,7 +329,7 @@ function WalletTab({ data }: { data: UserDetail }) {
               <TR key={t.id}>
                 <TD className="capitalize">{t.type}</TD>
                 <TD className="capitalize">{t.source.replace(/_/g, ' ')}</TD>
-                <TD className={t.type === 'debit' ? 'text-red-600' : 'text-emerald-600'}>
+                <TD className={t.type === 'debit' ? 'text-destructive' : 'text-offer-green'}>
                   {t.type === 'debit' ? '-' : '+'}{formatInr(t.amount_inr)}
                 </TD>
                 <TD>{t.description ?? '—'}</TD>
@@ -357,11 +344,7 @@ function WalletTab({ data }: { data: UserDetail }) {
 }
 
 function PayoutTab({ userId, isHostOnboarded }: { userId: string; isHostOnboarded: boolean }) {
-  const { data, isLoading } = useQuery({
-    queryKey: ['admin-user-payout', userId],
-    queryFn: () => apiClient.get<PayoutDetails>(`/admin/users/${userId}/payout-details`),
-    enabled: !!userId,
-  })
+  const { data, isLoading } = useUserPayoutQuery(userId)
 
   return (
     <Card>
@@ -375,8 +358,8 @@ function PayoutTab({ userId, isHostOnboarded }: { userId: string; isHostOnboarde
           <Skeleton className="h-24 w-full" />
         ) : !data?.payout_method ? (
           <div className="flex flex-col gap-1">
-            <p className="text-sm text-zinc-500">No payout details on file.</p>
-            <p className="text-xs text-zinc-400">
+            <p className="text-sm text-ink-secondary">No payout details on file.</p>
+            <p className="text-xs text-ink-secondary">
               {isHostOnboarded
                 ? 'Host onboarding is marked finished but no payout method is saved — worth a closer look.'
                 : 'Host onboarding not completed — this user is not yet eligible to host events.'}
@@ -485,15 +468,15 @@ function SupportTab({ data }: { data: UserDetail }) {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
-          {data.support_requests.length === 0 && <p className="text-sm text-zinc-400">None</p>}
+          {data.support_requests.length === 0 && <p className="text-sm text-ink-secondary">None</p>}
           {data.support_requests.map((s) => (
-            <div key={s.id} className="border-2 border-zinc-900 p-3 text-sm rounded-[14px]">
+            <div key={s.id} className="border border-divider p-3 text-sm rounded-input">
               <div className="mb-1 flex items-center justify-between">
                 <span className="font-medium">{s.topic}</span>
                 <Badge variant={s.status === 'open' ? 'warning' : 'neutral'}>{s.status}</Badge>
               </div>
-              <p className="text-zinc-500">{s.message}</p>
-              <p className="mt-1 text-xs text-zinc-400">{formatDate(s.created_at)}</p>
+              <p className="text-ink-secondary">{s.message}</p>
+              <p className="mt-1 text-xs text-ink-secondary">{formatDate(s.created_at)}</p>
             </div>
           ))}
         </CardContent>
@@ -504,11 +487,11 @@ function SupportTab({ data }: { data: UserDetail }) {
           <CardTitle>App feedback ({data.app_feedback.length})</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
-          {data.app_feedback.length === 0 && <p className="text-sm text-zinc-400">None</p>}
+          {data.app_feedback.length === 0 && <p className="text-sm text-ink-secondary">None</p>}
           {data.app_feedback.map((f) => (
-            <div key={f.id} className="border-2 border-zinc-900 p-3 text-sm rounded-[14px]">
-              <p className="text-zinc-500">{f.text}</p>
-              <p className="mt-1 text-xs text-zinc-400">{formatDate(f.created_at)}</p>
+            <div key={f.id} className="border border-divider p-3 text-sm rounded-input">
+              <p className="text-ink-secondary">{f.text}</p>
+              <p className="mt-1 text-xs text-ink-secondary">{formatDate(f.created_at)}</p>
             </div>
           ))}
         </CardContent>
@@ -560,8 +543,8 @@ function VibesTab({ data }: { data: UserDetail }) {
 function Field({ label, value, full }: { label: string; value: string; full?: boolean }) {
   return (
     <div className={full ? 'col-span-2' : undefined}>
-      <p className="text-xs text-zinc-400">{label}</p>
-      <p className="text-zinc-900">{value}</p>
+      <p className="text-xs text-ink-secondary">{label}</p>
+      <p className="text-ink-primary">{value}</p>
     </div>
   )
 }
