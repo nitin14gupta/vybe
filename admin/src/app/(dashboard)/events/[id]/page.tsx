@@ -7,6 +7,7 @@ import {
   MapPin, Calendar, Users, Ban, Star, ShieldAlert, Clock,
 } from 'lucide-react'
 import { useEventQuery, useCancelEventMutation } from '@/hooks/useEvents'
+import { useTabParam } from '@/hooks/useTabParam'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -29,6 +30,7 @@ export default function EventDetailPage() {
   const isSuperAdmin = admin?.role === 'super_admin'
   const [cancelOpen, setCancelOpen] = useState(false)
   const [galleryOpen, setGalleryOpen] = useState(false)
+  const [tab, setTab] = useTabParam('attendees')
 
   const { data, isLoading } = useEventQuery(id)
   const cancelMutation = useCancelEventMutation(id)
@@ -139,7 +141,7 @@ export default function EventDetailPage() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="attendees">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="attendees">Attendees ({data.attendees.length})</TabsTrigger>
           <TabsTrigger value="waitlist">Waitlist ({data.waitlist.length})</TabsTrigger>

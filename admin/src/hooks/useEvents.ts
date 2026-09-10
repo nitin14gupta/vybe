@@ -5,7 +5,7 @@ import type { PaginatedResponse } from '@/types/feedback'
 
 export function useEventsQuery({ status, q, page, pageSize }: { status: string; q: string; page: number; pageSize: number }) {
   return useQuery({
-    queryKey: ['admin-events', status, q, page],
+    queryKey: ['admin-events', status, q, page, pageSize],
     queryFn: () => {
       const params = new URLSearchParams({ status, page: String(page), page_size: String(pageSize) })
       if (q) params.set('q', q)

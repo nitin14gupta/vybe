@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/authStore'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
+import { CommandPalette } from './CommandPalette'
 import { BrandedLoader } from '../ui/BrandedLoader'
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
@@ -33,6 +34,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <Header />
         <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
       </div>
+      <CommandPalette />
     </div>
   )
 }

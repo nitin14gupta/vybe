@@ -2,19 +2,21 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ShieldAlert } from 'lucide-react'
+import { ShieldAlert, Search } from 'lucide-react'
 import {
   useUserReportsQuery, useEventReportsQuery, useMessageReportsQuery, useBlocksQuery, useAdminActivityQuery,
 } from '@/hooks/useReports'
+import { usePagination } from '@/hooks/usePagination'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/Table'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
 import { Badge } from '@/components/ui/Badge'
+import { Input } from '@/components/ui/Input'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/Select'
+import { Toolbar } from '@/components/ui/Toolbar'
 import { ListShell } from '@/components/ui/ListShell'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { formatDate } from '@/lib/formatters'
 import { ACTION_LABELS, targetHref } from '@/lib/auditLog'
-
-const PAGE_SIZE = 20
 
 export default function SafetyPage() {
   return (
@@ -45,8 +47,8 @@ export default function SafetyPage() {
 }
 
 function UserReportsTab() {
-  const [page, setPage] = useState(1)
-  const { data, isLoading } = useUserReportsQuery(page)
+  const { page, pageSize, setPage, setPageSize } = usePagination(20)
+  const { data, isLoading } = useUserReportsQuery(page, pageSize)
 
   return (
     <ListShell
@@ -56,8 +58,9 @@ function UserReportsTab() {
       emptyLabel="No user reports"
       total={data?.total ?? 0}
       page={data?.page ?? 1}
-      pageSize={data?.page_size ?? PAGE_SIZE}
+      pageSize={data?.page_size ?? pageSize}
       onPageChange={setPage}
+      onPageSizeChange={setPageSize}
     >
       <Table>
         <THead><TR><TH>Reported user</TH><TH>Reported by</TH><TH>Reason</TH><TH>Date</TH></TR></THead>
@@ -85,8 +88,8 @@ function UserReportsTab() {
 }
 
 function EventReportsTab() {
-  const [page, setPage] = useState(1)
-  const { data, isLoading } = useEventReportsQuery(page)
+  const { page, pageSize, setPage, setPageSize } = usePagination(20)
+  const { data, isLoading } = useEventReportsQuery(page, pageSize)
 
   return (
     <ListShell
@@ -96,8 +99,9 @@ function EventReportsTab() {
       emptyLabel="No event reports"
       total={data?.total ?? 0}
       page={data?.page ?? 1}
-      pageSize={data?.page_size ?? PAGE_SIZE}
+      pageSize={data?.page_size ?? pageSize}
       onPageChange={setPage}
+      onPageSizeChange={setPageSize}
     >
       <Table>
         <THead><TR><TH>Event</TH><TH>Reported by</TH><TH>Reason</TH><TH>Description</TH><TH>Date</TH></TR></THead>
@@ -127,8 +131,8 @@ function EventReportsTab() {
 }
 
 function MessageReportsTab() {
-  const [page, setPage] = useState(1)
-  const { data, isLoading } = useMessageReportsQuery(page)
+  const { page, pageSize, setPage, setPageSize } = usePagination(20)
+  const { data, isLoading } = useMessageReportsQuery(page, pageSize)
 
   return (
     <ListShell
@@ -138,8 +142,9 @@ function MessageReportsTab() {
       emptyLabel="No message reports"
       total={data?.total ?? 0}
       page={data?.page ?? 1}
-      pageSize={data?.page_size ?? PAGE_SIZE}
+      pageSize={data?.page_size ?? pageSize}
       onPageChange={setPage}
+      onPageSizeChange={setPageSize}
     >
       <Table>
         <THead><TR><TH>Sender</TH><TH>Message</TH><TH>Reported by</TH><TH>Reason</TH><TH>Date</TH></TR></THead>
@@ -170,49 +175,75 @@ function MessageReportsTab() {
 }
 
 function AdminActivityTab() {
-  const [page, setPage] = useState(1)
-  const { data, isLoading } = useAdminActivityQuery(page)
+  const [q, setQ] = useState('')
+  const [action, setAction] = useState('')
+  const { page, pageSize, setPage, setPageSize } = usePagination(20)
+  const { data, isLoading } = useAdminActivityQuery(page, pageSize, { q, action })
 
   return (
-    <ListShell
-      emptyIcon={ShieldAlert}
-      isLoading={isLoading}
-      empty={!isLoading && data?.items.length === 0}
-      emptyLabel="No admin activity yet"
-      total={data?.total ?? 0}
-      page={data?.page ?? 1}
-      pageSize={data?.page_size ?? PAGE_SIZE}
-      onPageChange={setPage}
-    >
-      <Table>
-        <THead><TR><TH>Admin</TH><TH>Action</TH><TH>Detail</TH><TH>Date</TH></TR></THead>
-        <TBody>
-          {data?.items.map((a) => {
-            const href = targetHref(a.target_type, a.target_id)
-            return (
-              <TR key={a.id}>
-                <TD>{a.admin_name ?? a.admin_email}</TD>
-                <TD>
-                  {href ? (
-                    <Link href={href} className="hover:underline">{ACTION_LABELS[a.action] ?? a.action}</Link>
-                  ) : (
-                    ACTION_LABELS[a.action] ?? a.action
-                  )}
-                </TD>
-                <TD>{a.detail ?? '—'}</TD>
-                <TD>{formatDate(a.created_at)}</TD>
-              </TR>
-            )
-          })}
-        </TBody>
-      </Table>
-    </ListShell>
+    <div className="flex flex-col gap-4">
+      <Toolbar>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-ink-secondary" />
+          <Input
+            value={q}
+            onChange={(e) => { setQ(e.target.value); setPage(1) }}
+            placeholder="Search by admin name or email"
+            className="w-64 pl-9"
+          />
+        </div>
+        <Select value={action || 'all'} onValueChange={(v) => { setAction(v === 'all' ? '' : v); setPage(1) }}>
+          <SelectTrigger className="w-52"><SelectValue placeholder="All actions" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All actions</SelectItem>
+            {Object.entries(ACTION_LABELS).map(([key, label]) => (
+              <SelectItem key={key} value={key}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Toolbar>
+
+      <ListShell
+        emptyIcon={ShieldAlert}
+        isLoading={isLoading}
+        empty={!isLoading && data?.items.length === 0}
+        emptyLabel="No admin activity matches this filter"
+        total={data?.total ?? 0}
+        page={data?.page ?? 1}
+        pageSize={data?.page_size ?? pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+      >
+        <Table>
+          <THead><TR><TH>Admin</TH><TH>Action</TH><TH>Detail</TH><TH>Date</TH></TR></THead>
+          <TBody>
+            {data?.items.map((a) => {
+              const href = targetHref(a.target_type, a.target_id)
+              return (
+                <TR key={a.id}>
+                  <TD>{a.admin_name ?? a.admin_email}</TD>
+                  <TD>
+                    {href ? (
+                      <Link href={href} className="hover:underline">{ACTION_LABELS[a.action] ?? a.action}</Link>
+                    ) : (
+                      ACTION_LABELS[a.action] ?? a.action
+                    )}
+                  </TD>
+                  <TD>{a.detail ?? '—'}</TD>
+                  <TD>{formatDate(a.created_at)}</TD>
+                </TR>
+              )
+            })}
+          </TBody>
+        </Table>
+      </ListShell>
+    </div>
   )
 }
 
 function BlocksTab() {
-  const [page, setPage] = useState(1)
-  const { data, isLoading } = useBlocksQuery(page)
+  const { page, pageSize, setPage, setPageSize } = usePagination(20)
+  const { data, isLoading } = useBlocksQuery(page, pageSize)
 
   return (
     <ListShell
@@ -222,8 +253,9 @@ function BlocksTab() {
       emptyLabel="No blocks"
       total={data?.total ?? 0}
       page={data?.page ?? 1}
-      pageSize={data?.page_size ?? PAGE_SIZE}
+      pageSize={data?.page_size ?? pageSize}
       onPageChange={setPage}
+      onPageSizeChange={setPageSize}
     >
       <Table>
         <THead><TR><TH>Blocked by</TH><TH>Blocked user</TH><TH>Date</TH></TR></THead>

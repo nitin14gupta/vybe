@@ -1,23 +1,39 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from './Button'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from './Select'
+
+const PAGE_SIZE_OPTIONS = [25, 50, 100]
 
 interface PaginationProps {
   page: number
   pageSize: number
   total: number
   onPageChange: (page: number) => void
+  onPageSizeChange?: (pageSize: number) => void
 }
 
-export function Pagination({ page, pageSize, total, onPageChange }: PaginationProps) {
+export function Pagination({ page, pageSize, total, onPageChange, onPageSizeChange }: PaginationProps) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1
   const to = Math.min(page * pageSize, total)
 
   return (
-    <div className="flex items-center justify-between px-1 py-3 font-sans text-sm text-ink-secondary">
-      <span>
-        {from}–{to} of {total}
-      </span>
+    <div className="flex flex-wrap items-center justify-between gap-3 px-1 py-3 font-sans text-sm text-ink-secondary">
+      <div className="flex items-center gap-3">
+        <span>
+          {from}–{to} of {total}
+        </span>
+        {onPageSizeChange && (
+          <Select value={String(pageSize)} onValueChange={(v) => onPageSizeChange(Number(v))}>
+            <SelectTrigger className="h-8 w-[92px] text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <SelectItem key={size} value={String(size)}>{size} / page</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
       <div className="flex items-center gap-2">
         <Button
           variant="outline"

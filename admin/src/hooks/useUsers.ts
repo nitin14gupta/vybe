@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/apiClient'
-import type { UserListResponse, UserDetail, PayoutDetails } from '@/types/user'
+import type { UserListResponse, UserListItem, UserDetail, PayoutDetails } from '@/types/user'
 
 export function useUsersQuery({ q, status, page, pageSize }: { q: string; status: string; page: number; pageSize: number }) {
   return useQuery({
-    queryKey: ['admin-users', q, status, page],
+    queryKey: ['admin-users', q, status, page, pageSize],
     queryFn: () => {
       const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) })
       if (q) params.set('q', q)
@@ -12,6 +12,23 @@ export function useUsersQuery({ q, status, page, pageSize }: { q: string; status
       return apiClient.get<UserListResponse>(`/admin/users?${params}`)
     },
   })
+}
+
+const EXPORT_PAGE_SIZE = 100
+const EXPORT_MAX_PAGES = 20
+
+/** Fetches every user matching the given filters (not just the current page), for CSV export. */
+export async function fetchAllUsers({ q, status }: { q: string; status: string }): Promise<UserListItem[]> {
+  const all: UserListItem[] = []
+  for (let page = 1; page <= EXPORT_MAX_PAGES; page++) {
+    const params = new URLSearchParams({ page: String(page), page_size: String(EXPORT_PAGE_SIZE) })
+    if (q) params.set('q', q)
+    if (status) params.set('status', status)
+    const res = await apiClient.get<UserListResponse>(`/admin/users?${params}`)
+    all.push(...res.items)
+    if (all.length >= res.total || res.items.length === 0) break
+  }
+  return all
 }
 
 export function useUserQuery(id: string | undefined) {

@@ -6,11 +6,12 @@ import {
   CartesianGrid, Tooltip, Legend, LabelList,
 } from 'recharts'
 import {
-  Users, CalendarDays, CalendarClock, CalendarCheck, Wallet, MessageSquare, Lock, Ban, Activity, ArrowRight,
+  Users, CalendarDays, CalendarClock, CalendarCheck, Wallet, MessageSquare, Lock, Ban, Activity, ArrowRight, RefreshCw,
 } from 'lucide-react'
 import { StatCard } from '@/components/ui/StatCard'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { Button } from '@/components/ui/Button'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
 import { useDashboardQuery } from '@/hooks/useDashboard'
@@ -27,11 +28,12 @@ function formatDayTick(day: string) {
 export default function DashboardPage() {
   const { admin } = useAdminAuth()
   const c = chartColors()
-  const { data, isLoading } = useDashboardQuery()
-  const { data: activity, isLoading: activityLoading } = useAdminActivityQuery(1)
+  const { data, isLoading, isFetching, dataUpdatedAt, refetch } = useDashboardQuery()
+  const { data: activity, isLoading: activityLoading, isFetching: activityFetching, refetch: refetchActivity } = useAdminActivityQuery(1)
 
   const stats = data?.stats
   const recentActivity = activity?.items.slice(0, 6) ?? []
+  const refreshing = isFetching || activityFetching
 
   return (
     <div className="flex flex-col gap-6">
@@ -39,6 +41,22 @@ export default function DashboardPage() {
         breadcrumb={[{ label: 'Dashboard' }]}
         title={`Welcome${admin?.name ? `, ${admin.name}` : ''}`}
         subtitle="Here's a snapshot of what's happening on Gorave."
+        actions={
+          <div className="flex items-center gap-2">
+            {dataUpdatedAt > 0 && (
+              <span className="font-sans text-xs text-ink-secondary">Updated {formatRelative(new Date(dataUpdatedAt).toISOString())}</span>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => { refetch(); refetchActivity() }}
+              disabled={refreshing}
+              title="Refresh"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+        }
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

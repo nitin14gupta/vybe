@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import type { HostBadgeTier } from '@/types/user'
 
@@ -11,7 +12,7 @@ export function HostBadge({ tier, size = 20, className }: HostBadgeProps) {
   if (!tier) return null
 
   return (
-    <img
+    <Image
       src={`/host_badges/${tier.toLowerCase()}.png`}
       alt={`${tier} host`}
       title={`${tier} host`}

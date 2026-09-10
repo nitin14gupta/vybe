@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Search, Users, MapPin, ImageOff } from 'lucide-react'
 import { useEventsQuery } from '@/hooks/useEvents'
+import { usePagination } from '@/hooks/usePagination'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Input } from '@/components/ui/Input'
@@ -13,7 +14,6 @@ import { Toolbar } from '@/components/ui/Toolbar'
 import { ListShell } from '@/components/ui/ListShell'
 import { formatDate, formatInr } from '@/lib/formatters'
 
-const PAGE_SIZE = 12
 const TABS = [
   { value: 'active', label: 'Active' },
   { value: 'upcoming', label: 'Upcoming' },
@@ -24,9 +24,9 @@ const TABS = [
 export default function EventsPage() {
   const [status, setStatus] = useState<string>('active')
   const [q, setQ] = useState('')
-  const [page, setPage] = useState(1)
+  const { page, pageSize, setPage, setPageSize } = usePagination(12)
 
-  const { data, isLoading } = useEventsQuery({ status, q, page, pageSize: PAGE_SIZE })
+  const { data, isLoading } = useEventsQuery({ status, q, page, pageSize })
 
   return (
     <div className="flex flex-col gap-4">
@@ -66,8 +66,9 @@ export default function EventsPage() {
         emptyLabel={`No ${status} events`}
         total={data?.total ?? 0}
         page={data?.page ?? 1}
-        pageSize={data?.page_size ?? PAGE_SIZE}
+        pageSize={data?.page_size ?? pageSize}
         onPageChange={setPage}
+        onPageSizeChange={setPageSize}
         skeletonCount={6}
         skeletonHeight="h-64"
         grid

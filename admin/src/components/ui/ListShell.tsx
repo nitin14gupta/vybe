@@ -14,6 +14,7 @@ interface ListShellProps {
   page: number
   pageSize: number
   onPageChange: (page: number) => void
+  onPageSizeChange?: (pageSize: number) => void
   skeletonCount?: number
   /** Skeleton height in the loading state — taller for card grids, shorter for table rows. */
   skeletonHeight?: string
@@ -34,6 +35,7 @@ export function ListShell({
   page,
   pageSize,
   onPageChange,
+  onPageSizeChange,
   skeletonCount = 5,
   skeletonHeight = 'h-12',
   grid = false,
@@ -55,7 +57,9 @@ export function ListShell({
     return <EmptyState icon={emptyIcon} label={emptyLabel} />
   }
 
-  const pagination = total > 0 && <Pagination page={page} pageSize={pageSize} total={total} onPageChange={onPageChange} />
+  const pagination = total > 0 && (
+    <Pagination page={page} pageSize={pageSize} total={total} onPageChange={onPageChange} onPageSizeChange={onPageSizeChange} />
+  )
 
   if (!card) {
     return (

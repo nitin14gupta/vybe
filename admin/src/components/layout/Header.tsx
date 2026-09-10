@@ -1,13 +1,15 @@
 'use client'
 
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { Menu, LogOut, User } from 'lucide-react'
+import { Menu, LogOut, User, Search } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useSidebarStore } from '@/store/sidebarStore'
+import { useCommandPaletteStore } from '@/store/commandPaletteStore'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
 
 export function Header() {
   const setMobileOpen = useSidebarStore((s) => s.setMobileOpen)
+  const setCommandPaletteOpen = useCommandPaletteStore((s) => s.setOpen)
   const { admin, logout } = useAdminAuth()
   const router = useRouter()
 
@@ -24,7 +26,14 @@ export function Header() {
       >
         <Menu className="h-5 w-5" />
       </button>
-      <div className="hidden md:block" />
+      <button
+        onClick={() => setCommandPaletteOpen(true)}
+        className="hidden items-center gap-2 rounded-full border border-divider px-3 py-1.5 font-sans text-sm text-ink-secondary hover:border-gray-border hover:text-ink-primary md:flex"
+      >
+        <Search className="h-3.5 w-3.5" />
+        Search…
+        <kbd className="ml-2 rounded border border-divider px-1.5 py-0.5 font-mono text-[10px] text-ink-disabled">⌘K</kbd>
+      </button>
 
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>

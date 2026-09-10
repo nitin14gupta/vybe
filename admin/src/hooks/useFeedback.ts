@@ -4,7 +4,7 @@ import type { AppFeedbackItem, SupportRequestItem, PaginatedResponse } from '@/t
 
 export function useSupportRequestsQuery({ status, page, pageSize }: { status: string; page: number; pageSize: number }) {
   return useQuery({
-    queryKey: ['admin-support', status, page],
+    queryKey: ['admin-support', status, page, pageSize],
     queryFn: () =>
       apiClient.get<PaginatedResponse<SupportRequestItem>>(
         `/admin/feedback/support?page=${page}&page_size=${pageSize}${status ? `&status=${status}` : ''}`,
@@ -25,7 +25,7 @@ export function useUpdateSupportStatusMutation() {
 
 export function useAppFeedbackQuery({ page, pageSize }: { page: number; pageSize: number }) {
   return useQuery({
-    queryKey: ['admin-app-feedback', page],
+    queryKey: ['admin-app-feedback', page, pageSize],
     queryFn: () =>
       apiClient.get<PaginatedResponse<AppFeedbackItem>>(`/admin/feedback/app-feedback?page=${page}&page_size=${pageSize}`),
   })

@@ -5,23 +5,25 @@ import Link from 'next/link'
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts'
-import { Search, TrendingUp, Wallet, Landmark, Trophy, Users as UsersIcon, Star, Banknote } from 'lucide-react'
+import { Search, TrendingUp, Wallet, Landmark, Trophy, Users as UsersIcon, Star, Banknote, Download } from 'lucide-react'
 import {
-  useRevenueStatsQuery, useRevenueByDayQuery, useRevenueHostsQuery, useRevenueLeaderboardQuery,
+  useRevenueStatsQuery, useRevenueByDayQuery, useRevenueHostsQuery, useRevenueLeaderboardQuery, fetchAllRevenueHosts,
 } from '@/hooks/useRevenue'
+import { usePagination } from '@/hooks/usePagination'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { StatCard } from '@/components/ui/StatCard'
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/Table'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
 import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { Input } from '@/components/ui/Input'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { ListShell } from '@/components/ui/ListShell'
 import { chartColors } from '@/lib/chartColors'
 import { formatInr } from '@/lib/formatters'
-
-const PAGE_SIZE = 20
+import { toCsv, downloadCsv } from '@/lib/csv'
+import { useToast } from '@/hooks/useToast'
 
 function formatDayTick(day: string) {
   return new Date(day).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
@@ -101,23 +103,51 @@ function OverviewTab() {
 
 function PayoutsTab() {
   const [q, setQ] = useState('')
-  const [page, setPage] = useState(1)
+  const { page, pageSize, setPage, setPageSize } = usePagination()
+  const [exporting, setExporting] = useState(false)
+  const toast = useToast()
 
-  const { data, isLoading } = useRevenueHostsQuery({ q, page, pageSize: PAGE_SIZE })
+  const { data, isLoading } = useRevenueHostsQuery({ q, page, pageSize })
+
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const rows = await fetchAllRevenueHosts({ q })
+      const csv = toCsv(rows, [
+        { header: 'Host', get: (h) => h.host_name ?? 'Unnamed' },
+        { header: 'Phone', get: (h) => h.host_phone },
+        { header: 'Paid Events', get: (h) => h.paid_events_count },
+        { header: 'Gross Revenue', get: (h) => h.gross_ticket_revenue },
+        { header: 'Commission', get: (h) => h.commission_taken },
+        { header: 'Net Payable', get: (h) => h.net_payable },
+        { header: 'Payout Method', get: (h) => (h.has_payout_details ? h.payout_method ?? 'on file' : 'missing') },
+      ])
+      downloadCsv('gorave-host-payouts.csv', csv)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to export payouts')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4">
       <p className="text-xs text-ink-secondary">
         Net payable = gross ticket revenue minus Gorave&apos;s commission, across non-cancelled paid events. No automated payout system exists yet — use this to settle hosts manually.
       </p>
-      <div className="relative max-w-sm">
-        <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-ink-secondary" />
-        <Input
-          value={q}
-          onChange={(e) => { setQ(e.target.value); setPage(1) }}
-          placeholder="Search by host name or phone"
-          className="pl-9"
-        />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative max-w-sm flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-ink-secondary" />
+          <Input
+            value={q}
+            onChange={(e) => { setQ(e.target.value); setPage(1) }}
+            placeholder="Search by host name or phone"
+            className="pl-9"
+          />
+        </div>
+        <Button variant="outline" onClick={handleExport} loading={exporting}>
+          <Download className="h-4 w-4" /> Export CSV
+        </Button>
       </div>
 
       <ListShell
@@ -127,8 +157,9 @@ function PayoutsTab() {
         emptyLabel="No hosts match this search"
         total={data?.total ?? 0}
         page={data?.page ?? 1}
-        pageSize={data?.page_size ?? PAGE_SIZE}
+        pageSize={data?.page_size ?? pageSize}
         onPageChange={setPage}
+        onPageSizeChange={setPageSize}
       >
         <Table>
           <THead>

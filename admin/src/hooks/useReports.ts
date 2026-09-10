@@ -4,31 +4,50 @@ import type { UserReportItem, EventReportItem, MessageReportItem, BlockItem } fr
 import type { AuditLogItem } from '@/types/audit'
 import type { PaginatedResponse } from '@/types/feedback'
 
-const PAGE_SIZE = 20
-
-function usePaginatedReports<T>(key: string, path: string, page: number) {
+function usePaginatedReports<T>(
+  key: string,
+  path: string,
+  page: number,
+  pageSize: number,
+  extraParams?: Record<string, string>,
+) {
   return useQuery({
-    queryKey: [key, page],
-    queryFn: () => apiClient.get<PaginatedResponse<T>>(`${path}?page=${page}&page_size=${PAGE_SIZE}`),
+    queryKey: [key, page, pageSize, extraParams],
+    queryFn: () => {
+      const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) })
+      if (extraParams) {
+        for (const [k, v] of Object.entries(extraParams)) {
+          if (v) params.set(k, v)
+        }
+      }
+      return apiClient.get<PaginatedResponse<T>>(`${path}?${params}`)
+    },
   })
 }
 
-export function useUserReportsQuery(page: number) {
-  return usePaginatedReports<UserReportItem>('admin-reports-users', '/admin/reports/users', page)
+export function useUserReportsQuery(page: number, pageSize: number) {
+  return usePaginatedReports<UserReportItem>('admin-reports-users', '/admin/reports/users', page, pageSize)
 }
 
-export function useEventReportsQuery(page: number) {
-  return usePaginatedReports<EventReportItem>('admin-reports-events', '/admin/reports/events', page)
+export function useEventReportsQuery(page: number, pageSize: number) {
+  return usePaginatedReports<EventReportItem>('admin-reports-events', '/admin/reports/events', page, pageSize)
 }
 
-export function useMessageReportsQuery(page: number) {
-  return usePaginatedReports<MessageReportItem>('admin-reports-messages', '/admin/reports/messages', page)
+export function useMessageReportsQuery(page: number, pageSize: number) {
+  return usePaginatedReports<MessageReportItem>('admin-reports-messages', '/admin/reports/messages', page, pageSize)
 }
 
-export function useBlocksQuery(page: number) {
-  return usePaginatedReports<BlockItem>('admin-reports-blocks', '/admin/reports/blocks', page)
+export function useBlocksQuery(page: number, pageSize: number) {
+  return usePaginatedReports<BlockItem>('admin-reports-blocks', '/admin/reports/blocks', page, pageSize)
 }
 
-export function useAdminActivityQuery(page: number) {
-  return usePaginatedReports<AuditLogItem>('admin-audit-log', '/admin/audit-log', page)
+export function useAdminActivityQuery(
+  page: number,
+  pageSize: number = 20,
+  filters?: { q?: string; action?: string },
+) {
+  return usePaginatedReports<AuditLogItem>('admin-audit-log', '/admin/audit-log', page, pageSize, {
+    q: filters?.q ?? '',
+    action: filters?.action ?? '',
+  })
 }

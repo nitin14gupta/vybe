@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Lock, Unlock, Mic, ShieldAlert, Wallet, CalendarDays, MessageSquare, Heart, Banknote, Clock } from 'lucide-react'
 import { useUserQuery, useUserPayoutQuery, useLockUserMutation, useUnlockUserMutation } from '@/hooks/useUsers'
+import { useTabParam } from '@/hooks/useTabParam'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Avatar } from '@/components/ui/Avatar'
 import { HostBadge } from '@/components/ui/HostBadge'
@@ -28,6 +29,7 @@ export default function UserDetailPage() {
   const isSuperAdmin = admin?.role === 'super_admin'
   const [lockDialogOpen, setLockDialogOpen] = useState(false)
   const [unlockDialogOpen, setUnlockDialogOpen] = useState(false)
+  const [tab, setTab] = useTabParam('profile')
 
   const { data, isLoading } = useUserQuery(id)
   const lockMutation = useLockUserMutation(id)
@@ -120,7 +122,7 @@ export default function UserDetailPage() {
         <DetailStat label="Member since" value={formatRelative(user.created_at)} icon={Clock} />
       </DetailStatsRow>
 
-      <Tabs defaultValue="profile">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="events">Events</TabsTrigger>

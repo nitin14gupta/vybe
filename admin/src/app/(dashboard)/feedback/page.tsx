@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { MessageSquare, Inbox } from 'lucide-react'
 import { useSupportRequestsQuery, useUpdateSupportStatusMutation, useAppFeedbackQuery } from '@/hooks/useFeedback'
+import { usePagination } from '@/hooks/usePagination'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
 import { Badge } from '@/components/ui/Badge'
@@ -14,7 +15,6 @@ import { ListShell } from '@/components/ui/ListShell'
 import { formatDate } from '@/lib/formatters'
 import { useToast } from '@/hooks/useToast'
 
-const PAGE_SIZE = 20
 const STATUSES = ['open', 'resolved', 'closed'] as const
 
 export default function FeedbackPage() {
@@ -51,10 +51,10 @@ function statusBadgeVariant(status: string) {
 
 function SupportRequestsTab() {
   const [status, setStatus] = useState<string>('')
-  const [page, setPage] = useState(1)
+  const { page, pageSize, setPage, setPageSize } = usePagination()
   const toast = useToast()
 
-  const { data, isLoading } = useSupportRequestsQuery({ status, page, pageSize: PAGE_SIZE })
+  const { data, isLoading } = useSupportRequestsQuery({ status, page, pageSize })
   const updateStatusMutation = useUpdateSupportStatusMutation()
 
   const updateStatus = async (id: string, newStatus: string) => {
@@ -87,8 +87,9 @@ function SupportRequestsTab() {
         emptyLabel="No support requests"
         total={data?.total ?? 0}
         page={data?.page ?? 1}
-        pageSize={data?.page_size ?? PAGE_SIZE}
+        pageSize={data?.page_size ?? pageSize}
         onPageChange={setPage}
+        onPageSizeChange={setPageSize}
         skeletonCount={4}
         skeletonHeight="h-24"
         card={false}
@@ -128,8 +129,8 @@ function SupportRequestsTab() {
 }
 
 function AppFeedbackTab() {
-  const [page, setPage] = useState(1)
-  const { data, isLoading } = useAppFeedbackQuery({ page, pageSize: PAGE_SIZE })
+  const { page, pageSize, setPage, setPageSize } = usePagination()
+  const { data, isLoading } = useAppFeedbackQuery({ page, pageSize })
 
   return (
     <ListShell
@@ -139,8 +140,9 @@ function AppFeedbackTab() {
       emptyLabel="No feedback yet"
       total={data?.total ?? 0}
       page={data?.page ?? 1}
-      pageSize={data?.page_size ?? PAGE_SIZE}
+      pageSize={data?.page_size ?? pageSize}
       onPageChange={setPage}
+      onPageSizeChange={setPageSize}
       skeletonCount={4}
       skeletonHeight="h-20"
       card={false}
