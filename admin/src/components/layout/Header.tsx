@@ -19,7 +19,7 @@ export function Header() {
   }
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b border-divider bg-background px-4 md:px-6">
+    <header className="flex h-16 shrink-0 items-center justify-between bg-background px-4 md:px-6">
       <button
         onClick={() => setMobileOpen(true)}
         className="rounded-full p-2 text-ink-secondary hover:bg-surface md:hidden"
