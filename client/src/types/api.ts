@@ -139,6 +139,9 @@ export interface EventSummary {
   attended_host_before?: boolean
   paid_attended_host_before?: boolean
   is_hotlisted?: boolean
+  // Only populated by getMyJoinedEvents() (/events/joined).
+  my_checked_in_at?: string | null
+  my_review_rating?: number | null
 }
 
 export interface MyEventsPage {

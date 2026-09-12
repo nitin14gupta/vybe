@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import { ActivityIndicator, Pressable, Text, View, StyleSheet, ViewStyle } from 'react-native'
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated'
-import { hTap } from '@/lib/haptics'
-import { Colors, FontFamily, ComponentSize, Radius } from '@/constants'
+import { hTap, hError } from '@/lib/haptics'
+import { Colors, FontFamily, ComponentSize, Radius, withOpacity } from '@/constants'
 
 interface Props {
   label: string
@@ -12,9 +12,12 @@ interface Props {
   icon?: ReactNode
   style?: ViewStyle
   size?: 'default' | 'small'
+  /** Red tinted-fill variant for a destructive confirm (e.g. ConfirmSheet)
+   * instead of the neutral outline — same press/loading behavior either way. */
+  destructive?: boolean
 }
 
-export function OutlineButton({ label, onPress, disabled, loading, icon, style, size = 'default' }: Props) {
+export function OutlineButton({ label, onPress, disabled, loading, icon, style, size = 'default', destructive }: Props) {
   const scale = useSharedValue(1)
   const isSmall = size === 'small'
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }))
@@ -22,18 +25,30 @@ export function OutlineButton({ label, onPress, disabled, loading, icon, style, 
   return (
     <Pressable
       onPress={!disabled && !loading ? onPress : undefined}
-      onPressIn={() => { if (!disabled) { scale.value = withSpring(0.97, { duration: 120 }); hTap() } }}
+      onPressIn={() => {
+        if (!disabled) {
+          scale.value = withSpring(0.97, { duration: 120 })
+          destructive ? hError() : hTap()
+        }
+      }}
       onPressOut={() => { scale.value = withSpring(1, { duration: 120 }) }}
       disabled={disabled || loading}
       style={style}
     >
-      <Animated.View style={[styles.btn, isSmall && styles.btnSmall, animStyle]}>
+      <Animated.View style={[styles.btn, isSmall && styles.btnSmall, destructive && styles.btnDestructive, animStyle]}>
         {loading ? (
-          <ActivityIndicator color={Colors.inkPrimary} size="small" />
+          <ActivityIndicator color={destructive ? Colors.destructive : Colors.inkPrimary} size="small" />
         ) : (
           <View style={styles.content}>
             {icon}
-            <Text style={[styles.text, isSmall && styles.textSmall, disabled && styles.disabledText]}>{label}</Text>
+            <Text style={[
+              styles.text,
+              isSmall && styles.textSmall,
+              destructive && styles.textDestructive,
+              disabled && styles.disabledText,
+            ]}>
+              {label}
+            </Text>
           </View>
         )}
       </Animated.View>
@@ -55,10 +70,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  btnDestructive: {
+    backgroundColor: withOpacity(Colors.destructive, 0.15),
+    borderColor: withOpacity(Colors.destructive, 0.4),
+  },
   text: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 16,
     color: Colors.inkPrimary,
+  },
+  textDestructive: {
+    color: Colors.destructive,
   },
   disabledText: {
     color: Colors.inkDisabled,

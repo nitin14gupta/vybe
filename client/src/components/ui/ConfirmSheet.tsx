@@ -2,9 +2,10 @@ import { useRef, useEffect } from 'react'
 import { Text, Pressable, StyleSheet } from 'react-native'
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet'
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet'
-import { hSuccess, hError, hTap } from '@/lib/haptics'
+import { hSuccess, hTap } from '@/lib/haptics'
 import { Colors, FontFamily, withOpacity } from '@/constants'
 import { PrimaryButton } from './PrimaryButton'
+import { OutlineButton } from './OutlineButton'
 
 interface Props {
   visible: boolean
@@ -39,12 +40,12 @@ function ConfirmSheetCore({ title, body, confirmLabel, destructive, onConfirm, o
         <Text style={s.title}>{title}</Text>
         <Text style={s.body}>{body}</Text>
         {destructive ? (
-          <Pressable
-            style={[s.btn, s.btnDestructive]}
-            onPress={() => { hError(); onConfirm(); onClose() }}
-          >
-            <Text style={[s.btnText, s.btnTextDestructive]}>{confirmLabel}</Text>
-          </Pressable>
+          <OutlineButton
+            label={confirmLabel}
+            destructive
+            onPress={() => { onConfirm(); onClose() }}
+            style={s.btn}
+          />
         ) : (
           <PrimaryButton
             label={confirmLabel}
@@ -72,9 +73,6 @@ const s = StyleSheet.create({
   title: { fontFamily: FontFamily.headingBold, fontSize: 18, color: Colors.inkPrimary, textAlign: 'center' },
   body: { fontFamily: FontFamily.bodyRegular, fontSize: 14, color: Colors.inkSecondary, textAlign: 'center', lineHeight: 20 },
   btn: { height: 52, borderRadius: 999, marginTop: 4 },
-  btnDestructive: { alignItems: 'center', justifyContent: 'center', backgroundColor: withOpacity(Colors.destructive, 0.15), borderWidth: 1, borderColor: withOpacity(Colors.destructive, 0.4) },
-  btnText: { fontFamily: FontFamily.bodySemiBold, fontSize: 16, color: Colors.background },
-  btnTextDestructive: { color: Colors.destructive },
   cancelBtn: { height: 48, alignItems: 'center', justifyContent: 'center' },
   cancelText: { fontFamily: FontFamily.bodyMedium, fontSize: 15, color: Colors.inkSecondary },
 })

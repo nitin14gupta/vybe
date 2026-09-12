@@ -5,7 +5,7 @@ import { Swipeable } from 'react-native-gesture-handler'
 import { Image } from 'expo-image'
 import { AutoSkeletonView } from 'react-native-auto-skeleton'
 import { hTap, hMedium } from '@/lib/haptics'
-import { Bell, UserPlus, Flame, MessageCircle, PartyPopper, ShieldCheck, Trophy, Trash2 } from 'lucide-react-native'
+import { Bell, UserPlus, Flame, MessageCircle, PartyPopper, ShieldCheck, Trophy, Trash2, Star, Frown } from 'lucide-react-native'
 import type { AppNotification } from '@/api/apiService'
 import { Colors, FontFamily, withOpacity } from '@/constants'
 import { OutlineButton, PrimaryButton } from '@/components/ui'
@@ -38,6 +38,10 @@ const TYPE_FALLBACK: Record<string, { Icon: any; bg: string; color: string }> = 
   report_submitted: { Icon: ShieldCheck, bg: withOpacity(Colors.inkPrimary, 0.16), color: Colors.inkPrimary },
   host_badge_earned: { Icon: Trophy, bg: withOpacity(Colors.accentGold, 0.16), color: Colors.accentGold },
   review_milestone: { Icon: Trophy, bg: withOpacity(Colors.accentGold, 0.16), color: Colors.accentGold },
+  // Neutral, not brand-colored — a filled orange star here would read as an
+  // already-given rating rather than a prompt to go leave one.
+  event_review_prompt: { Icon: Star, bg: Colors.surface, color: Colors.inkDisabled },
+  event_missed: { Icon: Frown, bg: Colors.surface, color: Colors.inkDisabled },
 }
 
 export const NotificationRow = React.memo(function NotificationRow({ item, onPress, onAction, onDismiss }: {

@@ -163,6 +163,18 @@ export default function NotificationsScreen() {
       router.push(`/(events)/${item.entity_id}/ticket` as any)
       return
     }
+    // Same idea — the review nudge should drop them straight into the
+    // review form, not the event page they'd have to tap "Rate Event" from.
+    if (item.type === 'event_review_prompt' && item.entity_id) {
+      router.push(`/(events)/${item.entity_id}/review` as any)
+      return
+    }
+    // The missed-event notice has nothing useful behind the event itself —
+    // send them to Browse to find the next one instead.
+    if (item.type === 'event_missed') {
+      router.push('/(tabs)/events' as any)
+      return
+    }
     const target = notifEntityToTarget(item.entity_type, item.entity_id)
     if (target) router.push(targetToHref(target, useAuthStore.getState().userId) as any)
   }

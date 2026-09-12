@@ -126,12 +126,12 @@ class EventSummary(BaseModel):
     attendee_count: int = 0
     attendee_avatars: List[str] = []
     is_cancelled: bool = False
-    # Relationship/relevance signals — only populated by the search-ranked
-    # GET /events query (see list_events); default False elsewhere.
     is_following_host: bool = False
     attended_host_before: bool = False
     paid_attended_host_before: bool = False
     is_hotlisted: bool = False
+    my_checked_in_at: Optional[str] = None
+    my_review_rating: Optional[int] = None
 
 
 class MyEventsPage(BaseModel):
@@ -527,13 +527,15 @@ def get_joined_events(current_user: dict = Depends(get_current_user)):
                         SELECT 1 FROM follows fo WHERE fo.follower_id = %s::uuid AND fo.following_id = eav.user_id
                     ) DESC, eav.joined_at ASC LIMIT 3
                 ) au WHERE au.avatar_url IS NOT NULL) AS attendee_avatars,
-                EXISTS(SELECT 1 FROM event_hotlist h WHERE h.user_id = %s::uuid AND h.event_id = e.id) AS is_hotlisted
+                EXISTS(SELECT 1 FROM event_hotlist h WHERE h.user_id = %s::uuid AND h.event_id = e.id) AS is_hotlisted,
+                ea.checked_in_at::text AS my_checked_in_at,
+                (SELECT rating FROM event_reviews WHERE event_id = e.id AND reviewer_id = %s::uuid LIMIT 1) AS my_review_rating
             FROM events e
             JOIN users u ON u.id = e.host_id
             JOIN event_attendees ea ON ea.event_id = e.id AND ea.user_id = %s::uuid AND ea.status = 'going'
             ORDER BY e.date_time DESC
             """,
-            (uid, uid, uid),
+            (uid, uid, uid, uid),
         )
         rows = cur.fetchall()
     result = []

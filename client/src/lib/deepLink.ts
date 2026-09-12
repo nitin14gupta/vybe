@@ -7,23 +7,27 @@ import { APP_SCHEME } from '@/api/config'
 export type DeepLinkTarget =
   | { screen: 'event'; id: string }
   | { screen: 'ticket'; id: string }
+  | { screen: 'review'; id: string }
   | { screen: 'wallet' }
   | { screen: 'profile'; id: string }
   | { screen: 'chat'; id: string }
   | { screen: 'chatList' }
   | { screen: 'notifications' }
   | { screen: 'createEvent' }
+  | { screen: 'browseEvents' }
 
 export function targetToHref(t: DeepLinkTarget, currentUserId?: string | null): string {
   switch (t.screen) {
     case 'event': return `/(events)/${t.id}`
     case 'ticket': return `/(events)/${t.id}/ticket`
+    case 'review': return `/(events)/${t.id}/review`
     case 'wallet': return '/(settings)/wallet'
     case 'profile': return t.id === currentUserId ? '/(tabs)/profile' : `/(profile)/${t.id}`
     case 'chat': return `/(chat)/${t.id}`
     case 'chatList': return '/(tabs)/chat'
     case 'notifications': return '/(settings)/notifications'
     case 'createEvent': return '/(events)/create'
+    case 'browseEvents': return '/(tabs)/events'
   }
 }
 
@@ -43,6 +47,10 @@ export function pushDataToTarget(data: any): DeepLinkTarget | null {
     case 'payment_success':
     case 'ticket_ready':
       return data.event_id ? { screen: 'ticket', id: data.event_id } : null
+    case 'event_review_prompt':
+      return data.event_id ? { screen: 'review', id: data.event_id } : null
+    case 'event_missed':
+      return { screen: 'browseEvents' }
     case 'wallet':
       return { screen: 'wallet' }
     case 'host_onboarding_complete':

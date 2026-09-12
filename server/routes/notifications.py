@@ -198,6 +198,31 @@ def notify_report_submitted(cur, reporter_id: str, entity_type: str, entity_id: 
     )
 
 
+def notify_event_review_prompt(cur, user_id: str, event_id: str, event_title: str):
+    """Fired once per attendee by the _event_wrapup_loop scheduler (see
+    utils/event_wrapup.py) shortly after an event they checked into ends,
+    as long as they haven't reviewed it yet."""
+    _insert_notification(
+        cur, user_id, "event_review_prompt",
+        title="How was it?",
+        body=f"Rate your night at {event_title}.",
+        entity_id=event_id,
+        entity_type="event",
+    )
+
+
+def notify_event_missed(cur, user_id: str, event_id: str, event_title: str):
+    """Counterpart to notify_event_review_prompt — for attendees who RSVP'd
+    'going' but never checked in, once the event has ended."""
+    _insert_notification(
+        cur, user_id, "event_missed",
+        title="Sorry you missed it",
+        body=f"You didn't check in at {event_title} — hope you catch the next one.",
+        entity_id=event_id,
+        entity_type="event",
+    )
+
+
 def notify_event_updated(cur, user_id: str, event_id: str, event_title: str):
     _insert_notification(
         cur, user_id, "event_updated",

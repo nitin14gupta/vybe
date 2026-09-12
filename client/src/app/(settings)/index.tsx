@@ -81,8 +81,8 @@ export default function SettingsScreen() {
           title="APP"
           items={[
             { icon: <Info size={18} color={iconColor} strokeWidth={1.5} />, label: 'About Gorave', value: `v${appVersion}`, onPress: () => router.push('/(settings)/about') },
-            { icon: <Sparkles size={18} color={iconColor} strokeWidth={1.5} />, label: 'Background', onPress: () => router.push('/(settings)/background' as any) },
-            { icon: <Star size={18} color={iconColor} strokeWidth={1.5} />, label: 'Rate Gorave', onPress: () => Linking.openURL(RATE_APP_URL) },
+            // { icon: <Sparkles size={18} color={iconColor} strokeWidth={1.5} />, label: 'Background', onPress: () => router.push('/(settings)/background' as any) },
+            // { icon: <Star size={18} color={iconColor} strokeWidth={1.5} />, label: 'Rate Gorave', onPress: () => Linking.openURL(RATE_APP_URL) },
           ]}
         />
 

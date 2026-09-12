@@ -67,12 +67,24 @@ const AnimatedPressable = ReanimatedView.createAnimatedComponent(Pressable)
 export function HeaderIconBtn({
   children,
   onPress,
+  disableAnimation = false,
 }: {
   children: ReactNode
   onPress?: () => void
+  /** Opt out of the press-scale spring — set true for an icon that's felt
+   * laggy rather than tactile (e.g. the profile screen's Settings icon). */
+  disableAnimation?: boolean
 }) {
   const pressScale = useSharedValue(1)
   const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale.value }] }))
+
+  if (disableAnimation) {
+    return (
+      <Pressable onPress={onPress} hitSlop={10} style={styles.iconBtn}>
+        {children}
+      </Pressable>
+    )
+  }
 
   return (
     <AnimatedPressable

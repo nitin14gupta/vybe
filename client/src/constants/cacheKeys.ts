@@ -2,6 +2,8 @@ export const CacheKeys = {
   homeJoinedEvents: 'home:joined-events',
   /** "You're Hosting" */
   homeHostedEvents: 'home:hosted-events',
+  /** "On the Waitlist" */
+  homeWaitlistedEvents: 'home:waitlisted-events',
 
   chatConversations: 'chat:conversations',
   chatMessages: (conversationId: string) => `chat:messages:${conversationId}`,

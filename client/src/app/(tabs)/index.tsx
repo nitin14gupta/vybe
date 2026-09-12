@@ -12,6 +12,8 @@ import { NotificationPopBadge } from '@/components/home/NotificationPopBadge'
 import { TemplateFan } from '@/components/home/TemplateFan'
 import { ActiveEventsSection, type ActiveEventsSectionHandle } from '@/components/home/ActiveEventsSection'
 import { MyEventsSection, type MyEventsSectionHandle } from '@/components/home/MyEventsSection'
+import { WaitlistSection, type WaitlistSectionHandle } from '@/components/home/WaitlistSection'
+import { PendingReviewsSection, type PendingReviewsSectionHandle } from '@/components/home/PendingReviewsSection'
 import { RecentlyViewedSection } from '@/components/home/RecentlyViewedSection'
 import { PromoCarousel } from '@/components/home/PromoCarousel'
 import { TrendingSection, type TrendingSectionHandle } from '@/components/home/TrendingSection'
@@ -36,13 +38,17 @@ export default function HomeScreen() {
   const headerHeight = APP_HEADER_BAR_HEIGHT + insets.top
 
   const [myEventsEmpty, setMyEventsEmpty] = useState<boolean | null>(null)
+  const [waitlistEmpty, setWaitlistEmpty] = useState<boolean | null>(null)
+  const [pendingReviewsEmpty, setPendingReviewsEmpty] = useState<boolean | null>(null)
   const [recentEmpty, setRecentEmpty] = useState<boolean | null>(null)
   const [trendingEmpty, setTrendingEmpty] = useState<boolean | null>(null)
-  const allEmpty = myEventsEmpty === true && recentEmpty === true && trendingEmpty === true
+  const allEmpty = myEventsEmpty === true && waitlistEmpty === true && pendingReviewsEmpty === true && recentEmpty === true && trendingEmpty === true
 
   const [refreshing, setRefreshing] = useState(false)
   const activeEventsRef = useRef<ActiveEventsSectionHandle>(null)
   const myEventsRef = useRef<MyEventsSectionHandle>(null)
+  const waitlistRef = useRef<WaitlistSectionHandle>(null)
+  const pendingReviewsRef = useRef<PendingReviewsSectionHandle>(null)
   const trendingRef = useRef<TrendingSectionHandle>(null)
 
   const handleRefresh = useCallback(async () => {
@@ -51,6 +57,8 @@ export default function HomeScreen() {
       await Promise.all([
         activeEventsRef.current?.refresh(),
         myEventsRef.current?.refresh(),
+        waitlistRef.current?.refresh(),
+        pendingReviewsRef.current?.refresh(),
         trendingRef.current?.refresh(),
       ])
     } finally {
@@ -125,6 +133,8 @@ export default function HomeScreen() {
 
         <ActiveEventsSection ref={activeEventsRef} />
         <MyEventsSection ref={myEventsRef} onEmptyChange={setMyEventsEmpty} />
+        <WaitlistSection ref={waitlistRef} onEmptyChange={setWaitlistEmpty} />
+        <PendingReviewsSection ref={pendingReviewsRef} onEmptyChange={setPendingReviewsEmpty} />
         <RecentlyViewedSection onEmptyChange={setRecentEmpty} />
         <PromoCarousel />
         <TrendingSection ref={trendingRef} onEmptyChange={setTrendingEmpty} />

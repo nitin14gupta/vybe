@@ -37,6 +37,7 @@ from utils.account_purge import purge_expired_deleted_accounts
 ADMIN_ORIGINS = [o.strip() for o in os.getenv("ADMIN_ORIGINS", "").split(",") if o.strip()]
 
 PURGE_INTERVAL_SECONDS = 24 * 60 * 60
+EVENT_WRAPUP_INTERVAL_SECONDS = 15 * 60
 _scheduler_redis = None
 
 
@@ -81,10 +82,30 @@ async def _account_purge_loop():
         await asyncio.sleep(PURGE_INTERVAL_SECONDS)
 
 
+async def _event_wrapup_loop():
+    """Runs every 15 minutes — nudges attendees to review an event once it's
+    ended, and separately notifies attendees who RSVP'd but never checked in
+    that they missed it. See utils/event_wrapup.py."""
+    while True:
+        try:
+            if await _try_acquire_lock("sched_lock:event_wrapup", EVENT_WRAPUP_INTERVAL_SECONDS - 60):
+                from utils.event_wrapup import send_event_wrapup_notifications
+                result = await asyncio.to_thread(send_event_wrapup_notifications)
+                if result["review_prompts"] or result["missed_notices"]:
+                    print(
+                        f"[WRAPUP] Sent {result['review_prompts']} review prompt(s), "
+                        f"{result['missed_notices']} missed-event notice(s)", flush=True,
+                    )
+        except Exception as e:
+            print(f"[WRAPUP] Event wrap-up run failed: {e}", flush=True)
+        await asyncio.sleep(EVENT_WRAPUP_INTERVAL_SECONDS)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     tasks = [
         asyncio.create_task(_account_purge_loop()),
+        asyncio.create_task(_event_wrapup_loop()),
     ]
     yield
     for task in tasks:

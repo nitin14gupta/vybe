@@ -183,24 +183,6 @@ export function useEventDetail(id: string | undefined) {
     }
   }, [event, id, router, showPill])
 
-  const handleLeaveWaitlist = useCallback(async () => {
-    if (!event) return
-    setRsvpStatus('loading')
-    try {
-      await ApiService.rsvpEvent(id!, 'cancel')
-      setRsvpStatus('idle')
-      setEvent(prev => prev ? {
-        ...prev,
-        my_offer_expires_at: null,
-        my_waitlist_position: null,
-      } : prev)
-      showPill("You've left the waitlist", 'default')
-    } catch (e: any) {
-      setRsvpStatus('waitlist')
-      showPill(e?.message || "Couldn't leave waitlist", 'error')
-    }
-  }, [event, id, showPill])
-
   const handleManageWaitlist = useCallback(() => {
     router.push(`/(events)/${id}/waitlist` as any)
   }, [id, router])
@@ -262,7 +244,6 @@ export function useEventDetail(id: string | undefined) {
     doCancelEvent,
     handleShare,
     handleJoinWaitlist,
-    handleLeaveWaitlist,
     handleManageWaitlist,
     handleAddressAction,
     isStarted,

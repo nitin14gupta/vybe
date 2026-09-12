@@ -53,8 +53,11 @@ export function UserProfileCtaBar({
           />
         </View>
       ) : isPending ? (
+        // A sent vibe is a success, not a dead end — read it that way: a
+        // warm brand-tinted pill with the flame lit, not the same flat grey
+        // "disabled" treatment as an actual blocked state like cooldown.
         <Pressable style={[s.ctaBtn, s.ctaBtnPending]} disabled>
-          <Flame size={18} color={Colors.inkSecondary} fill="transparent" strokeWidth={1.8} />
+          <Flame size={18} color={Colors.brandOrange} fill={Colors.brandOrange} strokeWidth={1.8} />
           <Text style={s.ctaBtnPendingText}>Vibe Sent</Text>
         </Pressable>
       ) : isCooldown && cooldownUntil ? (
@@ -70,18 +73,18 @@ export function UserProfileCtaBar({
       )}
 
       <Pressable
-        style={[s.ctaBtn, s.ctaBtnSecondary, following && s.ctaBtnFollowing]}
+        style={[s.ctaBtn, s.ctaBtnSecondary]}
         onPress={() => {
           hTap();
           onFollowTogglePress();
         }}
       >
         {following ? (
-          <UserCheck size={18} color={Colors.brandOrange} strokeWidth={1.8} />
+          <UserCheck size={18} color={Colors.inkPrimary} strokeWidth={1.8} />
         ) : (
           <UserPlus size={18} color={Colors.inkPrimary} strokeWidth={1.8} />
         )}
-        <Text style={[s.ctaBtnSecondaryText, following && s.ctaBtnFollowingText]}>
+        <Text style={s.ctaBtnSecondaryText}>
           {following ? "Following" : "Follow"}
         </Text>
       </Pressable>
@@ -124,13 +127,13 @@ const s = StyleSheet.create({
   },
   ctaBtnPending: {
     flex: 1.6,
-    backgroundColor: Colors.elevated,
+    backgroundColor: withOpacity(Colors.brandOrange, 0.14),
+    borderWidth: 1,
+    borderColor: withOpacity(Colors.brandOrange, 0.3),
   },
   ctaBtnPendingText: {
     fontFamily: FontFamily.bodySemiBold,
     fontSize: 16,
-    color: Colors.inkSecondary,
+    color: Colors.brandOrange,
   },
-  ctaBtnFollowing: { borderColor: Colors.brandOrange },
-  ctaBtnFollowingText: { color: Colors.brandOrange },
 });

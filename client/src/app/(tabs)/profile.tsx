@@ -114,7 +114,7 @@ export default function ProfileScreen() {
           </HeaderIconBtn>
         }
         rightAction={
-          <HeaderIconBtn onPress={() => router.push('/(settings)')}>
+          <HeaderIconBtn onPress={() => router.push('/(settings)')} disableAnimation>
             <Settings size={18} color={Colors.inkSecondary} strokeWidth={1.5} />
           </HeaderIconBtn>
         }

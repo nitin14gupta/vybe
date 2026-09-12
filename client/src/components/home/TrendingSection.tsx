@@ -4,7 +4,8 @@ import { router } from 'expo-router'
 import ApiService, { type EventSummary } from '@/api/apiService'
 import { EventCard } from '@/components/events/EventCard'
 import { useProfile } from '@/hooks/useProfile'
-import { Colors, FontFamily } from '@/constants'
+import { getOrFetch } from '@/lib/queryCache'
+import { CacheKeys, Colors, FontFamily } from '@/constants'
 
 const CARD_WIDTH = 240
 const CARD_GAP = 12
@@ -52,11 +53,22 @@ export const TrendingSection = forwardRef<TrendingSectionHandle, Props>(function
   const mountedRef = useRef(true)
 
   const load = useCallback((): Promise<void> => {
+    const ownEventIds = () =>
+      Promise.all([
+        getOrFetch(CacheKeys.homeJoinedEvents, () => ApiService.getMyJoinedEvents(), { ttlMs: 5 * 60_000, persist: false }).catch(() => []),
+        getOrFetch(CacheKeys.homeHostedEvents, () => ApiService.getMyHostedEvents(), { ttlMs: 5 * 60_000, persist: false }).catch(() => []),
+      ]).then(([joined, hosted]) => new Set([...joined, ...hosted].map(e => e.id)))
+
     const loadTrending = (lat: number, lng: number) =>
-      ApiService.getEvents({ lat, lng, radius_km: 40, limit: FETCH_LIMIT })
-        .then(result => {
+      Promise.all([
+        ApiService.getEvents({ lat, lng, radius_km: 40, limit: FETCH_LIMIT }),
+        ownEventIds(),
+      ])
+        .then(([result, ownIds]) => {
           if (!mountedRef.current) return
-          const sorted = [...result].sort((a, b) => b.attendee_count - a.attendee_count)
+          const sorted = result
+            .filter(e => !ownIds.has(e.id))
+            .sort((a, b) => b.attendee_count - a.attendee_count)
           setAllEvents(sorted)
           setVisibleCount(INITIAL_COUNT)
           onEmptyChange?.(sorted.length === 0)

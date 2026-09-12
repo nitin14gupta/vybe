@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, type ReactNode } from 'react'
 import { Pressable, View, Text, StyleSheet } from 'react-native'
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import { Image, type ImageProps } from 'expo-image'
@@ -26,6 +26,7 @@ function EventListCardBase({
   showHotlist = true,
   showSos = false,
   priority = 'normal',
+  footer,
 }: {
   event: EventSummary
   onPress?: () => void
@@ -34,6 +35,9 @@ function EventListCardBase({
   /** Only pass true for an event that's actually happening right now (isEventActive) — e.g. the calendar's GOING rows. */
   showSos?: boolean
   priority?: ImageProps['priority']
+  /** Optional tappable strip rendered attached to the bottom of the card
+   * (same pattern as EventCard's footer) — e.g. a "Rate this event" CTA. */
+  footer?: ReactNode
 }) {
   const cover = event.cover_photos?.[0]?.url
   const TypeIcon = EVENT_ICONS[event.event_type] ?? EVENT_ICON_FALLBACK
@@ -44,6 +48,7 @@ function EventListCardBase({
 
   return (
     <View style={s.rowWrap}>
+    <View style={s.cardOuter}>
     <AnimatedPressable
       style={[s.row, pressStyle]}
       onPress={onPress ?? (() => router.push(`/(events)/${event.id}` as any))}
@@ -111,6 +116,8 @@ function EventListCardBase({
         <ChevronRight size={16} color={Colors.inkSecondary} strokeWidth={2.2} />
       </View>
     </AnimatedPressable>
+    {footer}
+    </View>
 
     {/* Siblings of the row's own Pressable above, not nested inside it —
         same reasoning as HostPill in EventCard.tsx: a nested touchable
@@ -164,18 +171,21 @@ const s = StyleSheet.create({
   sosBtn: {
     position: 'absolute', top: 16, left: 102,
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
+  cardOuter: {
     borderRadius: Radius.card + 8,
     backgroundColor: Colors.surface,
-    padding: 12,
+    overflow: 'hidden',
     shadowColor: Colors.background,
     shadowOpacity: 0.2,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    padding: 12,
   },
   thumb: { width: 120, height: 68, borderRadius: 14, overflow: 'hidden', position: 'relative' },
   thumbImg: { width: '100%', height: '100%' },

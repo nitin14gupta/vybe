@@ -48,9 +48,14 @@ export function StarRatingPicker({ rating, onSelect }: { rating: number; onSelec
       <Text style={p.rateLabel}>TAP TO RATE</Text>
 
       <View style={p.stars}>
-        {[1, 2, 3, 4, 5].map(n => (
-          <AnimatedStar key={n} n={n} rating={rating} onPress={() => handlePress(n)} />
-        ))}
+        {[1, 2, 3, 4, 5].map(n => {
+          const arcOffset = Math.abs(n - 3) * 8
+          return (
+            <View key={n} style={{ transform: [{ translateY: arcOffset }] }}>
+              <AnimatedStar n={n} rating={rating} onPress={() => handlePress(n)} />
+            </View>
+          )
+        })}
       </View>
 
       {rating > 0 ? (

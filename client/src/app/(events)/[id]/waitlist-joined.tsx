@@ -5,15 +5,20 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { StatusBar } from 'expo-status-bar'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { Users } from 'lucide-react-native'
+import { Users, Calendar, MapPin } from 'lucide-react-native'
 import { Colors, FontFamily, Spacing, Radius, withOpacity } from '@/constants'
 import { PrimaryButton, OutlineButton, BackButton, ConfirmSheet } from '@/components/ui'
 import { WaitlistPositionBadge } from '@/components/events/WaitlistPositionBadge'
 import { WaitlistInfoCard } from '@/components/events/WaitlistInfoCard'
+import { formatEventDate } from '@/components/events/EventCard'
 import { useLeaveWaitlist } from '@/hooks/useLeaveWaitlist'
+import ApiService, { type EventDetail } from '@/api/apiService'
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window')
-const BANNER_H = SCREEN_H * 0.48
+const { width: SCREEN_W } = Dimensions.get('window')
+// Event imagery is always 16:9 across the app — a portion-of-screen-height
+// banner (the old BANNER_H = SCREEN_H * 0.48) doesn't respect that and crops
+// differently per device; deriving height from width keeps the true ratio.
+const BANNER_H = (SCREEN_W * 9) / 16
 
 export default function WaitlistJoinedScreen() {
   const { id, position, coverUrl, title } = useLocalSearchParams<{
@@ -26,8 +31,14 @@ export default function WaitlistJoinedScreen() {
   const router = useRouter()
   const { leaving, leave } = useLeaveWaitlist(id!)
   const [confirmVisible, setConfirmVisible] = useState(false)
+  const [event, setEvent] = useState<EventDetail | null>(null)
 
   const pos = parseInt(position ?? '1', 10)
+
+  useEffect(() => {
+    if (!id) return
+    ApiService.getEvent(id).then(setEvent).catch(() => {})
+  }, [id])
 
   const cardY = useRef(new Animated.Value(24)).current
   const cardOpacity = useRef(new Animated.Value(0)).current
@@ -86,6 +97,21 @@ export default function WaitlistJoinedScreen() {
           {title ? (
             <Text style={s.eventTitle} numberOfLines={2}>{title}</Text>
           ) : null}
+
+          {event && (
+            <View style={s.detailRow}>
+              <View style={s.detailItem}>
+                <Calendar size={13} color={Colors.inkDisabled} strokeWidth={1.8} />
+                <Text style={s.detailText} numberOfLines={1}>{formatEventDate(event.date_time)}</Text>
+              </View>
+              {event.location_name ? (
+                <View style={s.detailItem}>
+                  <MapPin size={13} color={Colors.inkDisabled} strokeWidth={1.8} />
+                  <Text style={s.detailText} numberOfLines={1}>{event.location_name}</Text>
+                </View>
+              ) : null}
+            </View>
+          )}
 
           {/* Position chip */}
           <View style={s.posChip}>
@@ -175,6 +201,26 @@ const s = StyleSheet.create({
     textAlign: 'center',
     marginBottom: Spacing.md,
     paddingHorizontal: Spacing.sm,
+  },
+
+  detailRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 14,
+    marginTop: -Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    maxWidth: 160,
+  },
+  detailText: {
+    fontFamily: FontFamily.bodyRegular,
+    fontSize: 12,
+    color: Colors.inkDisabled,
   },
 
   posChip: {

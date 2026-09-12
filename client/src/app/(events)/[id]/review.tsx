@@ -5,8 +5,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, MapPin, Star } from 'lucide-react-native'
 import { hSuccess } from '@/lib/haptics'
-import { Colors, FontFamily, Radius, withOpacity } from '@/constants'
+import { Colors, FontFamily, Radius } from '@/constants'
 import ApiService, { type EventDetail } from '@/api/apiService'
+import { invalidate } from '@/lib/queryCache'
+import { CacheKeys } from '@/constants'
 import { usePillStore } from '@/store/pillStore'
 import { ConfettiRain, PrimaryButton, BrandedLoader } from '@/components/ui'
 import { StarRatingPicker, NotCheckedInGate, ReviewSuccessState } from '@/components/reviews/ReviewSubmitParts'
@@ -45,6 +47,7 @@ export default function ReviewScreen() {
     setSubmitting(true)
     try {
       await ApiService.submitReview(id!, rating, body.trim() || undefined)
+      invalidate(CacheKeys.homeJoinedEvents)
       hSuccess()
       setDone(true)
       let secs = 5
@@ -131,7 +134,7 @@ export default function ReviewScreen() {
         <StarRatingPicker rating={rating} onSelect={setRating} />
 
         <View style={s.inputSection}>
-          <Text style={s.sectionLabel}>SHARE THE EXPERIENCE</Text>
+          <Text style={s.sectionLabel}>Share the Experience</Text>
           <TextInput
             style={s.input}
             value={body}
@@ -166,8 +169,6 @@ const s = StyleSheet.create({
   },
   circleBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: withOpacity(Colors.inkPrimary, 0.08),
-    borderWidth: 1, borderColor: withOpacity(Colors.inkPrimary, 0.1),
     alignItems: 'center', justifyContent: 'center',
   },
 

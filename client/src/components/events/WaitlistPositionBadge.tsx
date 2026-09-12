@@ -1,23 +1,11 @@
-import { useEffect, useRef } from 'react'
-import { Animated, StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Colors, FontFamily, Spacing, withOpacity } from '@/constants'
 
 export function WaitlistPositionBadge({ position }: { position: number }) {
-  const pulse = useRef(new Animated.Value(1)).current
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.1, duration: 950, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1, duration: 950, useNativeDriver: true }),
-      ])
-    ).start()
-  }, [])
-
   return (
     <View style={s.wrap}>
-      <Animated.View style={[s.ring, { transform: [{ scale: pulse }] }]} />
+      <View style={s.ring} />
       <LinearGradient
         colors={[Colors.brandOrange, Colors.brandCoral]}
         start={{ x: 0, y: 0 }}
