@@ -13,9 +13,6 @@ interface Props {
   leftAction?: ReactNode
   rightAction?: ReactNode
   transparent?: boolean
-  // Pass the `hideProgress` from useHeaderScroll() to make the header float
-  // over content and fade/slide away on scroll-down, back on scroll-up.
-  // Omit for the default static, in-flow header (no behavior change).
   hideProgress?: Animated.Value
 }
 
